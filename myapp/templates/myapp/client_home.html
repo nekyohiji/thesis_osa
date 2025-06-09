@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>Technological University of the Philippines-Cavite - Office of Student Affairs</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />  
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">]
+
+    <link rel="stylesheet" href="{% static 'myapp/css/client_home.css' %}">
+</head>
+
+<body style="background-image: url('{% static 'myapp/images/bg_client.png' %}'); background-size: cover; background-repeat: no-repeat; background-attachment: fixed; background-position: center;"
+      data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0"
+>
+
+<!-- NAVIGATION BAR -->
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container-fluid">
+          <a id="TUPC" class="navbar-brand" href="#home">
+            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite<b/></span>
+            <span class="d-inline d-sm-none"><b>TUPC</b></span>
+         </a>
+
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
+                <li class="nav-item"><a class="nav-link nav-btn" href="{% url 'login' %}">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<!-- HOME SECTION -->
+<section id="home" class="text-center">
+    <div class="container"> <br>
+        <h1><b>Welcome to the Technological University of the Philippines - Cavite</b></h1>
+        <h3>Office of Student Affairs</h3> <br>
+        <p>The Office of Student Affairs (OSA) is one of the service units under the Vice President of the Academics Affairs. It is responsible for providing programs and activities designed to meet the need of every students, specfically that of having of healthy and productive student life. In order to meet the various student concerns and ensure the total development and well-being of the students, the OSA is engaged in various undertakings. It is further divided into the following areas of concerns/services.</p>
+    </div>
+</section>
+
+
+
+
+<!-- ABOUT US SECTION -->
+<section id="about" class="text-center py-5">
+    <div class="container">
+        <h1>About Us</h1>
+        <p>This is the about section.</p>
+        <div class="row mt-5">
+            <div class="col-md-4 mb-4">
+            <div class="card card-custom">
+                <div class="card-body">
+                <h5 class="card-title">Vision</h5>
+                <p class="card-text">Produce creative, critical, highly functional, globally oriented and competitive TUPC students.</p>
+                </div>
+            </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+            <div class="card card-custom">
+                <div class="card-body">
+                <h5 class="card-title">Mission</h5>
+                <p class="card-text">The Office of the Student Affairs serves the students in the maintenance of a healthy social relationship through varied services to facilitate the optimum development of potentials.</p>
+                </div>
+            </div>
+            </div>
+            <div class="col-md-4 mb-4">
+            <div class="card card-custom">
+                <div class="card-body">
+                <h5 class="card-title">Goals</h5>
+                <p class="card-text">Enhance students' commitment and leadership capability.
+                        Establish linkages to different sponsoring agencies for scholarship assistance.
+                        Enhance retention and admission policies.
+                        Uphold the dignity of the students in the community involving decision-making.
+                        </p>
+                </div>
+            </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- SERVICES SECTION -->
+<section id="services" class="text-center py-5">
+    <div class="container"><br>
+        <h2>Services</h2>
+        <p>Content coming soon.</p>
+    </div>
+</section>
+
+<!-- CONTACT / LOGIN SECTION -->
+<section id="contact" class="text-center py-5">
+    <div class="container">
+        <h2>Contact Us</h2>
+       
+    </div>
+</section>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

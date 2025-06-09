@@ -1,0 +1,119 @@
+  body {
+            background-color: #f8f9fa;
+              font-family: 'Roboto', sans-serif;
+        }
+
+        .section-title {
+            padding: 10px 0;
+            margin-top: 10x;
+            border-bottom: 0.1px solid #75000e;
+            font-size: 15px;
+            font-weight: 600;
+            color:#75000e;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #444;
+        }
+
+        .form-section {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        #retryBtn i {
+            transition: transform 0.3s ease;
+            font-size: 28px;
+            color:#360107;
+        }
+
+        #retryBtn:hover i {
+            transform: rotate(360deg);
+        }
+
+
+
+
+/* Style the Log Out button */
+.logout-btn {
+    color: #fff; /* white text */
+    background-color: #dc3545; /* Bootstrap's danger red */
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    display: inline-block;
+    margin-left: 350px; /* Increase this for more space */
+}
+
+.logout-btn:hover {
+    background-color: #c82333; /* Darker red on hover */
+    text-decoration: none;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+  /* NAVIGATION BAR */
+
+   #TUPC {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 18px;
+}
+
+    #TUPC img {
+    height: 30px;
+    width: auto;
+    flex-shrink: 0;
+    }
+
+    @media (max-width: 576px) {
+    #TUPC {
+        font-size: 0.9rem;
+    }
+
+    }
+    
+
+/* Stronger hover effect for nav links */
+.navbar-dark .navbar-nav .nav-link {
+    color: #ffffff !important; /* Force full white text */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 18px;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+font-weight: bold;
+    font-size: 1.1rem;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: white;
+
+}
+
+
+
+
+
+
