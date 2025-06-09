@@ -1,0 +1,184 @@
+ body {
+      background: #f8f9fa;
+    }
+    .filter-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .table-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .form-label {
+      font-weight: 600;
+    }
+    .form-label .bi {
+      margin-right: 6px;
+      color:#360107;
+    }
+    button .bi {
+      margin-right: 6px;
+    }
+
+
+
+
+
+    
+
+/* Style the Log Out button */
+.logout-btn {
+    color: #fff; /* white text */
+    background-color: #dc3545; /* Bootstrap's danger red */
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    display: inline-block;
+    margin-left: 350px; /* Increase this for more space */
+}
+
+.logout-btn:hover {
+    background-color: #c82333; /* Darker red on hover */
+    text-decoration: none;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Header styles */
+    thead {
+      background-color: #004080;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    thead th {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 2px solid #007bff;
+    }
+
+    /* Body rows styles */
+    tbody tr:nth-child(odd) {
+      background-color: #e6f2ff;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #ffffff;
+    }
+
+    tbody tr:hover {
+      background-color: #cce6ff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    tbody td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #007bff;
+      color: #333;
+    }
+
+    /* Responsive container */
+    .table-responsive {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    /* Align middle cells vertically */
+    .align-middle td, .align-middle th {
+      vertical-align: middle;
+    }
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+        
+
+  /* NAVIGATION BAR */
+
+   #TUPC {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 18px;
+}
+
+    #TUPC img {
+    height: 30px;
+    width: auto;
+    flex-shrink: 0;
+    }
+
+    @media (max-width: 576px) {
+    #TUPC {
+        font-size: 0.9rem;
+    }
+
+  }
+
+/* Stronger hover effect for nav links */
+.navbar-dark .navbar-nav .nav-link {
+    color: #ffffff !important; /* Force full white text */
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+
+/* Stronger hover effect for nav links */
+.navbar-dark .navbar-nav .nav-link {
+    color: #ffffff !important; /* Force full white text */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 20px;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+font-weight: bold;
+    font-size: 1.1rem;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: white;
+
+}

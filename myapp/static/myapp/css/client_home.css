@@ -1,0 +1,178 @@
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+
+    section {
+      padding: 100px 0;
+      min-height: 100vh;
+    }
+    #home {
+      background: #f8f9fa;
+    }
+
+    #about {
+      background: #dee2e6;
+    }
+
+    #services {
+      background: #ced4da;
+    }
+
+    #contact {
+      background: #adb5bd;
+            min-height: 25vh;
+    }
+
+
+
+
+
+
+
+    .service-button {
+      margin: 10px;
+      padding: 20px;
+      font-size: 1.2rem;
+    }
+
+    .card-custom {
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+    }
+
+    .card-custom:hover {
+      transform: translateY(-10px);
+    }
+
+
+
+
+      /* Buttons styled like cards */
+    .btn-card {
+      width: 200px;
+      margin: 10px;
+      padding: 20px;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      background-color: #ffffff;
+      color: #343a40;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .btn-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      color: #343a40;
+      background-color: #f8f9fa;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* NAVIGATION BAR */
+
+   #TUPC {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-size: 18px;
+}
+
+    #TUPC img {
+    height: 30px;
+    width: auto;
+    flex-shrink: 0;
+    }
+
+    @media (max-width: 576px) {
+    #TUPC {
+        font-size: 0.9rem;
+    }
+
+    }
+    .navbar-brand img {
+    height: 30px;
+    width: auto;
+    }
+    /* Custom Navbar Gradient Background */
+    .navbar-custom {
+    background: linear-gradient(to right, #000000, #7b000a, #000000);
+    }
+
+    /* Brand and Link Colors */
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+    color: white;
+    font-weight: 500;
+    margin-right: 10px;
+    font-size: 17px;
+    }
+
+    /* HOVER NAV */
+    .navbar-custom .nav-link:hover {
+    color: #adb5bd;
+    }
+
+    .navbar-custom .nav-link.active {
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: white;
+    }
+
+
+
+/* LOGIN BTN */
+.nav-btn {
+  background-color: #75000e;
+  color: #ffffff !important;
+  font-weight: bold;
+  padding: 8px 20px;
+  border-radius: 18px;
+  border: none;
+
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+/* Hover effect for the button */
+.nav-btn:hover {
+  background-color: #2869aa;
+  color: #000 !important;
+  text-decoration: none;
+}
+
+
+
+
+
+
+    /* BURGER */
+    .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5); /* Light border */
+    }
+
+    /* 3 LINES */
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        }
+
