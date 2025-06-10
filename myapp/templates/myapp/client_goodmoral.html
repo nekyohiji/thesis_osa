@@ -111,62 +111,56 @@
         </div>
 
 
-        <!-- STEP 2, ACADEMIC INFORMATION -->
-        <div class="step card mb-4">
+                <!-- STEP 2, ACADEMIC INFORMATION -->
+            <div class="step card mb-4">
             <div class="card-body">
-                <div class="section-title"><i class="bi bi-mortarboard-fill"></i> Academic Information</div><hr><br>
-        <!-- STUDENT ID NUMBER-->
+                <div class="section-title"><i class="bi bi-mortarboard-fill"></i> Academic Information</div>
+                <hr><br>
+
+                <!-- STUDENT ID NUMBER & PROGRAM/COURSE -->
                 <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Student ID Number::</label>
-                        <input type="text" id="studentID_goodmoral" class="form-control" name="program" placeholder="TUPC-XX-XXXX" required>
-                    </div>
-        <!-- PROGRAM/COURSE -->                                    
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Program:</label>
-                        <select class="form-select" id="program_goodmoral" name="program" required>
-                            <option value="">-- Select Program/Course --</option>
-                            <option value="BET-COET">BET-COET</option>
-                            <option value="BET-ET">BET-ET</option>
-                            <option value="BET-CT">BET-CT</option>
-                            <option value="BET-HE">BET-HE</option>
-                        </select>
-                    </div>
-
-        <!-- STATUS -->          
-                   <div class="col-md-4 mb-3">
-                        <label class="form-label">Status:</label>
-                        <select class="form-select" id="status_goodmoral" name="status" required>
-                            <option value="">-- Select Status --</option>
-                            <option value="Graduated">Graduated</option>
-                            <option value="Undergraduate">Undergraduate</option>
-                            <option value="Transferred">Transferred</option>
-                            <option value="Dropped">Dropped</option>
-                        </select>
-                    </div>
-
-        <!-- DATE GRADUATED -->          
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Date Graduated:</label>
-                        <input type="date" class="form-control" id="date_graduated_goodmoral" name="date_graduated">
-                    </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Student ID Number:</label>
+                    <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" placeholder="TUPC-XX-XXXX" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Program/Course:</label>
+                    <input type="text" id="program_goodmoral" class="form-control" name="program" placeholder="BET-COET" required>
+                </div>
                 </div>
 
-        <!-- YEARS OF STAY -->   
+                <!-- STATUS & DATE GRADUATED -->
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Inclusive Years of Stay:</label>
-                        <input type="text" class="form-control" id="stay_goodmoral" name="inclusive_years" placeholder="e.g., 2015-2019">
-                    </div>
-
-        <!-- DATE OF ADMISSION-->   
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Date of Admission:</label>
-                        <input type="date" class="form-control" id="admission_date_goodmoral" name="date_admission">
-                    </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status:</label>
+                    <select class="form-select" id="status_goodmoral" name="status" required>
+                    <option value="">-- Select Status --</option>
+                    <option value="Graduated">Graduated</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Transferred">Transferred</option>
+                    <option value="Dropped">Dropped</option>
+                    </select>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Date Graduated:</label>
+                    <input type="date" class="form-control" id="date_graduated_goodmoral" name="date_graduated">
+                </div>
+                </div>
+
+                <!-- INCLUSIVE YEARS OF STAY & DATE OF ADMISSION -->
+                <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Inclusive Years of Stay:</label>
+                    <input type="text" class="form-control" id="stay_goodmoral" name="inclusive_years" placeholder="e.g., 2015-2019">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Date of Admission:</label>
+                    <input type="date" class="form-control" id="admission_date_goodmoral" name="date_admission">
+                </div>
+                </div>
+
             </div>
-        </div>
+            </div>
 
 
 
@@ -274,113 +268,91 @@
 <!-- Stepper JS -->
 <script>
 
+            const documentTypeSelect = document.getElementById('documentTypeSelect');
+            const fileInputContainer = document.getElementById('fileInputContainer');
+            const documentFileInput = document.getElementById('documentFileInput');
+            const fileInputLabel = document.getElementById('fileInputLabel');
+            const submitButton = document.getElementById('submitButton');
 
-    const documentTypeSelect = document.getElementById('documentTypeSelect');
-    const fileInputContainer = document.getElementById('fileInputContainer');
-    const documentFileInput = document.getElementById('documentFileInput');
-    const fileInputLabel = document.getElementById('fileInputLabel');
-    const submitButton = document.getElementById('submitButton');
+            const uploadedFiles = {
+                upload_id: null,
+                upload_ack_receipt: null,
+                upload_diploma: null,
+            };
 
-    const fileLinks = {
-        upload_id: document.getElementById('viewUploadID'),
-        upload_ack_receipt: document.getElementById('viewAckReceipt'),
-        upload_diploma: document.getElementById('viewDiploma'),
-    };
+            // Show file input when document type changes
+            documentTypeSelect.addEventListener('change', () => {
+                const selectedType = documentTypeSelect.value;
+                fileInputContainer.style.display = selectedType ? 'block' : 'none';
+                if (selectedType) {
+                    fileInputLabel.textContent = `Upload ${documentTypeSelect.options[documentTypeSelect.selectedIndex].text}:`;
+                    documentFileInput.value = '';
+                }
+            });
 
-    const uploadedFiles = {
-        upload_id: null,
-        upload_ack_receipt: null,
-        upload_diploma: null,
-    };
+            // Enable submit button when a file is uploaded
+            documentFileInput.addEventListener('change', () => {
+                const selectedType = documentTypeSelect.value;
+                const file = documentFileInput.files[0];
 
-    // When document type changes, show the file input
-    documentTypeSelect.addEventListener('change', () => {
-        const selectedType = documentTypeSelect.value;
-        if (selectedType) {
-            fileInputContainer.style.display = 'block';
-            fileInputLabel.textContent = `Upload ${documentTypeSelect.options[documentTypeSelect.selectedIndex].text}:`;
-            documentFileInput.value = ''; // Reset file input
-        } else {
-            fileInputContainer.style.display = 'none';
-        }
-    });
+                if (file && selectedType) {
+                    uploadedFiles[selectedType] = file;
 
-    // When file is uploaded, update the preview link
-    documentFileInput.addEventListener('change', () => {
-        const selectedType = documentTypeSelect.value;
-        const file = documentFileInput.files[0];
+                    const hasFileUploaded = Object.values(uploadedFiles).some(f => f !== null);
+                    submitButton.disabled = !hasFileUploaded;
+                }
+            });
 
-        if (file && selectedType) {
-            const fileURL = URL.createObjectURL(file);
+            // Stepper Logic
+            let currentStep = 1;
+            const steps = document.getElementsByClassName('step');
+            const indicators = document.getElementById('stepIndicator').children;
 
-            fileLinks[selectedType].href = fileURL;
-            fileLinks[selectedType].textContent = 'View';
-            fileLinks[selectedType].classList.remove('disabled');
-            fileLinks[selectedType].removeAttribute('tabindex');
+            showStep(currentStep);
 
-            uploadedFiles[selectedType] = file;
+            function showStep(step) {
+                for (let i = 0; i < steps.length; i++) {
+                    steps[i].classList.remove('active');
+                }
+                steps[step - 1].classList.add('active');
 
-            // Enable submit button if at least one file is uploaded
-            const hasFileUploaded = Object.values(uploadedFiles).some(f => f !== null);
-            submitButton.disabled = !hasFileUploaded;
-        }
-    });
+                for (let i = 0; i < indicators.length; i++) {
+                    indicators[i].classList.remove('active', 'done');
+                    if (i < step - 1) {
+                        indicators[i].classList.add('done');
+                    } else if (i === step - 1) {
+                        indicators[i].classList.add('active');
+                    }
+                }
 
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+                const fixedNav = document.querySelector('.fixed-nav');
 
-
-function populatePreview() {
-    document.getElementById('previewFirstName').textContent = document.getElementById('fn_gv').value || '---';
-    document.getElementById('previewMiddleName').textContent = document.getElementById('mn_gv').value || '---';
-    document.getElementById('previewLastName').textContent = document.getElementById('ln_gv').value || '---';
-    document.getElementById('previewStudentID').textContent = document.getElementById('studentId_gv').value || '---';
-    document.getElementById('previewProgram').textContent = document.getElementById('studentProgram_gv').value || '---';
-    document.getElementById('previewViolationDateTime').textContent = document.getElementById('violation_datetime_gv').value || '---';
-    document.getElementById('previewViolationType').textContent = document.getElementById('violation_type_gv').value || '---';
-    document.getElementById('previewGuardName').textContent = document.getElementById('Guardname_gv').value || '---';
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-    let currentStep = 1;
-    const steps = document.getElementsByClassName('step');
-    const indicators = document.getElementById('stepIndicator').children;
-
-    showStep(currentStep);
-
-    function showStep(step) {
-        for (let i = 0; i < steps.length; i++) {
-            steps[i].classList.remove('active');
-        }
-        steps[step - 1].classList.add('active');
-
-        for (let i = 0; i < indicators.length; i++) {
-            indicators[i].classList.remove('active', 'done');
-            if (i < step - 1) {
-                indicators[i].classList.add('done');
-            } else if (i === step - 1) {
-                indicators[i].classList.add('active');
+                if (step === 1) {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'inline-block';
+                    fixedNav.classList.remove('justify-content-between');
+                    fixedNav.classList.add('justify-content-end');
+                } else if (step === steps.length) {
+                    prevBtn.style.display = 'inline-block';
+                    nextBtn.style.display = 'none';
+                    fixedNav.classList.remove('justify-content-end');
+                    fixedNav.classList.add('justify-content-between');
+                } else {
+                    prevBtn.style.display = 'inline-block';
+                    nextBtn.style.display = 'inline-block';
+                    fixedNav.classList.remove('justify-content-end');
+                    fixedNav.classList.add('justify-content-between');
+                }
             }
-        }
 
-        document.getElementById('prevBtn').style.display = (step === 1) ? 'none' : 'inline-block';
-        document.getElementById('nextBtn').style.display = (step === steps.length) ? 'none' : 'inline-block';
-    }
+            function changeStep(n) {
+                if (currentStep + n < 1 || currentStep + n > steps.length) return;
+                currentStep += n;
+                showStep(currentStep);
+            }
 
-    function changeStep(n) {
-        if (currentStep + n < 1 || currentStep + n > steps.length) return;
-        currentStep += n;
-        showStep(currentStep);
-    }
 </script>
 
 </body>
