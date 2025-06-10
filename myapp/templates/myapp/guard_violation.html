@@ -49,7 +49,7 @@
         </button>
     </div>
 
-    <!-- DATE AND TIME -->
+    <!-- CURRENT DATE AND TIME -->
     <div class="d-flex justify-content-start mb-3" style="font-weight: 500; color: #555;">
         <div style="margin-right: 15px;">
             <span><strong>Date:</strong> </span><span id="currentDate"></span>
@@ -59,7 +59,6 @@
         </div>
     </div>
 
-    <!-- FORM START -->
     <form id="violationForm">
         <div class="row">
 
@@ -68,41 +67,59 @@
                 <div class="section-title"><i class="bi bi-person-fill"></i> Personal Information</div>
                 <div class="form-section">
                     <div class="row">
+
+                        <!-- FIRST NAME -->
                         <div class="col-md-6 mb-3">
                             <label for="firstName" class="form-label" >First Name:</label>
-                            <input type="text" class="form-control" id="firstName" placeholder="Enter first name" disabled>
+                            <input type="text" class="form-control" id="fn_gv" placeholder="Enter first name" disabled>
                         </div>
+
+                        <!-- MIDDLE NAME -->
                         <div class="col-md-6 mb-3">
                             <label for="middleName" class="form-label">Middle Name:</label>
-                            <input type="text" class="form-control" id="middleName" placeholder="Enter middle name" disabled>
+                            <input type="text" class="form-control" id="mn_gv" placeholder="Enter middle name" disabled>
                         </div>
+
+                        <!-- LAST NAME -->
                         <div class="col-md-12 mb-3">
                             <label for="lastName" class="form-label">Last Name:</label>
-                            <input type="text" class="form-control" id="lastName" placeholder="Enter last name" disabled>
+                            <input type="text" class="form-control" id="ln_gv" placeholder="Enter last name" disabled>
                         </div>
                     </div>
                     <div class="row">
+
+                        <!-- STUDENT ID NUMBER -->
                         <div class="col-md-6 mb-3">
                             <label for="studentId" class="form-label">Student ID Number:</label>
-                            <input type="text" class="form-control" id="studentId" placeholder="Enter student ID" disabled>
+                            <input type="text" class="form-control" id="studentId_gv" placeholder="Enter student ID" disabled>
                         </div>
+
+                        <!-- PROGRAM/COURSE -->
                         <div class="col-md-6 mb-3">
                             <label for="studentProgram" class="form-label">Program/Course:</label>
-                            <input type="text" class="form-control" id="studentProgram" placeholder="Enter student program"disabled>
+                            <input type="text" class="form-control" id="studentProgram_gv" placeholder="Enter student program"disabled>
                         </div>
                     </div>
                 </div>
 
+
+
+        <!-- VIOLATION DETAILS -->
                 <div class="section-title"><i class="bi bi-exclamation-triangle-fill"></i> Violation Details</div>
                 <div class="form-section">
                     <div class="row">
+
+
+                        <!-- DATE AND TIME OF VIOLATION -->
                         <div class="col-md-12 mb-3">
                             <label for="violationDateTime" class="form-label">Date and Time of Violation:</label>
-                            <input type="datetime-local" class="form-control" id="violationDateTime">
+                            <input type="datetime-local" class="form-control" id="violation_datetime_gv">
                         </div>
+
+                        <!-- TYPE OF VIOLATION -->
                         <div class="col-md-12 mb-3">
                             <label for="violationType" class="form-label">Type of Violation:</label>
-                            <select class="form-select" id="violationType">
+                            <select class="form-select" id="violation_type_gv">
                                 <option value="">-- Select Violation Type --</option>
                                 <option value="Dress Code">Dress Code Violation</option>
                                 <option value="Behavior">Behavioral Misconduct</option>
@@ -114,6 +131,8 @@
                 </div>
             </div>
 
+
+
             <!-- RIGHT PANEL -->
             <div class="col-md-4 d-flex flex-column gap-4">
                 <!-- GUARD ON DUTY -->
@@ -121,7 +140,7 @@
                     <div class="section-title"><i class="bi bi-shield-lock-fill"></i> Guard on Duty</div>
                     <div class="form-section">
                         <label for="guardName" class="form-label">Select Guard:</label>
-                        <select class="form-select" id="guardName">
+                        <select class="form-select" id="Guardname_gv">
                             <option value="">-- Select Guard --</option>
                             <option value="Guard John">Guard John</option>
                             <option value="Guard Mary">Guard Mary</option>
@@ -137,12 +156,12 @@
                         <div class="form-section h-100 d-flex flex-column">
                             <div class="mb-3">
                                 <label for="violationEvidence" class="form-label">Upload Evidence File:</label>
-                                <input class="form-control" type="file" id="violationEvidence" accept="image/*,.pdf" multiple>
+                                <input class="form-control" type="file" id="violation_evidence_gv" accept="image/*,.pdf" multiple>
                             </div>
-                            <div id="previewContainer" style="overflow-y:auto; max-height: 300px;"></div>
+                            <div id="preview_container_gv" style="overflow-y:auto; max-height: 300px;"></div>
 
-                        <!-- Camera Icon Button -->
-                        <button id="cameraBtn" type="button" class="camera-btn" title="Open Camera"> Capture Evidence
+                        <!-- CAMERA BTN -->
+                        <button id="camera_btn_gv" type="button" class="camera-btn" title="Open Camera"> Capture Evidence
                             <i class="bi bi-camera-fill"></i>
                         </button>
                         </div>
@@ -152,7 +171,7 @@
 
                 <!-- SUBMIT BUTTON -->
                 <div class="text-center mt-3">
-                    <button type="submit" id="submitBtn" class="btn btn-success btn-lg w-100">
+                    <button type="submit" id="submit_btn_gv" class="btn btn-success btn-lg w-100" disabled>
                         <i class="bi bi-check-circle-fill" ></i> Submit
                     </button>
                 </div>

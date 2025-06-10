@@ -1,0 +1,387 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>OSA -  Good Moral Certificate</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />  
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">]
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="{% static 'myapp/css/client_goodmoral.css' %}">
+</head>
+
+<body data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0">
+
+<!-- NAVIGATION BAR -->
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container-fluid">
+          <a id="TUPC" class="navbar-brand" href="#home">
+            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite<b/></span>
+            <span class="d-inline d-sm-none"><b>TUPC</b></span>
+         </a>
+
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
+                <li class="nav-item"><a class="nav-link nav-btn" href="{% url 'login' %}">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+
+<div class="container mt-5 mb-5">
+    <br>
+    <h1  class="mb-4"> <i class="bi bi-file-earmark-text-fill"></i><b>  Good Moral Certificate Request Form</b></h1><hr>
+    <h6 class="mb-4"> Please fill in the required information below.</h6>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator mb-4" id="stepIndicator">
+        <div class="active" data-step="1"><i class="bi bi-person-fill"></i>  Personal</div>
+        <div data-step="2"><i class="bi bi-mortarboard-fill"></i>  Academic</div>
+        <div data-step="3"><i class="bi bi-journal-text"></i>  Request</div>
+        <div data-step="4"><i class="bi bi-upload"></i>  Upload</div>
+
+    </div>
+
+
+
+    <!-- Form -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+
+
+        <!-- STEP 1, PERSONAL INFORMATION-->
+        <div class="step active card mb-4">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-person-fill"></i>Personal Information</div>
+                <hr><br>
+
+        <!-- FIRST NAME-->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">First Name:</label>
+                        <input type="text" id="fn_goodmoral"class="form-control" name="first_name" placeholder="Enter Your First Name" required>
+                    </div>
+        <!-- MIDDLE NAME -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Middle Name:</label>
+                        <input type="text" id="mn_goodmoral" class="form-control" name="middle_name" placeholder="Enter Your Middle Name" >
+                    </div>
+        <!-- SURNAME -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Surname:</label>
+                        <input type="text" id="sn_goodmoral" class="form-control" name="surname" placeholder="Enter Your Last Name" required >
+                    </div>
+                </div>
+        <!-- EXTENSION -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Extension (Jr., Sr.):</label>
+                        <input type="text" id="ex_goodmoral" class="form-control" name="ext" placeholder="Enter Your Extension Name">
+                    </div>
+        <!-- SEX -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Sex:</label>
+                        <select class="form-select"  id="sex_goodmoral" name="sex" required>
+                            <option value="">-- Select --</option>
+                            <option>Male</option>
+                            <option>Female</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- STEP 2, ACADEMIC INFORMATION -->
+        <div class="step card mb-4">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-mortarboard-fill"></i> Academic Information</div><hr><br>
+        <!-- STUDENT ID NUMBER-->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Student ID Number::</label>
+                        <input type="text" id="studentID_goodmoral" class="form-control" name="program" placeholder="TUPC-XX-XXXX" required>
+                    </div>
+        <!-- PROGRAM/COURSE -->                                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Program:</label>
+                        <select class="form-select" id="program_goodmoral" name="program" required>
+                            <option value="">-- Select Program/Course --</option>
+                            <option value="BET-COET">BET-COET</option>
+                            <option value="BET-ET">BET-ET</option>
+                            <option value="BET-CT">BET-CT</option>
+                            <option value="BET-HE">BET-HE</option>
+                        </select>
+                    </div>
+
+        <!-- STATUS -->          
+                   <div class="col-md-4 mb-3">
+                        <label class="form-label">Status:</label>
+                        <select class="form-select" id="status_goodmoral" name="status" required>
+                            <option value="">-- Select Status --</option>
+                            <option value="Graduated">Graduated</option>
+                            <option value="Undergraduate">Undergraduate</option>
+                            <option value="Transferred">Transferred</option>
+                            <option value="Dropped">Dropped</option>
+                        </select>
+                    </div>
+
+        <!-- DATE GRADUATED -->          
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Date Graduated:</label>
+                        <input type="date" class="form-control" id="date_graduated_goodmoral" name="date_graduated">
+                    </div>
+                </div>
+
+        <!-- YEARS OF STAY -->   
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Inclusive Years of Stay:</label>
+                        <input type="text" class="form-control" id="stay_goodmoral" name="inclusive_years" placeholder="e.g., 2015-2019">
+                    </div>
+
+        <!-- DATE OF ADMISSION-->   
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Date of Admission:</label>
+                        <input type="date" class="form-control" id="admission_date_goodmoral" name="date_admission">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- STEP 3, REQUEST -->
+        <div class="step card mb-4">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-journal-text"></i> Request & Requester Information</div><hr><br>
+
+        <!-- PURPOSE -->
+                <div class="mb-3">
+                    <label class="form-label">Purpose of Request:</label>
+                    <select class="form-select" name="purpose" id="purpose_goodmoral" required>
+                        <option value="">-- Select Purpose of Request --</option>
+                        <option value="Employment">Employment</option>
+                        <option value="Further Studies">Further Studies</option>
+                        <option value="Transfer to Another School">Transfer to Another School</option>
+                        <option value="Personal Use">Personal Use</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+
+                <hr class="m"><br>
+
+        <!-- NAME OF REQUESTER -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Name of Requester:</label>
+                        <input type="text" class="form-control" id="requester_goodmoral" name="requester_name" placeholder="Enter your Name" required>
+                    </div>
+
+        <!-- EMAIL OF REQUESTER -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email of Requester:</label>
+                        <input type="email" class="form-control" id="email_req_goodmoral" name="requester_email" placeholder="@gmail.com" required>
+                    </div>
+                </div>
+
+        <!-- CONTACT OF REQUESTER -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Contact No. of Requester:</label>
+                        <input type="tel" class="form-control" id="contact_req_goodmoral" name="requester_contact" placeholder="+63 9XXXXXXXXX" required>
+                    </div>
+
+        <!-- RELATIONSHIP -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Relationship to Alum/Student:</label>
+                        <input type="text" class="form-control" id="relationship_goodmoral" name="relationship" placeholder="Self"  required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- STEP 4 UPLOAD -->
+        <div class="step card mb-4">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div> <hr><br>
+
+                <!-- Select which document to upload -->
+                <div class="mb-3">
+                    <label class="form-label">Select Document Type:</label>
+                    <select class="form-select" id="documentTypeSelect">
+                        <option value="">-- Select Document Type --</option>
+                        <option value="upload_id">ID</option>
+                        <option value="upload_ack_receipt">Acknowledgment Receipt</option>
+                        <option value="upload_diploma">Diploma</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic file input appears here -->
+                <div class="mb-3" id="fileInputContainer" style="display: none;">
+                    <label id="fileInputLabel" class="form-label">Upload File:</label>
+                    <input type="file" class="form-control" id="documentFileInput" accept=".jpg,.jpeg,.png,.pdf">
+                </div><br><hr>
+
+                
+        <!-- Submit Button -->
+                <div class="text-end mt-3">
+                    <button type="submit" id="submitButton" class="btn btn-success" disabled>
+                        <i class="bi bi-send-fill"></i> Submit Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+            <!-- Navigation Buttons (Fixed at Bottom of Form) -->
+            <div class="fixed-nav mt-4 py-3 d-flex justify-content-between align-items-center px-5">
+                <button type="button" class="btn btn-secondary btn-lg" id="prevBtn" onclick="changeStep(-1)">
+                    <i class="bi bi-arrow-left-circle-fill"></i> Previous
+                </button>
+                <button type="button" class="btn btn-primary btn-lg" id="nextBtn" onclick="changeStep(1)">
+                    Next <i class="bi bi-arrow-right-circle-fill"></i>
+                </button>
+            </div>
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Stepper JS -->
+<script>
+
+
+    const documentTypeSelect = document.getElementById('documentTypeSelect');
+    const fileInputContainer = document.getElementById('fileInputContainer');
+    const documentFileInput = document.getElementById('documentFileInput');
+    const fileInputLabel = document.getElementById('fileInputLabel');
+    const submitButton = document.getElementById('submitButton');
+
+    const fileLinks = {
+        upload_id: document.getElementById('viewUploadID'),
+        upload_ack_receipt: document.getElementById('viewAckReceipt'),
+        upload_diploma: document.getElementById('viewDiploma'),
+    };
+
+    const uploadedFiles = {
+        upload_id: null,
+        upload_ack_receipt: null,
+        upload_diploma: null,
+    };
+
+    // When document type changes, show the file input
+    documentTypeSelect.addEventListener('change', () => {
+        const selectedType = documentTypeSelect.value;
+        if (selectedType) {
+            fileInputContainer.style.display = 'block';
+            fileInputLabel.textContent = `Upload ${documentTypeSelect.options[documentTypeSelect.selectedIndex].text}:`;
+            documentFileInput.value = ''; // Reset file input
+        } else {
+            fileInputContainer.style.display = 'none';
+        }
+    });
+
+    // When file is uploaded, update the preview link
+    documentFileInput.addEventListener('change', () => {
+        const selectedType = documentTypeSelect.value;
+        const file = documentFileInput.files[0];
+
+        if (file && selectedType) {
+            const fileURL = URL.createObjectURL(file);
+
+            fileLinks[selectedType].href = fileURL;
+            fileLinks[selectedType].textContent = 'View';
+            fileLinks[selectedType].classList.remove('disabled');
+            fileLinks[selectedType].removeAttribute('tabindex');
+
+            uploadedFiles[selectedType] = file;
+
+            // Enable submit button if at least one file is uploaded
+            const hasFileUploaded = Object.values(uploadedFiles).some(f => f !== null);
+            submitButton.disabled = !hasFileUploaded;
+        }
+    });
+
+
+
+function populatePreview() {
+    document.getElementById('previewFirstName').textContent = document.getElementById('fn_gv').value || '---';
+    document.getElementById('previewMiddleName').textContent = document.getElementById('mn_gv').value || '---';
+    document.getElementById('previewLastName').textContent = document.getElementById('ln_gv').value || '---';
+    document.getElementById('previewStudentID').textContent = document.getElementById('studentId_gv').value || '---';
+    document.getElementById('previewProgram').textContent = document.getElementById('studentProgram_gv').value || '---';
+    document.getElementById('previewViolationDateTime').textContent = document.getElementById('violation_datetime_gv').value || '---';
+    document.getElementById('previewViolationType').textContent = document.getElementById('violation_type_gv').value || '---';
+    document.getElementById('previewGuardName').textContent = document.getElementById('Guardname_gv').value || '---';
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+    let currentStep = 1;
+    const steps = document.getElementsByClassName('step');
+    const indicators = document.getElementById('stepIndicator').children;
+
+    showStep(currentStep);
+
+    function showStep(step) {
+        for (let i = 0; i < steps.length; i++) {
+            steps[i].classList.remove('active');
+        }
+        steps[step - 1].classList.add('active');
+
+        for (let i = 0; i < indicators.length; i++) {
+            indicators[i].classList.remove('active', 'done');
+            if (i < step - 1) {
+                indicators[i].classList.add('done');
+            } else if (i === step - 1) {
+                indicators[i].classList.add('active');
+            }
+        }
+
+        document.getElementById('prevBtn').style.display = (step === 1) ? 'none' : 'inline-block';
+        document.getElementById('nextBtn').style.display = (step === steps.length) ? 'none' : 'inline-block';
+    }
+
+    function changeStep(n) {
+        if (currentStep + n < 1 || currentStep + n > steps.length) return;
+        currentStep += n;
+        showStep(currentStep);
+    }
+</script>
+
+</body>
+</html>

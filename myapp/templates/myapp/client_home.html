@@ -15,8 +15,7 @@
 </head>
 
 <body style="background-image: url('{% static 'myapp/images/bg_client.png' %}'); background-size: cover; background-repeat: no-repeat; background-attachment: fixed; background-position: center;"
-      data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0"
->
+      data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0">
 
 <!-- NAVIGATION BAR -->
 <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
@@ -102,7 +101,29 @@
         <h2>Services</h2>
         <p>Content coming soon.</p>
     </div>
+            <section id="services" class="text-center">
+                <div class="container">
+                    <h1>Our Services</h1>
+                    <p>Click on a service below to learn more.</p>
+                    <div class="card-container">
+                        <a href="{% url 'client_goodmoral' %}" class="service-card">Good Moral Certificate</a>
+                        <a href="{% url 'client_scholarships' %}" class="service-card">Scholarships</a>
+                        <a href="{% url 'client_CS' %}" class="service-card">Community Service</a>
+                        <a href="{% url 'client_SurrenderingID' %}" class="service-card">Surrender of ID</a>
+                        <a href="{% url 'client_studentAssistantship' %}" class="service-card">Student Assistantship</a>
+                        <a href="{% url 'client_ACSO' %}" class="service-card">ACSO Accreditations</a>
+                        <a href="{% url 'client_lostandfound' %}" class="service-card">Lost and Found</a>
+                    </div>
+                </div>
+            </section>
+
+
+
 </section>
+
+
+
+
 
 <!-- CONTACT / LOGIN SECTION -->
 <section id="contact" class="text-center py-5">
