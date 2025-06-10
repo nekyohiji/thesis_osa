@@ -1,94 +1,253 @@
 body {
-      font-family: 'Roboto', sans-serif;
-    }
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f0f0;
 
 
-  /* NAVIGATION BAR */
-
-   #TUPC {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  font-size: 18px;
+    body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to right, #00000013, #f0f0f0, #000000);
+    color: #fff; /* Optional: adjust text color */
+}
+    
 }
 
-    #TUPC img {
+/* NAVIGATION BAR */
+#TUPC {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    font-size: 18px;
+}
+
+#TUPC img {
     height: 30px;
     width: auto;
     flex-shrink: 0;
-    }
+}
 
-    @media (max-width: 576px) {
+@media (max-width: 576px) {
     #TUPC {
         font-size: 0.9rem;
     }
+}
 
-    }
-    .navbar-brand img {
+.navbar-brand img {
     height: 30px;
     width: auto;
-    }
-    /* Custom Navbar Gradient Background */
-    .navbar-custom {
-    background: linear-gradient(to right, #000000, #7b000a, #000000);
-    }
+}
 
-    /* Brand and Link Colors */
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
+/* Custom Navbar Gradient Background */
+.navbar-custom {
+    background: linear-gradient(to right, #000000, #7b000a, #000000);
+}
+
+/* Brand and Link Colors */
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
     color: white;
     font-weight: 500;
     margin-right: 10px;
     font-size: 17px;
-    }
+}
 
-    /* HOVER NAV */
-    .navbar-custom .nav-link:hover {
+/* Hover NAV */
+.navbar-custom .nav-link:hover {
     color: #adb5bd;
-    }
+}
 
-    .navbar-custom .nav-link.active {
+.navbar-custom .nav-link.active {
     font-weight: bold;
     font-size: 1.1rem;
     text-decoration: underline;
     text-underline-offset: 4px;
     color: white;
-    }
-
-
+}
 
 /* LOGIN BTN */
 .nav-btn {
-  background-color: #75000e;
-  color: #ffffff !important;
-  font-weight: bold;
-  padding: 8px 20px;
-  border-radius: 18px;
-  border: none;
-
-  transition: all 0.3s ease;
-  text-align: center;
+    background-color: #75000e;
+    color: #ffffff !important;
+    font-weight: bold;
+    padding: 8px 20px;
+    border-radius: 18px;
+    border: none;
+    transition: all 0.3s ease;
+    text-align: center;
 }
 
-/* Hover effect for the button */
 .nav-btn:hover {
-  background-color: #49040c;
-  color: #e7e1e1 !important;
-  text-decoration: underline;
-  font-weight: bold;
+    background-color: #49040c;
+    color: #e7e1e1 !important;
+    text-decoration: underline;
+    font-weight: bold;
 }
 
-    /* BURGER */
-    .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5); /* Light border */
-    }
+/* BURGER */
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
 
-    /* 3 LINES */
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-        }
-
-
+/* 3 LINES */
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
 
 
+
+
+
+
+/*GOOD MORAL CERTIFICATE */
+
+.container h1 {
+  text-decoration: none;
+}
+
+/* Step Indicator */
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.step-indicator::before {
+    content: '';
+    position: absolute;
+    top: 40px; /* adjust this to align with center of circles */
+    left: 0px;
+    right: 0px;
+    height: 2px;
+    background-color:#7b000a;
+    z-index: 0;
+}
+
+.step-indicator div {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.step-indicator div::before {
+    content: attr(data-step);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #887f7f;
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 2;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+}
+
+.step-indicator div.active::before {
+    background-color:  #c20d0d;
+}
+
+.step-indicator div.done::before {
+    background-color: #7b000a;
+}
+
+.step-indicator div::after {
+    content: none;
+}
+
+/* Step Visibility */
+.step {
+    display: none;
+}
+
+.step.active {
+    display: block;
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-right: 8px;
+}
+
+/* Fixed Navigation Buttons */
+.fixed-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 999;
+    background-color: #fff; /* to avoid transparent overlap */
+    padding: 10px 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.fixed-nav button {
+    min-width: 100px;
+    min-height: 50px;
+}
+
+/* Step Card Colors */
+.step.card {
+  background-color: white;
+  color: rgb(0, 0, 0);
+  padding: 50px;
+  border: 1px solid #75000e;
+}
+
+
+
+/* /////////BUTTONS */
+
+
+.fixed-nav {
+    background-color: transparent !important;
+    border-top: none; /* Optional, if you want to remove the border */
+}
+
+
+.fixed-nav .btn-primary {
+    background-color: #75000e;
+    border-color: #75000e;
+    color: white;
+}
+
+.fixed-nav .btn-primary:hover {
+    background-color: #49040c;
+    border-color: #49040c;
+    color: #e7e1e1;
+}
+
+.fixed-nav .btn-secondary {
+    background-color: #333333;
+    border-color: #333333;
+    color: white;
+}
+
+.fixed-nav .btn-secondary:hover {
+    background-color: #555555;
+    border-color: #555555;
+    color: white;
+}
+
+
+
+/* Solid border on focus for text inputs, selects, textareas */
+input.form-control:focus,
+select.form-select:focus,
+textarea.form-control:focus {
+    border: 1px solid #49040c;
+    box-shadow: none; 
+    outline: none; 
+}

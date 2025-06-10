@@ -59,9 +59,23 @@
 
 
 
+/* Force solid border on focus */
+input.form-control:focus,
+select.form-select:focus,
+textarea.form-control:focus {
+    border-width: 2px !important;        /* Make border thicker */
+    border-style: solid !important;      /* Force solid style */
+    border-color: #0d6efd !important;    /* Primary blue color */
+    box-shadow: none !important;         /* Remove Bootstrap shadow */
+    outline: none !important;            /* Remove browser outline */
+}
 
-
-
+/* Optional: make transition smooth */
+input.form-control,
+select.form-select,
+textarea.form-control {
+    transition: border 0.2s ease-in-out;
+}
 
 
 

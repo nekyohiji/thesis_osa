@@ -3,14 +3,14 @@
 <html>
 <head>
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-    <title>OSA -  Surrendering of ID</title>
+    <title>OSA - Surrendering of ID</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />  
     <!-- Google Fonts: Roboto -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">]
-
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'myapp/css/client_SurrenderingID.css' %}">
 </head>
 
@@ -19,15 +19,14 @@
 <!-- NAVIGATION BAR -->
 <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
     <div class="container-fluid">
-          <a id="TUPC" class="navbar-brand" href="#home">
+        <a id="TUPC" class="navbar-brand" href="#home">
             <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
-            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite<b/></span>
+            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
             <span class="d-inline d-sm-none"><b>TUPC</b></span>
-         </a>
-
+        </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -41,19 +40,142 @@
     </div>
 </nav>
 
+<!-- MAIN CONTAINER -->
+<div class="container mt-5 mb-5">
+    <br>
+    <br>
+    <h1 class="mb-4"><i class="bi bi-card-text"></i> <b>Surrendering of ID Form</b></h1>
+    <hr>
+    <h6 class="mb-4">Please fill in the required information below.</h6>
 
-<br>
-<br>
-<br>
+    <!-- Form -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
 
-    <h1> Dito ka magdesign sa body beh, wag mo alisin navigation bar hehe /Surrendering ID</h1>
+        <!-- STEP 1: Personal Information -->
+        <div class="card mb-4 card-surrender-personal shadow-sm">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-person-fill"></i> Personal Information</div>
+                <hr><br>
 
-    
+                <div class="row">
+                    <!-- First Name -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">First Name:</label>
+                        <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" required>
+                    </div>
+                    <!-- Middle Name -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Middle Name:</label>
+                        <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name">
+                    </div>
+                    <!-- Surname -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Surname:</label>
+                        <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" required>
+                    </div>
+                </div>
 
+                <div class="row">
+                    <!-- Extension -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Extension (Jr., Sr.):</label>
+                        <input type="text" class="form-control"id="ex_surrender" name="extension" placeholder="Enter Extension Name (if any)">
+                    </div>
+
+                    <!-- Program -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Program:</label>
+                        <select class="form-select" id="program_surrender" name="program" required>
+                            <option value="">-- Select Program --</option>
+                            <option value="BET-COET">BET-COET</option>
+                            <option value="BET-ET">BET-ET</option>
+                            <option value="BET-CT">BET-CT</option>
+                            <option value="BET-HE">BET-HE</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- STEP 2: Academic Information -->
+        <div class="card mb-4 card-surrender-academic shadow-sm">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-book"></i> Academic Information</div>
+                <hr><br>
+
+                <!-- Reason to Surrender -->
+                <div class="mb-3">
+                    <label class="form-label">Reason to Surrender:</label>
+                    <select class="form-select" name="reason"  id="reason_surrender" required>
+                        <option value="">-- Select Reason --</option>
+                        <option value="Graduated">Graduated</option>
+                        <option value="Transferred">Transferred</option>
+                        <option value="Dropped">Dropped</option>
+                        <option value="Replacement ID">Replacement ID</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Student Number and Year Level -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Student Number:</label>
+                        <input type="text" class="form-control" name="student_number" id="studentID_surrender"placeholder="TUPC-XX-XXXX" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Year Level:</label>
+                        <select class="form-select" name="year_level" id="yearlevel_surrender" required>
+                            <option value="">-- Select Year Level --</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Inclusive Years of Stay -->
+                <div class="mb-3">
+                    <label class="form-label">Inclusive Years of Stay:</label>
+                    <input type="text" class="form-control" name="inclusive_years" id="stay_surrender" placeholder="e.g., 2015-2019" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Upload Documents -->
+        <div class="card mb-4 card-surrender-upload shadow-sm">
+            <div class="card-body">
+                <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div>
+                <hr><br>
+
+                <!-- Upload ID/Affidavit Front -->
+                <div class="mb-3">
+                    <label class="form-label">Upload ID / Affidavit (Front):</label>
+                    <input type="file" class="form-control"id="front_surrender" name="upload_id_front" accept=".jpg,.jpeg,.png,.pdf" required>
+                </div>
+
+                <!-- Upload ID/Affidavit Back -->
+                <div class="mb-3">
+                    <label class="form-label">Upload ID / Affidavit (Back):</label>
+                    <input type="file" class="form-control" id="back_surrender" name="upload_id_back" accept=".jpg,.jpeg,.png,.pdf" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-end mb-5">
+            <button type="submit" class="btn btn-success btn-lg" disabled>
+                <i class="bi bi-send-fill"></i> Submit Request
+            </button>
+        </div>
+    </form>
+</div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 
 </body>
 </html>

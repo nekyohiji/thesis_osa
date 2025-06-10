@@ -1,93 +1,181 @@
+/* GLOBAL BODY */
 body {
-      font-family: 'Roboto', sans-serif;
-    }
+    font-family: 'Roboto', sans-serif;
+    background-color: #f0f0f0;
 
-
-  /* NAVIGATION BAR */
-
-   #TUPC {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  font-size: 18px;
 }
 
-    #TUPC img {
+/* NAVIGATION BAR */
+#TUPC {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    font-size: 18px;
+}
+
+#TUPC img {
     height: 30px;
     width: auto;
     flex-shrink: 0;
-    }
+}
 
-    @media (max-width: 576px) {
+@media (max-width: 576px) {
     #TUPC {
         font-size: 0.9rem;
     }
+}
 
-    }
-    .navbar-brand img {
+.navbar-brand img {
     height: 30px;
     width: auto;
-    }
-    /* Custom Navbar Gradient Background */
-    .navbar-custom {
-    background: linear-gradient(to right, #000000, #7b000a, #000000);
-    }
+}
 
-    /* Brand and Link Colors */
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
+/* Custom Navbar Gradient Background */
+.navbar-custom {
+    background: linear-gradient(to right, #000000, #7b000a, #000000);
+}
+
+/* Brand and Link Colors */
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
     color: white;
     font-weight: 500;
     margin-right: 10px;
     font-size: 17px;
-    }
+}
 
-    /* HOVER NAV */
-    .navbar-custom .nav-link:hover {
+/* Hover NAV */
+.navbar-custom .nav-link:hover {
     color: #adb5bd;
-    }
+}
 
-    .navbar-custom .nav-link.active {
+.navbar-custom .nav-link.active {
     font-weight: bold;
     font-size: 1.1rem;
     text-decoration: underline;
     text-underline-offset: 4px;
     color: white;
-    }
+}
 
-
-
-/* LOGIN BTN */
+/* LOGIN BUTTON */
 .nav-btn {
-  background-color: #75000e;
-  color: #ffffff !important;
-  font-weight: bold;
-  padding: 8px 20px;
-  border-radius: 18px;
-  border: none;
-
-  transition: all 0.3s ease;
-  text-align: center;
+    background-color: #75000e;
+    color: #ffffff !important;
+    font-weight: bold;
+    padding: 8px 20px;
+    border-radius: 18px;
+    border: none;
+    transition: all 0.3s ease;
+    text-align: center;
 }
 
-/* Hover effect for the button */
 .nav-btn:hover {
-  background-color: #49040c;
-  color: #e7e1e1 !important;
-  text-decoration: underline;
-  font-weight: bold;
+    background-color: #49040c;
+    color: #e7e1e1 !important;
+    text-decoration: underline;
+    font-weight: bold;
 }
 
-    /* BURGER */
-    .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5); /* Light border */
-    }
+/* BURGER MENU */
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
 
-    /* 3 LINES */
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-        }
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-right: 8px;
+}
+
+/* FIXED NAVIGATION BUTTONS (for multi-step, optional) */
+.fixed-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 999;
+    background-color: transparent !important;
+    border-top: none;
+    padding: 10px 20px;
+}
+
+.fixed-nav button {
+    min-width: 100px;
+    min-height: 50px;
+}
+
+.fixed-nav .btn-primary {
+    background-color: #75000e;
+    border-color: #75000e;
+    color: white;
+}
+
+.fixed-nav .btn-primary:hover {
+    background-color: #49040c;
+    border-color: #49040c;
+    color: #e7e1e1;
+}
+
+.fixed-nav .btn-secondary {
+    background-color: #333333;
+    border-color: #333333;
+    color: white;
+}
+
+.fixed-nav .btn-secondary:hover {
+    background-color: #555555;
+    border-color: #555555;
+    color: white;
+}
+
+
+
+/* INPUT FOCUS */
+input.form-control:focus,
+select.form-select:focus,
+textarea.form-control:focus {
+    border: 1px solid #49040c;
+    box-shadow: none;
+    outline: none;
+}
+
+
+/* Section Title Styling */
+.section-title {
+    font-size: 1.2rem;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/* Different colors per panel */
+.card-surrender-personal {
+    border: 1px solid #49040c;
+}
+
+.card-surrender-academic {
+    border: 1px solid #49040c;
+}
+
+.card-surrender-upload  {
+     border: 1px solid #49040c;
+}
+
+
 
 
 
