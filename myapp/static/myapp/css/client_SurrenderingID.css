@@ -31,7 +31,6 @@ body {
     width: auto;
 }
 
-/* Custom Navbar Gradient Background */
 .navbar-custom {
     background: linear-gradient(to right, #000000, #7b000a, #000000);
 }
