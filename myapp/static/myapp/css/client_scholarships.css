@@ -192,7 +192,7 @@ body {
   color: white;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .container.mt-5.pt-5 {
       padding-top: 3rem !important;
