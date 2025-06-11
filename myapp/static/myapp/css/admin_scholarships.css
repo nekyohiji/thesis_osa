@@ -1,7 +1,11 @@
 body {
-  margin: 0;
   font-family: 'Roboto', sans-serif;
-  background: #f8f9fa;
+  background-color: #e2877f; 
+  background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/2.png'); /* Corrected relative path */
+  background-size: cover; 
+  background-repeat: no-repeat; 
+  background-attachment: fixed; 
+  background-position: center center; 
 }
 
 .sidebar {
@@ -135,21 +139,29 @@ hr {
 /* Responsive Sidebar */
 @media (min-width: 768px) {
   .toggle-btn {
-    display: none;
+      display: none;
+  }
+
+  /* PUSH MAIN CONTENT TO THE RIGHT WHEN SIDEBAR IS OPEN */
+  .main-content {
+      margin-left: 260px;
   }
 }
 
 @media (max-width: 767.98px) {
   .sidebar {
-    transform: translateX(-100%);
+      transform: translateX(-100%);
   }
 
   .sidebar.show {
-    transform: translateX(0);
+      transform: translateX(0);
+  }
+
+  /* RESET MARGIN FOR SMALL SCREENS */
+  .main-content {
+      margin-left: 0;
   }
 }
-
-
 
 .logout a {
   display: flex;
@@ -179,3 +191,124 @@ hr {
 
 
 /* ////////////////////////////////////// START HERE MAG ADD//////////////////*/
+
+
+.main-content {
+  padding: 20px;
+  transition: margin-left 0.3s ease-in-out; 
+  min-height: 100vh; 
+}
+
+/* Main Title (SCHOLARSHIPS) */
+.section-title {
+  color: #f4e1e1;
+  font-size: 2.5rem;
+  font-weight: bold;
+  border-bottom: 3px solid #c3bebf;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.section-title i {
+  color: #7b000a;
+}
+
+.card-header.bg-primary {
+  background-color: black !important; 
+  color: white !important; 
+}
+
+
+.posted-scholarships-list .card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out;
+}
+
+.posted-scholarships-list .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.posted-scholarships-list .card-body {
+  padding: 15px;
+}
+
+.posted-scholarships-list .card-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.posted-scholarships-list .card-text small {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.posted-scholarships-list .card-text .badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.6em;
+}
+
+
+.btn-light {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+  color: #333;
+}
+.btn-light:hover {
+  background-color: #e2e6ea;
+  border-color: #dae0e5;
+  color: #333;
+}
+
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+.btn-secondary:hover {
+  background-color: #5a6268;
+  border-color: #545b62;
+}
+
+
+.btn-info {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+}
+.btn-info:hover {
+  background-color: #138496;
+  border-color: #117a8b;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.timeline-container {
+  max-height: 400px; 
+  overflow-y: auto; 
+  border: 1px solid #ced4da; 
+  border-radius: 5px; 
+  padding: 10px; 
+  background-color: #8e8787; 
+}
