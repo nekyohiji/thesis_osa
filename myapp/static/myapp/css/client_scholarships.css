@@ -1,11 +1,20 @@
 body {
-      font-family: 'Roboto', sans-serif;
-    }
+  font-family: 'Roboto', sans-serif;
+  background-color: #e2877f; 
+  background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/2.png'); /* Corrected relative path */
+  background-size: cover; 
+  background-repeat: no-repeat; 
+  background-attachment: fixed; 
+  background-position: center center; 
+}
 
+/* NAVIGATION BAR */
 
-  /* NAVIGATION BAR */
+.navbar-custom.fixed-top {
+  z-index: 1030; 
+}
 
-   #TUPC {
+#TUPC {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -13,50 +22,48 @@ body {
   font-size: 18px;
 }
 
-    #TUPC img {
-    height: 30px;
-    width: auto;
-    flex-shrink: 0;
-    }
+#TUPC img {
+  height: 30px;
+  width: auto;
+  flex-shrink: 0;
+}
 
-    @media (max-width: 576px) {
-    #TUPC {
-        font-size: 0.9rem;
-    }
+@media (max-width: 576px) {
+  #TUPC {
+      font-size: 0.9rem;
+  }
+}
 
-    }
-    .navbar-brand img {
-    height: 30px;
-    width: auto;
-    }
-    /* Custom Navbar Gradient Background */
-    .navbar-custom {
-    background: linear-gradient(to right, #000000, #7b000a, #000000);
-    }
+.navbar-brand img {
+  height: 30px;
+  width: auto;
+}
 
-    /* Brand and Link Colors */
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-    color: white;
-    font-weight: 500;
-    margin-right: 10px;
-    font-size: 17px;
-    }
-
-    /* HOVER NAV */
-    .navbar-custom .nav-link:hover {
-    color: #adb5bd;
-    }
-
-    .navbar-custom .nav-link.active {
-    font-weight: bold;
-    font-size: 1.1rem;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    color: white;
-    }
+.navbar-custom {
+  background: linear-gradient(to right, #000000, #7b000a, #000000);
+}
 
 
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+  color: white;
+  font-weight: 500;
+  margin-right: 10px;
+  font-size: 17px;
+}
+
+/* HOVER NAV */
+.navbar-custom .nav-link:hover {
+  color: #adb5bd;
+}
+
+.navbar-custom .nav-link.active {
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: white;
+}
 
 /* LOGIN BTN */
 .nav-btn {
@@ -66,12 +73,11 @@ body {
   padding: 8px 20px;
   border-radius: 18px;
   border: none;
-
   transition: all 0.3s ease;
   text-align: center;
 }
 
-/* Hover effect for the button */
+
 .nav-btn:hover {
   background-color: #49040c;
   color: #e7e1e1 !important;
@@ -79,16 +85,120 @@ body {
   font-weight: bold;
 }
 
-    /* BURGER */
-    .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5); /* Light border */
-    }
+/* BURGER */
+.navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.5); 
+}
 
-    /* 3 LINES */
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-        }
+/* 3 LINES */
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* --- PARA SA TITLE (SCHOLARSHIPS) --- */
+
+.section-title {
+  color: white;  
+  font-weight: bold;
+  padding-bottom: 15px;
+  position: relative; 
+  font-size: 2.5rem; 
+}
+/* UNDERLINE NG TITLE */
+.section-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 120px; 
+  height: 4px;
+  background-color: #dadada; 
+  border-radius: 5px;
+}
 
 
+.scholarship-card {
+  background-color: rgba(212, 205, 205, 0.82); 
+  border-radius: 10px; /* Rounded corners for cards */
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.scholarship-card:hover {
+  transform: translateY(-5px); 
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15) !important; 
+}
+
+/* PARA SA TITLE NG SCHOLARSHIP */
+.scholarship-card .card-title {
+  font-weight: bold !important;
+  margin-bottom: 0.2rem;
+  color: #7d0013 !important;
+}
 
 
+.scholarship-card .card-subtitle {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.scholarship-card .post-date,
+.scholarship-card .deadline-date {
+  font-weight: 500;
+}
+
+.scholarship-card .card-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-top: 1rem;
+  color: #343a40; 
+}
+
+
+.scholarship-card .badge {
+  font-size: 0.75rem;
+  padding: 0.4em 0.8em;
+  border-radius: 0.25rem;
+  font-weight: normal;
+}
+
+
+.scholarship-card .btn-outline-primary {
+  color: #7b000a;
+  border-color: #7b000a;
+}
+
+.scholarship-card .btn-outline-primary:hover {
+  background-color: #7b000a;
+  color: white;
+}
+
+.scholarship-card .btn-outline-success {
+  color: #7b000a;
+  border-color: #7b000a;
+}
+
+.scholarship-card .btn-outline-success:hover {
+  background-color: #28a745;
+  color: white;
+}
+
+.scholarship-card .btn-outline-info { 
+  color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.scholarship-card .btn-outline-info:hover {
+  background-color: #17a2b8;
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container.mt-5.pt-5 {
+      padding-top: 3rem !important;
+      margin-top: 3rem !important;
+  }
+  .section-title {
+      font-size: 2rem;
+  }
+}

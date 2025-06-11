@@ -1,11 +1,18 @@
 body {
-      font-family: 'Roboto', sans-serif;
-    }
+  font-family: 'Roboto', sans-serif;
+  background-color: #e2877f; 
+  background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/2.png'); /* Corrected relative path */
+  background-size: cover; 
+  background-repeat: no-repeat; 
+  background-attachment: fixed;
+  background-position: center center; 
 
+  background-repeat: no-repeat; 
+  background-attachment: fixed; 
+}
 
-  /* NAVIGATION BAR */
-
-   #TUPC {
+/* NAVIGATION BAR */
+#TUPC {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -13,50 +20,49 @@ body {
   font-size: 18px;
 }
 
-    #TUPC img {
-    height: 30px;
-    width: auto;
-    flex-shrink: 0;
-    }
+#TUPC img {
+  height: 30px;
+  width: auto;
+  flex-shrink: 0;
+}
 
-    @media (max-width: 576px) {
-    #TUPC {
-        font-size: 0.9rem;
-    }
+@media (max-width: 576px) {
+  #TUPC {
+      font-size: 0.9rem;
+  }
+}
 
-    }
-    .navbar-brand img {
-    height: 30px;
-    width: auto;
-    }
-    /* Custom Navbar Gradient Background */
-    .navbar-custom {
-    background: linear-gradient(to right, #000000, #7b000a, #000000);
-    }
-
-    /* Brand and Link Colors */
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-    color: white;
-    font-weight: 500;
-    margin-right: 10px;
-    font-size: 17px;
-    }
-
-    /* HOVER NAV */
-    .navbar-custom .nav-link:hover {
-    color: #adb5bd;
-    }
-
-    .navbar-custom .nav-link.active {
-    font-weight: bold;
-    font-size: 1.1rem;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    color: white;
-    }
+.navbar-brand img {
+  height: 30px;
+  width: auto;
+}
 
 
+.navbar-custom {
+  background: linear-gradient(to right, #000000, #7b000a, #000000);
+}
+
+
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+  color: white;
+  font-weight: 500;
+  margin-right: 10px;
+  font-size: 17px;
+}
+
+/* HOVER NAV */
+.navbar-custom .nav-link:hover {
+  color: #adb5bd;
+}
+
+.navbar-custom .nav-link.active {
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: white;
+}
 
 /* LOGIN BTN */
 .nav-btn {
@@ -66,7 +72,6 @@ body {
   padding: 8px 20px;
   border-radius: 18px;
   border: none;
-
   transition: all 0.3s ease;
   text-align: center;
 }
@@ -79,18 +84,83 @@ body {
   font-weight: bold;
 }
 
-    /* BURGER */
-    .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5); /* Light border */
-    }
-
-    /* 3 LINES */
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-        }
+/* BURGER */
+.navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.5); 
+}
 
 
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
 
 
+.student-assistantship-title {
+  color: white; 
+  font-weight: bold;
+  text-align: center;
+  font-size: 2.5rem; 
+  margin-top: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
+}
 
-        
+.requirements-box {
+  border: 2px solid white; 
+  padding: 2rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white; 
+  border-radius: 10px; 
+}
+
+.requirements-heading {
+  font-weight: bold;
+  font-size: 1.5rem; 
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.requirements-list {
+  text-align: left; 
+  font-style: italic;
+  font-size: 1.2rem; 
+  line-height: 1.8; 
+  max-width: 400px; 
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.requirements-list li {
+  margin-bottom: 0.5rem; 
+}
+
+
+@media (max-width: 768px) {
+  .student-assistantship-title {
+      font-size: 2rem;
+  }
+  .requirements-heading {
+      font-size: 1.3rem;
+  }
+  .requirements-list {
+      font-size: 1.1rem;
+  }
+  .requirements-box {
+      padding: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .student-assistantship-title {
+      font-size: 1.8rem;
+  }
+  .requirements-heading {
+      font-size: 1.1rem;
+  }
+  .requirements-list {
+      font-size: 1rem;
+      padding-left: 0; 
+  }
+  .requirements-box {
+      padding: 1rem;
+  }
+}
