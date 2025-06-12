@@ -12,12 +12,13 @@
 
    <link rel="stylesheet" href="{% static 'myapp/css/guard_report.css' %}">
 </head>
-<body>
+<body style="background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/guard_bg.png" %}'); 
+            background-size: cover; background-position: center;">
 
 
 
 <!-- NAVIGATION BAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
     <div class="container-fluid">
         <a id="TUPC" class="navbar-brand" >
             <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
@@ -50,7 +51,7 @@
     </h1>
 
         <!-- CURRENT DATE AND TIME -->
-    <div class="d-flex justify-content-start mb-3" style="font-weight: 500; color: #555;">
+    <div class="d-flex justify-content-start mb-3" style="font-weight: 500; color: #fff;">
         <div style="margin-right: 15px;">
             <span><strong>Date:</strong> </span><span id="currentDate"></span>
         </div>

@@ -11,10 +11,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'myapp/css/guard_violation.css' %}">
 </head>
-<body>
+<body style="background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/guard_bg.png" %}'); 
+            background-size: cover; background-position: center;">
 
 <!-- NAVIGATION BAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
     <div class="container-fluid">
         <a id="TUPC" class="navbar-brand" href="#home">
             <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
@@ -44,20 +45,22 @@
 <div class="container mb-5" style="max-width: 1200px;">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0"><i class="bi bi-pencil-square"></i><b> Violation Collection Form</b></h2>
-        <button id="retryBtn" type="button" class="btn" title="Retry" aria-label="Retry form">
+        <button id="retryBtn" type="button" class="btn" title="Retry" aria-label="Retry form" style="font-weight: 500; color: #fffa;  "  >
             <i class="bi bi-arrow-clockwise"></i> Retry
         </button>
     </div>
 
-    <!-- CURRENT DATE AND TIME -->
-    <div class="d-flex justify-content-start mb-3" style="font-weight: 500; color: #555;">
-        <div style="margin-right: 15px;">
-            <span><strong>Date:</strong> </span><span id="currentDate"></span>
-        </div>
-        <div>
-            <span><strong>Time:</strong> </span><span id="currentTime"></span>
-        </div>
-    </div>
+              <!-- CURRENT DATE AND TIME -->
+            <div class="d-flex flex-wrap align-items-center mb-3" style="font-weight: 500; color: #fffa;">
+            <div class="me-4">
+                <strong>Date:</strong> <span id="currentDate">Loading...</span>
+            </div>
+            <div>
+                <strong>Time:</strong> <span id="currentTime">Loading...</span>
+            </div>
+            </div>
+
+
 
     <form id="violationForm">
         <div class="row">
@@ -68,16 +71,24 @@
                 <div class="form-section">
                     <div class="row">
 
-                        <!-- FIRST NAME -->
-                        <div class="col-md-6 mb-3">
-                            <label for="firstName" class="form-label" >First Name:</label>
-                            <input type="text" class="form-control" id="fn_gv" placeholder="Enter first name" disabled>
-                        </div>
+                        <div class="row">
+                            <!-- FIRST NAME -->
+                            <div class="col-md-4 mb-3">
+                                <label for="firstName" class="form-label">First Name:</label>
+                                <input type="text" class="form-control" id="fn_gv" placeholder="Enter first name" disabled>
+                            </div>
 
-                        <!-- MIDDLE NAME -->
-                        <div class="col-md-6 mb-3">
-                            <label for="middleName" class="form-label">Middle Name:</label>
-                            <input type="text" class="form-control" id="mn_gv" placeholder="Enter middle name" disabled>
+                            <!-- MIDDLE NAME -->
+                            <div class="col-md-4 mb-3">
+                                <label for="middleName" class="form-label">Middle Initial:</label>
+                                <input type="text" class="form-control" id="mn_gv" placeholder="Enter middle initial" disabled>
+                            </div>
+
+                            <!-- EXTENSION NAME -->
+                            <div class="col-md-4 mb-3">
+                                <label for="extName" class="form-label">Extension Name:</label>
+                                <input type="text" class="form-control" id="ext_gv" placeholder="e.g., Jr., Sr., III" disabled>
+                            </div>
                         </div>
 
                         <!-- LAST NAME -->
@@ -110,11 +121,17 @@
                     <div class="row">
 
 
-                        <!-- DATE AND TIME OF VIOLATION -->
-                        <div class="col-md-12 mb-3">
-                            <label for="violationDateTime" class="form-label">Date and Time of Violation:</label>
-                            <input type="datetime-local" class="form-control" id="violation_datetime_gv">
-                        </div>
+            <!-- DATE OF VIOLATION -->
+                <div class="col-md-6 mb-3">
+                    <label for="violation_date_gv" class="form-label">Date of Violation:</label>
+                    <input type="date" class="form-control" id="violation_date_gv" disabled>
+                </div>
+
+                <!-- TIME OF VIOLATION -->
+                <div class="col-md-6 mb-3">
+                    <label for="violation_time_gv" class="form-label">Time of Violation:</label>
+                    <input type="time" class="form-control" id="violation_time_gv" disabled>
+                </div>
 
                         <!-- TYPE OF VIOLATION -->
                         <div class="col-md-12 mb-3">
@@ -165,31 +182,40 @@
                     </div>
                 </div>
 
-                    <!-- UPLOAD PROOF -->
-                    <div class="upload-evidence-card position-relative">
-                        <div class="section-title"><i class="bi bi-paperclip"></i> Upload Evidence</div>
-                        <div class="form-section h-100 d-flex flex-column">
-                            <div class="mb-3">
-                                <label for="violationEvidence" class="form-label">Upload Evidence File:</label>
-                                <input class="form-control" type="file" id="violation_evidence_gv" accept="image/*,.pdf" multiple>
-                            </div>
-                            <div id="preview_container_gv" style="overflow-y:auto; max-height: 300px;"></div>
+                            <!-- UPLOAD PROOF -->
+                            <div class="upload-evidence-card position-relative">
+                                <div class="section-title"><i class="bi bi-paperclip"></i> Upload Evidence</div>
+                                <div class="form-section h-100 d-flex flex-column">
 
-                        <!-- CAMERA BTN -->
-                        <button id="camera_btn_gv" type="button" class="camera-btn" title="Open Camera"> Capture Evidence
-                            <i class="bi bi-camera-fill"></i>
-                        </button>
-                        </div>
+                                    <!-- SCROLLABLE CONTAINER -->
+                                    <div id="fileInputsContainer" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
+                                        <!-- Dynamically added file inputs will go here -->
+                                    </div>
+
+                                    <!-- ADD FILE BUTTON -->
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <button type="button" class="btn btn-success" id="addFileInputBtn">
+                                            <i class="bi bi-plus-lg"></i> Add
+                                        </button>
+                                    </div>
+
+                                </div> <!-- CLOSE form-section -->
+                            </div> <!-- CLOSE upload-evidence-card -->
+
+                            <!-- CAMERA BTN -->
+                            <button id="camera_btn_gv" type="button" class="camera-btn" title="Open Camera">
+                                Capture Evidence <i class="bi bi-camera-fill"></i>
+                            </button>
+
+                            <!-- SUBMIT BUTTON -->
+                            <div class="text-center mt-3">
+                                <button type="submit" id="submit_btn_gv" class="btn btn-success btn-lg w-100" disabled>
+                                    <i class="bi bi-check-circle-fill"></i> Submit
+                                </button>
+                            </div>
+                        </div> 
                     </div>
                     <br>
-
-
-                <!-- SUBMIT BUTTON -->
-                <div class="text-center mt-3">
-                    <button type="submit" id="submit_btn_gv" class="btn btn-success btn-lg w-100" disabled>
-                        <i class="bi bi-check-circle-fill" ></i> Submit
-                    </button>
-                </div>
             </div>
         </div>
     </form>
@@ -199,78 +225,96 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Date & Time
+        
+     const timezone = "Asia/Manila";
     function updateDateTime() {
-        const now = new Date();
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedDate = now.toLocaleDateString('en-US', dateOptions);
+        fetch(`https://timeapi.io/api/Time/current/zone?timeZone=${timezone}`)
+            .then(response => response.json())
+            .then(data => {
+                const date = new Date(data.dateTime);
+                document.getElementById("currentDate").textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById("currentTime").textContent = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
-        const formattedTime = now.toLocaleTimeString('en-US', timeOptions);
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
 
-        document.getElementById('currentDate').textContent = formattedDate;
-        document.getElementById('currentTime').textContent = formattedTime;
+                document.getElementById("violation_date_gv").value = `${yyyy}-${mm}-${dd}`;
+                document.getElementById("violation_time_gv").value = `${hours}:${minutes}`;
+            })
+            .catch(() => {
+                document.getElementById("currentDate").textContent = "Unavailable";
+                document.getElementById("currentTime").textContent = "Unavailable";
+            });
     }
-
     updateDateTime();
     setInterval(updateDateTime, 1000);
 
-    // Upload Evidence Preview
-    const input = document.getElementById('violationEvidence');
-    const previewContainer = document.getElementById('previewContainer');
+    let fileInputCounter = 0;
+    const fileInputsContainer = document.getElementById('fileInputsContainer');
 
-    input.addEventListener('change', () => {
-        previewContainer.innerHTML = ''; // Clear previous previews
-        const files = input.files;
-        if (!files.length) return;
+    function createFileInputGroup() {
+        fileInputCounter++;
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'mb-3';
+        inputGroup.innerHTML = `
+            <label class="form-label">Upload Evidence File ${fileInputCounter}:</label>
+            <input class="form-control evidence-input" type="file" accept="image/*,application/pdf,video/*" data-preview-id="preview_${fileInputCounter}">
+            <div id="preview_${fileInputCounter}" class="mt-2" style="overflow-y:auto; max-height: 300px;"></div>
+        `;
+        fileInputsContainer.appendChild(inputGroup);
+    }
 
-        Array.from(files).forEach(file => {
-            const fileType = file.type;
-            const previewDiv = document.createElement('div');
-            previewDiv.style.marginBottom = '15px';
+    fileInputsContainer.addEventListener('change', function (e) {
+        if (e.target && e.target.classList.contains('evidence-input')) {
+            const previewId = e.target.getAttribute('data-preview-id');
+            const previewContainer = document.getElementById(previewId);
+            previewContainer.innerHTML = '';
 
-            if (fileType.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.style.maxWidth = '100%';
-                img.style.borderRadius = '5px';
-                img.style.boxShadow = '0 0 5px rgba(0,0,0,0.2)';
-                img.alt = file.name;
+            Array.from(e.target.files).forEach(file => {
+                const fileType = file.type;
+                const fileURL = URL.createObjectURL(file);
 
-                const reader = new FileReader();
-                reader.onload = e => {
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-                previewDiv.appendChild(img);
-            } else if (fileType === 'application/pdf') {
-                const pdfIcon = document.createElement('i');
-                pdfIcon.className = 'bi bi-file-earmark-pdf-fill';
-                pdfIcon.style.fontSize = '48px';
-                pdfIcon.style.color = '#d9534f';
-                previewDiv.appendChild(pdfIcon);
-
-                const fileName = document.createElement('div');
-                fileName.textContent = file.name;
-                previewDiv.appendChild(fileName);
-            } else {
-                const genericIcon = document.createElement('i');
-                genericIcon.className = 'bi bi-file-earmark-fill';
-                genericIcon.style.fontSize = '48px';
-                previewDiv.appendChild(genericIcon);
-
-                const fileName = document.createElement('div');
-                fileName.textContent = file.name;
-                previewDiv.appendChild(fileName);
-            }
-
-            previewContainer.appendChild(previewDiv);
-        });
+                if (fileType.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = fileURL;
+                    img.className = 'img-fluid rounded mb-3';
+                    previewContainer.appendChild(img);
+                } else if (fileType === 'application/pdf') {
+                    const link = document.createElement('a');
+                    link.href = fileURL;
+                    link.textContent = 'View PDF';
+                    link.target = '_blank';
+                    link.className = 'btn btn-outline-light w-100 mb-3';
+                    previewContainer.appendChild(link);
+                } else if (fileType.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = fileURL;
+                    video.controls = true;
+                    video.className = 'w-100 rounded mb-3';
+                    previewContainer.appendChild(video);
+                } else {
+                    const msg = document.createElement('p');
+                    msg.textContent = 'Unsupported file type.';
+                    msg.className = 'text-warning';
+                    previewContainer.appendChild(msg);
+                }
+            });
+        }
     });
 
-    // Retry button reloads the form
-    document.getElementById('retryBtn').addEventListener('click', () => {
+    createFileInputGroup(); // Initial input
+    document.getElementById('addFileInputBtn').addEventListener('click', createFileInputGroup);
+
+    // Retry button logic
+    document.getElementById('retryBtn').addEventListener('click', function () {
         document.getElementById('violationForm').reset();
-        previewContainer.innerHTML = '';
+        fileInputsContainer.innerHTML = '';
+        fileInputCounter = 0;
+        createFileInputGroup();
+        updateDateTime();
     });
 </script>
 
