@@ -1,11 +1,22 @@
 body {
-      font-family: 'Roboto', sans-serif;
-    }
+  font-family: 'Roboto', sans-serif;
+  background-color: #e2877f; 
+  background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/lostandfoundbg.png');
+  background-size: cover; 
+  background-repeat: no-repeat; 
+  background-attachment: fixed;
+  background-position: center center;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  min-height: 100vh;
+  margin: 0;
+}
 
 
-  /* NAVIGATION BAR */
+/* NAVIGATION BAR */
 
-   #TUPC {
+#TUPC {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -13,48 +24,50 @@ body {
   font-size: 18px;
 }
 
-    #TUPC img {
-    height: 30px;
-    width: auto;
-    flex-shrink: 0;
-    }
+#TUPC img {
+  height: 30px;
+  width: auto;
+  flex-shrink: 0;
+}
 
-    @media (max-width: 576px) {
-    #TUPC {
-        font-size: 0.9rem;
-    }
+@media (max-width: 576px) {
+  #TUPC {
+      font-size: 0.9rem;
+  }
 
-    }
-    .navbar-brand img {
-    height: 30px;
-    width: auto;
-    }
-    /* Custom Navbar Gradient Background */
-    .navbar-custom {
-    background: linear-gradient(to right, #000000, #7b000a, #000000);
-    }
+}
 
-    /* Brand and Link Colors */
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-    color: white;
-    font-weight: 500;
-    margin-right: 10px;
-    font-size: 17px;
-    }
+.navbar-brand img {
+  height: 30px;
+  width: auto;
+}
 
-    /* HOVER NAV */
-    .navbar-custom .nav-link:hover {
-    color: #adb5bd;
-    }
+/* Custom Navbar Gradient Background */
+.navbar-custom {
+  background: linear-gradient(to right, #000000, #7b000a, #000000);
+}
 
-    .navbar-custom .nav-link.active {
-    font-weight: bold;
-    font-size: 1.1rem;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    color: white;
-    }
+/* Brand and Link Colors */
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+  color: white;
+  font-weight: 500;
+  margin-right: 10px;
+  font-size: 17px;
+}
+
+/* HOVER NAV */
+.navbar-custom .nav-link:hover {
+  color: #adb5bd;
+}
+
+.navbar-custom .nav-link.active {
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: white;
+}
 
 
 
@@ -66,7 +79,6 @@ body {
   padding: 8px 20px;
   border-radius: 18px;
   border: none;
-
   transition: all 0.3s ease;
   text-align: center;
 }
@@ -79,16 +91,87 @@ body {
   font-weight: bold;
 }
 
-    /* BURGER */
-    .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5); /* Light border */
-    }
+/* BURGER */
+.navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.5);
+  /* Light border */
+}
 
-    /* 3 LINES */
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-        }
+/* 3 LINES */
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
 
 
+/* Lost and Found Container */
+.lost-and-found-container {
+  margin-top: 50px; 
+  text-align: center;
+  width: 100%;
+  max-width: 800px; 
+  padding: 20px;
+  box-sizing: border-box;
+}
 
+/*Title Section */
+.lost-and-found-title-section {
+  margin-bottom: 30px; 
+  text-align: center;
+}
 
+.lost-and-found-title-section h2 {
+  font-weight: bold;
+  font-size: 2.5em; 
+  margin-bottom: 10px;
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  gap: 15px; 
+  color: #ffffff; 
+}
+
+.lost-and-found-title-section h2 i {
+  font-size: 1em; 
+}
+
+.title-divider {
+  border: none;
+  border-top: 2px solid #484848; 
+  width: 80%; 
+  margin: 0 auto; 
+  opacity: 0.8; 
+}
+
+.lost-and-found-item {
+  border: 2px solid rgb(86, 72, 72);
+  padding: 30px;
+  margin: 0 auto 20px auto; 
+  max-width: 700px;
+  text-align: left;
+  background-color: #f0f0f0; 
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.lost-and-found-item p {
+  font-size: 25px;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.item-image-display {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-top: 15px; 
+}
+
+.item-image-display img {
+  max-width: 70%;
+  height: auto; 
+  display: block; 
+  border: 1px solid #ddd; 
+  background-color: #e9ecef; 
+}

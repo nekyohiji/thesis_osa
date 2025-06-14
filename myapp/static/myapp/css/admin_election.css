@@ -1,3 +1,4 @@
+
 body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
@@ -179,3 +180,347 @@ hr {
 
 
 /* ////////////////////////////////////// START HERE MAG ADD//////////////////*/
+
+
+
+
+
+
+
+/* --- Election Tab Layout --- */
+.election-container {
+  margin-left: 500px;
+}
+
+
+
+
+
+/* Tab Buttons Container */
+.tab-buttons {
+  gap: 10px;
+}
+
+/* Individual Tab Buttons */
+.tab-btn {
+  width: 150pxpx;
+  text-align: center;
+  background-color: #f0f0f0;
+  color: #333;
+  font-weight: 500;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+
+}
+
+/* Active Tab */
+.tab-btn.active {
+  background-color: #7b000a;
+  color: white;
+  border-color: #ffffff;
+}
+
+/* Hover Effect */
+.tab-btn:hover {
+  background-color: #a4000f;
+  color: #fff;
+  border-color: #a4000f;
+}
+
+/* Responsive Stack for Small Screens */
+@media (max-width: 575.98px) {
+  .tab-btn {
+    flex: 1 0 100%;
+  }
+}
+
+
+
+
+
+.btn-sm-custom {
+  padding: 4px 12px;
+  font-size: 20px;
+  margin-top:20px;
+  background-color: #b11212;
+  color: white;
+  border:none;
+  border-radius: 10px;
+}
+
+.btn-sm-custom:hover {
+  padding: 4px 12px;
+  font-size: 21px;
+  margin-top:20px;
+  background-color: #b11212;
+  color: white;
+  border:none;
+  border-radius: 10px;
+}
+
+
+
+
+
+
+
+/* ////////////// CANDIDATES */
+
+/* Custom Color Classes */
+.bg-custom-dark {
+  background-color:  #57060c !important;
+}
+
+.bg-custom-primary {
+  background-color: #0d6efd !important;
+}
+
+.bg-custom-secondary {
+  background-color: #166bb6 !important;
+}
+
+.text-custom-white {
+  color: #ffffff !important;
+}
+
+.text-custom-muted {
+  color: #6c757d !important;
+}
+
+.btn-custom-success {
+  background-color: #a72828 !important;
+  color: #fff;
+  border: none;
+}
+
+
+
+
+
+
+.border-custom-dark {
+  border: 2px solid #436e08 !important;
+}
+
+/* Position Filters */
+.position-filter {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.position-filter.active {
+  background-color: #a31622 !important;
+  color: #fff !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Panel background and layout */
+.candidate-panel {
+  background-color:#00000039; /* light gray */
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 0.5px solid rgb(65, 4, 4);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  height: 100%;
+}
+
+.image-preview {
+  width: 100%;
+  max-width: 250px;
+  aspect-ratio: 1 / 1;
+  background-color: #f8f9fa;
+  border: 2px dashed #343a40;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  position: relative;
+  text-align: center;
+}
+
+/* Preview image */
+#previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+
+
+
+@media (max-width: 576px) {
+  .candidate-panel .image-preview {
+    max-width: 100%;
+  }
+}
+
+
+/* Image add button */
+.candidate-panel .image-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-radius: 50%;
+  padding: 5px 8px;
+  font-size: 0.85rem;
+  background-color: #343a40;
+  color: white;
+  border: none;
+  margin-bottom: 10px;
+  margin-right: 10px;
+}
+
+/* Form elements */
+.candidate-panel input,
+.candidate-panel select {
+  margin-bottom: 0.75rem;
+  border-radius: 0.5rem;
+  border: 0.5px solid rgb(65, 4, 4);
+
+}
+
+/* ADD button custom */
+.btn-add {
+  background-color: #343a40;
+  color: white;
+  border: none;
+  margin-right: 50px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-add:hover {
+  background-color: #1f2327;
+}
+
+
+
+
+.custom-input {
+  width: 100%; /*  fills the parent container */
+  max-width: 500px; /* optional: limits to 500px on large screens */
+  transition: all 0.3s ease;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background-color: #f9f9f9;
+  font-size: 0.95rem;
+  display: block;
+  margin: 0 auto; /* centers the input */
+}
+
+
+/* Hover state */
+.custom-input:hover {
+  background-color: #ffffff;
+  border-color: #68060f;
+}
+
+/* Focus/Active state */
+.custom-input:focus,
+.custom-input:active {
+  background-color: #ffffff;
+  border-color: #212223;
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(12, 12, 12, 0.1);
+}
+
+
+
+
+
+
+
+
+
+/* ///////////////////////////////// RESULTS*/
+
+
+
+
+
+  #results {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 10px;
+  }
+
+  .tab-pane h4 {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+
+  .tab-pane p {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-select,
+  .form-control {
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .position-table {
+    background: #ffffff;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    margin-top: 2rem;
+  }
+
+  .position-table h5 {
+    border-bottom: 2px solid #000000;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    color: #000000;
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    background-color: #e9ecef !important;
+    color: #343a40;
+    font-weight: bold;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f1f3f5;
+  }
+
+  .table td,
+  .table th {
+    vertical-align: middle;
+  }
+
+  @media (max-width: 768px) {
+    .form-select,
+    .form-control {
+      margin-bottom: 1rem;
+    }
+  }

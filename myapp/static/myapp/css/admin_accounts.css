@@ -1,7 +1,11 @@
 body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
-  background: #f8f9fa;
+  background-image:linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/lostandfoundbg.png" %}');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .sidebar {
@@ -154,7 +158,7 @@ hr {
 .logout a {
   display: flex;
   align-items: center;
-  color: #ca0303 !important; /* Red logout text */
+  color: #ca0303 !important;
   font-weight: bold;
   text-decoration: none !important;
   transition: background 0.3s ease, color 0.3s ease;
@@ -162,12 +166,12 @@ hr {
 
 .logout a:hover,
 .logout a:focus {
-  background: #a11a1a33; /* Light red background on hover */
+  background: #a11a1a33;
   color: #ffffff !important;
 }
 
 .toggle-btn.btn-primary {
-  background-color: #7b000a !important; /* Custom color */
+  background-color: #7b000a !important;
   border: none;
   color: #fff !important;
 }
@@ -179,3 +183,173 @@ hr {
 
 
 /* ////////////////////////////////////// START HERE MAG ADD//////////////////*/
+
+.main-content {
+  margin-left: 260px;
+  padding: 20px;
+  transition: margin-left 0.3s ease-in-out;
+  background-color: rgba(52, 45, 45, 0.705);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+@media (max-width: 767.98px) {
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+h1 {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #cdcdcd;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #cdcdcd;
+  width: 100%; /* Line extends fully */
+  /* white-space: nowrap; */ /* Uncomment if text wraps on one line */
+}
+
+.content-container {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.create-account-section,
+.activated-accounts-section {
+  border: 1px solid #8e5757;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #8e5757;
+  box-shadow: 0 2px 4px rgba(145, 115, 115, 0.1);
+  box-sizing: border-box;
+}
+
+.create-account-section {
+  flex: 1;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.create-account-section .form-group {
+  margin-bottom: 15px;
+}
+
+.create-account-section label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #fff; /* Adjusted label color for better contrast */
+}
+
+/* New CSS for show password icon */
+.password-input-container {
+  position: relative; /* Essential for absolute positioning of the icon */
+  margin-bottom: 15px; /* Maintain consistent spacing */
+}
+
+.create-account-section input[type="text"],
+.create-account-section input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #1c1b1b;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background-color: #e0e0e0;
+  padding-right: 35px; /* Add space for the eye icon */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px; /* Position from the right edge of the input */
+  top: calc(50% + 5px); /* Adjusted top to account for label margin-bottom, 50% of input height plus label's 5px margin*/
+  transform: translateY(-10%); /* For precise vertical centering based on its own height */
+  cursor: pointer;
+  color: #555; /* Color of the eye icon */
+  font-size: 1.1em; /* Adjust icon size */
+  z-index: 2; /* Ensure icon is above input field */
+}
+
+.password-toggle:hover {
+  color: #000; /* Darker on hover */
+}
+
+
+.create-account-section .create-btn {
+  background-color: #0c962a;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.create-account-section .create-btn:hover {
+  background-color: #2eb947;
+}
+
+.activated-accounts-section {
+  flex: 1;
+  min-width: 300px;
+  max-width: 400px;
+  position: relative;
+}
+
+.activated-accounts-section h2 {
+  margin-top: 0;
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #fff; /* Adjusted heading color for better contrast */
+}
+
+.account-list-container {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+  color: #fff; /* Adjusted text color for list items */
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.account-item:last-child {
+  border-bottom: none;
+}
+
+.account-item span {
+  font-weight: bold;
+}
+
+.account-item .deactivate-btn {
+  background-color: #dc3545;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.account-item .deactivate-btn:hover {
+  background-color: #c82333;
+}
+
+.scroll-indicator {
+    display: none;
+}
+
+.text-center.text-muted.mt-3 {
+  text-align: center;
+  color: #fff; /* Adjusted text color for better contrast */
+  margin-top: 1rem;
+}

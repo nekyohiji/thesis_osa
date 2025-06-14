@@ -7,7 +7,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'myapp/css/admin_accounts.css' %}">
+  <style>
+    /* Custom styles for the message modal (keep these here as they were) */
+    .message-modal, .confirm-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      z-index: 1060;
+      display: none; /* Hidden by default */
+      min-width: 300px;
+      text-align: center;
+    }
+    .message-modal.show-modal, .confirm-modal.show-modal {
+      display: block;
+    }
+    .message-modal .modal-header, .confirm-modal .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .message-modal .modal-body, .confirm-modal .modal-body {
+      margin-bottom: 15px;
+    }
+    .message-modal .modal-footer, .confirm-modal .modal-footer {
+      text-align: right;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    /* Buttons in modals, including the 'Close' button at the bottom of message modal */
+    .message-modal .close-btn,
+    .confirm-modal .btn {
+      background-color: #007bff; /* Default blue, can be customized in admin_accounts.css if desired */
+      color: white;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .message-modal .close-btn:hover,
+    .confirm-modal .btn:hover {
+      background-color: #161616; /* Black on hover for default buttons */
+    }
+    .confirm-modal .btn-danger {
+        background-color: #dc3545;
+    }
+    .confirm-modal .btn-danger:hover {
+        background-color: #c82333;
+    }
+    .confirm-modal .btn-secondary {
+        background-color: #0f1010; /* Darker grey for 'No' button */
+    }
+    .confirm-modal .btn-secondary:hover {
+        background-color: #121313; /* Slightly darker on hover */
+    }
+
+    /* Style for the 'X' close button in the modal header (plain 'X' as requested) */
+    .message-modal .modal-header .btn-close,
+    .confirm-modal .modal-header .btn-close {
+      background-image: none;
+      background-color: transparent;
+      opacity: 1;
+      filter: none;
+      color: #000; /* Black 'X' */
+      padding: 0;
+      margin: 0;
+      width: auto;
+      height: auto;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .message-modal .modal-header .btn-close:hover,
+    .confirm-modal .modal-header .btn-close:hover {
+        color: #555;
+    }
+
+  </style>
 </head>
 
 <body>
@@ -63,6 +149,8 @@
         <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
         <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
         <li><a href="{% url 'admin_election' %}" class="nav-link"><i class="fas fa-vote-yea"></i> Election</a></li>
+        <li><a href="{% url 'admin_add_window' %}" class="nav-link"><i class="bi bi-plus-circle"></i> Add Window</a></li>
+
       </ul>
     </div>
 
@@ -71,7 +159,6 @@
     </div>
   </div>
 
-  <!-- Logout Modal -->
   <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -88,22 +175,67 @@
     </div>
   </div>
 
-  <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
+  <div id="messageModal" class="message-modal">
+    <div class="modal-header">
+      <span id="messageModalTitle"></span>
+      <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
+    </div>
+    <div class="modal-body">
+      <p id="messageModalBody"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
+    </div>
+  </div>
 
+  <div id="confirmDeactivateModal" class="confirm-modal">
+    <div class="modal-header">
+      <span>Confirm Deactivation</span>
+      <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmDeactivateMessage"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
+      <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
+    </div>
+  </div>
 
+  <div class="main-content">
+    <h1><i class="fas fa-user-cog"></i> CREATE ACCOUNT </h1>
+    <div class="content-container">
+      <div class="create-account-section">
+        <div class="form-group">
+          <label for="createUsername">Username:</label>
+          <input type="text" id="createUsername" placeholder="Username">
+        </div>
+        <div class="form-group password-input-container"> {# Added container for password field #}
+          <label for="createPassword">Password</label>
+          <input type="password" id="createPassword" placeholder="Password">
+          <span class="password-toggle" onclick="togglePasswordVisibility('createPassword')">
+            <i class="fas fa-eye"></i> {# Eye icon #}
+          </span>
+        </div>
+        <div class="form-group password-input-container"> {# Added container for confirm password field #}
+          <label for="confirmPassword">Confirm Password</label>
+          <input type="password" id="confirmPassword" placeholder="Confirm Password">
+          <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
+            <i class="fas fa-eye"></i> {# Eye icon #}
+          </span>
+        </div>
+        <button class="create-btn" id="createAccountBtn">CREATE</button>
+      </div>
 
+      <div class="activated-accounts-section">
+        <h2>Activated Accounts:</h2>
+        <div class="account-list-container" id="activatedAccountsList">
+          </div>
+        <div class="scroll-indicator"></div>
+      </div>
+    </div>
+  </div>
 
-<h1>//////////////////////////////// ACCOUNTS</h1>
-
-
-
-
-
-
-
-
-
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     function toggleSidebar() {
@@ -145,11 +277,142 @@
           link.classList.add("active");
         }
       });
+
+      // Initialize accounts from a dummy source or local storage if needed
+      renderAccounts();
     });
 
-    ///////////////////////////// START HERE MAG ADD
+    ///////////////////////////// START HERE MAG ADD /////////////////////////
 
+    // --- Message Modal Functions ---
+    function showMessageModal(title, body) {
+      document.getElementById('messageModalTitle').textContent = title;
+      document.getElementById('messageModalBody').textContent = body;
+      document.getElementById('messageModal').classList.add('show-modal');
+    }
 
+    function closeMessageModal() {
+      document.getElementById('messageModal').classList.remove('show-modal');
+    }
+
+    // --- Confirmation Modal Functions ---
+    let pendingDeactivateIndex = -1; // To store the index of the account to be deactivated
+
+    function showConfirmModal(message, index) {
+        document.getElementById('confirmDeactivateMessage').textContent = message;
+        document.getElementById('confirmDeactivateModal').classList.add('show-modal');
+        pendingDeactivateIndex = index; // Store the index
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmDeactivateModal').classList.remove('show-modal');
+        pendingDeactivateIndex = -1; // Reset the index
+    }
+
+    // --- Account Management Logic (Frontend Only for Demonstration) ---
+
+    // Dummy array to store created accounts
+    let accounts = [];
+
+    // Function to render accounts in the list
+    function renderAccounts() {
+      const accountListContainer = document.getElementById('activatedAccountsList');
+      accountListContainer.innerHTML = ''; // Clear existing list
+
+      if (accounts.length === 0) {
+        accountListContainer.innerHTML = '<p class="text-center text-muted mt-3">No activated accounts yet.</p>';
+        return;
+      }
+
+      accounts.forEach((account, index) => {
+        const accountItem = document.createElement('div');
+        accountItem.classList.add('account-item');
+        accountItem.innerHTML = `
+          <span>${account.username}</span>
+          <button class="deactivate-btn" data-index="${index}">Deactivate</button>
+        `;
+        accountListContainer.appendChild(accountItem);
+      });
+
+      // Attach event listeners to new deactivate buttons
+      document.querySelectorAll('.deactivate-btn').forEach(button => {
+        button.addEventListener('click', promptDeactivateConfirmation);
+      });
+    }
+
+    // Function to handle account creation
+    document.getElementById('createAccountBtn').addEventListener('click', function() {
+      const usernameInput = document.getElementById('createUsername');
+      const passwordInput = document.getElementById('createPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      if (!username || !password || !confirmPassword) {
+        showMessageModal('Error', 'All fields are required.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showMessageModal('Error', 'Passwords do not match.');
+        return;
+      }
+
+      // Check if username already exists (simple frontend check)
+      if (accounts.some(account => account.username === username)) {
+        showMessageModal('Error', 'Username already exists. Please choose a different one.');
+        return;
+      }
+
+      // Simulate account creation
+      accounts.push({ username: username, password: password }); // In a real app, password would be hashed
+      renderAccounts(); // Update the displayed list
+
+      showMessageModal('Success', `Account '${username}' created successfully!`);
+
+      // Clear the form fields
+      usernameInput.value = '';
+      passwordInput.value = '';
+      confirmPasswordInput.value = '';
+    });
+
+    // New function to prompt confirmation before deactivating
+    function promptDeactivateConfirmation(event) {
+        const index = event.target.dataset.index;
+        const username = accounts[index].username;
+        showConfirmModal(`Are you sure you want to deactivate account '${username}'?`, index);
+    }
+
+    // Function to perform actual account deactivation after confirmation
+    document.getElementById('confirmDeactivateBtn').addEventListener('click', function() {
+        if (pendingDeactivateIndex !== -1) {
+            const usernameToDeactivate = accounts[pendingDeactivateIndex].username;
+            // Remove the account from the array
+            accounts.splice(pendingDeactivateIndex, 1);
+            renderAccounts(); // Re-render the list
+
+            showMessageModal('Success', `Account '${usernameToDeactivate}' deactivated.`);
+            closeConfirmModal(); // Close the confirmation modal
+        }
+    });
+
+    // Function to toggle password visibility
+    function togglePasswordVisibility(fieldId) {
+      const passwordField = document.getElementById(fieldId);
+      const toggleIcon = passwordField.nextElementSibling.querySelector('i');
+
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+      } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+      }
+    }
 
   </script>
 </body>

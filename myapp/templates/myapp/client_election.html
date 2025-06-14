@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title> USG Election</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'myapp/css/client_election.css' %}" />
+</head>
+
+<body data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0" class="fullpage">
+
+<!-- NAVIGATION BAR -->
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+  <div class="container-fluid">
+    <a id="TUPC" class="navbar-brand" href="#home">
+      <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+      <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
+      <span class="d-inline d-sm-none"><b>TUPC</b></span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
+        <li class="nav-item"><a class="nav-link nav-btn" href="{% url 'login' %}">Login</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO HEADER -->
+<header>
+  <div class="hero-text">
+  </div>
+</header>
+
+<!-- ENTER TUPC-IDD  -->
+<section class="donation-box">
+  <div class="icon"><i class="fas fa-balance-scale"></i></div>
+  <div class="info">
+    <h3>Start to Vote Now!!</h3>
+    <p>Please enter your registered TUPC ID number to vote.</p>
+    <input type="text" id="tupc_linedit_election" placeholder="TUPC-XX-XXXX" />
+    <button type="submit" id="ID_election" onclick="location.href='{% url 'client_view_election' %}'" >
+            Get Started
+    </button>
+
+  </div>
+</section>
+
+<!-- BOTTOM SECTION -->
+<section class="bottom-section">
+  <div class="text">
+    <h2><i class="fas fa-vote-yea"></i> Vote Wisely!</h2>
+    <p>Technological University of the Philippines - Cavite | University Student Government Election</p>
+    <div class="signature">
+      <i class="fas fa-pen-nib"></i> — Office of Student Affairs
+    </div>
+  </div>
+  <div class="image">
+    <img src="{% static 'myapp/images/logo.png' %}" alt="Sketch" />
+  </div>
+  
+</section>
+
+ 
+
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

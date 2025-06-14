@@ -7,6 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+  
   <link rel="stylesheet" href="{% static 'myapp/css/admin_election.css' %}">
 </head>
 
@@ -63,6 +67,9 @@
         <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
         <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
         <li><a href="{% url 'admin_election' %}" class="nav-link"><i class="fas fa-vote-yea"></i> Election</a></li>
+        <li><a href="{% url 'admin_add_window' %}" class="nav-link"><i class="bi bi-plus-circle"></i> Add Window</a></li>
+
+        
       </ul>
     </div>
 
@@ -93,7 +100,140 @@
 
 
 
-<h1>//////////////////////////////// ELECTION</h1>
+
+
+
+<div class="mt-4 ps-4 pe-4" style="margin-left: 260px; min-height: 100vh;">
+
+<div class="election-header text-white mt-4"
+     style="background: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.3)), 
+            url('{% static 'myapp/images/election_bg.jpg' %}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 50px;
+            min-height: 100px;
+            margin-bottom: 50px;
+            ">
+  <h2 class="fw-bold mb-0">University Student Government Election Dashboard</h2>
+  <p class="mb-0">Monitor, manage, and update election proceedings.</p>
+  <hr class="border-light">
+</div>
+
+
+
+  <div class="d-flex flex-wrap justify-content-start gap-2 mb-4">
+    <button class="btn tab-btn active d-flex align-items-center gap-2" data-bs-target="#candidates" onclick="showTab(this)">
+      <i class="bi bi-person-circle"></i> Candidates
+    </button>
+    <button class="btn tab-btn d-flex align-items-center gap-2" data-bs-target="#results" onclick="showTab(this)">
+      <i class="bi bi-bar-chart-fill"></i> Results
+    </button>
+    <button class="btn tab-btn d-flex align-items-center gap-2" data-bs-target="#manage" onclick="showTab(this)">
+      <i class="bi bi-gear-fill"></i> Manage
+    </button>
+  </div>
+
+  <!-- Tab Content Area -->
+  <div class="tab-content p-4 bg-white border rounded shadow-sm">
+
+
+
+
+    <!-- CANDIDATES TAB -->
+    <div class="tab-pane show active" id="candidates">
+      <!-- Top Row -->
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+        <h4 class="fw-bold"><i class="bi bi-person-circle me-2"></i>Candidates</h4>
+        <div></div>
+        <div class="input-group input-group-sm w-50 ms-auto">
+          <input type="text" id="searchInput_candidates" class="form-control" placeholder="Search by name">
+          <button class="btn btn-outline-secondary" type="button" disabled>
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+
+<div class="container-fluid px-4">
+  <div class="row">
+    <!-- Left: Candidate Form Panel -->
+    <div class="col-md-5 mb-4">
+      <div class="candidate-panel">
+        <h5 class="fw-bold text-center mb-4">Candidate Details</h5>
+
+        <div class="d-flex justify-content-center mb-3">
+          <div class="position-relative">
+            <div class="image-preview d-flex align-items-center justify-content-center" id="imagePreviewContainer">
+              <img id="previewImage" src="" alt="Preview">
+              <span id="placeholderText" class="placeholder-text">Upload a photo here</span>
+            </div>
+            <button type="button" class="image-btn" onclick="document.getElementById('imageInput').click()">
+              <i class="bi bi-plus"></i>
+            </button>
+            <input type="file" accept="image/*" id="imageInput" style="display: none;">
+          </div>
+        </div>
+
+        <div id="formWarning" class="alert alert-warning d-none" role="alert">
+          Please fill out all fields and upload a photo.
+        </div>
+
+        <form id="candidateForm">
+          <input type="text" class="form-control custom-input mb-2" placeholder="Enter Name" id="candidateName" required>
+          <input type="text" class="form-control custom-input mb-2" placeholder="Enter Year and Section" id="candidateSection" required>
+          <input type="text" class="form-control custom-input mb-2" placeholder="TUPC-XX-XXX" id="candidateID" required>
+
+          <select id="candidatePosition" class="form-control custom-input mb-2" required>
+            <option value="">Select Position</option>
+            <option value="President">President</option>
+            <option value="Vice President">Vice President</option>
+            <option value="Senators">Senator</option>
+            <option value="Governors">Governor</option>
+          </select>
+          <hr>
+          <div class="text-end mt-2">
+            <button type="submit" id="add_candidate" class="btn-add">
+              <i class="bi bi-plus-circle me-1"></i> <b>ADD</b>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Candidate Display -->
+    <div class="col-md-7">
+      <!-- Position Filters -->
+      <div class="d-flex flex-wrap justify-content-between gap-2 mb-4" id="positionFilters">
+        <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="President">
+          <div class="fw-bold">President</div>
+          <span id="count-president">0</span>
+        </div>
+        <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="Vice President">
+          <div class="fw-bold">Vice President</div>
+          <span id="count-vp">0</span>
+        </div>
+        <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="Senators">
+          <div class="fw-bold">Senators</div>
+          <span id="count-senators">0</span>
+        </div>
+        <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="Governors">
+          <div class="fw-bold">Governors</div>
+          <span id="count-governors">0</span>
+        </div>
+        <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="All">
+          <div class="fw-bold">All</div>
+          <span id="count-all">0</span>
+        </div>
+      </div>
+
+      <!-- Candidate Cards -->
+      <div id="candidateList" class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
+        <!-- Cards appear dynamically here -->
+      </div>
+    </div>
+  </div>
+</div>
+</div>
 
 
 
@@ -102,6 +242,271 @@
 
 
 
+
+
+
+
+    <!--////////////////////////////////////////// RESULTS TAB -->
+    <div class="tab-pane" id="results">
+      <h4><i class="bi bi-bar-chart-fill me-2"></i>Results</h4>
+      <p>See the election results and statistics of all candidates.</p>
+
+    <!-- Filter Toolbar -->
+    <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+      <!-- Position Dropdown -->
+      <select id="positionFilter" class="form-select form-select-sm w-auto">
+        <option value="all">All Positions</option>
+        <option value="president">President</option>
+        <option value="vice-president">Vice President</option>
+        <option value="senator">Senator</option>
+        <option value="governor">Governor</option>
+      </select>
+
+      <!-- School Year Dropdown -->
+      <select id="syFilter" class="form-select form-select-sm w-auto">
+        <option value="all">All SY</option>
+        <option value="2023-2024">2023-2024</option>
+        <option value="2024-2025">2024-2025</option>
+      </select>
+
+      <!-- Search Input on Right -->
+      <div class="input-group input-group-sm w-50 ms-auto">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
+        <button class="btn btn-outline-secondary" type="button" disabled>
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- PRESIDENT TABLE -->
+    <div class="position-table" data-position="president" data-sy="2024-2025">
+      <h5 class="fw-bold text-dark"><i class="bi bi-award-fill me-2 text-dark"></i>PRESIDENT <small class="text-muted">(SY: 2024-2025)</small></h5>
+      <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th><th>Votes</th><th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>John Doe</td><td>500</td><td>45%</td></tr>
+          <tr><td>Jane Smith</td><td>600</td><td>55%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- VICE PRESIDENT TABLE -->
+    <div class="position-table" data-position="vice-president" data-sy="2024-2025">
+      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-person-vcard me-2 text-dark"></i>VICE PRESIDENT <small class="text-muted">(SY: 2024-2025)</small></h5>
+      <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th><th>Votes</th><th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Emily Cruz</td><td>450</td><td>48%</td></tr>
+          <tr><td>Mark Lim</td><td>480</td><td>52%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SENATOR TABLE (Old SY) -->
+    <div class="position-table" data-position="senator" data-sy="2023-2024">
+      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-people-fill me-2 text-dark"></i>SENATORS <small class="text-muted">(SY: 2023-2024)</small></h5>
+      <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th><th>Votes</th><th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Candidate A</td><td>300</td><td>30%</td></tr>
+          <tr><td>Candidate B</td><td>280</td><td>28%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- GOVERNOR TABLE -->
+    <div class="position-table" data-position="governor" data-sy="2024-2025">
+      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-building me-2 text-dark"></i>GOVERNORS <small class="text-muted">(SY: 2024-2025)</small></h5>
+      <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th><th>Votes</th><th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Governor X</td><td>350</td><td>65%</td></tr>
+          <tr><td>Governor Y</td><td>190</td><td>35%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    </div>  <!-- ✅ CLOSE this div! -->
+
+
+
+
+
+
+
+
+
+
+
+
+<!--//////////////////////////////////////// MANAGE TAB -->
+<div class="tab-pane" id="manage">
+  <h4><i class="bi bi-gear-fill me-2"></i>Manage Elections</h4>
+  <p>Configure election settings, timelines, and eligibility.</p>
+  <hr>
+
+  <div class="row">
+    <!-- Summary Table (Left Panel) -->
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+          <h5 class="fw-bold text-dark mb-3">
+            <i class="bi bi-bar-chart-fill me-2 text-dark"></i>PROGRAM VOTING SUMMARY
+          </h5>
+
+            <!-- Filters -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 border-bottom pb-2">
+          <!-- SY Dropdown (No label) -->
+          <div style="width: 180px;">
+            <select class="form-select form-select-sm w-auto" id="syFilter_manage">
+              <option value="All" selected>All SY</option>
+              <option value="2024-2025">2024-2025</option>
+              <option value="2023-2024">2023-2024</option>
+              <option value="2022-2023">2022-2023</option>
+            </select>
+          </div>
+
+
+            <!-- Search Bar -->
+            <div class="input-group input-group-sm w-50">
+              <input type="text" id="searchInput_manage" class="form-control" placeholder="Search by program name">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center mb-0">
+              <thead style="background-color: #7b000a; color: white;">
+                <tr>
+                  <th>Program</th>
+                  <th>School Year</th>
+                  <th>Number of Students</th>
+                  <th>Number of Votes</th>
+                </tr>
+              </thead>
+              <tbody id="manageTableBody">
+                <tr data-sy="2024-2025" data-program="BS Computer Engineering">
+                  <td>BET-COET</td>
+                  <td>2024-2025</td>
+                  <td><input type="number" class="form-control form-control-sm text-center" value="0"</td>
+                  <td>98</td>
+                </tr>
+                <tr data-sy="2023-2024" data-program="BS Civil Engineering">
+                  <td>BS-CE</td>
+                  <td>2023-2024</td>
+                  <td><input type="number" class="form-control form-control-sm text-center" value="0"</td>
+                  <td>76</td>
+                </tr>
+                <tr data-sy="2024-2025" data-program="BS Mechanical Engineering">
+                  <td>BS-PPT</td>
+                  <td>2024-2025</td>
+                  <td><input type="number" class="form-control form-control-sm text-center" value="0"</td>
+                  <td>64</td>
+                </tr>
+                <tr data-sy="2022-2023" data-program="BS Electrical Engineering">
+                  <td>BET-MT</td>
+                  <td>2022-2023</td>
+                  <td><input type="number" class="form-control form-control-sm text-center" value="0"</td>
+                  <td>90</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+<!-- Control Panel (Right Panel) -->
+<div class="col-md-4">
+  <div class="card shadow border-start border-5" style="border-color: #7b000a !important;">
+    <div class="card-header text-white" style="background-color: #7b000a;">
+      <strong><i class="bi bi-tools me-2"></i>Election Control Panel</strong>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small">Use the controls below to manage the current election status and timelines. These actions affect all programs.</p>
+
+      <!-- Voting Actions -->
+      <div class="mb-3">
+        <label class="fw-semibold text-uppercase small text-secondary mb-2">Voting Actions</label>
+        <div class="d-grid gap-2">
+          <button id="enable_btn_mng" class="btn rounded-pill fw-semibold shadow-sm text-white" style="background-color: #7b000a;">
+            <i class="bi bi-check-circle me-1"></i> Enable voting for all programs
+          </button>
+          <button id="disable_btn_mng" class="btn rounded-pill fw-semibold shadow-sm text-white" style="background-color: #dc3545;">
+            <i class="bi bi-x-circle me-1"></i> Disable voting for all programs
+          </button>
+        </div>
+      </div>
+
+      <hr>
+
+            <!-- Election Period Management -->
+            <div>
+              <label class="fw-semibold text-uppercase small text-secondary mb-2">Election Period Management</label>
+              <div class="d-grid gap-2">
+                <button id="create_btn_mng" class="btn rounded-pill fw-semibold shadow-sm text-white" style="background-color: #0d6efd;">
+                  <i class="bi bi-plus-circle me-1"></i> Create new election period
+                </button>
+                <button id="end_btn_mng" class="btn rounded-pill fw-semibold shadow-sm text-white" style="background-color: #6c757d;">
+                  <i class="bi bi-stop-circle me-1"></i> End election period
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+    
+  </div>
+</div>
+
+
+
+<!-- Withdraw Confirmation Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="withdrawModalLabel">Confirm Withdrawal</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to withdraw this candidate?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmWithdrawBtn">Withdraw</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -150,6 +555,445 @@
     ///////////////////////////// START HERE MAG ADD
 
 
+ function showTab(button) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+
+      const targetId = button.getAttribute('data-bs-target');
+      document.querySelector(targetId).classList.add('show', 'active');
+      button.classList.add('active');
+    }
+
+
+
+
+
+
+
+    ///////////////////////////// CANDIDATES
+
+///////////////////////// search
+// Search Function
+const searchInput = document.getElementById('searchInput_candidates');
+searchInput.addEventListener('input', function () {
+  const query = this.value.toLowerCase().trim();
+
+  const filtered = candidates.filter(c => c.name.toLowerCase().includes(query));
+
+  candidateList.innerHTML = "";
+
+  if (filtered.length === 0) {
+    candidateList.innerHTML = "<div class='text-center text-muted'>No matching candidates name found.</div>";
+    return;
+  }
+
+  filtered.forEach((candidate, index) => {
+    const card = document.createElement("div");
+    card.className = "card d-flex flex-row align-items-center p-2 shadow-sm justify-content-between mb-2";
+
+    card.innerHTML = `
+      <div class="d-flex align-items-center w-100 p-3">
+        <img src="${candidate.image}" class="rounded border me-3" style="width: 80px; height: 80px; object-fit: cover;" id="image-${index}">
+        <div style="width: 1px; height: 80px; background-color: #dee2e6;" class="me-3"></div>
+        <div class="flex-grow-1" id="candidate-details-${index}">
+          <p class="mb-1 small"><strong>Name:</strong> ${candidate.name}</p>
+          <p class="mb-1 small"><strong>Year & Section:</strong> ${candidate.section}</p>
+          <p class="mb-1 small text-muted"><strong>TUPC ID:</strong> ${candidate.id}</p>
+        </div>
+        <div class="d-flex align-items-center justify-content-center px-3" style="min-width: 140px;">
+          <span class="badge bg-secondary px-3 py-2" style="font-size: 0.85rem;">${candidate.position}</span>
+        </div>
+        <div class="d-flex flex-column gap-2 ms-2">
+          <button class="btn btn-sm btn-outline-primary edit-btn" data-index="${index}">
+            <i class="bi bi-pencil-square me-1"></i> Edit
+          </button>
+          <button class="btn btn-sm btn-danger withdraw-btn" data-index="${index}">
+            <i class="bi bi-x-circle me-1"></i> Withdraw
+          </button>
+        </div>
+      </div>
+    `;
+
+    candidateList.appendChild(card);
+  });
+});
+
+
+
+  ///////////////////////// candidates functions
+
+const form = document.getElementById("candidateForm");
+const previewImage = document.getElementById("previewImage");
+const imageInput = document.getElementById("imageInput");
+const candidateList = document.getElementById("candidateList");
+const positionFilters = document.querySelectorAll(".position-filter");
+const warningDiv = document.getElementById("formWarning");
+
+let candidates = [];
+let currentFilter = "All";
+let withdrawIndex = null;
+
+// Bootstrap modal for withdraw
+const withdrawModal = new bootstrap.Modal(document.getElementById("withdrawModal"));
+const confirmWithdrawBtn = document.getElementById("confirmWithdrawBtn");
+
+// Image Preview
+imageInput.addEventListener("change", function () {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      previewImage.src = e.target.result;
+      previewImage.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Add Candidate
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const name = document.getElementById("candidateName").value.trim();
+  const section = document.getElementById("candidateSection").value.trim();
+  const id = document.getElementById("candidateID").value.trim();
+  const position = document.getElementById("candidatePosition").value;
+  const imageSrc = previewImage.src;
+
+  if (!name || !section || !id || !position || !imageSrc || imageSrc === window.location.href) {
+    warningDiv.textContent = "Please fill out all fields and upload a photo.";
+    warningDiv.classList.remove("d-none");
+    setTimeout(() => {
+      warningDiv.classList.add("d-none");
+    }, 3000);
+    return;
+  }
+
+  warningDiv.classList.add("d-none");
+
+  const candidate = {
+    name,
+    section,
+    id,
+    position,
+    image: imageSrc
+  };
+
+  candidates.push(candidate);
+
+  form.reset();
+  imageInput.value = "";
+  previewImage.src = "";
+  previewImage.style.display = "none";
+  document.getElementById("candidatePosition").selectedIndex = 0;
+
+  renderCandidates(currentFilter);
+  updateCounts();
+});
+
+// Render Candidates
+function renderCandidates(filter = "All") {
+  candidateList.innerHTML = "";
+
+  const filtered = filter === "All"
+    ? candidates
+    : candidates.filter(c => c.position === filter);
+
+  if (filtered.length === 0) {
+    candidateList.innerHTML = "<div class='text-center text-muted'>No candidates yet.</div>";
+    return;
+  }
+
+  filtered.forEach((candidate, index) => {
+    const card = document.createElement("div");
+    card.className = "card d-flex flex-row align-items-center p-2 shadow-sm justify-content-between mb-2";
+
+    card.innerHTML = `
+      <div class="d-flex align-items-center w-100 p-3">
+        <img src="${candidate.image}" class="rounded border me-3" style="width: 80px; height: 80px; object-fit: cover;" id="image-${index}">
+        <div style="width: 1px; height: 80px; background-color: #dee2e6;" class="me-3"></div>
+        <div class="flex-grow-1" id="candidate-details-${index}">
+          <p class="mb-1 small"><strong>Name:</strong> ${candidate.name}</p>
+          <p class="mb-1 small"><strong>Year & Section:</strong> ${candidate.section}</p>
+          <p class="mb-1 small text-muted"><strong>TUPC ID:</strong> ${candidate.id}</p>
+        </div>
+        <div class="d-flex align-items-center justify-content-center px-3" style="min-width: 140px;">
+          <span class="badge bg-secondary px-3 py-2" style="font-size: 0.85rem;">${candidate.position}</span>
+        </div>
+        <div class="d-flex flex-column gap-2 ms-2">
+          <button class="btn btn-sm btn-outline-primary edit-btn" data-index="${index}">
+            <i class="bi bi-pencil-square me-1"></i> Edit
+          </button>
+          <button class="btn btn-sm btn-danger withdraw-btn" data-index="${index}">
+            <i class="bi bi-x-circle me-1"></i> Withdraw
+          </button>
+        </div>
+      </div>
+    `;
+
+    candidateList.appendChild(card);
+  });
+}
+
+// Handle Withdraw Button (trigger modal)
+document.addEventListener("click", function (e) {
+  if (e.target.closest(".withdraw-btn")) {
+    withdrawIndex = e.target.closest(".withdraw-btn").getAttribute("data-index");
+    withdrawModal.show();
+  }
+});
+
+// Confirm Withdraw in Modal
+confirmWithdrawBtn.addEventListener("click", function () {
+  if (withdrawIndex !== null) {
+    candidates.splice(withdrawIndex, 1);
+    renderCandidates(currentFilter);
+    updateCounts();
+    withdrawModal.hide();
+    withdrawIndex = null;
+  }
+});
+
+// Update Count Badges
+function updateCounts() {
+  document.getElementById("count-president").textContent = candidates.filter(c => c.position === "President").length;
+  document.getElementById("count-vp").textContent = candidates.filter(c => c.position === "Vice President").length;
+  document.getElementById("count-senators").textContent = candidates.filter(c => c.position === "Senators").length;
+  document.getElementById("count-governors").textContent = candidates.filter(c => c.position === "Governors").length;
+  document.getElementById("count-all").textContent = candidates.length;
+}
+
+// Filter Buttons
+positionFilters.forEach(filterDiv => {
+  filterDiv.addEventListener("click", () => {
+    const pos = filterDiv.getAttribute("data-position");
+    currentFilter = pos;
+
+    positionFilters.forEach(f => f.classList.remove("bg-primary", "text-white", "active"));
+    filterDiv.classList.add("bg-primary", "text-white", "active");
+
+    renderCandidates(pos);
+  });
+});
+
+// Handle Edit / Save Button (with image)
+document.addEventListener("click", function (e) {
+  const editBtn = e.target.closest(".edit-btn");
+  if (editBtn) {
+    const index = editBtn.getAttribute("data-index");
+    const container = document.getElementById(`candidate-details-${index}`);
+    const candidate = candidates[index];
+    const imageTag = document.getElementById(`image-${index}`);
+    const isEditing = editBtn.innerText.trim().startsWith("Save");
+
+    if (!isEditing) {
+      container.innerHTML = `
+        <div class="mb-1">
+          <label class="form-label form-label-sm mb-0"><strong>Name:</strong></label>
+          <input type="text" class="form-control form-control-sm" id="edit-name-${index}" value="${candidate.name}">
+        </div>
+        <div class="mb-1">
+          <label class="form-label form-label-sm mb-0"><strong>Year & Section:</strong></label>
+          <input type="text" class="form-control form-control-sm" id="edit-section-${index}" value="${candidate.section}">
+        </div>
+        <div class="mb-1">
+          <label class="form-label form-label-sm mb-0"><strong>TUPC ID:</strong></label>
+          <input type="text" class="form-control form-control-sm" id="edit-id-${index}" value="${candidate.id}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label form-label-sm mb-0"><strong>Position:</strong></label>
+          <select class="form-select form-select-sm" id="edit-position-${index}">
+            <option value="President" ${candidate.position === "President" ? "selected" : ""}>President</option>
+            <option value="Vice President" ${candidate.position === "Vice President" ? "selected" : ""}>Vice President</option>
+            <option value="Senators" ${candidate.position === "Senators" ? "selected" : ""}>Senators</option>
+            <option value="Governors" ${candidate.position === "Governors" ? "selected" : ""}>Governors</option>
+          </select>
+        </div>
+        <div class="mb-1">
+          <label class="form-label form-label-sm mb-0"><strong>Update Photo:</strong></label>
+          <input type="file" class="form-control form-control-sm" id="edit-photo-${index}" accept="image/*">
+        </div>
+      `;
+      editBtn.innerHTML = `<i class="bi bi-check2-circle me-1"></i> Save`;
+      editBtn.classList.remove("btn-outline-primary");
+      editBtn.classList.add("btn-success");
+    } else {
+      const newName = document.getElementById(`edit-name-${index}`).value.trim();
+      const newSection = document.getElementById(`edit-section-${index}`).value.trim();
+      const newID = document.getElementById(`edit-id-${index}`).value.trim();
+      const newPosition = document.getElementById(`edit-position-${index}`).value;
+      const newPhotoInput = document.getElementById(`edit-photo-${index}`);
+      const newPhotoFile = newPhotoInput.files[0];
+
+      if (!newName || !newSection || !newID || !newPosition) {
+        alert("All fields are required.");
+        return;
+      }
+
+      if (newPhotoFile) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          candidates[index] = {
+            name: newName,
+            section: newSection,
+            id: newID,
+            position: newPosition,
+            image: e.target.result
+          };
+          renderCandidates(currentFilter);
+          updateCounts();
+        };
+        reader.readAsDataURL(newPhotoFile);
+      } else {
+        candidates[index] = {
+          name: newName,
+          section: newSection,
+          id: newID,
+          position: newPosition,
+          image: candidate.image
+        };
+        renderCandidates(currentFilter);
+        updateCounts();
+      }
+    }
+  }
+});
+
+// Initial Load
+renderCandidates();
+updateCounts();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ///////////////////////////// RESULTS
+  document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const positionFilter = document.getElementById('positionFilter');
+    const syFilter = document.getElementById('syFilter');
+    const tables = document.querySelectorAll('.position-table');
+
+    function applyFilters() {
+      const selectedPosition = positionFilter.value;
+      const selectedSY = syFilter.value;
+      const query = searchInput.value.toLowerCase();
+
+      tables.forEach(table => {
+        const matchesPosition = selectedPosition === 'all' || table.dataset.position === selectedPosition;
+        const matchesSY = selectedSY === 'all' || table.dataset.sy === selectedSY;
+
+        let tableVisible = matchesPosition && matchesSY;
+        let hasMatch = false;
+
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => row.style.display = ''); // reset
+
+        // Remove previous "no match" message if it exists
+        const tbody = table.querySelector('tbody');
+        const existingMsg = tbody.querySelector('.no-match-msg');
+        if (existingMsg) existingMsg.remove();
+
+        if (tableVisible && query) {
+          rows.forEach(row => {
+            const nameCell = row.querySelector('td');
+            if (nameCell && nameCell.textContent.toLowerCase().includes(query)) {
+              row.style.display = '';
+              hasMatch = true;
+            } else {
+              row.style.display = 'none';
+            }
+          });
+
+          if (!hasMatch) {
+            const noRow = document.createElement('tr');
+            noRow.classList.add('no-match-msg');
+            noRow.innerHTML = `<td colspan="4" class="text-center text-muted">No matching candidates name found.</td>`;
+            tbody.appendChild(noRow);
+            tableVisible = true;
+          }
+        } else if (!query) {
+          hasMatch = true;
+        }
+
+        table.style.display = tableVisible ? '' : 'none';
+      });
+    }
+
+    positionFilter.addEventListener('change', applyFilters);
+    syFilter.addEventListener('change', applyFilters);
+    searchInput.addEventListener('input', applyFilters);
+  });
+
+
+
+
+
+
+///////////////////////////// MANAGE ELECTIONS
+document.addEventListener('DOMContentLoaded', function () {
+  const searchInput = document.getElementById('searchInput_manage');
+  const syFilter = document.getElementById('syFilter_manage');
+  const tableBody = document.getElementById('manageTableBody');
+
+  function filterTable() {
+    const query = searchInput.value.toLowerCase().trim();
+    const selectedSY = syFilter.value.toLowerCase(); // make this lowercase too
+    let hasMatch = false;
+
+    // Remove old "no match" row
+    const oldMsg = tableBody.querySelector('.no-match-msg');
+    if (oldMsg) oldMsg.remove();
+
+    const rows = tableBody.querySelectorAll('tr');
+    rows.forEach(row => {
+      const programText = row.cells[0]?.textContent.toLowerCase() || "";
+      const syText = row.cells[1]?.textContent.trim().toLowerCase() || "";
+
+      const matchesProgram = programText.includes(query);
+      const matchesSY = (selectedSY === 'all' || selectedSY === syText); // now case-insensitive
+
+      const visible = matchesProgram && matchesSY;
+      row.style.display = visible ? '' : 'none';
+      if (visible) hasMatch = true;
+    });
+
+    if (!hasMatch) {
+      const noRow = document.createElement('tr');
+      noRow.classList.add('no-match-msg');
+      noRow.innerHTML = `<td colspan="4" class="text-center text-muted">No matching Program/Course found.</td>`;
+      tableBody.appendChild(noRow);
+    }
+  }
+
+  searchInput.addEventListener('input', filterTable);
+  syFilter.addEventListener('change', filterTable);
+});
+
+
+
+
+
+
+
+
+</script>
 
   </script>
 </body>
