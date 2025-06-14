@@ -1,7 +1,7 @@
 body {
   font-family: 'Roboto', sans-serif;
   background-color: #e2877f; 
-  background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/2.png'); /* Corrected relative path */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/2.png'); 
   background-size: cover; 
   background-repeat: no-repeat; 
   background-attachment: fixed; 
@@ -120,7 +120,7 @@ body {
 
 .scholarship-card {
   background-color: rgba(212, 205, 205, 0.82); 
-  border-radius: 10px; /* Rounded corners for cards */
+  border-radius: 10px; 
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 .scholarship-card:hover {
@@ -128,7 +128,9 @@ body {
   box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15) !important; 
 }
 
-/* PARA SA TITLE NG SCHOLARSHIP */
+
+
+
 .scholarship-card .card-title {
   font-weight: bold !important;
   margin-bottom: 0.2rem;
