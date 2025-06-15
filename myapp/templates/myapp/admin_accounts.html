@@ -2,425 +2,445 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>OSA - Manage Accounts</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'myapp/css/admin_accounts.css' %}">
-  <style>
-    /* Custom styles for the message modal (keep these here as they were) */
-    .message-modal, .confirm-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: #fff;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      padding: 20px;
-      z-index: 1060;
-      display: none; /* Hidden by default */
-      min-width: 300px;
-      text-align: center;
-    }
-    .message-modal.show-modal, .confirm-modal.show-modal {
-      display: block;
-    }
-    .message-modal .modal-header, .confirm-modal .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      font-weight: bold;
-    }
-    .message-modal .modal-body, .confirm-modal .modal-body {
-      margin-bottom: 15px;
-    }
-    .message-modal .modal-footer, .confirm-modal .modal-footer {
-      text-align: right;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-    /* Buttons in modals, including the 'Close' button at the bottom of message modal */
-    .message-modal .close-btn,
-    .confirm-modal .btn {
-      background-color: #007bff; /* Default blue, can be customized in admin_accounts.css if desired */
-      color: white;
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .message-modal .close-btn:hover,
-    .confirm-modal .btn:hover {
-      background-color: #161616; /* Black on hover for default buttons */
-    }
-    .confirm-modal .btn-danger {
-        background-color: #dc3545;
-    }
-    .confirm-modal .btn-danger:hover {
-        background-color: #c82333;
-    }
-    .confirm-modal .btn-secondary {
-        background-color: #0f1010; /* Darker grey for 'No' button */
-    }
-    .confirm-modal .btn-secondary:hover {
-        background-color: #121313; /* Slightly darker on hover */
-    }
-
-    /* Style for the 'X' close button in the modal header (plain 'X' as requested) */
-    .message-modal .modal-header .btn-close,
-    .confirm-modal .modal-header .btn-close {
-      background-image: none;
-      background-color: transparent;
-      opacity: 1;
-      filter: none;
-      color: #000; /* Black 'X' */
-      padding: 0;
-      margin: 0;
-      width: auto;
-      height: auto;
-      font-size: 1.25rem;
-      line-height: 1;
-    }
-
-    .message-modal .modal-header .btn-close:hover,
-    .confirm-modal .modal-header .btn-close:hover {
-        color: #555;
-    }
-
-  </style>
-</head>
+    <meta charset="UTF-8">
+    <title>OSA - Manage Accounts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'myapp/css/admin_accounts.css' %}"> 
 
 <body>
-  <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+<button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
-  <div class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar">
     <div><br>
-      <div class="logo text-center">
-        <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid mb-2 logo-img">
-        <div><span><h5><b>TUPC OSA</b></h5></span></div>
-        <h6>Welcome Admin!</h6>
-        <hr>
-      </div>
+        <div class="logo text-center">
+            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid mb-2 logo-img">
+            <div><span><h5><b>TUPC OSA</b></h5></span></div>
+            <h6>Welcome Admin!</h6>
+            <hr>
+        </div>
 
-      <ul class="nav flex-column">
-        <li><a href="{% url 'admin_dashboard' %}" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <ul class="nav flex-column">
+            <li><a href="{% url 'admin_dashboard' %}" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
 
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('violationMenu')">
-            <span><i class="fas fa-exclamation-triangle"></i> Violation</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-violationMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="violationMenu">
-            <a class="nav-link" href="{% url 'admin_violation' %}"><i class="fas fa-window-maximize"></i> Violation</a>
-            <a class="nav-link" href="{% url 'admin_CS' %}"><i class="fas fa-people-group"></i> Community Service</a>
-          </div>
-        </li>
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('violationMenu')">
+                    <span><i class="fas fa-exclamation-triangle"></i> Violation</span>
+                    <i class="fas fa-caret-down dropdown-icon" id="icon-violationMenu"></i>
+                </a>
+                <div class="collapse submenu ps-3 border-start" id="violationMenu">
+                    <a class="nav-link" href="{% url 'admin_violation' %}"><i class="fas fa-window-maximize"></i> Violation</a>
+                    <a class="nav-link" href="{% url 'admin_CS' %}"><i class="fas fa-people-group"></i> Community Service</a>
+                </div>
+            </li>
 
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('documentsMenu')">
-            <span><i class="fas fa-file-alt"></i> Documents</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-documentsMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="documentsMenu">
-            <a class="nav-link" href="{% url 'admin_goodmoral' %}"><i class="fas fa-shield-alt"></i> Good Moral Requests</a>
-            <a class="nav-link" href="{% url 'admin_ackreq' %}"><i class="fas fa-file-download"></i> Acknowledgement Receipt Requests</a>
-          </div>
-        </li>
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('documentsMenu')">
+                    <span><i class="fas fa-file-alt"></i> Documents</span>
+                    <i class="fas fa-caret-down dropdown-icon" id="icon-documentsMenu"></i>
+                </a>
+                <div class="collapse submenu ps-3 border-start" id="documentsMenu">
+                    <a class="nav-link" href="{% url 'admin_goodmoral' %}"><i class="fas fa-shield-alt"></i> Good Moral Requests</a>
+                    <a class="nav-link" href="{% url 'admin_ackreq' %}"><i class="fas fa-file-download"></i> Acknowledgement Receipt Requests</a>
+                </div>
+            </li>
 
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('postingsMenu')">
-            <span><i class="fas fa-bullhorn"></i> Postings</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-postingsMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="postingsMenu">
-            <a class="nav-link" href="{% url 'admin_scholarships' %}"><i class="fas fa-award"></i> Scholarships</a>
-            <a class="nav-link" href="{% url 'admin_lostandfound' %}"><i class="fas fa-search"></i> Lost and Found</a>
-            <a class="nav-link" href="{% url 'admin_ACSO' %}"><i class="fas fa-building"></i> ACSO Accreditation</a>
-            <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student Assistantship</a>
-          </div>
-        </li>
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('postingsMenu')">
+                    <span><i class="fas fa-bullhorn"></i> Postings</span>
+                    <i class="fas fa-caret-down dropdown-icon" id="icon-postingsMenu"></i>
+                </a>
+                <div class="collapse submenu ps-3 border-start" id="postingsMenu">
+                    <a class="nav-link" href="{% url 'admin_scholarships' %}"><i class="fas fa-award"></i> Scholarships</a>
+                    <a class="nav-link" href="{% url 'admin_lostandfound' %}"><i class="fas fa-search"></i> Lost and Found</a>
+                    <a class="nav-link" href="{% url 'admin_ACSO' %}"><i class="fas fa-building"></i> ACSO Accreditation</a>
+                    <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student Assistantship</a>
+                </div>
+            </li>
 
-        <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
-        <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
-        <li><a href="{% url 'admin_election' %}" class="nav-link"><i class="fas fa-vote-yea"></i> Election</a></li>
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('studentRecordMenu')">
-            <span><i class="bi bi-plus-circle"></i> Student Record</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-studentRecordMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="studentRecordMenu">
-            <a class="nav-link" href="{% url 'admin_removedstud' %}"><i class="fas fa-window-maximize"></i> Removed Student</a>
-          </div>
-        </li>
-      </ul>
+            <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
+            <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
+            <li><a href="{% url 'admin_election' %}" class="nav-link"><i class="fas fa-vote-yea"></i> Election</a></li>
+        </ul>
     </div>
 
     <div class="logout">
-      <a href="{% url 'admin_violation' %}" class="nav-link" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="{% url 'admin_violation' %}" class="nav-link" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
-  </div>
+</div>
 
-  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Confirm Logout</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Logout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">Are you sure you want to logout?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'login' %}" class="btn btn-danger">Logout</a>
+            </div>
         </div>
-        <div class="modal-body">Are you sure you want to logout?</div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <a href="{% url 'login' %}" class="btn btn-danger">Logout</a>
-        </div>
-      </div>
     </div>
-  </div>
+</div>
 
-  <div id="messageModal" class="message-modal">
+<div id="messageModal" class="message-modal">
     <div class="modal-header">
-      <span id="messageModalTitle"></span>
-      <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
+        <span id="messageModalTitle"></span>
+        <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
     </div>
     <div class="modal-body">
-      <p id="messageModalBody"></p>
+        <p id="messageModalBody"></p>
     </div>
     <div class="modal-footer">
-      <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
+        <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
     </div>
-  </div>
+</div>
 
-  <div id="confirmDeactivateModal" class="confirm-modal">
+<div id="confirmDeactivateModal" class="confirm-modal">
     <div class="modal-header">
-      <span>Confirm Deactivation</span>
-      <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
+        <span>Confirm Deactivation</span>
+        <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
     </div>
     <div class="modal-body">
-      <p id="confirmDeactivateMessage"></p>
+        <p id="confirmDeactivateMessage"></p>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
-      <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
+        <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
+        <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
     </div>
-  </div>
+</div>
 
-  <div class="main-content">
+{# USER FIELDS #}
+</head>
+<div id="accountDetailsModal" class="account-details-modal">
+    <div class="modal-header">
+        <span>Account Details</span>
+        <button type="button" class="btn-close" onclick="closeAccountDetailsModal()"></button>
+    </div>
+    <div class="modal-body" style="text-align: left;">
+        <p><strong>Full Name:</strong> <span id="detailFullName"></span></p>
+        <p><strong>Email:</strong> <span id="detailEmail"></span></p>
+        <p><strong>Position:</strong> <span id="detailPosition"></span></p>
+        <p><strong>Username:</strong> <span id="detailUsername"></span></p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="deactivate-from-details-btn" id="deactivateFromDetailsBtn" style="display: none;">Deactivate</button>
+        <button type="button" class="close-btn" onclick="closeAccountDetailsModal()">Close</button>
+    </div>
+</div>
+
+<div class="main-content">
     <h1><i class="fas fa-user-cog"></i> CREATE ACCOUNT </h1>
     <div class="content-container">
-      <div class="create-account-section">
-        <div class="form-group">
-          <label for="createUsername">Username:</label>
-          <input type="text" id="createUsername" placeholder="Username">
+        <div class="create-account-section">
+            <div class="form-group">
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" placeholder="Full Name">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Email">
+            </div>
+            <div class="form-group">
+                <label for="position">Position:</label>
+                <select id="position">
+                    <option value="">Select Position</option>
+                    <option value="Security Guard">Security Guard</option>
+                    <option value="COMSELEC">COMSELEC</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="createUsername">Username:</label>
+                <input type="text" id="createUsername" placeholder="Username">
+            </div>
+            <div class="form-group password-input-container">
+                <label for="createPassword">Password</label>
+                <input type="password" id="createPassword" placeholder="Password">
+                <span class="password-toggle" onclick="togglePasswordVisibility('createPassword')">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+            <div class="form-group password-input-container">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm Password">
+                <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+            <button class="create-btn" id="createAccountBtn">CREATE</button>
         </div>
-        <div class="form-group password-input-container"> {# Added container for password field #}
-          <label for="createPassword">Password</label>
-          <input type="password" id="createPassword" placeholder="Password">
-          <span class="password-toggle" onclick="togglePasswordVisibility('createPassword')">
-            <i class="fas fa-eye"></i> {# Eye icon #}
-          </span>
-        </div>
-        <div class="form-group password-input-container"> {# Added container for confirm password field #}
-          <label for="confirmPassword">Confirm Password</label>
-          <input type="password" id="confirmPassword" placeholder="Confirm Password">
-          <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
-            <i class="fas fa-eye"></i> {# Eye icon #}
-          </span>
-        </div>
-        <button class="create-btn" id="createAccountBtn">CREATE</button>
-      </div>
 
-      <div class="activated-accounts-section">
-        <h2>Activated Accounts:</h2>
-        <div class="account-list-container" id="activatedAccountsList">
-          </div>
-        <div class="scroll-indicator"></div>
-      </div>
+        <div class="activated-accounts-section">
+            <h2>ACCOUNTS</h2>
+            <div class="account-columns-wrapper">
+                <div class="account-column active-accounts-column">
+                    <h3>Active</h3>
+                    <div class="account-list-container" id="activeAccountsList">
+                        <p class="text-center text-muted mt-3">No active accounts yet.</p>
+                    </div>
+                </div>
+                <div class="account-column deactivated-accounts-column">
+                    <h3>Deactivated</h3>
+                    <div class="account-list-container" id="deactivatedAccountsList">
+                        <p class="text-center text-muted mt-3">No deactivated accounts yet.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-indicator"></div>
+        </div>
     </div>
-  </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
     function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('show');
+        document.getElementById('sidebar').classList.toggle('show');
     }
 
     function handleDropdown(id) {
-      const icon = document.getElementById('icon-' + id);
-      const target = document.getElementById(id);
-      const bsTarget = bootstrap.Collapse.getOrCreateInstance(target);
+        const icon = document.getElementById('icon-' + id);
+        const target = document.getElementById(id);
+        const bsTarget = bootstrap.Collapse.getOrCreateInstance(target);
 
-      if (target.classList.contains('show')) {
-        bsTarget.hide();
-        icon.classList.remove('rotate');
-      } else {
-        bsTarget.show();
-        icon.classList.add('rotate');
-      }
-
-      const allMenus = ['violationMenu', 'documentsMenu', 'postingsMenu'];
-      allMenus.forEach(menu => {
-        if (menu !== id) {
-          const el = document.getElementById(menu);
-          const ic = document.getElementById('icon-' + menu);
-          const bs = bootstrap.Collapse.getInstance(el);
-          if (bs) bs.hide();
-          if (ic) ic.classList.remove('rotate');
+        if (target.classList.contains('show')) {
+            bsTarget.hide();
+            icon.classList.remove('rotate');
+        } else {
+            bsTarget.show();
+            icon.classList.add('rotate');
         }
-      });
+
+        const allMenus = ['violationMenu', 'documentsMenu', 'postingsMenu'];
+        allMenus.forEach(menu => {
+            if (menu !== id) {
+                const el = document.getElementById(menu);
+                const ic = document.getElementById('icon-' + menu);
+                const bs = bootstrap.Collapse.getInstance(el);
+                if (bs) bs.hide();
+                if (ic) ic.classList.remove('rotate');
+            }
+        });
     }
 
-    // Smooth Highlighting Active Link
     document.addEventListener("DOMContentLoaded", function () {
-      const currentUrl = window.location.href;
-      const navLinks = document.querySelectorAll(".nav-link");
+        const currentUrl = window.location.href;
+        const navLinks = document.querySelectorAll(".nav-link");
 
-      navLinks.forEach(link => {
-        if (link.href && currentUrl.includes(link.href)) {
-          link.classList.add("active");
-        }
-      });
+        navLinks.forEach(link => {
+            if (link.href && currentUrl.includes(link.href)) {
+                link.classList.add("active");
+            }
+        });
 
-      // Initialize accounts from a dummy source or local storage if needed
-      renderAccounts();
+
+
+        renderAccounts();
     });
 
-    ///////////////////////////// START HERE MAG ADD /////////////////////////
-
-    // --- Message Modal Functions ---
+    // --- Modal Functions ---
     function showMessageModal(title, body) {
-      document.getElementById('messageModalTitle').textContent = title;
-      document.getElementById('messageModalBody').textContent = body;
-      document.getElementById('messageModal').classList.add('show-modal');
+        document.getElementById('messageModalTitle').textContent = title;
+        document.getElementById('messageModalBody').textContent = body;
+        document.getElementById('messageModal').classList.add('show-modal');
     }
 
     function closeMessageModal() {
-      document.getElementById('messageModal').classList.remove('show-modal');
+        document.getElementById('messageModal').classList.remove('show-modal');
     }
 
-    // --- Confirmation Modal Functions ---
-    let pendingDeactivateIndex = -1; // To store the index of the account to be deactivated
+    // --- Confirmation Modal Functions (Deactivate) ---
+    let pendingDeactivateIndex = -1;
 
     function showConfirmModal(message, index) {
         document.getElementById('confirmDeactivateMessage').textContent = message;
         document.getElementById('confirmDeactivateModal').classList.add('show-modal');
-        pendingDeactivateIndex = index; // Store the index
+        pendingDeactivateIndex = index; 
     }
 
     function closeConfirmModal() {
         document.getElementById('confirmDeactivateModal').classList.remove('show-modal');
-        pendingDeactivateIndex = -1; // Reset the index
+        pendingDeactivateIndex = -1;
     }
 
-    // --- Account Management Logic (Frontend Only for Demonstration) ---
 
-    // Dummy array to store created accounts
-    let accounts = [];
 
-    // Function to render accounts in the list
+    // --- Account Details Modal Functions ---
+  
+    function showAccountDetailsModal(index) {
+        const account = accounts[index];
+        document.getElementById('detailFullName').textContent = account.fullName;
+        document.getElementById('detailEmail').textContent = account.email;
+        document.getElementById('detailPosition').textContent = account.position;
+        document.getElementById('detailUsername').textContent = account.username;
+
+        const deactivateButton = document.getElementById('deactivateFromDetailsBtn');
+        if (account.isActive) {
+            deactivateButton.style.display = 'inline-block'; 
+            deactivateButton.onclick = () => {
+                closeAccountDetailsModal(); 
+                showConfirmModal(`Are you sure you want to deactivate account '${account.username}'?`, index);
+            };
+        } else {
+            deactivateButton.style.display = 'none'; 
+        }
+
+        document.getElementById('accountDetailsModal').classList.add('show-modal');
+    }
+
+    function closeAccountDetailsModal() {
+        document.getElementById('accountDetailsModal').classList.remove('show-modal');
+    }
+
+   
+    let accounts = []; 
+
     function renderAccounts() {
-      const accountListContainer = document.getElementById('activatedAccountsList');
-      accountListContainer.innerHTML = ''; // Clear existing list
+        const activeAccountListContainer = document.getElementById('activeAccountsList');
+        const deactivatedAccountListContainer = document.getElementById('deactivatedAccountsList');
+        activeAccountListContainer.innerHTML = '';
+        deactivatedAccountListContainer.innerHTML = '';
 
-      if (accounts.length === 0) {
-        accountListContainer.innerHTML = '<p class="text-center text-muted mt-3">No activated accounts yet.</p>';
-        return;
-      }
+        const activeAccounts = accounts.filter(account => account.isActive);
+        const deactivatedAccounts = accounts.filter(account => !account.isActive);
 
-      accounts.forEach((account, index) => {
-        const accountItem = document.createElement('div');
-        accountItem.classList.add('account-item');
-        accountItem.innerHTML = `
-          <span>${account.username}</span>
-          <button class="deactivate-btn" data-index="${index}">Deactivate</button>
-        `;
-        accountListContainer.appendChild(accountItem);
-      });
+        if (activeAccounts.length === 0) {
+            activeAccountListContainer.innerHTML = '<p class="text-center text-muted mt-3">No active accounts yet.</p>';
+        } else {
+            activeAccounts.forEach((account, i) => { 
+                const originalIndex = accounts.indexOf(account); 
+                const accountItem = document.createElement('div');
+                accountItem.classList.add('account-item');
+                accountItem.innerHTML = `
+                    <span>${account.username}</span>
+                    <div>
+                        <button class="details-btn" data-index="${originalIndex}">Details</button>
+                    </div>
+                `;
+                activeAccountListContainer.appendChild(accountItem);
+            });
+        }
 
-      // Attach event listeners to new deactivate buttons
-      document.querySelectorAll('.deactivate-btn').forEach(button => {
-        button.addEventListener('click', promptDeactivateConfirmation);
-      });
+        if (deactivatedAccounts.length === 0) {
+            deactivatedAccountListContainer.innerHTML = '<p class="text-center text-muted mt-3">No deactivated accounts yet.</p>';
+        } else {
+            deactivatedAccounts.forEach((account, i) => { 
+                const originalIndex = accounts.indexOf(account); 
+                const accountItem = document.createElement('div');
+                accountItem.classList.add('account-item');
+                accountItem.innerHTML = `
+                    <span>${account.username}</span>
+                `;
+                deactivatedAccountListContainer.appendChild(accountItem);
+            });
+        }
+
+    
+        document.querySelectorAll('.details-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const index = parseInt(event.target.dataset.index); 
+                showAccountDetailsModal(index);
+            });
+        });
     }
 
-    // Function to handle account creation
+    //  account creation functions
     document.getElementById('createAccountBtn').addEventListener('click', function() {
-      const usernameInput = document.getElementById('createUsername');
-      const passwordInput = document.getElementById('createPassword');
-      const confirmPasswordInput = document.getElementById('confirmPassword');
+        const fullNameInput = document.getElementById('fullName');
+        const emailInput = document.getElementById('email');
+        const positionSelect = document.getElementById('position');
+        const usernameInput = document.getElementById('createUsername');
+        const passwordInput = document.getElementById('createPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
 
-      const username = usernameInput.value.trim();
-      const password = passwordInput.value;
-      const confirmPassword = confirmPasswordInput.value;
+        const fullName = fullNameInput.value.trim();
+        const email = emailInput.value.trim();
+        const position = positionSelect.value;
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
 
-      if (!username || !password || !confirmPassword) {
-        showMessageModal('Error', 'All fields are required.');
-        return;
-      }
+        if (!fullName || !email || !position || !username || !password || !confirmPassword) {
+            showMessageModal('Error', 'All fields are required.');
+            return;
+        }
 
-      if (password !== confirmPassword) {
-        showMessageModal('Error', 'Passwords do not match.');
-        return;
-      }
+        if (password !== confirmPassword) {
+            showMessageModal('Error', 'Passwords do not match.');
+            return;
+        }
 
-      // Check if username already exists (simple frontend check)
-      if (accounts.some(account => account.username === username)) {
-        showMessageModal('Error', 'Username already exists. Please choose a different one.');
-        return;
-      }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showMessageModal('Error', 'Please enter a valid email address.');
+            return;
+        }
 
-      // Simulate account creation
-      accounts.push({ username: username, password: password }); // In a real app, password would be hashed
-      renderAccounts(); // Update the displayed list
+        if (accounts.some(account => account.username === username)) {
+            showMessageModal('Error', 'Username already exists. Please choose a different one.');
+            return;
+        }
+        if (accounts.some(account => account.email === email)) {
+            showMessageModal('Error', 'Email already exists. Please use a different one.');
+            return;
+        }
 
-      showMessageModal('Success', `Account '${username}' created successfully!`);
+        accounts.push({
+            fullName: fullName,
+            email: email,
+            position: position,
+            username: username,
+            password: password,
+            isActive: true
+        });
+        renderAccounts();
 
-      // Clear the form fields
-      usernameInput.value = '';
-      passwordInput.value = '';
-      confirmPasswordInput.value = '';
+        showMessageModal('Success', `Account '${username}' created successfully!`);
+
+        fullNameInput.value = '';
+        emailInput.value = '';
+        positionSelect.value = '';
+        usernameInput.value = '';
+        passwordInput.value = '';
+        confirmPasswordInput.value = '';
     });
 
-    // New function to prompt confirmation before deactivating
-    function promptDeactivateConfirmation(event) {
-        const index = event.target.dataset.index;
-        const username = accounts[index].username;
-        showConfirmModal(`Are you sure you want to deactivate account '${username}'?`, index);
-    }
 
-    // Function to perform actual account deactivation after confirmation
     document.getElementById('confirmDeactivateBtn').addEventListener('click', function() {
-        if (pendingDeactivateIndex !== -1) {
+        if (pendingDeactivateIndex !== -1 && pendingDeactivateIndex < accounts.length) { // Added bounds check
             const usernameToDeactivate = accounts[pendingDeactivateIndex].username;
-            // Remove the account from the array
-            accounts.splice(pendingDeactivateIndex, 1);
-            renderAccounts(); // Re-render the list
+            accounts[pendingDeactivateIndex].isActive = false;
+            renderAccounts();
 
             showMessageModal('Success', `Account '${usernameToDeactivate}' deactivated.`);
-            closeConfirmModal(); // Close the confirmation modal
+            closeConfirmModal();
+        } else {
+            
+             console.error("Attempted to deactivate with an invalid index:", pendingDeactivateIndex);
+             closeConfirmModal(); 
         }
     });
 
-    // Function to toggle password visibility
-    function togglePasswordVisibility(fieldId) {
-      const passwordField = document.getElementById(fieldId);
-      const toggleIcon = passwordField.nextElementSibling.querySelector('i');
 
-      if (passwordField.type === 'password') {
-        passwordField.type = 'text';
-        toggleIcon.classList.remove('fa-eye');
-        toggleIcon.classList.add('fa-eye-slash');
-      } else {
-        passwordField.type = 'password';
-        toggleIcon.classList.remove('fa-eye-slash');
-        toggleIcon.classList.add('fa-eye');
-      }
+
+    function togglePasswordVisibility(fieldId) {
+        const passwordField = document.getElementById(fieldId);
+        const toggleIcon = passwordField.nextElementSibling.querySelector('i');
+
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
     }
 
-  </script>
+</script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
-  background-image:linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/lostandfoundbg.png" %}');
+  background-image:linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('../images/lostandfoundbg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -139,17 +139,17 @@ hr {
 /* Responsive Sidebar */
 @media (min-width: 768px) {
   .toggle-btn {
-    display: none;
+      display: none;
   }
 }
 
 @media (max-width: 767.98px) {
   .sidebar {
-    transform: translateX(-100%);
+      transform: translateX(-100%);
   }
 
   .sidebar.show {
-    transform: translateX(0);
+      transform: translateX(0);
   }
 }
 
@@ -186,7 +186,7 @@ hr {
 
 .main-content {
   margin-left: 260px;
-  padding: 20px;
+  padding: 15px; 
   transition: margin-left 0.3s ease-in-out;
   background-color: rgba(52, 45, 45, 0.705);
   min-height: 100vh;
@@ -195,33 +195,40 @@ hr {
 
 @media (max-width: 767.98px) {
   .main-content {
-    margin-left: 0;
+      margin-left: 0;
   }
 }
 
 h1 {
-  margin-bottom: 20px;
+  margin-bottom: 15px; 
   display: flex;
   align-items: center;
   gap: 10px;
   color: #cdcdcd;
   padding-bottom: 5px;
   border-bottom: 2px solid #cdcdcd;
-  width: 100%; /* Line extends fully */
-  /* white-space: nowrap; */ /* Uncomment if text wraps on one line */
+  width: 100%;
 }
 
 .content-container {
-  display: flex;
-  gap: 30px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px; /* Minimized gap */
   flex-wrap: wrap;
   justify-content: center;
 }
 
-.create-account-section,
+@media (max-width: 992px) {
+  .content-container {
+      grid-template-columns: 1fr;
+  }
+}
+
+
+
 .activated-accounts-section {
   border: 1px solid #8e5757;
-  padding: 20px;
+  padding: 15px; /* Minimized padding */
   border-radius: 8px;
   background-color: #8e5757;
   box-shadow: 0 2px 4px rgba(145, 115, 115, 0.1);
@@ -229,64 +236,73 @@ h1 {
 }
 
 .create-account-section {
-  flex: 1;
   min-width: 300px;
-  max-width: 400px;
+  max-width: 450px;
+  width: 100%;
 }
 
 .create-account-section .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .create-account-section label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 3px; 
   font-weight: bold;
-  color: #fff; /* Adjusted label color for better contrast */
+  color: #fff;
+  font-size: 0.95em; 
 }
 
-/* New CSS for show password icon */
+
 .password-input-container {
-  position: relative; /* Essential for absolute positioning of the icon */
-  margin-bottom: 15px; /* Maintain consistent spacing */
+  position: relative;
+  margin-bottom: 10px; 
 }
 
 .create-account-section input[type="text"],
-.create-account-section input[type="password"] {
+.create-account-section input[type="email"],
+.create-account-section input[type="password"],
+.create-account-section select {
   width: 100%;
-  padding: 8px;
+  padding: 6px 8px;
   border: 1px solid #1c1b1b;
   border-radius: 4px;
   box-sizing: border-box;
   background-color: #e0e0e0;
-  padding-right: 35px; /* Add space for the eye icon */
+  padding-right: 30px; 
+  font-size: 0.9em; 
+}
+
+.create-account-section select {
+  padding-right: 8px;
 }
 
 .password-toggle {
   position: absolute;
-  right: 10px; /* Position from the right edge of the input */
-  top: calc(50% + 5px); /* Adjusted top to account for label margin-bottom, 50% of input height plus label's 5px margin*/
-  transform: translateY(-10%); /* For precise vertical centering based on its own height */
+  right: 10px; 
+  top: calc(50% + 5px); 
+  transform: translateY(-10%); 
   cursor: pointer;
-  color: #555; /* Color of the eye icon */
-  font-size: 1.1em; /* Adjust icon size */
-  z-index: 2; /* Ensure icon is above input field */
+  color: #555; 
+  font-size: 1.1em; 
+  z-index: 2; 
 }
 
 .password-toggle:hover {
-  color: #000; /* Darker on hover */
+  color: #000;
 }
 
 
 .create-account-section .create-btn {
   background-color: #0c962a;
   color: white;
-  padding: 10px 20px;
+  padding: 8px 15px; 
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px; 
   margin-top: 10px;
+  width: 100%;
 }
 
 .create-account-section .create-btn:hover {
@@ -296,7 +312,7 @@ h1 {
 .activated-accounts-section {
   flex: 1;
   min-width: 300px;
-  max-width: 400px;
+  width: 100%;
   position: relative;
 }
 
@@ -304,22 +320,59 @@ h1 {
   margin-top: 0;
   font-size: 20px;
   margin-bottom: 15px;
-  color: #fff; /* Adjusted heading color for better contrast */
+  color: #fff;
+  text-align: center;
+}
+
+.account-columns-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px; 
+}
+
+
+@media (max-width: 768px) {
+  .account-columns-wrapper {
+      grid-template-columns: 1fr;
+  }
+}
+
+.account-column {
+  border: 1px solid #a36f6f;
+  padding: 10px; 
+  border-radius: 6px;
+  background-color: #a36f6f;
+}
+
+.account-column h3 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 10px; 
+  color: #fff;
+  font-size: 1.05em; 
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 5px;
 }
 
 .account-list-container {
-  max-height: 200px;
+  max-height: 220px; 
   overflow-y: auto;
-  padding-right: 10px;
-  color: #fff; /* Adjusted text color for list items */
+  padding-right: 8px; 
+  color: #241a1a;
 }
 
+/* CONTENT NG ADDED ACC */
 .account-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 6px 8px; 
   border-bottom: 1px solid #eee;
+  color: #f9f9f9;
+  background-color: #c2c2c4;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-size: 0.9em; 
 }
 
 .account-item:last-child {
@@ -328,28 +381,149 @@ h1 {
 
 .account-item span {
   font-weight: bold;
+  color: #333;
 }
 
+
 .account-item .deactivate-btn {
-  background-color: #dc3545;
+  display: none; /* Hide this button from the active list */
+}
+
+
+.account-item .details-btn {
+  background-color: #08a30d;
   color: white;
-  padding: 5px 10px;
+  padding: 4px 8px; 
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px; 
 }
 
-.account-item .deactivate-btn:hover {
+.account-item .details-btn:hover {
+  background-color: #00b348;
+}
+
+
+.message-modal, .confirm-modal, .account-details-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #dea6a6;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  z-index: 1060;
+  display: none; 
+  min-width: 300px;
+  text-align: center;
+}
+.message-modal.show-modal, .confirm-modal.show-modal, .account-details-modal.show-modal {
+  display: block;
+}
+.message-modal .modal-header, .confirm-modal .modal-header, .account-details-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+.message-modal .modal-body, .confirm-modal .modal-body, .account-details-modal .modal-body {
+  margin-bottom: 15px;
+}
+.message-modal .modal-footer, .confirm-modal .modal-footer, .account-details-modal .modal-footer {
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-modal .btn,
+.account-details-modal .deactivate-from-details-btn {
+  background-color: #ec4d4d9e;
+  color: rgb(255, 255, 255);
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.close-btn {
+  background-color: #1e1c1c9e;
+  color: rgb(255, 255, 255);
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+.message-modal .close-btn{
+background-color: #1e0e0efa;
+color: rgb(255, 255, 255);
+padding: 8px 15px;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+}
+
+.message-modal .close-btn:hover,
+.confirm-modal .btn:hover,
+.account-details-modal .close-btn:hover,
+.account-details-modal .deactivate-from-details-btn:hover {
+  background-color: #161616;
+}
+.confirm-modal .btn-danger {
+  background-color: #dc3545;
+}
+.confirm-modal .btn-danger:hover {
+  background-color: #c82333;
+}
+.confirm-modal .btn-secondary {
+  background-color: #0f1010;
+}
+.confirm-modal .btn-secondary:hover {
+  background-color: #121313;
+}
+.message-modal .modal-header .btn-close,
+.confirm-modal .modal-header .btn-close,
+.account-details-modal .modal-header .btn-close {
+  background-image: none;
+  background-color: transparent;
+  opacity: 1;
+  filter: none;
+  color: #000;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  height: auto;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.message-modal .modal-header .btn-close:hover,
+.confirm-modal .modal-header .btn-close:hover,
+.account-details-modal .modal-header .btn-close:hover {
+  color: #555;
+}
+
+.account-details-modal .deactivate-from-details-btn {
+  background-color: #dc3545;
+}
+
+.account-details-modal .deactivate-from-details-btn:hover {
   background-color: #c82333;
 }
 
+
 .scroll-indicator {
-    display: none;
+  display: none;
 }
 
 .text-center.text-muted.mt-3 {
   text-align: center;
-  color: #fff; /* Adjusted text color for better contrast */
+  color: #333;
   margin-top: 1rem;
+  font-size: 0.9em;
 }
