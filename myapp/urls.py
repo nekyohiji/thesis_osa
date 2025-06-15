@@ -32,6 +32,8 @@ urlpatterns = [
     path('admin_view_violation/', views.admin_view_violation_view, name='admin_view_violation'),
     path('admin_violation/', views.admin_violation_view, name='admin_violation'),
     path('admin_student/', views.admin_student_view, name='admin_student'),
+    path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
+    
     
     
     

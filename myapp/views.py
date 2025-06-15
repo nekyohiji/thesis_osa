@@ -69,6 +69,21 @@ def client_election_view(request):
     return render (request, 'myapp/client_election.html')
 def client_view_election_view(request):
     return render (request, 'myapp/client_view_election.html')
+def admin_removedstud_view(request):
+    return render (request, 'myapp/admin_removedstud.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ########################GUARD
