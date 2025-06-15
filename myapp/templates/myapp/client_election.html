@@ -58,10 +58,14 @@
 <section class="donation-box">
   <div class="icon"><i class="fas fa-balance-scale"></i></div>
   <div class="info">
-    <h3>Start to Vote Now!!</h3>
-    <p>Please enter your registered TUPC ID number to vote.</p>
-    <input type="text" id="tupc_linedit_election" placeholder="TUPC-XX-XXXX" />
-    <button type="submit" id="ID_election" onclick="location.href='{% url 'client_view_election' %}'" >
+    <h3 class="text-center" >Start to Vote Now!!</h3>
+    <p class="text-center">Please enter your registered TUPC ID number to vote.</p>
+     <h6><b>Surname:</b></h6>
+    <input type="text" id="surname_election" placeholder="Enter your Surname" style="margin-bottom: 10px;margin-left:10px;" />
+
+    <h6><b>TUPC-ID:</b></h6>
+     <input type="text" id="tupc_election" placeholder="TUPC-XX-XXXX" style="margin-bottom: 10px;margin-left:10px;" />
+    <button type="submit" id="id_election" onclick="location.href='{% url 'client_view_election' %}'" >
             Get Started
     </button>
 

@@ -67,7 +67,7 @@
         <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
         <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
         <li><a href="{% url 'admin_election' %}" class="nav-link"><i class="fas fa-vote-yea"></i> Election</a></li>
-        <li><a href="{% url 'admin_add_window' %}" class="nav-link"><i class="bi bi-plus-circle"></i> Add Window</a></li>
+        <li><a href="{% url 'admin_add_window' %}" class="nav-link"><i class="bi bi-plus-circle"></i> Student Record</a></li>
 
         
       </ul>
@@ -251,32 +251,28 @@
       <h4><i class="bi bi-bar-chart-fill me-2"></i>Results</h4>
       <p>See the election results and statistics of all candidates.</p>
 
-    <!-- Filter Toolbar -->
-    <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
-      <!-- Position Dropdown -->
-      <select id="positionFilter" class="form-select form-select-sm w-auto">
-        <option value="all">All Positions</option>
-        <option value="president">President</option>
-        <option value="vice-president">Vice President</option>
-        <option value="senator">Senator</option>
-        <option value="governor">Governor</option>
-      </select>
 
-      <!-- School Year Dropdown -->
-      <select id="syFilter" class="form-select form-select-sm w-auto">
-        <option value="all">All SY</option>
-        <option value="2023-2024">2023-2024</option>
-        <option value="2024-2025">2024-2025</option>
-      </select>
+        <!-- Filter Toolbar -->
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
 
-      <!-- Search Input on Right -->
-      <div class="input-group input-group-sm w-50 ms-auto">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
-        <button class="btn btn-outline-secondary" type="button" disabled>
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
-    </div>
+          <!-- School Year Dropdown -->
+          <div>
+            <select id="syFilter" class="form-select form-select-sm w-auto">
+              <option value="all">Select School Year</option>
+              <option value="2023-2024">2023-2024</option>
+              <option value="2024-2025">2024-2025</option>
+            </select>
+          </div>
+
+          <!-- Search Input on Right -->
+          <div class="input-group input-group-sm ms-auto w-50">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+          </div>
+        </div>
+
 
 
     <!-- PRESIDENT TABLE -->
@@ -377,7 +373,7 @@
           <!-- SY Dropdown (No label) -->
           <div style="width: 180px;">
             <select class="form-select form-select-sm w-auto" id="syFilter_manage">
-              <option value="All" selected>All SY</option>
+              <option value="All" selected>Select School Year</option>
               <option value="2024-2025">2024-2025</option>
               <option value="2023-2024">2023-2024</option>
               <option value="2022-2023">2022-2023</option>
@@ -884,64 +880,58 @@ updateCounts();
 
 
   ///////////////////////////// RESULTS
-  document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.getElementById('searchInput');
-    const positionFilter = document.getElementById('positionFilter');
-    const syFilter = document.getElementById('syFilter');
-    const tables = document.querySelectorAll('.position-table');
+ document.addEventListener('DOMContentLoaded', function () {
+  const searchInput = document.getElementById('searchInput');
+  const syFilter = document.getElementById('syFilter');
+  const tables = document.querySelectorAll('.position-table');
 
-    function applyFilters() {
-      const selectedPosition = positionFilter.value;
-      const selectedSY = syFilter.value;
-      const query = searchInput.value.toLowerCase();
+  function applyFilters() {
+    const selectedSY = syFilter.value;
+    const query = searchInput.value.toLowerCase();
 
-      tables.forEach(table => {
-        const matchesPosition = selectedPosition === 'all' || table.dataset.position === selectedPosition;
-        const matchesSY = selectedSY === 'all' || table.dataset.sy === selectedSY;
+    tables.forEach(table => {
+      const matchesSY = selectedSY === 'all' || table.dataset.sy === selectedSY;
 
-        let tableVisible = matchesPosition && matchesSY;
-        let hasMatch = false;
+      let tableVisible = matchesSY;
+      let hasMatch = false;
 
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => row.style.display = ''); // reset
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => row.style.display = ''); // reset
 
-        // Remove previous "no match" message if it exists
-        const tbody = table.querySelector('tbody');
-        const existingMsg = tbody.querySelector('.no-match-msg');
-        if (existingMsg) existingMsg.remove();
+      // Remove previous "no match" message if it exists
+      const tbody = table.querySelector('tbody');
+      const existingMsg = tbody.querySelector('.no-match-msg');
+      if (existingMsg) existingMsg.remove();
 
-        if (tableVisible && query) {
-          rows.forEach(row => {
-            const nameCell = row.querySelector('td');
-            if (nameCell && nameCell.textContent.toLowerCase().includes(query)) {
-              row.style.display = '';
-              hasMatch = true;
-            } else {
-              row.style.display = 'none';
-            }
-          });
-
-          if (!hasMatch) {
-            const noRow = document.createElement('tr');
-            noRow.classList.add('no-match-msg');
-            noRow.innerHTML = `<td colspan="4" class="text-center text-muted">No matching candidates name found.</td>`;
-            tbody.appendChild(noRow);
-            tableVisible = true;
+      if (tableVisible && query) {
+        rows.forEach(row => {
+          const nameCell = row.querySelector('td');
+          if (nameCell && nameCell.textContent.toLowerCase().includes(query)) {
+            row.style.display = '';
+            hasMatch = true;
+          } else {
+            row.style.display = 'none';
           }
-        } else if (!query) {
-          hasMatch = true;
+        });
+
+        if (!hasMatch) {
+          const noRow = document.createElement('tr');
+          noRow.classList.add('no-match-msg');
+          noRow.innerHTML = `<td colspan="4" class="text-center text-muted">No matching candidates name found.</td>`;
+          tbody.appendChild(noRow);
+          tableVisible = true;
         }
+      } else if (!query) {
+        hasMatch = true;
+      }
 
-        table.style.display = tableVisible ? '' : 'none';
-      });
-    }
+      table.style.display = tableVisible ? '' : 'none';
+    });
+  }
 
-    positionFilter.addEventListener('change', applyFilters);
-    syFilter.addEventListener('change', applyFilters);
-    searchInput.addEventListener('input', applyFilters);
-  });
-
-
+  syFilter.addEventListener('change', applyFilters);
+  searchInput.addEventListener('input', applyFilters);
+});
 
 
 
