@@ -31,7 +31,16 @@ urlpatterns = [
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_CS'),
     path('admin_view_violation/', views.admin_view_violation_view, name='admin_view_violation'),
     path('admin_violation/', views.admin_violation_view, name='admin_violation'),
-    path('admin_add_window/', views.admin_add_window_view, name='admin_add_window'),
+    path('admin_student/', views.admin_student_view, name='admin_student'),
+    
+    
+    
+    ########################################admin
+    
+    path('upload_student_csv/', views.upload_student_csv, name='upload_student_csv'),
+    
+    ########################################guard
+    path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),
 
     
     
