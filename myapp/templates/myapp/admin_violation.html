@@ -107,7 +107,356 @@
 
 
 
-<h1>//////////////////////////////// Violations</h1>
+<div class="main-content" style="margin-left: 250px; padding: 20px;">
+  <!-- WHITE CONTAINER -->
+
+  
+    <!-- HEADER -->
+    <div class="container-fluid py-3 border-bottom bg-light rounded">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div class="mb-2">
+          <h3 class="mb-0 fw-bold">
+            <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>OSA Violation Dashboard
+          </h3>
+          <small class="text-muted">Manage violations, monitor status, and review history.</small>
+        </div>
+      </div>
+
+      <!-- Search bar -->
+      <div class="mt-3 d-flex justify-content-end">
+        <div class="input-group input-group-sm" style="max-width: 500px;">
+          <input type="text" class="form-control shadow-sm border" placeholder="Search student">
+          <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
+        </div>
+      </div>
+    </div>
+
+
+
+
+<!-- CONTENT PANELS -->
+<div class="container-fluid mt-4 px-3">
+  <div class="row">
+    <!-- LEFT PANEL -->
+    <div class="col-12 col-lg-8 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #440207;">
+          <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Pending Violations</h5>
+        </div>
+        <div class="card-body table-responsive">
+          <table class="table table-hover table-bordered align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Course/Program</th>
+                <th>Violation</th>
+                <th>Actions</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Juan Dela Cruz</td>
+                <td>BS Computer Engineering</td>
+                <td>No ID</td>
+                <td>
+                  <div class="d-flex justify-content-center flex-wrap gap-1">
+                    <button class="btn btn-success btn-sm"><i class="bi bi-check-circle"></i> Accept</button>
+                    <button class="btn btn-danger btn-sm"><i class="bi bi-x-circle"></i> Decline</button>
+                  </div>
+                <td>
+                  <a href="{% url 'admin_view_violation' %}" class="text-primary text-decoration-none">
+                    <i></i> View More
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+    <!-- RIGHT PANEL -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header text-white" style="background-color: #440207;">
+          <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Violation History</h5>
+        </div>
+        <div class="card-body table-responsive">
+          <table class="table table-hover table-bordered align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Maria Santos</td>
+                <td><span>Cleared</span></td>
+                <td>
+                  <a href="{% url 'admin_view_violation' %}" class="text-primary text-decoration-none">
+                    <i></i> View More
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- MODAL -->
+<div class="modal fade" id="viewMoreModal" tabindex="-1" aria-labelledby="viewMoreModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 90%;">
+    <div class="modal-content">
+      
+      <!-- Header -->
+      <div class="modal-header text-white" style="background-color: #440207;">
+        <h5 class="modal-title">
+          <i class="bi bi-info-circle-fill me-2"></i>Violation Profile Summary
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+        <div class="row g-4">
+          
+
+
+<!-- Left Panel -->
+<div class="col-md-6">
+  <!-- Student Profile Card -->
+  <div class="p-4 border rounded bg-light shadow-sm">
+    <h5 class="text-uppercase fw-bold mb-4">
+      <i class="bi bi-person-vcard-fill me-2 text-secondary"></i>Student Profile
+    </h5>
+
+    <div class="text-center mb-4">
+      <img src="https://via.placeholder.com/120x120.png?text=Photo"
+           alt="Profile Photo"
+           class="rounded-circle border border-3 border-secondary"
+           style="width: 120px; height: 120px; object-fit: cover;">
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label"><strong>Name</strong></label>
+        <input type="text" class="form-control" value="Juan D. Dela Cruz Jr." readonly>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label"><strong>ID Number</strong></label>
+        <input type="text" class="form-control" value="2021-04567" readonly>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label"><strong>Program</strong></label>
+        <input type="text" class="form-control" value="BS Computer Engineering" readonly>
+      </div>
+    </div>
+  </div>
+
+  <!-- Latest Violation Card -->
+  <div class="p-4 mt-4 border rounded bg-light shadow-sm">
+    <h6 class="text-uppercase fw-bold mb-4">
+      <i class="bi bi-exclamation-diamond-fill me-2 text-danger"></i>Latest Violation
+    </h6>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label"><strong>Date</strong></label>
+        <input type="text" class="form-control" value="June 17, 2025" readonly>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label"><strong>Time</strong></label>
+        <input type="text" class="form-control" value="10:45 AM" readonly>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label"><strong>Violation</strong></label>
+        <input type="text" class="form-control" value="Not Wearing ID" readonly>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label"><strong>Guard on Duty</strong></label>
+        <input type="text" class="form-control" value="Security Guard Alfredo Reyes" readonly>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label"><strong>Evidence</strong></label>
+        <div class="text-center mt-2">
+          <img src="https://via.placeholder.com/600x300.png?text=Evidence+Image"
+               alt="Evidence Image"
+               class="img-fluid rounded shadow-sm"
+               style="max-height: 300px;">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Right Panel -->
+<div class="col-md-6">
+  
+  <!-- Violation Summary Card -->
+  <div class="p-3 border rounded bg-light shadow-sm mb-4">
+    <h6 class="text-uppercase fw-bold mb-3">
+      <i class="bi bi-clock-history me-2 text-secondary"></i>Violation Summary
+      <span class="badge bg-danger">4 Violations</span>
+    </h6>
+
+    <div class="table-responsive" style="max-height: 30vh; overflow-y: auto;">
+      <table class="table table-bordered table-sm align-middle">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Violation</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody class="text-center">
+          <tr>
+            <td>2025-06-17</td>
+            <td>10:45 AM</td>
+            <td>Not Wearing ID</td>
+            <td><span class="badge bg-warning text-dark">Pending</span></td>
+          </tr>
+          <tr>
+            <td>2025-06-01</td>
+            <td>1:30 PM</td>
+            <td>Disrespectful Behavior</td>
+            <td><span class="badge bg-warning text-dark">Pending</span></td>
+          </tr>
+          <tr>
+            <td>2025-04-08</td>
+            <td>8:15 AM</td>
+            <td>Late Entry</td>
+            <td><span class="badge bg-success">Settled</span></td>
+          </tr>
+          <tr>
+            <td>2025-03-22</td>
+            <td>9:00 AM</td>
+            <td>Improper Uniform</td>
+            <td><span class="badge bg-success">Settled</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 text-end">
+      <a href="#" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-file-earmark-text"></i> View Detailed History
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Violations Card -->
+  <div class="p-3 border rounded bg-light shadow-sm">
+    <h6 class="text-uppercase fw-bold mb-3">
+      <i class="bi bi-hourglass-split me-2 text-secondary"></i>Pending Violations
+    </h6>
+
+    <div class="table-responsive" style="max-height: 20vh; overflow-y: auto;">
+      <table class="table table-bordered table-sm align-middle">
+        <thead class="table-warning text-center">
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Violation</th>
+          </tr>
+        </thead>
+        <tbody class="text-center">
+          <tr>
+            <td>2025-06-17</td>
+            <td>10:45 AM</td>
+            <td>Not Wearing ID</td>
+          </tr>
+          <tr>
+            <td>2025-06-01</td>
+            <td>1:30 PM</td>
+            <td>Disrespectful Behavior</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>Close
+               <div class="modal-footer">
+
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+  </div> <!-- END OF WHITE CONTAINER -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -166,8 +515,6 @@
       }
     });
   });
-</script>
-
 
     ///////////////////////////// START HERE MAG ADD
 
