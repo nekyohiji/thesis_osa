@@ -110,10 +110,6 @@
 
 
 
-
-
-
-
 <div class="mt-4 ps-4 pe-4" style="margin-left: 260px; min-height: 100vh;">
 
 <div class="election-header text-white mt-4"
@@ -257,101 +253,131 @@
 
 
 
-    <!--////////////////////////////////////////// RESULTS TAB -->
-    <div class="tab-pane" id="results">
-      <h4><i class="bi bi-bar-chart-fill me-2"></i>Results</h4>
-      <p>See the election results and statistics of all candidates.</p>
+<!--////////////////////////////////////////// RESULTS TAB -->
+<div class="tab-pane" id="results">
+  <div class="container-fluid">
+    <h4><i class="bi bi-bar-chart-fill me-2"></i>Results</h4>
+    <p>See the election results and statistics of all candidates.</p>
 
+    <!-- Filter Toolbar -->
+    <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+      <!-- School Year Dropdown -->
+      <div>
+        <select id="syFilter" class="form-select form-select-sm w-auto">
+          <option value="all">Select School Year</option>
+          <option value="2023-2024">2023-2024</option>
+          <option value="2024-2025">2024-2025</option>
+        </select>
+      </div>
 
-        <!-- Filter Toolbar -->
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
-
-          <!-- School Year Dropdown -->
-          <div>
-            <select id="syFilter" class="form-select form-select-sm w-auto">
-              <option value="all">Select School Year</option>
-              <option value="2023-2024">2023-2024</option>
-              <option value="2024-2025">2024-2025</option>
-            </select>
-          </div>
-
-          <!-- Search Input on Right -->
-          <div class="input-group input-group-sm ms-auto w-50">
-            <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
-            <span class="input-group-text">
-              <i class="bi bi-search"></i>
-            </span>
-          </div>
-        </div>
-
-
+      <!-- Search Input on Right -->
+      <div class="input-group input-group-sm ms-auto w-50">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+      </div>
+    </div>
 
     <!-- PRESIDENT TABLE -->
     <div class="position-table" data-position="president" data-sy="2024-2025">
-      <h5 class="fw-bold text-dark"><i class="bi bi-award-fill me-2 text-dark"></i>PRESIDENT <small class="text-muted">(SY: 2024-2025)</small></h5>
-      <table class="table table-bordered align-middle text-center">
-        <thead class="table-light">
-          <tr>
-            <th>Name</th><th>Votes</th><th>Percentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>John Doe</td><td>500</td><td>45%</td></tr>
-          <tr><td>Jane Smith</td><td>600</td><td>55%</td></tr>
-        </tbody>
-      </table>
+      <h5 class="fw-bold text-dark"><i class="bi bi-award-fill me-2 text-dark"></i>PRESIDENT 
+        <small class="text-muted">(SY: 2024-2025)</small>
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th><th>Votes</th><th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>John Doe</td><td>500</td><td>45%</td></tr>
+            <tr><td>Jane Smith</td><td>600</td><td>55%</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- VICE PRESIDENT TABLE -->
     <div class="position-table" data-position="vice-president" data-sy="2024-2025">
-      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-person-vcard me-2 text-dark"></i>VICE PRESIDENT <small class="text-muted">(SY: 2024-2025)</small></h5>
-      <table class="table table-bordered align-middle text-center">
-        <thead class="table-light">
-          <tr>
-            <th>Name</th><th>Votes</th><th>Percentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Emily Cruz</td><td>450</td><td>48%</td></tr>
-          <tr><td>Mark Lim</td><td>480</td><td>52%</td></tr>
-        </tbody>
-      </table>
+      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-person-vcard me-2 text-dark"></i>VICE PRESIDENT 
+        <small class="text-muted">(SY: 2024-2025)</small>
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th><th>Votes</th><th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Emily Cruz</td><td>450</td><td>48%</td></tr>
+            <tr><td>Mark Lim</td><td>480</td><td>52%</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- SENATOR TABLE (Old SY) -->
+    <!-- SENATOR TABLE -->
     <div class="position-table" data-position="senator" data-sy="2023-2024">
-      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-people-fill me-2 text-dark"></i>SENATORS <small class="text-muted">(SY: 2023-2024)</small></h5>
-      <table class="table table-bordered align-middle text-center">
-        <thead class="table-light">
-          <tr>
-            <th>Name</th><th>Votes</th><th>Percentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Candidate A</td><td>300</td><td>30%</td></tr>
-          <tr><td>Candidate B</td><td>280</td><td>28%</td></tr>
-        </tbody>
-      </table>
+      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-people-fill me-2 text-dark"></i>SENATORS 
+        <small class="text-muted">(SY: 2023-2024)</small>
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th><th>Votes</th><th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Candidate A</td><td>300</td><td>30%</td></tr>
+            <tr><td>Candidate B</td><td>280</td><td>28%</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- GOVERNOR TABLE -->
     <div class="position-table" data-position="governor" data-sy="2024-2025">
-      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-building me-2 text-dark"></i>GOVERNORS <small class="text-muted">(SY: 2024-2025)</small></h5>
-      <table class="table table-bordered align-middle text-center">
-        <thead class="table-light">
-          <tr>
-            <th>Name</th><th>Votes</th><th>Percentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Governor X</td><td>350</td><td>65%</td></tr>
-          <tr><td>Governor Y</td><td>190</td><td>35%</td></tr>
-        </tbody>
-      </table>
+      <h5 class="fw-bold text-dark mt-4"><i class="bi bi-building me-2 text-dark"></i>GOVERNORS 
+        <small class="text-muted">(SY: 2024-2025)</small>
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th><th>Votes</th><th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Governor X</td><td>350</td><td>65%</td></tr>
+            <tr><td>Governor Y</td><td>190</td><td>35%</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div> <!-- End .container-fluid -->
+</div> <!-- End #results -->
 
 
-    </div>  <!-- ✅ CLOSE this div! -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
