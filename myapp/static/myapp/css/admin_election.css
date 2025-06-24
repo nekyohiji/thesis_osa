@@ -209,7 +209,7 @@ hr {
 
 /* Individual Tab Buttons */
 .tab-btn {
-  width: 100% !important;
+  width: 300px !important; 
   text-align: center;
   background-color: #f0f0f0;
   color: #333;
@@ -218,8 +218,8 @@ hr {
   border-radius: 5px;
   padding: 10px 15px;
   transition: all 0.3s ease;
-
 }
+
 
 /* Active Tab */
 .tab-btn.active {
@@ -320,23 +320,6 @@ hr {
   background-color: #a31622 !important;
   color: #fff !important;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -463,9 +446,6 @@ hr {
 
 
 /* ///////////////////////////////// RESULTS*/
-
-
-
 
 
   #results {
