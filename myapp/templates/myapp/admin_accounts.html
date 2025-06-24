@@ -10,6 +10,20 @@
     <link rel="stylesheet" href="{% static 'myapp/css/admin_accounts.css' %}"> 
 
 <body>
+<div id="loadingOverlay" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+">
+  <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
+    <span class="visually-hidden">Sending OTP...</span>
+  </div>
+</div>
 <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
 <div class="sidebar" id="sidebar">
@@ -83,6 +97,7 @@
     </div>
 </div>
 
+
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -98,6 +113,16 @@
         </div>
     </div>
 </div>
+      {% if messages %}
+        <div class="mt-3">
+          {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert" style="word-wrap: break-word; white-space: normal; max-width: 100%;">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
 
 <div id="messageModal" class="message-modal">
     <div class="modal-header">
@@ -128,6 +153,7 @@
 
 {# USER FIELDS #}
 </head>
+
 <div id="accountDetailsModal" class="account-details-modal">
     <div class="modal-header">
         <span>Account Details</span>
@@ -140,7 +166,7 @@
         <p><strong>Username:</strong> <span id="detailUsername"></span></p>
     </div>
     <div class="modal-footer">
-        <button type="button" class="deactivate-from-details-btn" id="deactivateFromDetailsBtn" style="display: none;">Deactivate</button>
+        <button type="button" class="deactivate-from-details-btn" id="deactivateFromDetailsBtn" style="display: none;" onclick="confirmDeactivate()">Deactivate</button>
         <button type="button" class="close-btn" onclick="closeAccountDetailsModal()">Close</button>
     </div>
 </div>
@@ -149,42 +175,55 @@
     <h1><i class="fas fa-user-cog"></i> CREATE ACCOUNT </h1>
     <div class="content-container">
         <div class="create-account-section">
-            <div class="form-group">
-                <label for="fullName">Full Name:</label>
-                <input type="text" id="fullName" placeholder="Full Name">
-            </div>
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" placeholder="Email">
-            </div>
-            <div class="form-group">
-                <label for="position">Position:</label>
-                <select id="position">
-                    <option value="">Select Position</option>
-                    <option value="Security Guard">Security Guard</option>
-                    <option value="COMSELEC">COMSELEC</option>
-                    <option value="Admin">Admin</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="createUsername">Username:</label>
-                <input type="text" id="createUsername" placeholder="Username">
-            </div>
-            <div class="form-group password-input-container">
-                <label for="createPassword">Password</label>
-                <input type="password" id="createPassword" placeholder="Password">
-                <span class="password-toggle" onclick="togglePasswordVisibility('createPassword')">
-                    <i class="fas fa-eye"></i>
-                </span>
-            </div>
-            <div class="form-group password-input-container">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" placeholder="Confirm Password">
-                <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
-                    <i class="fas fa-eye"></i>
-                </span>
-            </div>
-            <button class="create-btn" id="createAccountBtn">CREATE</button>
+            <form id="createAccountForm" method="post" action="{% url 'request_otp' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="fullName">Full Name:</label>
+                    <input type="text" id="fullName" name="fullName" placeholder="Full Name" maxlength="128" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" placeholder="Email" maxlength="254"
+                        required pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
+                        title="Please enter a valid Gmail address">
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position:</label>
+                    <select id="position" name="position" required>
+                        <option value="">Select Position</option>
+                        <option value="guard">Security Guard</option>
+                        <option value="comselec">COMSELEC</option>
+                        <option value="admin">Admin</option>
+                        <option value="scholarship">Scholarship Coordinator</option>
+                    </select>
+                </div>
+
+                <div class="form-group password-input-container">
+                    <label for="createPassword">Password</label>
+                    <input type="password" id="createPassword" name="password" placeholder="Password" minlength="8" maxlength="128" required>
+                    <span class="password-toggle" onclick="togglePasswordVisibility('createPassword')">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+
+                <div class="form-group password-input-container">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password" minlength="8" maxlength="128" required>
+                    <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+
+                <button type="button" class="create-btn" id="createAccountBtn">CREATE</button>
+
+                <div class="form-group" id="otpSection" style="display: none; margin-top: 1rem;">
+                    <label for="otp">Enter OTP sent to email:</label>
+                    <input type="text" id="otp" maxlength="6" placeholder="6-digit OTP">
+                    <button type="button" class="btn btn-success mt-2" id="verifyOtpBtn">Verify and Create Account</button>
+                </div>
+            </form> 
         </div>
 
         <div class="activated-accounts-section">
@@ -208,23 +247,19 @@
     </div>
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-
-
-  // Toggle Sidebar
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('show');
   }
 
-  // Handle Dropdowns Uniformly
   function handleDropdown(menuId) {
     const clickedIcon = document.getElementById(`icon-${menuId}`);
     const clickedMenu = document.getElementById(menuId);
     const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
 
-    // Toggle clicked menu
     if (clickedMenu.classList.contains('show')) {
       clickedCollapse.hide();
       clickedIcon.classList.remove('rotate');
@@ -233,7 +268,6 @@
       clickedIcon.classList.add('rotate');
     }
 
-    // Hide other open menus
     const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
     allDropdowns.forEach(id => {
       if (id !== menuId) {
@@ -246,242 +280,248 @@
     });
   }
 
-  // Highlight Active Link
-  document.addEventListener('DOMContentLoaded', function () {
-    const currentUrl = window.location.href;
-    const navLinks = document.querySelectorAll('.nav-link');
+  function togglePasswordVisibility(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = field.nextElementSibling.querySelector('i');
+    if (field.type === 'password') {
+      field.type = 'text';
+      icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+      field.type = 'password';
+      icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+  }
 
-    navLinks.forEach(link => {
-      if (link.href && currentUrl.includes(link.href)) {
-        link.classList.add('active');
+  function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookie = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+    return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
+  }
+
+  let otpCooldownSeconds = 0;
+  let cooldownTimer = null;
+
+  function startOtpCooldown(seconds) {
+    otpCooldownSeconds = seconds;
+    const btn = document.getElementById('createAccountBtn');
+    btn.disabled = true;
+    btn.textContent = `Wait ${otpCooldownSeconds}s`;
+
+    cooldownTimer = setInterval(() => {
+      otpCooldownSeconds--;
+      if (otpCooldownSeconds <= 0) {
+        clearInterval(cooldownTimer);
+        btn.disabled = false;
+        btn.textContent = 'CREATE';
+      } else {
+        btn.textContent = `Wait ${otpCooldownSeconds}s`;
+      }
+    }, 1000);
+  }
+
+  document.getElementById('createAccountBtn').addEventListener('click', function () {
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const position = document.getElementById('position').value;
+  const password = document.getElementById('createPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  if (!fullName || !email || !position || !password || !confirmPassword) {
+    showMessage("All fields are required.", "danger");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    showMessage("Passwords do not match.", "danger");
+    return;
+  }
+
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.style.display = 'flex';
+
+  const createBtn = document.getElementById('createAccountBtn');
+  createBtn.disabled = true;
+  createBtn.textContent = 'Sending...';
+
+  fetch('/request-otp/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken()
+    },
+    body: JSON.stringify({
+      fullName: fullName,
+      email: email,
+      position: position,
+      password: password
+    })
+  })
+    .then(response => response.json())
+    .then(data => {
+      overlay.style.display = 'none';
+      createBtn.disabled = false;
+      createBtn.textContent = 'CREATE';
+
+      if (data.status === 'ok') {
+        document.getElementById('otpSection').style.display = 'block';
+        startOtpCooldown(300);
+        showMessage("OTP sent to email!", "success");
+      } else if (data.status === 'wait') {
+        const match = data.message.match(/\d+/);
+        if (match) startOtpCooldown(parseInt(match[0]));
+        showMessage(data.message, "warning");
+      } else {
+        showMessage(data.message || "Failed to send OTP.", "danger");
+      }
+    })
+    .catch(err => {
+      overlay.style.display = 'none';
+      createBtn.disabled = false;
+      createBtn.textContent = 'CREATE';
+      showMessage("An error occurred. Please try again.", "danger");
+    });
+  });
+
+  document.getElementById('verifyOtpBtn').addEventListener('click', function () {
+    const otp = document.getElementById('otp').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    if (!otp) {
+      showMessage("Enter the OTP.", "danger");
+      return;
+    }
+
+    fetch('/verify-otp/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken()
+      },
+      body: JSON.stringify({ email: email, otp: otp })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        window.location.reload(true);
+      } else {
+        showMessage(data.message || "Invalid OTP.", "danger");
       }
     });
   });
 
+  function fetchAndDisplayAccounts() {
+    fetch('/get-accounts/')
+      .then(res => res.json())
+      .then(data => {
+        const activeList = document.getElementById('activeAccountsList');
+        const deactivatedList = document.getElementById('deactivatedAccountsList');
 
+        activeList.innerHTML = '';
+        deactivatedList.innerHTML = '';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // --- Modal Functions ---
-    function showMessageModal(title, body) {
-        document.getElementById('messageModalTitle').textContent = title;
-        document.getElementById('messageModalBody').textContent = body;
-        document.getElementById('messageModal').classList.add('show-modal');
-    }
-
-    function closeMessageModal() {
-        document.getElementById('messageModal').classList.remove('show-modal');
-    }
-
-    // --- Confirmation Modal Functions (Deactivate) ---
-    let pendingDeactivateIndex = -1;
-
-    function showConfirmModal(message, index) {
-        document.getElementById('confirmDeactivateMessage').textContent = message;
-        document.getElementById('confirmDeactivateModal').classList.add('show-modal');
-        pendingDeactivateIndex = index; 
-    }
-
-    function closeConfirmModal() {
-        document.getElementById('confirmDeactivateModal').classList.remove('show-modal');
-        pendingDeactivateIndex = -1;
-    }
-
-
-
-    // --- Account Details Modal Functions ---
-  
-    function showAccountDetailsModal(index) {
-        const account = accounts[index];
-        document.getElementById('detailFullName').textContent = account.fullName;
-        document.getElementById('detailEmail').textContent = account.email;
-        document.getElementById('detailPosition').textContent = account.position;
-        document.getElementById('detailUsername').textContent = account.username;
-
-        const deactivateButton = document.getElementById('deactivateFromDetailsBtn');
-        if (account.isActive) {
-            deactivateButton.style.display = 'inline-block'; 
-            deactivateButton.onclick = () => {
-                closeAccountDetailsModal(); 
-                showConfirmModal(`Are you sure you want to deactivate account '${account.username}'?`, index);
-            };
+        if (data.active.length === 0) {
+          activeList.innerHTML = `<p class="text-center text-muted mt-3">No active accounts yet.</p>`;
         } else {
-            deactivateButton.style.display = 'none'; 
+          data.active.forEach(account => {
+            const div = document.createElement('div');
+            div.className = 'account-card';
+            div.innerHTML = `
+              <div class="card-body" onclick="showAccountDetails('${account.full_name}', '${account.email}', '${account.role}', 'active')">
+                <h5 class="card-title">${account.full_name}</h5>
+                <p class="card-text">${account.email}</p>
+                <p class="card-text">${account.role}</p>
+              </div>
+            `;
+            activeList.appendChild(div);
+          });
         }
 
-        document.getElementById('accountDetailsModal').classList.add('show-modal');
-    }
-
-    function closeAccountDetailsModal() {
-        document.getElementById('accountDetailsModal').classList.remove('show-modal');
-    }
-
-   
-    let accounts = []; 
-
-    function renderAccounts() {
-        const activeAccountListContainer = document.getElementById('activeAccountsList');
-        const deactivatedAccountListContainer = document.getElementById('deactivatedAccountsList');
-        activeAccountListContainer.innerHTML = '';
-        deactivatedAccountListContainer.innerHTML = '';
-
-        const activeAccounts = accounts.filter(account => account.isActive);
-        const deactivatedAccounts = accounts.filter(account => !account.isActive);
-
-        if (activeAccounts.length === 0) {
-            activeAccountListContainer.innerHTML = '<p class="text-center text-muted mt-3">No active accounts yet.</p>';
+        if (data.deactivated.length === 0) {
+          deactivatedList.innerHTML = `<p class="text-center text-muted mt-3">No deactivated accounts yet.</p>`;
         } else {
-            activeAccounts.forEach((account, i) => { 
-                const originalIndex = accounts.indexOf(account); 
-                const accountItem = document.createElement('div');
-                accountItem.classList.add('account-item');
-                accountItem.innerHTML = `
-                    <span>${account.username}</span>
-                    <div>
-                        <button class="details-btn" data-index="${originalIndex}">Details</button>
-                    </div>
-                `;
-                activeAccountListContainer.appendChild(accountItem);
-            });
+          data.deactivated.forEach(account => {
+            const div = document.createElement('div');
+            div.className = 'account-card';
+            div.innerHTML = `
+              <div class="card-body" onclick="showAccountDetails('${account.full_name}', '${account.email}', '${account.role}', 'deactivated')">
+                <h5 class="card-title">${account.full_name}</h5>
+                <p class="card-text">${account.email}</p>
+              </div>
+            `;
+            deactivatedList.appendChild(div);
+          });
         }
+      });
+  }
 
-        if (deactivatedAccounts.length === 0) {
-            deactivatedAccountListContainer.innerHTML = '<p class="text-center text-muted mt-3">No deactivated accounts yet.</p>';
-        } else {
-            deactivatedAccounts.forEach((account, i) => { 
-                const originalIndex = accounts.indexOf(account); 
-                const accountItem = document.createElement('div');
-                accountItem.classList.add('account-item');
-                accountItem.innerHTML = `
-                    <span>${account.username}</span>
-                `;
-                deactivatedAccountListContainer.appendChild(accountItem);
-            });
-        }
+  function showAccountDetails(fullName, email, position, status) {
+    document.getElementById('detailFullName').textContent = fullName;
+    document.getElementById('detailEmail').textContent = email;
+    document.getElementById('detailPosition').textContent = position;
+    document.getElementById('detailUsername').textContent = email.split('@')[0];
 
-    
-        document.querySelectorAll('.details-btn').forEach(button => {
-            button.addEventListener('click', (event) => {
-                const index = parseInt(event.target.dataset.index); 
-                showAccountDetailsModal(index);
-            });
-        });
-    }
+    const deactivateBtn = document.getElementById('deactivateFromDetailsBtn');
+    deactivateBtn.style.display = status === 'active' ? 'inline-block' : 'none';
 
-    //  account creation functions
-    document.getElementById('createAccountBtn').addEventListener('click', function() {
-        const fullNameInput = document.getElementById('fullName');
-        const emailInput = document.getElementById('email');
-        const positionSelect = document.getElementById('position');
-        const usernameInput = document.getElementById('createUsername');
-        const passwordInput = document.getElementById('createPassword');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
+    document.getElementById('accountDetailsModal').style.display = 'block';
+  }
 
-        const fullName = fullNameInput.value.trim();
-        const email = emailInput.value.trim();
-        const position = positionSelect.value;
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
+  function closeAccountDetailsModal() {
+    document.getElementById('accountDetailsModal').style.display = 'none';
+  }
 
-        if (!fullName || !email || !position || !username || !password || !confirmPassword) {
-            showMessageModal('Error', 'All fields are required.');
-            return;
-        }
+  function showMessage(msg, type = "info") {
+    const alert = document.createElement("div");
+    alert.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+    alert.role = "alert";
+    alert.innerHTML = `
+      ${msg}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.querySelector(".main-content").prepend(alert);
+  }
 
-        if (password !== confirmPassword) {
-            showMessageModal('Error', 'Passwords do not match.');
-            return;
-        }
+  document.addEventListener('DOMContentLoaded', function () {
+    fetchAndDisplayAccounts();
+  });
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            showMessageModal('Error', 'Please enter a valid email address.');
-            return;
-        }
+  let selectedEmailToDeactivate = "";
 
-        if (accounts.some(account => account.username === username)) {
-            showMessageModal('Error', 'Username already exists. Please choose a different one.');
-            return;
-        }
-        if (accounts.some(account => account.email === email)) {
-            showMessageModal('Error', 'Email already exists. Please use a different one.');
-            return;
-        }
+  function confirmDeactivate() {
+  selectedEmailToDeactivate = document.getElementById("detailEmail").textContent;
+  document.getElementById("confirmDeactivateMessage").textContent = 
+    `Are you sure you want to deactivate ${selectedEmailToDeactivate}?`;
+  document.getElementById("accountDetailsModal").style.display = "none";
+  document.getElementById("confirmDeactivateModal").style.display = "block";
+  }
 
-        accounts.push({
-            fullName: fullName,
-            email: email,
-            position: position,
-            username: username,
-            password: password,
-            isActive: true
-        });
-        renderAccounts();
+  function closeConfirmModal() {
+    document.getElementById("confirmDeactivateModal").style.display = "none";
+    document.getElementById("accountDetailsModal").style.display = "block";
+  }
 
-        showMessageModal('Success', `Account '${username}' created successfully!`);
-
-        fullNameInput.value = '';
-        emailInput.value = '';
-        positionSelect.value = '';
-        usernameInput.value = '';
-        passwordInput.value = '';
-        confirmPasswordInput.value = '';
+  document.getElementById("confirmDeactivateBtn").addEventListener("click", function () {
+    fetch(`/deactivate-account/${encodeURIComponent(selectedEmailToDeactivate)}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCSRFToken()
+      }
+    })
+    .then(res => {
+      if (res.ok) {
+        window.location.reload(true); 
+      } else {
+        showMessage("Failed to deactivate account.", "danger");
+      }
+    })
+    .catch(err => {
+      showMessage("Error deactivating account.", "danger");
     });
-
-
-    document.getElementById('confirmDeactivateBtn').addEventListener('click', function() {
-        if (pendingDeactivateIndex !== -1 && pendingDeactivateIndex < accounts.length) { // Added bounds check
-            const usernameToDeactivate = accounts[pendingDeactivateIndex].username;
-            accounts[pendingDeactivateIndex].isActive = false;
-            renderAccounts();
-
-            showMessageModal('Success', `Account '${usernameToDeactivate}' deactivated.`);
-            closeConfirmModal();
-        } else {
-            
-             console.error("Attempted to deactivate with an invalid index:", pendingDeactivateIndex);
-             closeConfirmModal(); 
-        }
-    });
-
-
-
-    function togglePasswordVisibility(fieldId) {
-        const passwordField = document.getElementById(fieldId);
-        const toggleIcon = passwordField.nextElementSibling.querySelector('i');
-
-        if (passwordField.type === 'password') {
-            passwordField.type = 'text';
-            toggleIcon.classList.remove('fa-eye');
-            toggleIcon.classList.add('fa-eye-slash');
-        } else {
-            passwordField.type = 'password';
-            toggleIcon.classList.remove('fa-eye-slash');
-            toggleIcon.classList.add('fa-eye');
-        }
-    }
+  });
 
 </script>
+
+
+
 </body>
 </html>

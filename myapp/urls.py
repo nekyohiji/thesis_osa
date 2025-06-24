@@ -40,6 +40,10 @@ urlpatterns = [
     ########################################admin
     
     path('upload_student_csv/', views.upload_student_csv, name='upload_student_csv'),
+    path('request-otp/', views.request_otp, name='request_otp'),
+    path('verify-otp/', views.verify_otp, name='verify_otp'),
+    path('get-accounts/', views.get_accounts_data, name='get_accounts_data'),
+    path('deactivate-account/<str:user_email>/', views.deactivate_account, name='deactivate_account'),
     
     ########################################guard
     path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),
