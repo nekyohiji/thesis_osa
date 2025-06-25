@@ -17,6 +17,7 @@
   width: 100%; height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 9999;
+  color:white
   align-items: center;
   justify-content: center;
 ">
@@ -24,6 +25,8 @@
     <span class="visually-hidden">Sending OTP...</span>
   </div>
 </div>
+
+
 <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
 <div class="sidebar" id="sidebar">
@@ -113,10 +116,287 @@
         </div>
     </div>
 </div>
+
+
+
+  <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
+
+<style>
+  
+
+
+
+.main-content {
+  overflow-y: auto;
+  max-height: 100vh;
+  padding-bottom: 40px;
+}
+
+  body {
+      background-color: #f8f9fa;
+    }
+
+    .main-wrapper {
+      margin-left: 250px;
+      padding: 40px 20px;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+
+    .card {
+      border: none;
+      border-radius: 1rem;
+    }
+
+    .form-label {
+      font-weight: 500;
+    }
+
+    .password-toggle {
+      cursor: pointer;
+    }
+
+    .account-status-card {
+      min-height: 200px;
+    }
+
+
+
+    #loadingOverlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+#createAccountBtn {
+  background-color: #440207;
+  color: white;
+  border-radius: 5px;
+  padding: 6px 16px;
+  border: none;
+  display: inline-flex;       
+  align-items: center;         
+  gap: 6px;                    
+  transition: background-color 0.3s ease;
+  height: 50px;
+  font-size: 16px;
+}
+
+#createAccountBtn:hover {
+  background-color:rgb(126, 13, 13); 
+  font-weight: bold;
+  font-size: 18px;
+}
+
+
+
+.eye-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 5;
+  color: #440207;
+}
+
+.eye-icon i {
+  font-size: 1rem;
+  pointer-events: none; /* So the icon itself doesn't block the span's click */
+}
+
+.eye-icon:hover i {
+  color: #880d0d;
+}
+
+
+#createAccountForm input.form-control,
+#createAccountForm select.form-select {
+  border: 0.5px solid  #440207; /* base solid border */
+  box-shadow: none !important;
+  outline: none !important;
+  transition: border-color 0.2s ease-in-out;
+  height: 40px; 
+}
+
+#createAccountForm input.form-control:focus,
+#createAccountForm select.form-select:focus {
+  border: 2px solid #440207;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#createAccountForm input.form-control:hover,
+#createAccountForm select.form-select:hover {
+  border-color: #660d0d;
+}
+
+
+.input-group-text {
+  background-color: transparent;
+  border: 1.5px solid #ced4da;
+  border-left: none;
+}
+
+
+.input-group > input.form-control + .input-group-text {
+  border-left: none;
+  background-color: transparent;
+}
+
+
+
+/*///// MODAL */
+.account-details-modal {
+  width: 700px;
+  height: 300;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  background-color:white;
+  color:#440207;
+    border: 1px solid #440207;
+
+}
+
+
+
+/* Common Modal Containers */
+.message-modal,
+.confirm-modal {
+  background-color:rgb(255, 255, 255);
+}
+
+/* Modal Inner Structure */
+.message-modal > div,
+.confirm-modal > div {
+  background-color: #fff;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color:#440207;
+}
+
+
+/* Header Styling */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+  padding: 10px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+/* Close Button */
+.btn-close {
+  border: none;
+  font-size: 1.2rem;
+  color: white;
+  cursor: pointer;
+}
+
+/* Body Styling */
+.modal-body {
+  color: #333;
+  font-size: 1rem;
+  padding: 1rem;
+  border-bottom: 0.5px solid #440207;
+}
+
+/* Footer Layout */
+.modal-footer {
+  display: flex;
+  flex-direction: row;       /* Makes buttons appear side by side */
+  justify-content: flex-end; /* Aligns them to the right */
+  gap: 0.5rem;                /* Adds spacing between buttons */
+  padding: 1rem;
+}
+
+
+
+
+
+
+/* Generic Close Button */
+.close-btn {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-color: #6c757d;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Secondary Button (No) */
+.btn-secondary {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-color: #6c757d;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Danger Button (Yes) */
+.btn-danger {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-color: #dc3545;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+
+
+
+
+
+
+
+
+</style>
+
+
+
+
       {% if messages %}
-        <div class="mt-3">
+        <div class="position-fixed top-0 start-50 translate-middle-x mt-3 z-3" style="width: 100%; max-width: 600px; padding: 0 15px;">
           {% for message in messages %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert" style="word-wrap: break-word; white-space: normal; max-width: 100%;">
+            <div class="alert alert-success alert-dismissible fade show" role="alert" style="word-wrap: break-word; white-space: normal;">
               {{ message }}
               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -124,128 +404,208 @@
         </div>
       {% endif %}
 
+
+
+
+<!-- Message Modal -->
 <div id="messageModal" class="message-modal">
-    <div class="modal-header">
-        <span id="messageModalTitle"></span>
-        <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
-    </div>
-    <div class="modal-body">
-        <p id="messageModalBody"></p>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
-    </div>
+  <div class="modal-header">
+    <span id="messageModalTitle"></span>
+    <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
+  </div>
+  <div class="modal-body">
+    <p id="messageModalBody"></p>
+  </div>
+  <div class="modal-footer" style="display: flex; flex-direction: row; justify-content: flex-end; gap: 0.5rem;">
+    <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
+  </div>
 </div>
 
+<!-- Confirm Deactivation Modal -->
 <div id="confirmDeactivateModal" class="confirm-modal">
-    <div class="modal-header">
-        <span>Confirm Deactivation</span>
-        <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
-    </div>
-    <div class="modal-body">
-        <p id="confirmDeactivateMessage"></p>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
-        <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
-    </div>
+  <div class="modal-header">
+    <span>Confirm Deactivation</span>
+    <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
+  </div>
+  <div class="modal-body">
+    <p id="confirmDeactivateMessage"></p>
+  </div>
+  <div class="modal-footer" style="display: flex; flex-direction: row; justify-content: flex-end; gap: 0.5rem;">
+    <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
+    <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
+  </div>
 </div>
 
-{# USER FIELDS #}
+
 </head>
 
-<div id="accountDetailsModal" class="account-details-modal">
-    <div class="modal-header">
-        <span>Account Details</span>
-        <button type="button" class="btn-close" onclick="closeAccountDetailsModal()"></button>
-    </div>
-    <div class="modal-body" style="text-align: left;">
-        <p><strong>Full Name:</strong> <span id="detailFullName"></span></p>
-        <p><strong>Email:</strong> <span id="detailEmail"></span></p>
-        <p><strong>Position:</strong> <span id="detailPosition"></span></p>
-        <p><strong>Username:</strong> <span id="detailUsername"></span></p>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="deactivate-from-details-btn" id="deactivateFromDetailsBtn" style="display: none;" onclick="confirmDeactivate()">Deactivate</button>
-        <button type="button" class="close-btn" onclick="closeAccountDetailsModal()">Close</button>
-    </div>
-</div>
 
-<div class="main-content">
-    <h1><i class="fas fa-user-cog"></i> CREATE ACCOUNT </h1>
-    <div class="content-container">
-        <div class="create-account-section">
-            <form id="createAccountForm" method="post" action="{% url 'request_otp' %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="fullName">Full Name:</label>
-                    <input type="text" id="fullName" name="fullName" placeholder="Full Name" maxlength="128" required>
-                </div>
 
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" placeholder="Email" maxlength="254"
-                        required pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
-                        title="Please enter a valid Gmail address">
-                </div>
 
-                <div class="form-group">
-                    <label for="position">Position:</label>
-                    <select id="position" name="position" required>
-                        <option value="">Select Position</option>
-                        <option value="guard">Security Guard</option>
-                        <option value="comselec">COMSELEC</option>
-                        <option value="admin">Admin</option>
-                        <option value="scholarship">Scholarship Coordinator</option>
-                    </select>
-                </div>
 
-                <div class="form-group password-input-container">
-                    <label for="createPassword">Password</label>
-                    <input type="password" id="createPassword" name="password" placeholder="Password" minlength="8" maxlength="128" required>
-                    <span class="password-toggle" onclick="togglePasswordVisibility('createPassword')">
-                        <i class="fas fa-eye"></i>
-                    </span>
-                </div>
-
-                <div class="form-group password-input-container">
-                    <label for="confirmPassword">Confirm Password</label>
-                    <input type="password" id="confirmPassword" placeholder="Confirm Password" minlength="8" maxlength="128" required>
-                    <span class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
-                        <i class="fas fa-eye"></i>
-                    </span>
-                </div>
-
-                <button type="button" class="create-btn" id="createAccountBtn">CREATE</button>
-
-                <div class="form-group" id="otpSection" style="display: none; margin-top: 1rem;">
-                    <label for="otp">Enter OTP sent to email:</label>
-                    <input type="text" id="otp" maxlength="6" placeholder="6-digit OTP">
-                    <button type="button" class="btn btn-success mt-2" id="verifyOtpBtn">Verify and Create Account</button>
-                </div>
-            </form> 
+{# // Account Details Modal #}
+    <div id="accountDetailsModal" class="account-details-modal">
+      <div class="modal-box">
+        <!-- HEADER -->
+        <div class="modal-header text-dark">
+          <span>
+            <h4><i class="fas fa-user-circle me-2"></i><b>Account Details</b></h4>
+          </span>
         </div>
 
-        <div class="activated-accounts-section">
-            <h2>ACCOUNTS</h2>
-            <div class="account-columns-wrapper">
-                <div class="account-column active-accounts-column">
-                    <h3>Active</h3>
-                    <div class="account-list-container" id="activeAccountsList">
-                        <p class="text-center text-muted mt-3">No active accounts yet.</p>
-                    </div>
-                </div>
-                <div class="account-column deactivated-accounts-column">
-                    <h3>Deactivated</h3>
-                    <div class="account-list-container" id="deactivatedAccountsList">
-                        <p class="text-center text-muted mt-3">No deactivated accounts yet.</p>
-                    </div>
-                </div>
+        <!-- BODY -->
+        <div class="modal-body">
+          <p><strong>Full Name:</strong> <span id="detailFullName"></span></p>
+          <p><strong>Email:</strong> <span id="detailEmail"></span></p>
+          <p><strong>Position:</strong> <span id="detailPosition"></span></p>
+          <p><strong>Username:</strong> <span id="detailUsername"></span></p>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+          <button type="button" class="deactivate-from-details-btn" id="deactivateFromDetailsBtn" style="display: none;" onclick="confirmDeactivate()">Deactivate</button>
+          <button type="button" class="close-btn" onclick="closeAccountDetailsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+
+
+<div class="main-content" style="margin-left: 250px; padding: 30px; min-height: 100vh; background-color: #f8f9fa; overflow-y: auto;"> <br>
+
+      <div class="mb-4">
+        <h3 class="fw-bold text-dark">
+          <i class="fas fa-user-cog me-2" style="color: #440207;"></i> Create Account
+        </h3>
+        <small class="text-muted">Register new users and assign their access roles.</small> 
+      </div> <hr>
+
+    <!-- CREATE ACCOUNT PANEL -->
+    <div class="card shadow-sm rounded-4 mb-4" >
+      <div class="card-header text-white py-2 px-4" style="background-color: #440207;">
+        <h6 class="mb-0"><i class="fas fa-user-plus me-2"></i><b> Create New Account</b></h6>
+      </div>
+
+      <div class="card-body px-4 py-3" >
+        <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 10px;">
+          {% csrf_token %}
+          <div class="row g-4" >
+    
+            <div class="col-md-6">
+              <!-- Full Name -->
+              <label for="fullName" class="form-label small"><b>Full Name:</b></label>
+              <div class="input-group input-group-sm mb-3">
+                <input type="text" class="form-control" id="fullName" name="fullName" maxlength="128" placeholder="Enter Full Name" required>
+              </div>
+
+              <!-- Email -->
+              <label for="email" class="form-label small"><b>Email (Gmail only):</b></label>
+              <div class="input-group input-group-sm mb-3">
+                <input type="email" class="form-control" id="email" name="email"
+                      pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
+                      title="Gmail only" maxlength="254" placeholder="Enter Email" required>
+              </div>
+
+              <!-- Position -->
+              <label for="position" class="form-label small"><b>Position:</b></label>
+              <select class="form-select form-select-sm mb-3" id="position" name="position" required>
+                <option value="">Select Position</option>
+                <option value="guard">Security Guard</option>
+                <option value="comselec">COMSELEC</option>
+                <option value="admin">Admin</option>
+                <option value="scholarship">Scholarship Coordinator</option>
+              </select>
             </div>
-            <div class="scroll-indicator"></div>
-        </div>
+
+
+            <div class="col-md-6">
+                  <!-- Password -->
+                  <label for="createPassword" class="form-label small"><b>Password:</b></label>
+                  <div class="form-group position-relative mb-3">
+                    <input type="password" class="form-control form-control-sm pe-5" id="createPassword"
+                          name="password" minlength="8" maxlength="128" placeholder="Enter Password" required>
+                    <span class="eye-icon" onclick="togglePasswordVisibility('createPassword')">
+                      <i class="fas fa-eye"></i>
+                    </span>
+                  </div>
+
+                  <!-- Confirm Password -->
+                  <label for="confirmPassword" class="form-label small"><b>Confirm Password:</b></label>
+                  <div class="form-group position-relative mb-3">
+                    <input type="password" class="form-control form-control-sm pe-5" id="confirmPassword"
+                          name="confirmPassword" minlength="8" maxlength="128" placeholder="Confirm Password" required>
+                    <span class="eye-icon" onclick="togglePasswordVisibility('confirmPassword')">
+                      <i class="fas fa-eye"></i>
+                    </span>
+                  </div>
+
+
+              <!-- OTP Section -->
+              <div id="otpSection" style="display: none;">
+                <label for="otp" class="form-label small">Enter OTP sent to email:</label>
+                <div class="input-group input-group-sm mb-2">
+                  <input type="text" id="otp" class="form-control" maxlength="6" placeholder="6-digit OTP">
+                  <button type="button" class="btn btn-success btn-sm" id="verifyOtpBtn">Verify</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Create Button -->
+          <div style="display: flex; justify-content: center; width: 100%; margin-top: 1rem;">
+            <button type="button" id="createAccountBtn" class="btn btn-dark btn-sm">
+              <i class="fas fa-user-plus me-1"></i> Create Account
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-</div>
+
+
+      <!-- Accounts Section -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card  mb-3 shadow-sm">
+            <div class="card-header text-white" style="background-color: #440207;"><i class="fas fa-check-circle me-2"></i>Active Accounts</div>
+            <div class="card-body">
+              <div id="activeAccountsList" class="text-muted text-center" style="
+                background-color: rgba(0, 0, 0, 0.04);
+                max-height: 250px;
+                overflow-y: auto;
+                padding: 10px;
+              ">
+                <p>No active accounts yet.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+      
+        <!-- Deactivated Accounts -->
+        <div class="col-md-6">
+          <div class="card  mb-3 shadow-sm">
+            <div class="card-header  text-white" style="background-color: #440207;"><i class="fas fa-times-circle me-2"></i>Deactivated Accounts</div>
+            <div class="card-body">
+              <div id="deactivatedAccountsList" class="text-muted text-center" style="
+                background-color: rgba(0, 0, 0, 0.04);
+                max-height: 250px;
+                overflow-y: auto;
+                padding: 10px;
+              ">
+                <p>No deactivated accounts yet.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -280,6 +640,14 @@
     });
   }
 
+
+
+
+
+
+
+
+    
   function togglePasswordVisibility(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = field.nextElementSibling.querySelector('i');
@@ -291,6 +659,9 @@
       icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
   }
+
+
+
 
   function getCSRFToken() {
     const name = 'csrftoken';
