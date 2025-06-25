@@ -105,7 +105,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Confirm Logout</h5>
+                <h5 class="modal-title text-dark">Confirm Logout</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">Are you sure you want to logout?</div>
@@ -139,39 +139,191 @@
 
 
 
-<!-- Message Modal -->
+    
 <div id="messageModal" class="message-modal">
-  <div class="modal-header">
-    <span id="messageModalTitle"></span>
-    <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
-  </div>
-  <div class="modal-body">
-    <p id="messageModalBody"></p>
-  </div>
-  <div class="modal-footer" style="display: flex; flex-direction: row; justify-content: flex-end; gap: 0.5rem;">
-    <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
-  </div>
+    <div class="modal-header">
+        <span id="messageModalTitle"></span>
+        <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
+    </div>
+    <div class="modal-body">
+        <p id="messageModalBody"></p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
+    </div>
 </div>
 
-<!-- Confirm Deactivation Modal -->
 <div id="confirmDeactivateModal" class="confirm-modal">
-  <div class="modal-header">
-    <span>Confirm Deactivation</span>
-    <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
-  </div>
-  <div class="modal-body">
-    <p id="confirmDeactivateMessage"></p>
-  </div>
-  <div class="modal-footer" style="display: flex; flex-direction: row; justify-content: flex-end; gap: 0.5rem;">
-    <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
-    <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
-  </div>
+    <div class="modal-header">
+        <span class="text-light">Confirm Deactivation</span>
+        <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
+    </div>
+    <div class="modal-body">
+        <p id="confirmDeactivateMessage"></p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
+        <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
+    </div>
 </div>
-
 
 </head>
 
+<style>
+  
 
+/*///// MODAL COMMON STYLES */
+.message-modal,
+.confirm-modal,
+.account-details-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color:rgb(255, 255, 255);
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1060;
+  display: none;
+  min-width: 300px;
+  max-width: 700px;
+  text-align: center;
+  color:rgb(0, 0, 0);
+}
+
+/* Show class to make modal visible */
+.message-modal.show-modal,
+.confirm-modal.show-modal,
+.account-details-modal.show-modal {
+  display: block;
+}
+
+/* Modal Header */
+.message-modal .modal-header,
+.confirm-modal .modal-header,
+.account-details-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  background-color: #440207;
+  color:rgb(0, 0, 0) ;
+  padding: 10px 15px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+/* Close Button (X) */
+.message-modal .modal-header .btn-close,
+.confirm-modal .modal-header .btn-close,
+.account-details-modal .modal-header .btn-close {
+  background: transparent;
+  color: white;
+  font-size: 1.25rem;
+  border: none;
+  cursor: pointer;
+}
+
+.message-modal .modal-header .btn-close:hover,
+.confirm-modal .modal-header .btn-close:hover,
+.account-details-modal .modal-header .btn-close:hover {
+  color: #ddd;
+}
+
+/* Modal Body */
+.message-modal .modal-body,
+.confirm-modal .modal-body,
+.account-details-modal .modal-body {
+  font-size: 1rem;
+  padding: 20px;
+  background-color: #fff;
+  color: #440207;
+  border-bottom: 1px solid #440207;
+}
+
+/* Modal Footer */
+.message-modal .modal-footer,
+.confirm-modal .modal-footer,
+.account-details-modal .modal-footer {
+  display: flex;
+  flex-direction: row;        /* Ensures horizontal layout */
+  justify-content: flex-end; /* Aligns buttons to the right */
+  align-items: center;        /* Vertically centers buttons */
+  gap: 10px;                  /* Space between buttons */
+  padding-top: 10px;
+}
+
+
+/* Buttons */
+.confirm-modal .btn,
+.account-details-modal .deactivate-from-details-btn {
+  background-color: #ec4d4d9e;
+  color: #fff;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-modal .btn:hover,
+.account-details-modal .deactivate-from-details-btn:hover {
+  background-color: #161616;
+}
+
+/* Close Button (footer) */
+.close-btn {
+  background-color: #1e1c1c9e;
+  color: #fff;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.message-modal .close-btn {
+  background-color: #1e0e0efa;
+}
+
+.message-modal .close-btn:hover,
+.confirm-modal .btn-secondary:hover,
+.account-details-modal .close-btn:hover {
+  background-color: #161616;
+}
+
+/* Danger and Secondary Button Customizations */
+.confirm-modal .btn-danger {
+  background-color: #dc3545;
+}
+
+.confirm-modal .btn-danger:hover {
+  background-color: #c82333;
+}
+
+.confirm-modal .btn-secondary {
+  background-color: #0f1010;
+}
+
+.confirm-modal .btn-secondary:hover {
+  background-color: #121313;
+}
+
+/* Overlay (if used separately) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+
+
+</style>
 
 
 
@@ -179,7 +331,7 @@
     <div id="accountDetailsModal" class="account-details-modal">
       <div class="modal-box">
         <!-- HEADER -->
-        <div class="modal-header text-dark">
+        <div class="modal-header text-light">
           <span>
             <h4><i class="fas fa-user-circle me-2"></i><b>Account Details</b></h4>
           </span>
