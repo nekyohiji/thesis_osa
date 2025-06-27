@@ -1,5 +1,5 @@
 from django.http import HttpResponse, JsonResponse
-import csv, random, json
+import csv, random, json, re
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
@@ -10,8 +10,9 @@ from django.db.models.functions import Lower
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.validators import validate_email
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
+from .decorators import role_required
 
 def index(request):
     return HttpResponse("🎓 Hello from your thesis web app!")
@@ -19,12 +20,11 @@ def index(request):
 def home_view(request):
     return render(request, 'myapp/client_home.html')
 
-def login_view(request):
-    return render (request, 'myapp/login.html')
-
+@role_required(['guard'])
 def guard_violation_view(request):
     return render (request, 'myapp/guard_violation.html')
 
+@role_required(['guard'])
 def guard_report_view(request):
     return render (request, 'myapp/guard_report.html')
 
@@ -49,76 +49,135 @@ def client_ACSO_view(request):
 def client_lostandfound_view(request):
     return render (request, 'myapp/client_lostandfound.html')
 
-def admin_dashboard_view(request):
-    return render (request, 'myapp/admin_dashboard.html')
-
-def admin_accounts_view(request):
-
-    return render (request, 'myapp/admin_accounts.html')
-
-def admin_ackreq_view(request):
-    return render (request, 'myapp/admin_ackreq.html')
-
-def admin_ACSO_view(request):
-    return render (request, 'myapp/admin_ACSO.html')
-
-def admin_assistantship_view(request):
-    return render (request, 'myapp/admin_assistantship.html')
-
-def admin_CS_view(request):
-    return render (request, 'myapp/admin_CS.html')
-
-def admin_election_view(request):
-    return render (request, 'myapp/admin_election.html')
-
-def admin_goodmoral_view(request):
-    return render (request, 'myapp/admin_goodmoral.html')
-
-def admin_lostandfound_view(request):
-    return render (request, 'myapp/admin_lostandfound.html')
-
-def admin_report_view(request):
-    return render (request, 'myapp/admin_report.html')
-
-def admin_scholarships_view(request):
-    return render (request, 'myapp/admin_scholarships.html')
-
-def admin_view_ackreq_view(request):
-    return render (request, 'myapp/admin_view_ackreq.html')
-
-def admin_view_CS_view(request):
-    return render (request, 'myapp/admin_view_CS.html')
-
-def admin_view_goodmoral_view(request):
-    return render (request, 'myapp/admin_view_goodmoral.html')
-
-def admin_view_violation_view(request):
-    return render (request, 'myapp/admin_view_violation.html')
-
-def admin_violation_view(request):
-    return render (request, 'myapp/admin_violation.html')
-
 def client_election_view(request):
     return render (request, 'myapp/client_election.html')
 
 def client_view_election_view(request):
     return render (request, 'myapp/client_view_election.html')
 
+@role_required(['admin'])
+def admin_dashboard_view(request):
+    return render (request, 'myapp/admin_dashboard.html')
+
+@role_required(['admin'])
+def admin_accounts_view(request):
+    return render (request, 'myapp/admin_accounts.html')
+
+@role_required(['admin'])
+def admin_ackreq_view(request):
+    return render (request, 'myapp/admin_ackreq.html')
+
+@role_required(['admin'])
+def admin_ACSO_view(request):
+    return render (request, 'myapp/admin_ACSO.html')
+
+@role_required(['admin'])
+def admin_assistantship_view(request):
+    return render (request, 'myapp/admin_assistantship.html')
+
+@role_required(['admin'])
+def admin_CS_view(request):
+    return render (request, 'myapp/admin_CS.html')
+
+@role_required(['admin', 'comselec'])
+def admin_election_view(request):
+    return render (request, 'myapp/admin_election.html')
+
+@role_required(['admin'])
+def admin_goodmoral_view(request):
+    return render (request, 'myapp/admin_goodmoral.html')
+
+@role_required(['admin'])
+def admin_lostandfound_view(request):
+    return render (request, 'myapp/admin_lostandfound.html')
+
+@role_required(['admin'])
+def admin_report_view(request):
+    return render (request, 'myapp/admin_report.html')
+
+@role_required(['admin', 'scholarship'])
+def admin_scholarships_view(request):
+    return render (request, 'myapp/admin_scholarships.html')
+
+@role_required(['admin'])
+def admin_view_ackreq_view(request):
+    return render (request, 'myapp/admin_view_ackreq.html')
+
+@role_required(['admin'])
+def admin_view_CS_view(request):
+    return render (request, 'myapp/admin_view_CS.html')
+
+@role_required(['admin'])
+def admin_view_goodmoral_view(request):
+    return render (request, 'myapp/admin_view_goodmoral.html')
+
+@role_required(['admin'])
+def admin_view_violation_view(request):
+    return render (request, 'myapp/admin_view_violation.html')
+
+@role_required(['admin'])
+def admin_violation_view(request):
+    return render (request, 'myapp/admin_violation.html')
+
+@role_required(['admin'])
 def admin_removedstud_view(request):
     return render (request, 'myapp/admin_removedstud.html')
 
 
 
 
+def login_view(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        # Validate email
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            messages.error(request, "Please enter a valid email address.")
+            return render(request, 'myapp/login.html')
+        if len(email) > 164:
+            messages.error(request, "Please enter a valid email.")
+            return render(request, 'myapp/login.html')
+
+        # Validate password length
+        if len(password) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+            return render(request, 'myapp/login.html')
+        if len(password) > 128:
+            messages.error(request, "Password is too long.")
+            return render(request, 'myapp/login.html')
+
+        try:
+            user = UserAccount.objects.get(email=email, is_active=True)
+            if check_password(password, user.password):
+                request.session['user_id'] = user.id
+                request.session['role'] = user.role
+                request.session['full_name'] = user.full_name
+                request.session['email'] = user.email
+
+                # Redirect by role
+                if user.role == 'admin':
+                    return redirect('admin_dashboard')
+                elif user.role == 'guard':
+                    return redirect('guard_violation')
+                elif user.role == 'scholarship':
+                    return redirect('admin_scholarships')
+                elif user.role == 'comselec':
+                    return redirect('admin_election')
+                else:
+                    messages.error(request, "Account role not recognized.")
+            else:
+                messages.error(request, "Incorrect password.")
+        except UserAccount.DoesNotExist:
+            messages.error(request, "Account not found or inactive.")
+
+    return render(request, 'myapp/login.html')
 
 
-
-
-
-
-
-
-
+def logout_view(request):
+    request.session.flush()
+    return redirect('login')
 
 
 ########################GUARD
