@@ -125,6 +125,20 @@ def admin_removedstud_view(request):
 
 
 
+# ////////////// INADD Q NA WINDOW
+@role_required(['admin', 'comselec'])
+def admin_election_results_view(request):
+    return render (request, 'myapp/admin_election_results.html')
+
+@role_required(['admin', 'comselec'])
+def admin_election_manage_view(request):
+    return render (request, 'myapp/admin_election_manage.html')
+
+
+
+
+
+
 
 def login_view(request):
     if request.method == 'POST':

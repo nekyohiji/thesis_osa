@@ -14,6 +14,7 @@
 <body>
   <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
+<!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div><br>
       <div class="logo text-center">
@@ -85,43 +86,42 @@
     </div>
   </div>
 
-  <!-- Logout Modal -->
+<!-- Logout Modal -->
   <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Confirm Logout</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">Are you sure you want to logout?</div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
-        </div>
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border">
+              <div class="modal-header">
+                  <h5 class="modal-title text-dark"></h5>
+              </div>
+              <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
+              <div class="modal-footer justify-content-center">
+                  <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
+                  <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+              </div>
+          </div>
       </div>
-    </div>
   </div>
 
-  <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
+<!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
 <style>
 
-    /* Highlight on focus */
-.input-group-sm .form-control:focus {
-  border: 2px solid #440207;
-  box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
-}
+        /* Highlight on focus */
+    .input-group-sm .form-control:focus {
+      border: 2px solid #440207;
+      box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
+    }
 
-/* Optional: subtle border on hover */
-.input-group-sm .form-control:hover {
-  border: 1px solid #440207;
-}
+    /* Optional: subtle border on hover */
+    .input-group-sm .form-control:hover {
+      border: 1px solid #440207;
+    }
 
-.input-group-sm:focus-within .input-group-text {
-  background-color: #f8f0f0;
-  border-color: #440207;
-  color: #440207;
-}
+    .input-group-sm:focus-within .input-group-text {
+      background-color: #f8f0f0;
+      border-color: #440207;
+      color: #440207;
+    }
   
 </style>
 
@@ -323,9 +323,9 @@
 <!-- Accept Modal -->
 <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0">
-      <div class="modal-header text-white" style="background-color: #440207;">
-        <h5 class="modal-title" id="acceptModalLabel"><i class="bi bi-check-circle me-2"></i>Confirm Acceptance</h5>
+    <div class="modal-content border">
+      <div class="modal-header text-white" >
+        <h5 class="modal-title" id="acceptModalLabel"></h5>
       </div>
       <div class="modal-body text-center">
         Are you sure you want to <strong>Accept</strong> this violation request?
@@ -341,9 +341,9 @@
 <!-- Decline Modal -->
 <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0">
-      <div class="modal-header text-white" style="background-color: #440207;">
-        <h5 class="modal-title" id="declineModalLabel"><i class="bi bi-x-circle me-2"></i>Confirm Decline</h5>
+    <div class="modal-content border">
+      <div class="modal-header text-white" >
+        <h5 class="modal-title" id="declineModalLabel"></h5>
       </div>
       <div class="modal-body text-center">
         Are you sure you want to <strong>Decline</strong> this violation request?
@@ -364,6 +364,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   
 <script>
+
+/* Sidebar Functions*/
   // Toggle Sidebar
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -410,7 +412,7 @@
     });
   });
 
-    ///////////////////////////// START HERE MAG ADD
+///////////////////////////// START HERE MAG ADD
 
 
 

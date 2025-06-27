@@ -13,7 +13,7 @@
 
 <body>
   <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-
+<!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div><br>
       <div class="logo text-center">
@@ -93,29 +93,31 @@
     </div>
   </div>
 
-  <!-- Logout Modal -->
+<!-- Logout Modal -->
   <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Confirm Logout</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">Are you sure you want to logout?</div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
-        </div>
+      <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border">
+              <div class="modal-header">
+                  <h5 class="modal-title text-dark"></h5>
+              </div>
+              <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
+              <div class="modal-footer justify-content-center">
+                  <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
+                  <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+              </div>
+          </div>
       </div>
-    </div>
   </div>
 
-  <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
+
+<!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
 
 
 
-<h1>//////////////////////////////// ACSO ACCRE</h1>
+
+
+  <h1>//////////////////////////////// ACSO ACCRE</h1>
 
 
 
@@ -128,52 +130,54 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-  // Toggle Sidebar
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('show');
-  }
 
-  // Handle Dropdowns Uniformly
-  function handleDropdown(menuId) {
-    const clickedIcon = document.getElementById(`icon-${menuId}`);
-    const clickedMenu = document.getElementById(menuId);
-    const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
+  /* Sidebar Functions*/   
+        // Toggle Sidebar
+        function toggleSidebar() {
+          const sidebar = document.getElementById('sidebar');
+          sidebar.classList.toggle('show');
+        }
 
-    // Toggle clicked menu
-    if (clickedMenu.classList.contains('show')) {
-      clickedCollapse.hide();
-      clickedIcon.classList.remove('rotate');
-    } else {
-      clickedCollapse.show();
-      clickedIcon.classList.add('rotate');
-    }
+        // Handle Dropdowns Uniformly
+        function handleDropdown(menuId) {
+          const clickedIcon = document.getElementById(`icon-${menuId}`);
+          const clickedMenu = document.getElementById(menuId);
+          const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
 
-    // Hide other open menus
-    const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
-    allDropdowns.forEach(id => {
-      if (id !== menuId) {
-        const menu = document.getElementById(id);
-        const icon = document.getElementById(`icon-${id}`);
-        const collapse = bootstrap.Collapse.getInstance(menu);
-        if (collapse) collapse.hide();
-        if (icon) icon.classList.remove('rotate');
-      }
-    });
-  }
+          // Toggle clicked menu
+          if (clickedMenu.classList.contains('show')) {
+            clickedCollapse.hide();
+            clickedIcon.classList.remove('rotate');
+          } else {
+            clickedCollapse.show();
+            clickedIcon.classList.add('rotate');
+          }
 
-  // Highlight Active Link
-  document.addEventListener('DOMContentLoaded', function () {
-    const currentUrl = window.location.href;
-    const navLinks = document.querySelectorAll('.nav-link');
+          // Hide other open menus
+          const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
+          allDropdowns.forEach(id => {
+            if (id !== menuId) {
+              const menu = document.getElementById(id);
+              const icon = document.getElementById(`icon-${id}`);
+              const collapse = bootstrap.Collapse.getInstance(menu);
+              if (collapse) collapse.hide();
+              if (icon) icon.classList.remove('rotate');
+            }
+          });
+        }
 
-    navLinks.forEach(link => {
-      if (link.href && currentUrl.includes(link.href)) {
-        link.classList.add('active');
-      }
-    });
-  });
-    ///////////////////////////// START HERE MAG ADD
+        // Highlight Active Link
+        document.addEventListener('DOMContentLoaded', function () {
+          const currentUrl = window.location.href;
+          const navLinks = document.querySelectorAll('.nav-link');
+
+          navLinks.forEach(link => {
+            if (link.href && currentUrl.includes(link.href)) {
+              link.classList.add('active');
+            }
+          });
+        });
+///////////////////////////// START HERE MAG ADD
 
 
 

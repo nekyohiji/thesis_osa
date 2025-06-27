@@ -15,6 +15,60 @@
     <link rel="stylesheet" href="{% static 'myapp/css/login.css' %}">
 </head>
 
+
+
+<style>
+
+            /* Reusable color */
+            :root {
+            --maroon: #440207;
+            }
+
+            /* Input base style */
+            .form-control:focus {
+            border: 2px solid var(--maroon);
+            box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1);
+            outline: none;
+            }
+
+            .form-control:hover {
+            border: 1px solid var(--maroon);
+            }
+
+            /* Left icon style */
+            .icon-input {
+            position: relative;
+            }
+
+            .icon-input i.bi {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+            }
+
+            /* Make space for left icon */
+            .icon-input input {
+            padding-left: 2.2rem;
+            }
+
+            /* Password eye icon (right side) */
+            #togglePasswordEye {
+            display: none;
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            color: #666;
+            cursor: pointer;
+            }
+
+
+  </style>
+
+
 <body style="background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/2.png" %}'); 
             background-size: cover; background-position: center;">
 
@@ -46,16 +100,40 @@
                     
 
                     <!-- USERNAME -->
-                    <div class="form-group icon-input">
-                        <i class="bi bi-person-fill"></i>
-                        <input type="text" id="email_login" placeholder="Enter your email" name="email" minlength="6" maxlength="200" required>
+                    <div class="form-group position-relative mb-3">
+                    <i class="bi bi-person-fill position-absolute" style="top: 50%; left: 10px; transform: translateY(-50%); color: #666;"></i>
+
+                    <input type="text"
+                            id="email_login"
+                            name="email"
+                            placeholder="Enter your email"
+                            class="form-control ps-5 pe-5"
+                            minlength="6"
+                            maxlength="200"
+                            required>
                     </div>
 
+
                     <!-- PASSWORD -->
-                    <div class="form-group icon-input">
-                        <i class="bi bi-lock-fill"></i>
-                        <input type="password" id="password_login" placeholder="Enter your password" name="password" minlength="6" maxlength="128" required>
-                    </div>
+                        <div class="form-group position-relative">
+                        <i class="bi bi-lock-fill position-absolute" style="top: 50%; left: 10px; transform: translateY(-50%); color: #666;"></i>
+
+                        <input type="password"
+                                id="password_login"
+                                name="password"
+                                placeholder="Enter your password"
+                                class="form-control ps-5 pe-5"
+                                minlength="6"
+                                maxlength="128"
+                                required>
+
+                        <!-- Eye icon: solid style, positioned on the right -->
+                        <i id="togglePasswordEye"
+                            class="bi bi-eye-fill position-absolute"
+                            style="top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer; display: none;"></i>
+                        </div>
+
+
 
                     <!-- FORGOT PASSWORD -->
                     <div class="form-options">
@@ -63,7 +141,8 @@
                     </div><br>
 
                     <!-- LOGN IN BTN -->
-                    <button type="submit" id="login_btn" class="btn">Sign In</button>
+                    <button type="submit" id="login_btn" class="btn">Sign In</button><br><hr><br>
+                    <a href="{% url 'client_home' %}" class="back-link">&larr; Return to Home</a>
                 </form>
 
         </div>
@@ -74,6 +153,25 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+<script>
+  const passwordInput = document.getElementById('password_login');
+  const toggleIcon = document.getElementById('togglePasswordEye');
+
+  passwordInput.addEventListener('input', () => {
+    toggleIcon.style.display = passwordInput.value ? 'block' : 'none';
+  });
+
+  toggleIcon.addEventListener('click', () => {
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    toggleIcon.classList.toggle('bi-eye-fill');
+    toggleIcon.classList.toggle('bi-eye-slash-fill');
+  });
+</script>
+
 
 </body>
 </html>

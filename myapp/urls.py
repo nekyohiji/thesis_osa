@@ -34,6 +34,16 @@ urlpatterns = [
     path('admin_violation/', views.admin_violation_view, name='admin_violation'),
     path('admin_student/', views.admin_student_view, name='admin_student'),
     path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
+    path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
+    path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
