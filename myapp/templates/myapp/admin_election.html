@@ -108,8 +108,26 @@
 
   <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
+  <style>
+
+    /* Highlight on focus */
+.input-group-sm .form-control:focus {
+  border: 2px solid #440207;
+  box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
+}
+
+/* Optional: subtle border on hover */
+.input-group-sm .form-control:hover {
+  border: 1px solid #440207;
+}
+
+.input-group-sm:focus-within .input-group-text {
+  background-color: #f8f0f0;
+  border-color: #440207;
+  color: #440207;
+}
   
-  
+</style>
 
 <div class="mt-4 ps-4 pe-4" style="margin-left: 260px; min-height: 100vh;">
   <div class="election-header text-white mt-4"
@@ -121,6 +139,7 @@
               padding: 50px;
               min-height: 100px;
               margin-bottom: 50px;
+              border-radius: 20px;
               ">
     <h2 class="fw-bold mb-0">University Student Government Election Dashboard</h2>
     <p class="mb-0">Monitor, manage, and update election proceedings.</p>

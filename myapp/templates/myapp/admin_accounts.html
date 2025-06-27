@@ -186,10 +186,11 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 1060;
   display: none;
-  min-width: 300px;
-  max-width: 700px;
+  min-width: 500px;
+  max-width: 800px;
   text-align: center;
   color:rgb(0, 0, 0);
+
 }
 
 /* Show class to make modal visible */
@@ -251,7 +252,7 @@
   justify-content: flex-end; /* Aligns buttons to the right */
   align-items: center;        /* Vertically centers buttons */
   gap: 10px;                  /* Space between buttons */
-  padding-top: 10px;
+  padding: 10px;
 }
 
 
@@ -359,14 +360,27 @@
 
 
 
-<div class="main-content" style="margin-left: 250px; padding: 30px; min-height: 100vh; background-color: #f8f9fa; overflow-y: auto;"> <br>
+<div class="main-content" style="margin-left: 250px; padding: 30px; min-height: 100vh; background-color: #f8f9fa; overflow-y: auto;">
 
-      <div class="mb-4">
-        <h3 class="fw-bold text-dark">
-          <i class="fas fa-user-cog me-2" style="color: #440207;"></i> Create Account
-        </h3>
-        <small class="text-muted">Register new users and assign their access roles.</small> 
-      </div> <hr>
+
+
+  
+  <div class="election-header text-white mt-4"
+      style="background: linear-gradient(to right bottom, #000000, #440207,rgb(104, 3, 12));
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 50px;
+            min-height: 100px;
+            border-radius: 20px;
+            margin-bottom: 20px;">
+      <h2 class="fw-bold mb-0">
+          <i class="fas fa-user-cog me-2"></i>
+        Create Account Page
+      </h2>
+      <p class="mb-0">Monitor and upload student records.</p>
+    </div>
+    
 
     <!-- CREATE ACCOUNT PANEL -->
     <div class="card shadow-sm rounded-4 mb-4" >
@@ -375,7 +389,7 @@
       </div>
 
       <div class="card-body px-4 py-3" >
-        <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 10px;">
+        <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 20px;">
           {% csrf_token %}
           <div class="row g-4" >
     

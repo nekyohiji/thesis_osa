@@ -105,16 +105,260 @@
 
   <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
+<style>
+
+    /* Highlight on focus */
+.input-group-sm .form-control:focus {
+  border: 2px solid #440207;
+  box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
+}
+
+/* Optional: subtle border on hover */
+.input-group-sm .form-control:hover {
+  border: 1px solid #440207;
+}
+
+.input-group-sm:focus-within .input-group-text {
+  background-color: #f8f0f0;
+  border-color: #440207;
+  color: #440207;
+}
+  
+</style>
+
+  <!-- Main Content Area -->
+<div class="main-content" style="margin-left: 250px; min-height: 100vh; background-color: #f8f9fa;">
+
+  <!--  Dashboard Header  -->
+  <div class="container-fluid py-4 px-4">
+    <div class="election-header text-white mt-4"
+      style="background: linear-gradient(to right bottom, #000000, #440207,rgb(104, 3, 12));
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 50px;
+            min-height: 100px;
+            border-radius: 20px;
+            margin-bottom: 1px;
+            margin-top:1px;">
+      <h2 class="fw-bold mb-0">
+         <i class="bi bi-file-earmark-text me-2"></i>
+        Good Moral Certification Dashboard
+      </h2>
+      <p class="mb-0">Monitor, manage, and update Goodmoral Requests</p>
+    </div>
+  </div>
 
 
 
-<h1>//////////////////////////////// GOOD MORAL</h1>
+  <div class="container-fluid px-4">
+    <div class="bg-white p-2 rounded shadow-sm border">
+      <!-- === TABLE PANELS === -->
+
+
+      <!-- Goodmoral Request Section -->
+      <div class="container-fluid pt-4 pb-5">
+        <div class="bg-white p-4 rounded shadow-sm border">
+       <h5 class="fw-bold mb-1">
+            <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>Good Moral Requests
+          </h5>
+          <small class="text-muted"> Handle certificate requests, monitor progress, and maintain records..</small>
+          <hr class="border-dark">
+          
+          <!-- Search Bar -->
+          <div class="d-flex justify-content-end mb-3">
+            <div class="input-group input-group-sm" style="max-width: 400px;">
+              <input id="goodmoral_search" type="text" class="form-control" placeholder="Search student">
+              <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
+            </div>
+          </div>
+ 
+
+          <!-- Table of Good Moral Request -->
+          <div class="card shadow-sm  border">
+            <div class="card-header text-white" style="background-color: #440207;">
+              <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Pending Good Moral Requests</h6>
+            </div>
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 5); overflow-y: auto;">
+              <table class="table table-hover table-bordered align-middle text-center mb-0">
+                <thead class="table-secondary sticky-top border">
+                  <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Juan Dela Cruz</td>
+                    <td>06-23-2025</td>
+                    <td>
+                      <div class="d-flex justify-content-center gap-2">
+                        <button id="accept_goodmoral" class="btn btn-sm btn-success action-btn" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                          <i class="bi bi-check-circle me-1"></i>Accept
+                        </button>
+                        <button  id="decline_goodmoral" class="btn btn-sm btn-danger action-btn" data-bs-toggle="modal" data-bs-target="#declineModal">
+                          <i class="bi bi-x-circle me-1"></i>Decline
+                        </button>
+                      </div>
+                    </td>                    
+                    <td>
+                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Anna Reyes</td>
+                    <td>06-23-2025</td>
+                    <td>
+                      <div class="d-flex justify-content-center gap-2">
+                        <button  id="accept_goodmoral" class="btn btn-sm btn-success action-btn" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                          <i class="bi bi-check-circle me-1"></i>Accept
+                        </button>
+                        <button id="decline_goodmoral" class="btn btn-sm btn-danger action-btn" data-bs-toggle="modal" data-bs-target="#declineModal">
+                          <i class="bi bi-x-circle me-1"></i>Decline
+                        </button>
+                      </div>
+                    </td>                    
+                    <td>
+                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Carlos Mendoza</td>
+                    <td>06-23-2025</td>
+                    <td>
+                      <div class="d-flex justify-content-center gap-2">
+                        <button  id="accept_goodmoral" class="btn btn-sm btn-success action-btn" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                          <i class="bi bi-check-circle me-1"></i>Accept
+                        </button>
+                        <button  id="decline_goodmoral" class="btn btn-sm btn-danger action-btn" data-bs-toggle="modal" data-bs-target="#declineModal">
+                          <i class="bi bi-x-circle me-1"></i>Decline
+                        </button>
+                      </div>
+                    </td>                    
+                    <td>
+                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+      <!-- Violation Record  -->
+      <div class="container-fluid pb-4">
+        <div class="bg-white p-4 rounded shadow-sm border">
+       <h5 class="fw-bold mb-1">
+            <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>Document History
+          </h5>
+          <small class="text-muted">Manage and review all past and current document submissions.</small>
+          <hr class="border-dark">
+
+
+          <!-- Search Bar for Violation Record-->
+          <div class="d-flex justify-content-end mb-3">
+            <div class="input-group input-group-sm" style="max-width: 400px;">
+              <input id="goodmoral_record_search" type="text" class="form-control" placeholder="Search history">
+              <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
+            </div>
+          </div>
+
+          <!-- Violation Record Table -->
+          <div class="card shadow-sm">
+            <div class="card-header text-white" style="background-color: #440207;">
+              <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Requested Good Moral Record</h6>
+            </div>
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 5); overflow-y: auto;">
+              <table class="table table-hover table-bordered align-middle text-center mb-0">
+                <thead class="table-secondary sticky-top border">
+                  <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Maria Santos</td>
+                    <td>06-23-2025</td>
+                    <td>Completed</td>
+                    <td>     
+                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>John Lee</td>
+                    <td>06-23-2025</td>
+                    <td>Completed</td>
+                    <td>     
+                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                    </td>                  
+                  </tr>
+                  <tr>
+                    <td>Angela Cruz</td>
+                    <td>06-23-2025</td>
+                    <td>Completed</td>
+                    <td>     
+                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                    </td>                  
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- End white content box -->
+  </div> <!-- End container -->
+</div> <!-- End main-content -->
 
 
 
 
 
+<!--///////////////// MODALS-->
 
+
+      <!-- Accept Modal -->
+      <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border-0">
+            <div class="modal-header text-white" style="background-color: #440207;">
+              <h5 class="modal-title" id="acceptModalLabel"><i class="bi bi-check-circle me-2"></i>Confirm Acceptance</h5>
+            </div>
+            <div class="modal-body text-center">
+              Are you sure you want to <strong>Accept</strong> this violation request?
+            </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-success">Accept</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decline Modal -->
+      <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border-0">
+            <div class="modal-header text-white" style="background-color: #440207;">
+              <h5 class="modal-title" id="declineModalLabel"><i class="bi bi-x-circle me-2"></i>Confirm Decline</h5>
+            </div>
+            <div class="modal-body text-center">
+              Are you sure you want to <strong>Decline</strong> this violation request?
+            </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger">Decline</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
 
 
