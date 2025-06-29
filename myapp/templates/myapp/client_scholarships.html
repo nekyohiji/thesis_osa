@@ -42,8 +42,7 @@
 
         <div class="row justify-content-center">
             <div class="col-lg-8">
-<!-- POSTED SCHOLARSHIPS -->
-                <div class="scholarship-card card mb-4 shadow-sm border-0">
+<div class="scholarship-card card mb-4 shadow-sm border-0">
                     <div class="card-body">
                         <h4 class="card-title text-primary mb-2">CHARITY FIRST SCHOLARSHIP</h4>
                         <h6 class="card-subtitle mb-3 text-muted">
@@ -64,7 +63,7 @@
                                 data-category="Internal"
                                 data-description="Good news! We are now accepting applications for the Charity First Foundation, Inc. scholarship for the Academic Year 2025-2026. The duration of the submission will start on March 5, 2025 - April 11, 2025.<br><br>To apply, you will need to submit the following documents to the Office of Student Affairs (OSA), in addition to the Charity First Foundation's requirements:<br>&#9744; Duly accomplished application form - link: <a href='https://drive.google.com/file/d/10dtOnEd7-EE0M-bBNeX6GHSSRef9Xmbk/view?fbclid=IwY2xjawK1L1RleHRuA2FlbQIxMABicmlkETF0WGg1UGlzVk9FbE5yTzVvAR7qpHsFxZmrr6sL_SyshKN1i1pN7Zh3WG6PGeX6HvXB-LRRBWP1D6QwEkTpuA_aem_iHKPSaraROdTFbiPmx4oRQ' target='_blank'>Application Form</a><br>&#9744; Endorsement from the Former Shop Adviser / Professor in the Campus (for incoming 2nd-year students) / Endorsement from the Former Class Adviser or Teacher from SHS (for incoming 1st-year students). Endorsement shall be addressed to:<br>Ms. Beverly de Vega<br>Head, Office of Student Affairs<br>Technological University of the Philippines - Cavite Campus<br>Thru:<br>Engr. Romel A. Bucayu<br>Coordinator, Scholarship<br>&#9744; Certified True Copy of Evaluation of Grades (for incoming 2nd-year students) / Senior High School Report Card G11 ang G12 (Form-138) (for incoming 1st-year students)<br>&#9744; Latest Income Tax Return / Certificate of non-filing of ITR<br>&#9744; 2x2 Picture (1pc)<br>&#9744; Photocopy of Registration Form from the previous semester (for incoming 2nd-year students)<br><br>Provide the aforementioned documents in one copy and place them in a separate long brown envelop.<br>* For incoming 1st-year, we will only accept applications from those who have passed the admission examination. However, if a student decides not to proceed with enrollment on campus, we will withdraw their application from consideration for screening.<br>* Medical Certificate and X-RAY result of those who underwent medical examination at the Campus may get a copy from the Campus Clinic.<br><br>Don't miss this opportunity! Submit your applications on time!"
                                 data-apply-link="https://drive.google.com/file/d/10dtOnEd7-EE0M-bBNeX6GHSSRef9Xmbk/view?fbclid=IwY2xjawK1L1RleHRuA2FlbQIxMABicmlkETF0WGg1UGlzVk9FbE5yTzVvAR7qpHsFxZmrr6sL_SyshKN1i1pN7Zh3WG6PGeX6HvXB-LRRBWP1D6QwEkTpuA_aem_iHKPSaraROdTFbiPmx4oRQ" {# Updated to Google Drive URL #}
-                                data-is-external="true"> 
+                                data-is-external="true">
                                 View Details / Apply <i class="bi bi-arrow-right-circle ms-1"></i>
                             </button>
                         </div>
@@ -140,9 +139,9 @@
             const postedDate = button.getAttribute('data-posted-date');
             const deadlineDate = button.getAttribute('data-deadline-date');
             const category = button.getAttribute('data-category');
-            const description = button.getAttribute('data-description'); 
-            const applyLink = button.getAttribute('data-apply-link'); 
-            const isExternal = button.getAttribute('data-is-external') === 'true'; 
+            const description = button.getAttribute('data-description');  
+            const applyLink = button.getAttribute('data-apply-link');
+            const isExternal = button.getAttribute('data-is-external') === 'true';
 
 
             const modalTitle = scholarshipDetailModal.querySelector('#modalScholarshipTitle');
@@ -155,8 +154,8 @@
 
             modalTitle.innerHTML = `<i class="bi bi-journal-text me-2"></i>${title}`;
             modalPostedDate.textContent = postedDate;
-            modalDeadlineDate.textContent = deadlineDate ? deadlineDate : 'N/A'; 
-            modalDescription.innerHTML = description; 
+            modalDeadlineDate.textContent = deadlineDate ? deadlineDate : 'N/A';
+            modalDescription.innerHTML = description;
 
             modalCategoryBadge.classList.remove('bg-secondary', 'bg-success', 'bg-info');
             let iconClass = '';
@@ -167,23 +166,24 @@
                 modalCategoryBadge.classList.add('bg-success');
                 iconClass = 'bi-globe';
             } else {
-                modalCategoryBadge.classList.add('bg-info'); 
-                iconClass = 'bi-link-45deg'; 
+                modalCategoryBadge.classList.add('bg-info');
+                iconClass = 'bi-link-45deg';
             }
-            modalCategoryBadge.innerHTML = `<i class="bi ${iconClass} me-1"></i>Category: ${category}`; 
+            modalCategoryBadge.innerHTML = `<i class="bi ${iconClass} me-1"></i>Category: ${category}`;
 
 
-            if (applyLink && applyLink !== 'None' && applyLink !== '#') { 
+            if (applyLink && applyLink !== 'None' && applyLink !== '#') {
                 modalApplyLink.href = applyLink;
-                modalApplyLink.classList.remove('d-none'); 
-           
-                modalApplyLink.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info', 'apply-now-btn', 'btn-primary'); // Clear all potential previous classes
+                modalApplyLink.classList.remove('d-none');
+
+                modalApplyLink.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info', 'apply-now-btn', 'btn-primary');
                 if (isExternal) {
                     modalApplyLink.classList.add('btn-primary');
                 } else {
-                    modalApplyLink.classList.add('apply-now-btn'); 
+                    modalApplyLink.classList.add('apply-now-btn');
+                }
             } else {
-                modalApplyLink.classList.add('d-none'); 
+                modalApplyLink.classList.add('d-none');
             }
         });
     });
