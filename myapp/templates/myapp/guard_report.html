@@ -61,67 +61,47 @@
     </div>
 
 
-<section class="filter-section">
-  <h6 class="mb-3"><i class="bi bi-funnel-fill"></i> Filter Violations</h6>
-  <hr>
+    <section class="filter-section">
+      <h6 class="mb-3"><i class="bi bi-funnel-fill"></i> Filter Violations</h6>
+      <hr>
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label>Start Date</label>
+            <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+        </div>
+        <div class="col-md-3">
+            <label>End Date</label>
+            <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+        </div>
+        <div class="col-md-3">
+            <label>Violation Type</label>
+            <select name="violation_type" class="form-select">
+                <option value="">All Types</option>
+                {% for key, label in violation_types %}
+                <option value="{{ key }}" {% if request.GET.violation_type == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>Guard on Duty</label>
+            <select name="guard_name" class="form-select">
+                <option value="">Select Guard</option>
+                {% for guard in guards %}
+                <option value="{{ guard.full_name }}" {% if request.GET.guard_name == guard.full_name %}selected{% endif %}>{{ guard.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-  <form id="filterForm" class="row g-3">
-
-
-    <!-- START DATE -->
-    <div class="col-md-3" id="startDate">
-      <label for="startDate" class="form-label">
-        <i class="bi bi-calendar-event"></i> Start Date
-      </label>
-      <input
-        type="date"
-        id="start_date_vr"
-        class="form-control"
-      />
-    </div>
-
-    <!-- END DATE -->
-    <div class="col-md-3" id="endDate">
-      <label for="endDate" class="form-label">
-        <i class="bi bi-calendar-event"></i> End Date
-      </label>
-      <input
-        type="date"
-        id="end_date_vr"
-        class="form-control"
-      />
-    </div>
-
-
-      <!-- VIOLATION TYPE -->
-      <div class="col-md-3">
-        <label for="violationType" class="form-label">
-          <i class="bi bi-exclamation-triangle-fill"></i> Violation Type
-        </label>
-        <select id="violation_type_vr" class="form-select">
-          <option value="">All Types</option>
-          <option>Tardiness</option>
-          <option>Cheating</option>
-          <option>Bullying</option>
-          <option>Dress Code</option>
-          <option>Disruption</option>
-        </select>
-      </div>
-
-      <!-- GUARD ON DUTY -->
-      <div class="col-md-3">
-        <label for="guardOnDuty" class="form-label">
-          <i class="bi bi-person-badge-fill"></i> Guard on Duty
-        </label>
-        <select id="guardname_vr" class="form-select">
-          <option value="">Select Guard</option>
-          <option value="Guard A">Guard A</option>
-          <option value="Guard B">Guard B</option>
-          <option value="Guard C">Guard C</option>
-          <option value="Guard D">Guard D</option>
-        </select>
-      </div>
-  </form>
+        <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary mt-2">Filter</button>
+        </div>
+    </form>
+        <div class="text-end mt-3">
+          <a href="{% url 'generate_guard_report_pdf' %}?{{ request.GET.urlencode }}" 
+            class="btn btn-success">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Download PDF Report
+          </a>
+        </div>
 </section>
 
 
@@ -148,50 +128,23 @@
                     </tr>
                   </thead>
                   <tbody id="report_body_vr">
-                    <!-- Sample data -->
+                    {% for violation in violations %}
                     <tr>
-                      <td>Jane Doe</td>
-                      <td>tupc-23-0001</td>
-                      <td>BET-COET</td>
-                      <td>2025-05-10</td>
-                      <td>08:30 AM</td>
-                      <td>Cheating</td>
-                      <td> Guard 1</td>
+                        <td>{{ violation.first_name }} {{ violation.last_name }}</td>
+                        <td>{{ violation.student_id }}</td>
+                        <td>{{ violation.violation_type }}</td>
+                        <td>{{ violation.violation_date }}</td>
+                        <td>{{ violation.violation_time }}</td>
+                        <td>{{ violation.guard_name }}</td>
+                        <td>{{ violation.status }}</td>
                     </tr>
-                    <tr>
-                      <td>John Smith</td>
-                      <td>tupc-23-0002</td>
-                      <td>BSIE</td>
-                      <td>2025-06-01</td>
-                      <td>09:15 AM</td>
-                      <td>Tardiness</td>
-                      <td>Guard 2</td>
-                    </tr>
-                    <tr>
-                      <td>Lisa Wong</td>
-                      <td>tupc-23-0003</td>
-                      <td>BET PPT</td>
-                      <td>2025-06-05</td>
-                      <td>10:00 AM</td>
-                      <td>Bullying</td>
-                      <td>Guard 3</td>
-                    </tr>
-                  </tbody>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center">No results found.</td></tr>
+                    {% endfor %}
+                </tbody>
                 </table>
               </div>
               <hr>
-
-
-            <!-- GENERATE BUTTON -->
-            <div class="col-12 d-flex justify-content-end">
-              <button type="button"
-                      class="btn btn-primary"
-                      data-bs-toggle="modal"
-                      data-bs-target="#generateReportModal">
-                <i class="bi bi-file-earmark-text"></i> Generate Report
-              </button>
-
-            </div>
 
     </section>
   </div>
@@ -276,13 +229,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-

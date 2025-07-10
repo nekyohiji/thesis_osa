@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('current_time/', views.current_time, name='current_time'),
     path('', views.home_view, name='client_home'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
@@ -56,10 +57,17 @@ urlpatterns = [
     path('get-accounts/', views.get_accounts_data, name='get_accounts_data'),
     path('deactivate-account/<str:user_email>/', views.deactivate_account, name='deactivate_account'),
     
+    ##########################################elections
+    path('add-candidate/', views.add_candidate, name='add_candidate'),
+    path('get-candidates/', views.get_candidates, name='get_candidates'),
+    path('delete-candidate/<int:candidate_id>/', views.delete_candidate, name='delete_candidate'),
+    path('get-academic-years/', views.get_academic_years, name='get_academic_years'),
+    
+    
     ########################################guard
     path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),
-
-    
+    path('submit/', views.submit_violation, name='submit_violation'),
+    path('guard_report/download_pdf/', views.generate_guard_report_pdf, name='generate_guard_report_pdf'),
     
     
 ]

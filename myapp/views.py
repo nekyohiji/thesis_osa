@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation
 from django.db.models.functions import Lower
 from django.core.mail import send_mail
 from django.conf import settings
@@ -13,6 +13,20 @@ from django.core.validators import validate_email
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from .decorators import role_required
+from django.core.serializers import serialize
+from django.utils.html import escape
+from django.templatetags.static import static
+import uuid, os
+from django.core.files.base import ContentFile
+from .forms import ViolationForm
+from django.utils.timezone import now
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
+def current_time(request):
+    return JsonResponse({'now': now().isoformat()})
 
 def index(request):
     return HttpResponse("🎓 Hello from your thesis web app!")
@@ -22,11 +36,36 @@ def home_view(request):
 
 @role_required(['guard'])
 def guard_violation_view(request):
-    return render (request, 'myapp/guard_violation.html')
+    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+    return render (request, 'myapp/guard_violation.html', {'guards': guards})
 
 @role_required(['guard'])
 def guard_report_view(request):
-    return render (request, 'myapp/guard_report.html')
+    violations = Violation.objects.all().order_by('-violation_date')
+    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+
+    # Get filters
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    violation_type = request.GET.get('violation_type')
+    guard_name = request.GET.get('guard_name')
+
+    # Apply filters
+    if start_date:
+        violations = violations.filter(violation_date__gte=start_date)
+    if end_date:
+        violations = violations.filter(violation_date__lte=end_date)
+    if violation_type:
+        violations = violations.filter(violation_type=violation_type)
+    if guard_name:
+        violations = violations.filter(guard_name=guard_name)
+
+    context = {
+        'violations': violations,
+        'guards': guards,
+        'violation_types': Violation.VIOLATION_TYPES,
+    }
+    return render(request, 'myapp/guard_report.html', context)
 
 def client_goodmoral_view(request):
     return render (request, 'myapp/client_goodmoral.html')
@@ -123,9 +162,6 @@ def admin_violation_view(request):
 def admin_removedstud_view(request):
     return render (request, 'myapp/admin_removedstud.html')
 
-
-
-# ////////////// INADD Q NA WINDOW
 @role_required(['admin', 'comselec'])
 def admin_election_results_view(request):
     return render (request, 'myapp/admin_election_results.html')
@@ -209,8 +245,89 @@ def get_student_by_id(request, tupc_id):
     except Student.DoesNotExist:
         return JsonResponse({'success': False})
 
+def submit_violation(request):
+    submitted = False
+    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+    if request.method == 'POST':
+        form = ViolationForm(request.POST, request.FILES)
+        if form.is_valid():
+            violation = form.save(commit=False)
+            violation.status = 'Pending'
+            violation.save()
+            submitted = True
+            form = ViolationForm()  # clear form
+    else:
+        form = ViolationForm()
+        print(form.errors)
+    return render(request, 'myapp/guard_violation.html', {
+        'form': form,
+        'submitted': submitted,
+        'guards': guards
+    })
 
+@role_required(['guard'])
+def generate_guard_report_pdf(request):
+    # Apply same filters as your view
+    violations = Violation.objects.all()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    violation_type = request.GET.get('violation_type')
+    guard_name = request.GET.get('guard_name')
 
+    if start_date:
+        violations = violations.filter(violation_date__gte=start_date)
+    if end_date:
+        violations = violations.filter(violation_date__lte=end_date)
+    if violation_type:
+        violations = violations.filter(violation_type=violation_type)
+    if guard_name:
+        violations = violations.filter(guard_name=guard_name)
+
+    # Start PDF response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="violations_report.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph("Violations Report", styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Table headers
+    data = [
+        ['Student Name', 'Student ID', 'Program/Course', 'Date', 'Time', 'Type of Violation', 'Reported By']
+    ]
+
+    for v in violations:
+        data.append([
+            f"{v.first_name} {v.last_name}",
+            v.student_id,
+            v.program_course,
+            v.violation_date.strftime("%Y-%m-%d"),
+            v.violation_time.strftime("%H:%M"),
+            v.violation_type,
+            v.guard_name
+        ])
+
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+    ]))
+
+    elements.append(table)
+
+    elements.append(Spacer(1, 24))
+    elements.append(Paragraph(f"Prepared by: {guard_name or '________________'}", styles['Normal']))
+    elements.append(Paragraph(f"Noted by: Chief Security Officer", styles['Normal']))
+
+    doc.build(elements)
+    return response
 
 ########################ADMIN
 
@@ -406,3 +523,80 @@ def get_accounts_data(request):
             'active': active_accounts,
             'deactivated': deactivated_accounts
         })
+
+
+
+################################ELECTIONS   
+@csrf_exempt
+def add_candidate(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        section = request.POST.get('section')
+        tupc_id = request.POST.get('tupc_id')
+        position = request.POST.get('position')
+        academic_year = request.POST.get('academic_year')
+        photo = request.FILES.get('photo')
+
+        if not all([name, section, tupc_id, position, academic_year, photo]):
+            return JsonResponse({'status': 'error', 'message': 'Missing fields'}, status=400)
+
+        # ✅ Check if the TUPC ID already exists for this academic year
+        existing = Candidate.objects.filter(tupc_id=tupc_id, academic_year=academic_year).exists()
+        if existing:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'TUPC ID "{tupc_id}" is already registered for academic year {academic_year}.'
+            }, status=409)
+
+        # 🆗 Safe to create
+        original_name = photo.name
+        extension = os.path.splitext(original_name)[1]
+        unique_filename = f"{uuid.uuid4()}{extension}"
+
+        candidate = Candidate.objects.create(
+            name=name,
+            section=section,
+            tupc_id=tupc_id,
+            position=position,
+            academic_year=academic_year
+        )
+        candidate.photo.save(unique_filename, photo)
+        candidate.save()
+
+        return JsonResponse({'status': 'success', 'candidate_id': candidate.id})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+def get_candidates(request):
+    if request.method == 'GET':
+        candidates = Candidate.objects.all().order_by('-academic_year', 'position')
+        data = []
+        for c in candidates:
+            image_url = c.photo.url if c.photo and c.photo.name else static('myapp/images/default.png')
+            data.append({
+                'id': c.id,
+                'name': c.name,
+                'section': c.section,
+                'tupc_id': c.tupc_id,
+                'position': c.position,
+                'academic_year': str(c.academic_year),  # optional, if this is a model
+                'image': image_url
+            })
+        return JsonResponse({'status': 'success', 'candidates': data})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+@csrf_exempt
+def delete_candidate(request, candidate_id):
+    if request.method == 'DELETE':
+        try:
+            candidate = Candidate.objects.get(id=candidate_id)
+            candidate.delete()
+            return JsonResponse({'status': 'success'})
+        except Candidate.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Candidate not found'}, status=404)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+def get_academic_years(request):
+    years = Candidate.objects.values_list('academic_year', flat=True).distinct()
+    return JsonResponse({'status': 'success', 'academic_years': list(years)})

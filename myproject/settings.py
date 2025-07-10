@@ -137,3 +137,6 @@ EMAIL_HOST_USER = 'jxhotel0@gmail.com'  # ← your Gmail address
 EMAIL_HOST_PASSWORD = 'ywbr yuah tzzy nxjt'  # ← your app password (no quotes if using .env)
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

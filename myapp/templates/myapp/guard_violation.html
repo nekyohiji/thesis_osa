@@ -61,229 +61,261 @@
             </div>
 
 
+{% if form.errors %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <ul class="mb-0">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                {% if field == '__all__' %}
+                    <li>{{ error }}</li>
+                {% else %}
+                    <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
 
-    <form id="violationForm">
-        <div class="row">
+<form id="violationForm" method="post" enctype="multipart/form-data" action="{% url 'submit_violation' %}">
+{% csrf_token %}
+<div class="row">
 
-            <!-- LEFT PANEL -->
-            <div class="col-md-8">
-                <div class="section-title"><i class="bi bi-person-fill"></i> Personal Information</div>
-                <div class="form-section">
-                    <div class="row">
+    <!-- LEFT PANEL -->
+    <div class="col-md-8">
+        <div class="section-title"><i class="bi bi-person-fill"></i> Personal Information</div>
+        <div class="form-section">
+            <div class="row">
 
-                        <div class="row">
-                            <!-- FIRST NAME -->
-                            <div class="col-md-4 mb-3">
-                                <label for="firstName" class="form-label">First Name:</label>
-                                <input type="text" class="form-control" id="fn_gv" placeholder="Enter first name" disabled>
-                            </div>
-
-                            <!-- MIDDLE NAME -->
-                            <div class="col-md-4 mb-3">
-                                <label for="middleName" class="form-label">Middle Initial:</label>
-                                <input type="text" class="form-control" id="mn_gv" placeholder="Enter middle initial" disabled>
-                            </div>
-
-                            <!-- EXTENSION NAME -->
-                            <div class="col-md-4 mb-3">
-                                <label for="extName" class="form-label">Extension Name:</label>
-                                <input type="text" class="form-control" id="ext_gv" placeholder="e.g., Jr., Sr., III" disabled>
-                            </div>
-                        </div>
-
-                        <!-- LAST NAME -->
-                        <div class="col-md-12 mb-3">
-                            <label for="lastName" class="form-label">Last Name:</label>
-                            <input type="text" class="form-control" id="ln_gv" placeholder="Enter last name" disabled>
-                        </div>
+                <div class="row">
+                    <!-- FIRST NAME -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">First Name:</label>
+                        <input type="text" class="form-control" id="fn_gv" name="first_name" placeholder="Enter first name" readonly>
                     </div>
-                    <div class="row">
 
-                        <!-- STUDENT ID NUMBER -->
-                        <div class="col-md-6 mb-3">
-                            <label for="studentId" class="form-label">Student ID Number:</label>
-                            <input type="text" id="studentId_gv" name="tupc_id" class="form-control" placeholder="Scan ID here" readonly>
-                            <input type="text" id="hiddenScanInput" style="opacity:0; position:absolute; z-index:-1;">
-                        </div>
+                    <!-- MIDDLE INITIAL -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Middle Initial:</label>
+                        <input type="text" class="form-control" id="mn_gv" name="middle_initial" placeholder="Enter middle initial" readonly> 
+                    </div>
 
-                        <!-- PROGRAM/COURSE -->
-                        <div class="col-md-6 mb-3">
-                            <label for="studentProgram" class="form-label">Program/Course:</label>
-                            <input type="text" class="form-control" id="studentProgram_gv" placeholder="Enter student program"disabled>
-                        </div>
+                    <!-- EXTENSION NAME -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Extension Name:</label>
+                        <input type="text" class="form-control" id="ext_gv" name="extension_name" placeholder="e.g., Jr., Sr., III" readonly>
                     </div>
                 </div>
 
+                <!-- LAST NAME -->
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Last Name:</label>
+                    <input type="text" class="form-control" id="ln_gv" name="last_name" placeholder="Enter last name" readonly>
+                </div>
+            </div>
 
+            <div class="row">
+                <!-- STUDENT ID NUMBER -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Student ID Number:</label>
+                    <input type="text" id="studentId_gv" name="student_id" class="form-control" placeholder="Scan ID here" readonly>
+                    <input type="text" id="hiddenScanInput" style="opacity:0; position:absolute; z-index:-1;">
+                </div>
+
+                <!-- PROGRAM/COURSE -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Program/Course:</label>
+                    <input type="text" class="form-control" id="studentProgram_gv" name="program_course" placeholder="Enter student program" readonly>
+                </div>
+            </div>
+        </div>
 
         <!-- VIOLATION DETAILS -->
-                <div class="section-title"><i class="bi bi-exclamation-triangle-fill"></i> Violation Details</div>
-                <div class="form-section">
-                    <div class="row">
+        <div class="section-title"><i class="bi bi-exclamation-triangle-fill"></i> Violation Details</div>
+        <div class="form-section">
+            <div class="row">
 
-
-            <!-- DATE OF VIOLATION -->
+                <!-- DATE OF VIOLATION -->
                 <div class="col-md-6 mb-3">
-                    <label for="violation_date_gv" class="form-label">Date of Violation:</label>
-                    <input type="date" class="form-control" id="violation_date_gv" disabled>
+                    <label class="form-label">Date of Violation:</label>
+                    <input type="date" class="form-control" id="violation_date_gv" name="violation_date" readonly>
                 </div>
 
                 <!-- TIME OF VIOLATION -->
                 <div class="col-md-6 mb-3">
-                    <label for="violation_time_gv" class="form-label">Time of Violation:</label>
-                    <input type="time" class="form-control" id="violation_time_gv" disabled>
+                    <label class="form-label">Time of Violation:</label>
+                    <input type="time" class="form-control" id="violation_time_gv" name="violation_time" readonly>
                 </div>
 
-                        <!-- TYPE OF VIOLATION -->
-                        <div class="col-md-12 mb-3">
-                            <label for="violationType" class="form-label">Type of Violation:</label>
-                            <select class="form-select" id="violation_type_gv">
-                                <option value="">-- Select Violation Type --</option>
-                                <option value="Disturbance">Causing Disturbance During Class Hours</option>
-                                <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
-                                <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
-                                <option value="Facial Hair">Unwanted Facial Hair</option>
-                                <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
-                                <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
-                                <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
-                                <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
-                                <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
-                                <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
-                                <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
-                                <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
-                                <option value="Gambling">Possession of Gambling Paraphernalia</option>
-                                <option value="Devices">Unauthorized Use of Devices during Class</option>
-                                <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
-                                <option value="Harrassment">Making Lewd Gestures and Lustful Words to a Student</option>
-                                <option value="Property Damage">Accidental Damage of University Property</option>
-                                <option value="PDA">public Display of Physical Intimacy or Affection</option>
-                                <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
-                            </select>
-                        </div>
-                    </div>
+                <!-- TYPE OF VIOLATION -->
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Type of Violation:</label>
+                    <select class="form-select" id="violation_type_gv" name="violation_type">
+                        <option value="">-- Select Violation Type --</option>
+                        <option value="Disturbance">Causing Disturbance During Class Hours</option>
+                        <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
+                        <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
+                        <option value="Facial Hair">Unwanted Facial Hair</option>
+                        <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
+                        <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
+                        <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
+                        <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
+                        <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
+                        <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
+                        <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
+                        <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
+                        <option value="Gambling">Possession of Gambling Paraphernalia</option>
+                        <option value="Devices">Unauthorized Use of Devices during Class</option>
+                        <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
+                        <option value="Harrassment">Making Lewd Gestures and Lustful Words to a Student</option>
+                        <option value="Property Damage">Accidental Damage of University Property</option>
+                        <option value="PDA">public Display of Physical Intimacy or Affection</option>
+                        <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
+                    </select>
                 </div>
-            </div>
-
-
-
-            <!-- RIGHT PANEL -->
-            <div class="col-md-4 d-flex flex-column gap-4">
-                <!-- GUARD ON DUTY -->
-                <div>
-                    <div class="section-title"><i class="bi bi-shield-lock-fill"></i> Guard on Duty</div>
-                    <div class="form-section">
-                        <label for="guardName" class="form-label">Select Guard:</label>
-                        <select class="form-select" id="Guardname_gv">
-                            <option value="">-- Select Guard --</option>
-                            <option value="Guard John">Guard John</option>
-                            <option value="Guard Mary">Guard Mary</option>
-                            <option value="Guard Alex">Guard Alex</option>
-                            <option value="Guard Sam">Guard Sam</option>
-                        </select>
-                    </div>
-                </div>
-
-                            <!-- UPLOAD PROOF -->
-                            <div class="upload-evidence-card position-relative">
-                                <div class="section-title"><i class="bi bi-paperclip"></i> Upload Evidence</div>
-                                <div class="form-section h-100 d-flex flex-column">
-
-                                    <!-- SCROLLABLE CONTAINER -->
-                                    <div id="fileInputsContainer" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
-                                        <!-- Dynamically added file inputs will go here -->
-                                    </div>
-
-                                    <!-- ADD FILE BUTTON -->
-                                    <div class="d-flex justify-content-between mt-2">
-                                        <button type="button" class="btn btn-danger" id="removeFileInputBtn">
-                                            <i class="bi bi-x-lg"></i> Remove
-                                        </button>
-                                        <button type="button" class="btn btn-success" id="addFileInputBtn">
-                                            <i class="bi bi-plus-lg"></i> Add
-                                        </button>
-                                    </div>
-
-
-                                </div> <!-- CLOSE form-section -->
-                            </div> <!-- CLOSE upload-evidence-card -->
-
-                            <!-- CAMERA BTN -->
-                            <button id="camera_btn_gv" type="button" class="camera-btn" title="Open Camera">
-                                Capture Evidence <i class="bi bi-camera-fill"></i>
-                            </button>
-
-                            <!-- SUBMIT BUTTON -->
-                            <div class="text-center mt-3">
-                              <!-- This is now just a trigger, not a real submit -->
-                                <button type="button"
-                                        class="btn btn-success btn-lg w-100"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#submitModal"
-                                        id="submit_btn_gv"
-                                        >
-                                <i class="bi bi-check-circle-fill"></i> Submit
-                                </button>
-
-
-
-                            </div>
-                        </div> 
-                    </div>
-                <br>
             </div>
         </div>
-    </form>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="col-md-4 d-flex flex-column gap-4">
+        <!-- GUARD ON DUTY -->
+        <div>
+            <div class="section-title"><i class="bi bi-shield-lock-fill"></i> Guard on Duty</div>
+            <div class="form-section">
+                <label class="form-label">Select Guard:</label>
+                <select class="form-select" id="Guardname_gv" name="guard_name">
+                    <option value="">-- Select Guard --</option>
+                    {% for guard in guards %}
+                        <option value="{{ guard.full_name }}">{{ guard.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Upload Evidence -->
+        <div class="upload-evidence-card position-relative">
+            <div class="section-title"><i class="bi bi-paperclip"></i> Upload Evidence</div>
+            <div class="form-section h-100 d-flex flex-column">
+
+                <!-- PREVIEW -->
+                <div id="fileInputsContainer" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
+                    <label class="form-label">Captured Evidence:</label>
+                    <div id="capturedPreview" class="mt-2" style="overflow-y:auto; max-height: 300px;">
+                        <p class="text-muted">No evidence captured yet.</p>
+                    </div>
+                </div>
+
+                <!-- CAMERA BUTTON -->
+                <div class="text-center mt-3">
+                    <button id="camera_btn_gv" type="button" class="btn btn-info w-100" title="Open Camera">
+                        📸 Capture Evidence <i class="bi bi-camera-fill"></i>
+                    </button>
+                </div>
+
+                <!-- HIDDEN INPUT -->
+                <input type="file" id="evidence_1" name="evidence_1" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center mt-3">
+            <button type="button"
+                    class="btn btn-success btn-lg w-100"
+                    data-bs-toggle="modal"
+                    data-bs-target="#submitModal"
+                    id="submit_btn_gv">
+                <i class="bi bi-check-circle-fill"></i> Submit
+            </button>
+        </div>
+    </div>
+</div>
+</form>
+
+
+<!-- ////////////////// MODALS ////////////////// -->
+
+<!-- Camera Modal -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cameraModalLabel">Capture Evidence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeCameraBtn"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="cameraStream" autoplay playsinline width="100%" style="max-height: 300px; border:1px solid #ccc; border-radius:5px;"></video>
+                <canvas id="cameraCanvas" style="display:none;"></canvas>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button id="takeSnapshotBtn" type="button" class="btn btn-success">📷 Take Snapshot</button>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Success</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                Violation submitted successfully and is pending review.
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- ///////////////// MODALS-->
-
-
-<!-- Submit Violation  -->
-    <div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border">
-            <div class="modal-header text-white">
-                <h5 class="modal-title" id="submitModalLabel"></h5>
+<!-- Confirmation Modal -->
+<div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="submitModalLabel">Confirm Submission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-dark text-center">
                 Are you sure you want to <strong>Submit</strong> this form?
             </div>
             <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-success" form="yourFormId">
-                Submit
+                <button type="submit" class="btn btn-success" form="violationForm">
+                    Submit
                 </button>
             </div>
-
-            </div>
         </div>
-        </div>
+    </div>
+</div>
 
-
-<!-- Logout  -->
-      <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
-
-            <!-- Modal Header -->
-            <div class="modal-header text-white" >
-              <h5 class="modal-title" id="logoutModalLabel"></h5>
+<!-- Logout Modal -->
+<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="logoutModalLabel">Log Out</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center text-dark">
-              Are you sure you want to <strong>Log Out?</strong>
+                Are you sure you want to <strong>Log Out?</strong>
             </div>
             <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Log Out</button>
-              </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Log Out</button>
+                </form>
             </div>
-
-          </div>
         </div>
-      </div>
+    </div>
+</div>
+
 
 
 
@@ -293,183 +325,210 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  const timezone = "Asia/Manila";
-  let isProcessingScan = false; // Global flag to block double trigger
+let isProcessingScan = false;
 
-  function updateDateTime() {
-    fetch(`https://timeapi.io/api/Time/current/zone?timeZone=${timezone}`)
-      .then(response => response.json())
-      .then(data => {
-        const date = new Date(data.dateTime);
-        document.getElementById("currentDate").textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById("currentTime").textContent = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-
-        document.getElementById("violation_date_gv").value = `${yyyy}-${mm}-${dd}`;
-        document.getElementById("violation_time_gv").value = `${hours}:${minutes}`;
-      })
-      .catch(() => {
-        document.getElementById("currentDate").textContent = "Unavailable";
-        document.getElementById("currentTime").textContent = "Unavailable";
-      });
-  }
-
-  function clearFields() {
+function clearFields() {
     document.getElementById("fn_gv").value = '';
     document.getElementById("ln_gv").value = '';
     document.getElementById("mn_gv").value = '';
     document.getElementById("ext_gv").value = '';
     document.getElementById("studentProgram_gv").value = '';
     document.getElementById("studentId_gv").value = '';
-  }
+}
 
-  function createFileInputGroup() {
-    fileInputCounter++;
-    const inputGroup = document.createElement('div');
-    inputGroup.className = 'mb-3';
-    inputGroup.innerHTML = `
-      <label class="form-label">Upload Evidence File ${fileInputCounter}:</label>
-      <input class="form-control evidence-input" type="file" accept="image/*,application/pdf,video/*" data-preview-id="preview_${fileInputCounter}">
-      <div id="preview_${fileInputCounter}" class="mt-2" style="overflow-y:auto; max-height: 300px;"></div>
-    `;
-    fileInputsContainer.appendChild(inputGroup);
-  }
+function updateDateTime() {
+    function pad(num) {
+        return String(num).padStart(2, '0');
+    }
 
-  let fileInputCounter = 0;
+    fetch('/current_time/')
+        .then(response => response.json())
+        .then(data => {
+            let serverTime = new Date(data.now);
 
-  document.addEventListener("DOMContentLoaded", () => {
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
+            function renderTime() {
+                const date = new Date(serverTime.getTime());
 
+                document.getElementById("currentDate").textContent =
+                    date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById("currentTime").textContent =
+                    date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                const yyyy = date.getFullYear();
+                const mm = pad(date.getMonth() + 1);
+                const dd = pad(date.getDate());
+                const hours = pad(date.getHours());
+                const minutes = pad(date.getMinutes());
+
+                document.getElementById("violation_date_gv").value = `${yyyy}-${mm}-${dd}`;
+                document.getElementById("violation_time_gv").value = `${hours}:${minutes}`;
+
+                // Increment by 1s
+                serverTime.setSeconds(serverTime.getSeconds() + 1);
+            }
+
+            renderTime();
+            setInterval(renderTime, 1000);
+        })
+        .catch(() => {
+            document.getElementById("currentDate").textContent = "Unavailable";
+            document.getElementById("currentTime").textContent = "Unavailable";
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
     const hiddenScanInput = document.getElementById("hiddenScanInput");
     const visibleStudentId = document.getElementById("studentId_gv");
+    hiddenScanInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+        }
+    });
+    document.addEventListener("click", (e) => {
+    const target = e.target;
+    if (
+        target.tagName !== "INPUT" &&
+        target.tagName !== "SELECT" &&
+        target.tagName !== "TEXTAREA"
+    ) {
+        hiddenScanInput.focus();
+    }
+    });
+    document.addEventListener("keydown", () => hiddenScanInput.focus());
+    hiddenScanInput.focus();
 
     function refocusScanner() {
-      hiddenScanInput.focus();
+        hiddenScanInput.focus();
     }
 
     refocusScanner();
-    document.addEventListener("click", (e) => {
-        const tag = e.target.tagName.toLowerCase();
-        const isInput = tag === 'select' || tag === 'input' || tag === 'button' || tag === 'textarea';
-        if (!isInput) {
-            setTimeout(refocusScanner, 100);
-        }
-        });
+
+    {% if submitted %}
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+    {% endif %}
 
     let scanBuffer = "";
     let scanTimeout = null;
 
     hiddenScanInput.addEventListener("input", () => {
-    const char = hiddenScanInput.value;
-    scanBuffer += char;
-    hiddenScanInput.value = ""; // Clear after each character
+        const char = hiddenScanInput.value;
+        scanBuffer += char;
+        hiddenScanInput.value = "";
 
-    if (scanTimeout) clearTimeout(scanTimeout);
+        if (scanTimeout) clearTimeout(scanTimeout);
 
-    scanTimeout = setTimeout(() => {
-        const rawText = scanBuffer.trim();
-        console.log("FULL SCAN:", JSON.stringify(rawText));
+        scanTimeout = setTimeout(() => {
+            const rawText = scanBuffer.trim();
+            console.log("FULL SCAN:", JSON.stringify(rawText));
 
-        scanBuffer = ""; // Reset for next scan
+            scanBuffer = "";
 
-        const match = rawText.match(/TUPC-\d{2}-\d{4}/i);
-        if (!match) {
-        alert("⚠️ Invalid ID format scanned!");
-        visibleStudentId.value = '';
-        return;
-        }
-
-        const tupcId = match[0].toUpperCase();
-        visibleStudentId.value = tupcId;
-        window.history.replaceState({}, document.title, "/guard_violation/");
-
-        fetch(`/get_student_by_id/${tupcId}/`)
-        .then(res => res.json())
-        .then(data => {
-            if (!data.success) {
-            alert("❌ Student not found.");
-            clearFields();
-            return;
+            const match = rawText.match(/TUPC-\d{2}-\d{4}/i);
+            if (!match) {
+                alert("⚠️ Invalid ID format scanned!");
+                visibleStudentId.value = '';
+                return;
             }
 
-            document.getElementById("fn_gv").value = data.first_name;
-            document.getElementById("ln_gv").value = data.last_name;
-            document.getElementById("mn_gv").value = data.middle_initial || '';
-            document.getElementById("ext_gv").value = data.extension || '';
-            document.getElementById("studentProgram_gv").value = data.program;
-        })
-        .catch(() => {
-            alert("❌ Error retrieving student data.");
-            clearFields();
-        })
-        .finally(() => {
-            hiddenScanInput.focus();
-        });
-    }, 200); // Wait 200ms after last character
-    }); 
+            const tupcId = match[0].toUpperCase();
+            visibleStudentId.value = tupcId;
+            window.history.replaceState({}, document.title, "/guard_violation/");
 
-    const fileInputsContainer = document.getElementById('fileInputsContainer');
-    fileInputsContainer.addEventListener('change', function (e) {
-      if (e.target && e.target.classList.contains('evidence-input')) {
-        const previewId = e.target.getAttribute('data-preview-id');
-        const previewContainer = document.getElementById(previewId);
-        previewContainer.innerHTML = '';
+            fetch(`/get_student_by_id/${tupcId}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert("❌ Student not found.");
+                        clearFields();
+                        return;
+                    }
 
-        Array.from(e.target.files).forEach(file => {
-          const fileType = file.type;
-          const fileURL = URL.createObjectURL(file);
-
-          if (fileType.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = fileURL;
-            img.className = 'img-fluid rounded mb-3';
-            previewContainer.appendChild(img);
-          } else if (fileType === 'application/pdf') {
-            const link = document.createElement('a');
-            link.href = fileURL;
-            link.textContent = 'View PDF';
-            link.target = '_blank';
-            link.className = 'btn btn-outline-light w-100 mb-3';
-            previewContainer.appendChild(link);
-          } else if (fileType.startsWith('video/')) {
-            const video = document.createElement('video');
-            video.src = fileURL;
-            video.controls = true;
-            video.className = 'w-100 rounded mb-3';
-            previewContainer.appendChild(video);
-          } else {
-            const msg = document.createElement('p');
-            msg.textContent = 'Unsupported file type.';
-            msg.className = 'text-warning';
-            previewContainer.appendChild(msg);
-          }
-        });
-      }
+                    document.getElementById("fn_gv").value = data.first_name;
+                    document.getElementById("ln_gv").value = data.last_name;
+                    document.getElementById("mn_gv").value = data.middle_initial || '';
+                    document.getElementById("ext_gv").value = data.extension || '';
+                    document.getElementById("studentProgram_gv").value = data.program;
+                })
+                .catch(() => {
+                    alert("❌ Error retrieving student data.");
+                    clearFields();
+                })
+                .finally(() => {
+                    hiddenScanInput.focus();
+                });
+        }, 200);
     });
 
-    createFileInputGroup();
-    document.getElementById('addFileInputBtn').addEventListener('click', createFileInputGroup);
+    // Camera functionality
+    const cameraBtn = document.getElementById('camera_btn_gv');
+    const capturedPreview = document.getElementById('capturedPreview');
+    const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    const video = document.getElementById('cameraStream');
+    const canvas = document.getElementById('cameraCanvas');
+    const takeSnapshotBtn = document.getElementById('takeSnapshotBtn');
+    const closeCameraBtn = document.getElementById('closeCameraBtn');
 
-    document.getElementById('retryBtn').addEventListener('click', () => {
-      document.getElementById('violationForm').reset();
-      fileInputsContainer.innerHTML = '';
-      fileInputCounter = 0;
-      createFileInputGroup();
-      updateDateTime();
-      clearFields();
-      refocusScanner();
+    let stream;
+
+    cameraBtn.addEventListener('click', () => {
+        cameraModal.show();
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(s => {
+                stream = s;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                alert("🚫 Unable to access camera: " + err);
+            });
     });
-  });
+
+    takeSnapshotBtn.addEventListener('click', () => {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            const file = new File([blob], "evidence_1.png", { type: "image/png" });
+
+            // Assign file to hidden input
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+
+            const hiddenFileInput = document.getElementById('evidence_1');
+            hiddenFileInput.files = dataTransfer.files;
+
+            // Show preview
+            const imageDataURL = URL.createObjectURL(blob);
+            capturedPreview.innerHTML = `
+                <img src="${imageDataURL}" class="img-fluid rounded mb-3" />
+            `;
+        }, 'image/png');
+
+        cameraModal.hide();
+        stopCamera();
+    });
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+
+    updateDateTime();
+});
 </script>
 
+{% if submitted %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    successModal.show();
+});
+</script>
 
-
-
+{% endif %}
 </body>
 </html>

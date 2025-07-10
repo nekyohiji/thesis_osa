@@ -63,3 +63,79 @@ class Archived_Account(models.Model):
 
     def __str__(self):
         return f"{self.email} ({'Active' if self.is_active else 'Deactivated'})"
+
+POSITIONS = [
+    ('President', 'President'),
+    ('Vice President', 'Vice President'),
+    ('Senator', 'Senator'),
+    ('Governor', 'Governor'),
+]
+
+class Candidate(models.Model):
+    academic_year = models.CharField(max_length=20)
+    name = models.CharField(max_length=100)
+    section = models.CharField(max_length=50)
+    tupc_id = models.CharField(max_length=40)
+    position = models.CharField(max_length=20, choices=POSITIONS)
+    photo = models.ImageField(upload_to='candidate_photos/')
+
+    def __str__(self):
+        return f"{self.name} - {self.position}"
+    
+    class Meta:
+        db_table = 'candidate'
+        
+class Violation(models.Model):
+    VIOLATION_TYPES = [
+    ("Disturbance", "Causing Disturbance During Class Hours"),
+    ("Proper Uniform", "Not Wearing Proper Uniform and ID"),
+    ("Cross Dressing", "Cross Dressing in Uniform and Wash Days"),
+    ("Facial Hair", "Unwanted Facial Hair"),
+    ("Earrings", "Wearing of Earrings or Multiple Earrings"),
+    ("Caps", "Wearing of Caps or Hats inside Covered Facilities"),
+    ("Entering Classroom", "Entering Classrooms without Permission from Instructor"),
+    ("Leaving Classroom", "Leaving Classrooms without Permission from Instructor"),
+    ("Attempt Fraternity", "Attempting to Join a Fraternity"),
+    ("Posting Materials", "Unauthorized Posting Printed Materials"),
+    ("Use of University Facilities", "Unauthorized Use of University Facilities"),
+    ("Official Notices", "Unauthorized Removal of Official Notices and Posters"),
+    ("Gambling", "Possession of Gambling Paraphernalia"),
+    ("Devices", "Unauthorized Use of Devices during Class"),
+    ("Resources", "Irresponsible Use of Water and Electricity within University"),
+    ("Harrassment", "Making Lewd Gestures and Lustful Words to a Student"),
+    ("Property Damage", "Accidental Damage of University Property"),
+    ("PDA", "Public Display of Physical Intimacy or Affection"),
+    ("Cigarette", "Possession of Any type of Cigarette or Tobacco inside University"),
+    ]
+
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("Approved", "Approved"),
+        ("Rejected", "Rejected"),
+    ]
+
+    first_name = models.CharField(max_length=50, blank=False)
+    middle_initial = models.CharField(max_length=10, blank=True)
+    extension_name = models.CharField(max_length=10, blank=True)
+    last_name = models.CharField(max_length=50, blank=False)
+    student_id = models.CharField(max_length=20, blank=False)
+    program_course = models.CharField(max_length=100, blank=False)
+    violation_date = models.DateField(blank=False)
+    violation_time = models.TimeField(blank=False)
+    violation_type = models.CharField(max_length=150, choices=VIOLATION_TYPES, blank=False)
+    guard_name = models.CharField(max_length=100, blank=False)
+    evidence_1 = models.ImageField(upload_to='evidence/', null=False, blank=False)
+    evidence_2 = models.ImageField(upload_to='evidence/', null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="Pending")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"{self.student_id} - {self.violation_type} ({self.status})"
+    class Meta:
+        db_table = 'violation'
