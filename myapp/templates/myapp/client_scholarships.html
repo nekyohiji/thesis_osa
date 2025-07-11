@@ -1,30 +1,28 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-    <title>OSA - Scholarships</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSA - Scholarships</title>
 
-    <link rel="stylesheet" href="{% static 'myapp/css/client_scholarships.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'myapp/css/client_scholarships.css' %}">
 </head>
 
 <body data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0">
 
 <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
     <div class="container-fluid">
-        <a id="TUPC" class="navbar-brand" href="#home">
+        <a id="TUPC" class="navbar-brand" href="{% url 'client_home' %}">
             <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
-            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite<b/></span>
-            <span class="d-inline d-sm-none"><b>TUPC</b></span>
+            <span><b>Technological University of the Philippines - Cavite</b></span>
         </a>
-
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
@@ -37,69 +35,66 @@
 </nav>
 
 <main class="container mt-5 pt-5">
-    <section id="scholarships-feed" class="py-4">
-        <h1 class="text-center fw-bold mb-5 section-title"><i class="bi bi-mortarboard-fill me-3"></i>SCHOLARSHIPS</h1>
+<section class="py-4">
+    <h1 class="text-center fw-bold mb-5">
+        <i class="bi bi-mortarboard-fill me-3"></i>Scholarships
+    </h1>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-<div class="scholarship-card card mb-4 shadow-sm border-0">
-                    <div class="card-body">
-                        <h4 class="card-title text-primary mb-2">CHARITY FIRST SCHOLARSHIP</h4>
-                        <h6 class="card-subtitle mb-3 text-muted">
-                            <i class="bi bi-calendar-event me-1"></i> Posted: <span class="post-date">June 10, 2025</span> |
-                            <i class="bi bi-calendar-x me-1"></i> Deadline: <span class="deadline-date">April 11, 2025</span>
-                        </h6>
+    <div class="row justify-content-center">
+    <div class="col-lg-8">
+        {% for s in scholarships %}
+        <div class="scholarship-card card mb-4 shadow-sm border-0" data-id="{{ s.id }}">
+            <div class="card-body">
+                <h4 class="card-title text-primary mb-2">{{ s.title }}</h4>
+                <h6 class="card-subtitle mb-3 text-muted">
+                    <i class="bi bi-calendar-event me-1"></i> Posted: <span>{{ s.posted_date|date:"F j, Y" }}</span> |
+                    <i class="bi bi-calendar-x me-1"></i> Deadline: <span>{{ s.deadline_date|date:"F j, Y" }}</span>
+                </h6>
 
-                        <p class="card-text">
-                            APPLY NOW!
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="badge bg-secondary"><i class="bi bi-house-fill me-1"></i>Category: Internal</span>
-                            <button type="button" class="btn btn-outline-primary btn-sm view-details-btn"
-                                data-bs-toggle="modal" data-bs-target="#scholarshipDetailModal"
-                                data-title="CHARITY FIRST SCHOLARSHIP"
-                                data-posted-date="June 10, 2025"
-                                data-deadline-date="April 11, 2025"
-                                data-category="Internal"
-                                data-description="Good news! We are now accepting applications for the Charity First Foundation, Inc. scholarship for the Academic Year 2025-2026. The duration of the submission will start on March 5, 2025 - April 11, 2025.<br><br>To apply, you will need to submit the following documents to the Office of Student Affairs (OSA), in addition to the Charity First Foundation's requirements:<br>&#9744; Duly accomplished application form - link: <a href='https://drive.google.com/file/d/10dtOnEd7-EE0M-bBNeX6GHSSRef9Xmbk/view?fbclid=IwY2xjawK1L1RleHRuA2FlbQIxMABicmlkETF0WGg1UGlzVk9FbE5yTzVvAR7qpHsFxZmrr6sL_SyshKN1i1pN7Zh3WG6PGeX6HvXB-LRRBWP1D6QwEkTpuA_aem_iHKPSaraROdTFbiPmx4oRQ' target='_blank'>Application Form</a><br>&#9744; Endorsement from the Former Shop Adviser / Professor in the Campus (for incoming 2nd-year students) / Endorsement from the Former Class Adviser or Teacher from SHS (for incoming 1st-year students). Endorsement shall be addressed to:<br>Ms. Beverly de Vega<br>Head, Office of Student Affairs<br>Technological University of the Philippines - Cavite Campus<br>Thru:<br>Engr. Romel A. Bucayu<br>Coordinator, Scholarship<br>&#9744; Certified True Copy of Evaluation of Grades (for incoming 2nd-year students) / Senior High School Report Card G11 ang G12 (Form-138) (for incoming 1st-year students)<br>&#9744; Latest Income Tax Return / Certificate of non-filing of ITR<br>&#9744; 2x2 Picture (1pc)<br>&#9744; Photocopy of Registration Form from the previous semester (for incoming 2nd-year students)<br><br>Provide the aforementioned documents in one copy and place them in a separate long brown envelop.<br>* For incoming 1st-year, we will only accept applications from those who have passed the admission examination. However, if a student decides not to proceed with enrollment on campus, we will withdraw their application from consideration for screening.<br>* Medical Certificate and X-RAY result of those who underwent medical examination at the Campus may get a copy from the Campus Clinic.<br><br>Don't miss this opportunity! Submit your applications on time!"
-                                data-apply-link="https://drive.google.com/file/d/10dtOnEd7-EE0M-bBNeX6GHSSRef9Xmbk/view?fbclid=IwY2xjawK1L1RleHRuA2FlbQIxMABicmlkETF0WGg1UGlzVk9FbE5yTzVvAR7qpHsFxZmrr6sL_SyshKN1i1pN7Zh3WG6PGeX6HvXB-LRRBWP1D6QwEkTpuA_aem_iHKPSaraROdTFbiPmx4oRQ" {# Updated to Google Drive URL #}
-                                data-is-external="true">
-                                View Details / Apply <i class="bi bi-arrow-right-circle ms-1"></i>
-                            </button>
-                        </div>
+                <p class="card-text">
+                    {{ s.description|linebreaksbr }}
+                </p>
+
+                {% if s.attachment_1 or s.attachment_2 or s.attachment_3 or s.attachment_4 or s.attachment_5 %}
+                <div class="mb-2">
+                    <strong>Attachments:</strong>
+                    <div class="mt-2">
+                        {% if s.attachment_1 %}
+                            <a href="{{ s.attachment_1.url }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Attachment 1</a>
+                        {% endif %}
+                        {% if s.attachment_2 %}
+                            <a href="{{ s.attachment_2.url }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Attachment 2</a>
+                        {% endif %}
+                        {% if s.attachment_3 %}
+                            <a href="{{ s.attachment_3.url }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Attachment 3</a>
+                        {% endif %}
+                        {% if s.attachment_4 %}
+                            <a href="{{ s.attachment_4.url }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Attachment 4</a>
+                        {% endif %}
+                        {% if s.attachment_5 %}
+                            <a href="{{ s.attachment_5.url }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Attachment 5</a>
+                        {% endif %}
                     </div>
                 </div>
+                {% endif %}
 
-                <div class="scholarship-card card mb-4 shadow-sm border-0">
-                    <div class="card-body">
-                        <h4 class="card-title text-success mb-2">DOST-SEI Undergraduate Scholarship</h4>
-                        <h6 class="card-subtitle mb-3 text-muted">
-                            <i class="bi bi-calendar-event me-1"></i> Posted: <span class="post-date">May 15, 2025</span> |
-                            <i class="bi bi-calendar-x me-1"></i> Deadline: <span class="deadline-date">August 15, 2025</span>
-                        </h6>
-                        <p class="card-text">
-                            APPLY NOW!
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="badge bg-success"><i class="bi bi-globe me-1"></i>Category: External (Govt)</span>
-                            <button type="button" class="btn btn-outline-success btn-sm view-details-btn"
-                                data-bs-toggle="modal" data-bs-target="#scholarshipDetailModal"
-                                data-title="DOST-SEI Undergraduate Scholarship"
-                                data-posted-date="June 10, 2025"
-                                data-deadline-date="August 15, 2025"
-                                data-category="External (Govt)"
-                                data-description="This is the comprehensive details for the DOST-SEI Undergraduate Scholarship. It covers the full eligibility criteria, all scholarship benefits (e.g., monthly stipend, book allowance, tuition subsidy), detailed application procedures, official documents required, and links to the DOST-SEI website for direct application. This scholarship is highly competitive and targets students pursuing priority STEM courses."
-                                data-apply-link="https://www.dost.gov.ph/scholarships/"
-                                data-is-external="true">
-                                View Details / Apply <i class="bi bi-arrow-right-circle ms-1"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div class="mt-3">
+                    <span class="badge 
+                        {% if s.category == 'Internal' %}bg-secondary
+                        {% elif s.category == 'External Govt' %}bg-success
+                        {% else %}bg-info
+                        {% endif %}">
+                        {{ s.category }}
+                    </span>
                 </div>
-
             </div>
         </div>
-    </section>
+        {% empty %}
+        <p class="text-center">No scholarships posted at this time. Please check back later.</p>
+        {% endfor %}
+    </div>
+    </div>
+</section>
 </main>
 
 <div class="modal fade" id="scholarshipDetailModal" tabindex="-1" aria-labelledby="scholarshipDetailModalLabel" aria-hidden="true">
@@ -128,65 +123,78 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const scholarshipDetailModal = document.getElementById('scholarshipDetailModal');
-        scholarshipDetailModal.addEventListener('show.bs.modal', function (event) {
+document.addEventListener('DOMContentLoaded', function() {
+    const scholarshipDetailModal = document.getElementById('scholarshipDetailModal');
+    scholarshipDetailModal.addEventListener('show.bs.modal', function (event) {
 
-            const button = event.relatedTarget;
+        const button = event.relatedTarget;
 
+        const title = button.getAttribute('data-title');
+        const postedDate = button.getAttribute('data-posted-date');
+        const deadlineDate = button.getAttribute('data-deadline-date');
+        const category = button.getAttribute('data-category');
+        const description = button.getAttribute('data-description');
 
-            const title = button.getAttribute('data-title');
-            const postedDate = button.getAttribute('data-posted-date');
-            const deadlineDate = button.getAttribute('data-deadline-date');
-            const category = button.getAttribute('data-category');
-            const description = button.getAttribute('data-description');  
-            const applyLink = button.getAttribute('data-apply-link');
-            const isExternal = button.getAttribute('data-is-external') === 'true';
+        const modalTitle = scholarshipDetailModal.querySelector('#modalScholarshipTitle');
+        const modalPostedDate = scholarshipDetailModal.querySelector('#modalScholarshipPostedDate');
+        const modalDeadlineDate = scholarshipDetailModal.querySelector('#modalScholarshipDeadlineDate');
+        const modalCategoryBadge = scholarshipDetailModal.querySelector('#modalScholarshipCategoryBadge');
+        const modalDescription = scholarshipDetailModal.querySelector('#modalScholarshipDescription');
 
+        modalTitle.innerHTML = `<i class="bi bi-journal-text me-2"></i>${title}`;
+        modalPostedDate.textContent = postedDate;
+        modalDeadlineDate.textContent = deadlineDate ? deadlineDate : 'N/A';
+        modalDescription.innerHTML = description;
 
-            const modalTitle = scholarshipDetailModal.querySelector('#modalScholarshipTitle');
-            const modalPostedDate = scholarshipDetailModal.querySelector('#modalScholarshipPostedDate');
-            const modalDeadlineDate = scholarshipDetailModal.querySelector('#modalScholarshipDeadlineDate');
-            const modalCategoryBadge = scholarshipDetailModal.querySelector('#modalScholarshipCategoryBadge');
-            const modalDescription = scholarshipDetailModal.querySelector('#modalScholarshipDescription');
-            const modalApplyLink = scholarshipDetailModal.querySelector('#modalApplyLink');
-
-
-            modalTitle.innerHTML = `<i class="bi bi-journal-text me-2"></i>${title}`;
-            modalPostedDate.textContent = postedDate;
-            modalDeadlineDate.textContent = deadlineDate ? deadlineDate : 'N/A';
-            modalDescription.innerHTML = description;
-
-            modalCategoryBadge.classList.remove('bg-secondary', 'bg-success', 'bg-info');
-            let iconClass = '';
-            if (category === 'Internal') {
-                modalCategoryBadge.classList.add('bg-secondary');
-                iconClass = 'bi-house-fill';
-            } else if (category === 'External (Govt)') {
-                modalCategoryBadge.classList.add('bg-success');
-                iconClass = 'bi-globe';
-            } else {
-                modalCategoryBadge.classList.add('bg-info');
-                iconClass = 'bi-link-45deg';
-            }
-            modalCategoryBadge.innerHTML = `<i class="bi ${iconClass} me-1"></i>Category: ${category}`;
-
-
-            if (applyLink && applyLink !== 'None' && applyLink !== '#') {
-                modalApplyLink.href = applyLink;
-                modalApplyLink.classList.remove('d-none');
-
-                modalApplyLink.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info', 'apply-now-btn', 'btn-primary');
-                if (isExternal) {
-                    modalApplyLink.classList.add('btn-primary');
-                } else {
-                    modalApplyLink.classList.add('apply-now-btn');
-                }
-            } else {
-                modalApplyLink.classList.add('d-none');
-            }
-        });
+        modalCategoryBadge.classList.remove('bg-secondary', 'bg-success', 'bg-info');
+        let iconClass = '';
+        if (category === 'Internal') {
+            modalCategoryBadge.classList.add('bg-secondary');
+            iconClass = 'bi-house-fill';
+        } else if (category === 'External (Govt)') {
+            modalCategoryBadge.classList.add('bg-success');
+            iconClass = 'bi-globe';
+        } else {
+            modalCategoryBadge.classList.add('bg-info');
+            iconClass = 'bi-link-45deg';
+        }
+        modalCategoryBadge.innerHTML = `<i class="bi ${iconClass} me-1"></i>Category: ${category}`;
     });
+});
+
+function pollScholarships() {
+    const container = document.getElementById('scholarships-feed');
+    const scrollPos = window.scrollY;
+
+    fetch('/api/scholarships/')
+        .then(response => response.json())
+        .then(data => {
+            let html = '';
+
+            data.scholarships.forEach(s => {
+                html += `
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-body">
+                        <h4 class="card-title text-primary mb-2">${s.title}</h4>
+                        <h6 class="card-subtitle mb-3 text-muted">
+                            Posted: ${s.posted_date} | Deadline: ${s.deadline_date}
+                        </h6>
+                        <p class="card-text">${s.description.replace(/\n/g, '<br>')}</p>
+                    </div>
+                </div>`;
+            });
+
+            if (data.scholarships.length === 0) {
+                html = `<p class="text-center">No scholarships posted at this time. Please check back later.</p>`;
+            }
+            container.innerHTML = html;
+            window.scrollTo(0, scrollPos);
+        });
+}
+
+
+pollScholarships();
+setInterval(pollScholarships, 10000);
 </script>
 </body>
 </html>

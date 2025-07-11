@@ -1,5 +1,6 @@
 from django import forms
-from .models import Violation
+from .models import Violation, Scholarship
+from django.core.exceptions import ValidationError
 
 
 class ViolationForm(forms.ModelForm):
@@ -23,3 +24,4 @@ class ViolationForm(forms.ModelForm):
         if not cleaned_data.get('evidence_1'):
             raise forms.ValidationError("At least one evidence photo is required.")
         return cleaned_data
+

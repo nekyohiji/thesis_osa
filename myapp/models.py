@@ -139,3 +139,39 @@ class Violation(models.Model):
         return f"{self.student_id} - {self.violation_type} ({self.status})"
     class Meta:
         db_table = 'violation'
+        
+class Scholarship(models.Model):
+    CATEGORY_CHOICES = [
+        ('Internal', 'Internal'),
+        ('External Govt', 'External (Govt)'),
+        ('External Private', 'External (Private)'),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    posted_date = models.DateField(auto_now_add=True)
+    deadline_date = models.DateField()
+
+    attachment_1 = models.FileField(upload_to='scholarship_attachments/', blank=True, null=True)
+    attachment_2 = models.FileField(upload_to='scholarship_attachments/', blank=True, null=True)
+    attachment_3 = models.FileField(upload_to='scholarship_attachments/', blank=True, null=True)
+    attachment_4 = models.FileField(upload_to='scholarship_attachments/', blank=True, null=True)
+    attachment_5 = models.FileField(upload_to='scholarship_attachments/', blank=True, null=True)
+
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        db_table = 'scholarship'
+        
+class LostAndFound(models.Model):
+    description = models.TextField()
+    image = models.ImageField(upload_to='lostandfound_images/', blank=True, null=True)
+    posted_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Lost & Found ({self.posted_date.date()})"
+    
+    class Meta:
+        db_table = 'lostandfound'

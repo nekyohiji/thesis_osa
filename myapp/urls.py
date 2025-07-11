@@ -56,6 +56,12 @@ urlpatterns = [
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('get-accounts/', views.get_accounts_data, name='get_accounts_data'),
     path('deactivate-account/<str:user_email>/', views.deactivate_account, name='deactivate_account'),
+    path('lostandfound/ajax/delete/<int:item_id>/', views.ajax_delete_lostandfound, name='ajax_delete_lostandfound'),
+    path('lostandfound/ajax/edit/<int:item_id>/', views.ajax_edit_lostandfound, name='ajax_edit_lostandfound'),
+    path('scholarships/ajax/delete/<int:id>/', views.ajax_delete_scholarship, name='ajax_delete_scholarship'),
+    path('scholarships/ajax/edit/<int:id>/', views.ajax_edit_scholarship, name='ajax_edit_scholarship'),
+    path('api/scholarships/', views.scholarship_feed_api, name='scholarship_feed_api'),
+    path('api/lostandfound/', views.lostandfound_feed_api, name='lostandfound_feed_api'),
     
     ##########################################elections
     path('add-candidate/', views.add_candidate, name='add_candidate'),

@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound
 from django.db.models.functions import Lower
 from django.core.mail import send_mail
 from django.conf import settings
@@ -24,6 +24,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from django.utils.dateparse import parse_date
+
 
 def current_time(request):
     return JsonResponse({'now': now().isoformat()})
@@ -71,7 +73,8 @@ def client_goodmoral_view(request):
     return render (request, 'myapp/client_goodmoral.html')
 
 def client_scholarships_view(request):
-    return render (request, 'myapp/client_scholarships.html')
+    scholarships = Scholarship.objects.order_by('-posted_date')
+    return render (request, 'myapp/client_scholarships.html', {'scholarships': scholarships})
 
 def client_CS_view(request):
     return render (request, 'myapp/client_CS.html')
@@ -86,7 +89,8 @@ def client_ACSO_view(request):
     return render (request, 'myapp/client_ACSO.html')
 
 def client_lostandfound_view(request):
-    return render (request, 'myapp/client_lostandfound.html')
+    items = LostAndFound.objects.order_by('-posted_date')
+    return render(request, 'myapp/client_lostandfound.html', {'items': items})
 
 def client_election_view(request):
     return render (request, 'myapp/client_election.html')
@@ -128,7 +132,29 @@ def admin_goodmoral_view(request):
 
 @role_required(['admin'])
 def admin_lostandfound_view(request):
-    return render (request, 'myapp/admin_lostandfound.html')
+    items = LostAndFound.objects.order_by('-posted_date')
+
+    if request.method == 'POST':
+        description = request.POST.get('description', '').strip()
+        image = request.FILES.get('image', None)
+
+        if not description:
+            messages.error(request, "Please enter a description of the found item.")
+            return redirect('admin_lostandfound')
+
+        try:
+            lost_item = LostAndFound(
+                description=description,
+                image=image
+            )
+            lost_item.save()
+            messages.success(request, "✅ Lost and Found item posted successfully.")
+            return redirect('admin_lostandfound')
+        except Exception as e:
+            messages.error(request, f"🚨 Error saving post: {e}")
+            return redirect('admin_lostandfound')
+
+    return render(request, 'myapp/admin_lostandfound.html', {'items': items})
 
 @role_required(['admin'])
 def admin_report_view(request):
@@ -136,7 +162,52 @@ def admin_report_view(request):
 
 @role_required(['admin', 'scholarship'])
 def admin_scholarships_view(request):
-    return render (request, 'myapp/admin_scholarships.html')
+    scholarships = Scholarship.objects.order_by('-posted_date')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        category = request.POST.get('category', '').strip()
+        deadline_date = request.POST.get('deadline_date', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        missing_fields = []
+        if not title:
+            missing_fields.append("Title")
+        if not category:
+            missing_fields.append("Category")
+        if not deadline_date:
+            missing_fields.append("Deadline Date")
+
+        if missing_fields:
+            messages.error(
+                request,
+                f"⚠️ Please fill in all required fields: {', '.join(missing_fields)}."
+            )
+            return redirect('admin_scholarships')
+
+        try:
+            scholarship = Scholarship(
+                title=title,
+                category=category,
+                deadline_date=deadline_date,
+                description=description,
+                attachment_1=request.FILES.get('attachment_1') or None,
+                attachment_2=request.FILES.get('attachment_2') or None,
+                attachment_3=request.FILES.get('attachment_3') or None,
+                attachment_4=request.FILES.get('attachment_4') or None,
+                attachment_5=request.FILES.get('attachment_5') or None,
+            )
+            scholarship.save()
+            messages.success(request, "✅ Scholarship posted successfully.")
+            return redirect('admin_scholarships')
+
+        except Exception as e:
+            messages.error(request, f"🚨 Something went wrong while saving: {e}")
+            return redirect('admin_scholarships')
+
+    return render(request, 'myapp/admin_scholarships.html', {
+        'scholarships': scholarships
+    })
 
 @role_required(['admin'])
 def admin_view_ackreq_view(request):
@@ -171,10 +242,26 @@ def admin_election_manage_view(request):
     return render (request, 'myapp/admin_election_manage.html')
 
 
+#########################CLIENT
+
+def scholarship_feed_api(request):
+    data = list(Scholarship.objects.order_by('-posted_date').values(
+        'id', 'title', 'description', 'category', 'posted_date', 'deadline_date'
+    ))
+    return JsonResponse({'scholarships': data})
+
+def lostandfound_feed_api(request):
+    data = list(LostAndFound.objects.order_by('-posted_date').values(
+        'id', 'description', 'posted_date', 'image'
+    ))
+    # optionally add .url if image is present
+    for item in data:
+        if item['image']:
+            item['image'] = request.build_absolute_uri(item['image'])
+    return JsonResponse({'items': data})
 
 
-
-
+#########################LOGIN
 
 def login_view(request):
     if request.method == 'POST':
@@ -223,7 +310,6 @@ def login_view(request):
             messages.error(request, "Account not found or inactive.")
 
     return render(request, 'myapp/login.html')
-
 
 def logout_view(request):
     request.session.flush()
@@ -524,8 +610,54 @@ def get_accounts_data(request):
             'deactivated': deactivated_accounts
         })
 
+@role_required(['admin'])
+def ajax_delete_lostandfound(request, item_id):
+    if request.method == 'POST':
+        item = get_object_or_404(LostAndFound, id=item_id)
+        item.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+@role_required(['admin', 'scholarship'])
+def ajax_edit_lostandfound(request, item_id):
+    if request.method == 'POST':
+        item = get_object_or_404(LostAndFound, id=item_id)
+        description = request.POST.get('description', '').strip()
+        if not description:
+            return JsonResponse({'success': False, 'error': 'Description required'}, status=400)
+        item.description = description
+        if 'image' in request.FILES:
+            item.image = request.FILES['image']
+        item.save()
+        return JsonResponse({'success': True, 'description': item.description, 'image_url': item.image.url if item.image else None})
+    return JsonResponse({'success': False}, status=400)
+
+@role_required(['admin', 'scholarship'])
+def ajax_delete_scholarship(request, id):
+    if request.method == 'POST':
+        s = get_object_or_404(Scholarship, id=id)
+        s.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
 
 
+@role_required(['admin'])
+def ajax_edit_scholarship(request, id):
+    if request.method == 'POST':
+        s = get_object_or_404(Scholarship, id=id)
+        s.title = request.POST.get('title', '').strip()
+        s.description = request.POST.get('description', '').strip()
+        s.category = request.POST.get('category', '').strip()
+        s.deadline_date = request.POST.get('deadline_date')
+        s.save()
+        return JsonResponse({
+            'success': True,
+            'title': s.title,
+            'description': s.description,
+            'category': s.category,
+            'deadline_date': s.deadline_date,
+        })
+    return JsonResponse({'success': False}, status=400)
 ################################ELECTIONS   
 @csrf_exempt
 def add_candidate(request):
