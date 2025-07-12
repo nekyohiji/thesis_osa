@@ -150,8 +150,6 @@ hr {
 }
 
 .logout a {
-  display: flex;
-  align-items: center;
   color: #ca0303 !important; /* Red logout text */
   font-weight: bold;
   text-decoration: none !important;
@@ -363,7 +361,7 @@ hr {
 }
 
 .btn-danger-sm {
-  background-color: #dc3545; /* Red for delete */
+  background-color: #dc3545; 
   color: white;
   border: none;
 }
@@ -373,7 +371,7 @@ hr {
 }
 
 .btn-info-sm {
-  background-color: #17a2b8; /* Blue for edit */
+  background-color: #17a2b8; 
   color: white;
   border: none;
 }
