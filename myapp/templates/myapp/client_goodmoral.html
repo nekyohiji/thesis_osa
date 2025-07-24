@@ -135,7 +135,12 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Program/Course:</label>
-                            <input type="text" id="program_goodmoral" class="form-control" name="program" maxlength="100" placeholder="BET-COET" required>
+                            <select class="form-select" id="program_goodmoral" name="program"  maxlength="100" required>
+                                <option value="">-- Select Status --</option>
+                                <option value="Graduated">Alumni/Graduated</option>
+                                <option value="Former_Student">Former Student</option>
+                                <option value="Current_Student">Current Student</option>
+                            </select>            
                         </div>
                     </div>
 
@@ -182,15 +187,25 @@
                 <!-- PURPOSE -->
                 <div class="mb-3">
                     <label class="form-label">Purpose of Request:</label>
-                    <select class="form-select" name="purpose" id="purpose_goodmoral" required>
+                    <select class="form-select" name="purpose" id="purpose_goodmoral" required onchange="toggleOtherInput()">
                         <option value="">-- Select Purpose of Request --</option>
                         <option value="Employment">Employment</option>
                         <option value="Further Studies">Further Studies</option>
                         <option value="Transfer to Another School">Transfer to Another School</option>
-                        <option value="Personal Use">Personal Use</option>
+                        <option value="SIT/OPT"> Supervised Industrial Training (SIT) / Off-Campus Practice Teaching (OPT) </option>
+                        <option value="Student Development">Student Development ( COMSELEC, USG, Awards. etc.)</option>
+
+                        <option value="Scholarship">Scholarship</option>
                         <option value="Others">Others</option>
                     </select>
                 </div>
+
+                <!-- Shown only if Others, Transfer, or Scholarship is selected -->
+                <div class="mb-3" id="otherPurposeContainer" style="display: none;">
+                    <label class="form-label">Please specify:</label>
+                    <input type="text" class="form-control" name="other_purpose" id="other_purpose">
+                </div>
+
 
                 <hr class="m"><br>
 
@@ -457,6 +472,44 @@
             fileInputContainer.style.display = 'none';
         }
     });
+
+
+
+    // "Others" - Hidden Input Text
+    function toggleOtherInput() {
+        const purposeSelect = document.getElementById("purpose_goodmoral");
+        const otherInputContainer = document.getElementById("otherPurposeContainer");
+        const otherInput = document.getElementById("other_purpose");
+
+        const selected = purposeSelect.value;
+
+        let placeholderText = "";
+
+        switch (selected) {
+            case "Others":
+                placeholderText = "Please specify your purpose";
+                break;
+            case "Transfer to Another School":
+                placeholderText = "Enter the School Name";
+                break;
+            case "Scholarship":
+                placeholderText = "Specify Scholarship";
+                break;
+        }
+
+        if (placeholderText !== "") {
+            otherInputContainer.style.display = "block";
+            otherInput.required = true;
+            otherInput.placeholder = placeholderText;
+        } else {
+            otherInputContainer.style.display = "none";
+            otherInput.required = false;
+            otherInput.value = "";
+            otherInput.placeholder = "";
+        }
+    }
+
+
 </script>
 
 
