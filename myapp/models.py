@@ -139,6 +139,29 @@ class Violation(models.Model):
         return f"{self.student_id} - {self.violation_type} ({self.status})"
     class Meta:
         db_table = 'violation'
+
+
+class ViolationSettlement(models.Model):
+    violation = models.OneToOneField(
+        Violation,
+        on_delete=models.CASCADE,
+        related_name='settlement'
+    )
+    settlement_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('Apology Letter', 'Apology Letter'),
+            ('Community Service', 'Community Service'),
+        ]
+    )
+    is_settled = models.BooleanField(default=False)
+    settled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'violation_settlement'
+
+    def __str__(self):
+        return f"{self.violation.student_id} - {self.settlement_type} - {'Settled' if self.is_settled else 'Unsettled'}"
         
 class Scholarship(models.Model):
     CATEGORY_CHOICES = [
@@ -175,3 +198,58 @@ class LostAndFound(models.Model):
     
     class Meta:
         db_table = 'lostandfound'
+
+class GoodMoralRequest(models.Model):
+    first_name = models.CharField(max_length=50)
+    middle_name = models.CharField(max_length=50, blank=True)
+    surname = models.CharField(max_length=50)
+    ext = models.CharField(max_length=10, blank=True)
+    sex = models.CharField(max_length=10)
+    student_id = models.CharField(max_length=20)
+    program = models.CharField(max_length=100)
+    status = models.CharField(max_length=20)
+    date_graduated = models.DateField(null=True, blank=True)
+    inclusive_years = models.CharField(max_length=20, blank=True)
+    date_admission = models.DateField(null=True, blank=True)
+    purpose = models.CharField(max_length=100)
+    requester_name = models.CharField(max_length=100)
+    requester_email = models.EmailField()
+    requester_contact = models.CharField(max_length=20)
+    relationship = models.CharField(max_length=50)
+
+    # New
+    document_type = models.CharField(max_length=30, default='unknown')
+    uploaded_file = models.FileField(upload_to='uploads/goodmoral/', default='uploads/goodmoral/default.pdf')
+
+    is_approved = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+    rejection_reason = models.TextField(blank=True)
+    is_paid = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.surname} - {self.student_id}"
+    
+    class Meta:
+        db_table = 'goodmoral'
+        
+class StudentAssistantshipRequirement(models.Model):
+    content = models.TextField("Requirements Text")
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Student Assistantship Requirements"
+    
+    class Meta:
+        db_table = 'studentassistant'
+        
+class ACSORequirement(models.Model):
+    content = models.TextField()
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"ACSO Requirement (Last updated: {self.last_updated})"
+    
+    class Meta:
+        db_table = 'acso'

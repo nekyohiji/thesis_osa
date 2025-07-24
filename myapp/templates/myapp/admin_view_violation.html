@@ -41,33 +41,33 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label"><strong>First Name:</strong></label>
-                <input type="text" class="form-control" placeholder="Firstname" readonly>
+                <input type="text" class="form-control" value="{{ student.first_name }}" readonly>
               </div>
               <div class="col-md-6">
                 <label class="form-label"><strong>Middle Initial:</strong></label>
-                <input type="text" class="form-control" placeholder="M.I." readonly>
+                <input type="text" class="form-control" value="{{ student.middle_initial }}" readonly>
               </div>
               <div class="col-md-6">
                 <label class="form-label"><strong>Ext:</strong></label>
-                <input type="text" class="form-control" placeholder="e.g., Jr., Sr., III" readonly>
+                <input type="text" class="form-control"value="{{ student.extension }}" readonly>
               </div>
               <div class="col-md-6">
                 <label class="form-label"><strong>Last Name:</strong></label>
-                <input type="text" class="form-control" placeholder="Lastname" readonly>
+                <input type="text" class="form-control" value="{{ student.last_name }}" readonly>
               </div>
               <div class="col-md-6">
                 <label class="form-label"><strong>ID Number:</strong></label>
-                <input type="text" class="form-control" placeholder="TUPC-XX-XXXX" readonly>
+                <input type="text" class="form-control" value="{{ student.tupc_id }}" readonly>
               </div>
               <div class="col-md-6">
                 <label class="form-label"><strong>Program:</strong></label>
-                <input type="text" class="form-control" placeholder="BET-COET" readonly>
+                <input type="text" class="form-control" value="{{ student.program }}" readonly>
               </div>
             </div>
             <!-- Total Violations Display -->
             <div class="mt-4 text-center">
               <h6 class="fw-bold text-uppercase mb-0">Total Violations:</h6>
-              <input type="number" class="form-control text-center w-50 mx-auto" value="4" readonly>
+              <input type="number" class="form-control text-center w-50 mx-auto" value="{{ total_violations }}" readonly>
             </div>
           </div>
         </div>
@@ -92,12 +92,35 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>May 21, 2025</td>
-                  <td>Unwanted Facial Hair</td>
-                  <td><a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#viewMoreModal">View More</a></td>
-                  <td>Settled</td>
-                </tr>
+              {% for v in approved_violations %}
+              <tr>
+                <td>{{ v.violation_date }}</td>
+                <td>{{ v.get_violation_type_display }}</td>
+                <td>
+                  {% if v.evidence_1 %}
+                    <a href="{{ v.evidence_1.url }}" target="_blank">Evidence 1</a>
+                  {% endif %}
+                  {% if v.evidence_2 %}
+                    <br><a href="{{ v.evidence_2.url }}" target="_blank">Evidence 2</a>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if v.settlement %}
+                    {% if v.settlement.is_settled %}
+                      <span class="badge bg-success">Settled</span>
+                    {% else %}
+                      <a href="{% url 'mark_settlement_as_settled' v.settlement.id %}" class="btn btn-sm btn-warning">
+                        Mark as Settled
+                      </a>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge bg-secondary">No Settlement</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4">No approved violations.</td></tr>
+              {% endfor %}
               </tbody>
             </table>
           </div>
@@ -118,16 +141,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>May 21, 2025</td>
-                  <td>Unwanted Facial Hair</td>
-                  <td><a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#viewMoreModal">View More</a></td>
-                </tr>
+              {% for v in pending_violations %}
+              <tr>
+                <td>{{ v.violation_date }}</td>
+                <td>{{ v.get_violation_type_display }}</td>
+                <td>
+                  {% if v.evidence_1 %}
+                    <a href="{{ v.evidence_1.url }}" target="_blank">Evidence 1</a>
+                  {% endif %}
+                  {% if v.evidence_2 %}
+                    <br><a href="{{ v.evidence_2.url }}" target="_blank">Evidence 2</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3">No pending violations.</td></tr>
+              {% endfor %}
               </tbody>
             </table>
           </div>
         </div>
-
       </div> <!-- End Right Panel -->
     </div> <!-- End row -->
   </div> <!-- End card -->

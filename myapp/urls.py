@@ -31,7 +31,7 @@ urlpatterns = [
     path('admin_view_ackreq/', views.admin_view_ackreq_view, name='admin_view_ackreq'),
     path('admin_view_CS/', views.admin_view_CS_view, name='admin_view_CS'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_CS'),
-    path('admin_view_violation/', views.admin_view_violation_view, name='admin_view_violation'),
+    path('admin_view_violation/', views.admin_view_violation, name='admin_view_violation'),
     path('admin_violation/', views.admin_violation_view, name='admin_violation'),
     path('admin_student/', views.admin_student_view, name='admin_student'),
     path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
@@ -62,7 +62,10 @@ urlpatterns = [
     path('scholarships/ajax/edit/<int:id>/', views.ajax_edit_scholarship, name='ajax_edit_scholarship'),
     path('api/scholarships/', views.scholarship_feed_api, name='scholarship_feed_api'),
     path('api/lostandfound/', views.lostandfound_feed_api, name='lostandfound_feed_api'),
-    
+    path('violation/<int:violation_id>/approve/', views.admin_approve_violation, name='admin_approve_violation'),
+    path('violation/<int:violation_id>/decline/', views.admin_decline_violation, name='admin_decline_violation'),
+    path('settlement/<int:settlement_id>/settle/', views.mark_settlement_as_settled, name='mark_settlement_as_settled'),
+
     ##########################################elections
     path('add-candidate/', views.add_candidate, name='add_candidate'),
     path('get-candidates/', views.get_candidates, name='get_candidates'),

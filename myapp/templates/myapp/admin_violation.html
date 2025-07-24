@@ -10,7 +10,14 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'myapp/css/admin_violation.css' %}">
 </head>
-
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-success alert-dismissible fade show mt-3 mx-3" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
 <body>
   <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
@@ -165,10 +172,10 @@
 
           <!-- Search Bar -->
           <div class="d-flex justify-content-end mb-3">
-            <div class="input-group input-group-sm" style="max-width: 400px;">
-              <input id="violation_search" type="text" class="form-control" placeholder="Search student">
-              <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
-            </div>
+            <form method="get" action="{% url 'admin_violation' %}" class="input-group input-group-sm" style="max-width: 400px;">
+              <input name="q" type="text" class="form-control" placeholder="Search pending student" value="{{ request.GET.q }}">
+              <button class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+            </form>
           </div>
  
 
@@ -189,60 +196,30 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Juan Dela Cruz</td>
-                    <td>BS Computer Engineering</td>
-                    <td>No ID</td>
-                    <td>
-                      <div class="d-flex justify-content-center gap-2">
-                        <button id="accept_violation_btn" class="btn btn-sm btn-success action-btn" data-bs-toggle="modal" data-bs-target="#acceptModal">
-                          <i class="bi bi-check-circle me-1"></i>Accept
-                        </button>
-                        <button   id="decline_violation_btn" class="btn btn-sm btn-danger action-btn" data-bs-toggle="modal" data-bs-target="#declineModal">
-                          <i class="bi bi-x-circle me-1"></i>Decline
-                        </button>
-                      </div>
-                    </td>                    
-                    <td>
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Anna Reyes</td>
-                    <td>BSBA</td>
-                    <td>Improper uniform</td>
-                    <td>
-                      <div class="d-flex justify-content-center gap-2">
-                        <button id="accept_violation_btn"  class="btn btn-sm btn-success action-btn" data-bs-toggle="modal" data-bs-target="#acceptModal">
-                          <i class="bi bi-check-circle me-1"></i>Accept
-                        </button>
-                        <button id="decline_violation_btn" class="btn btn-sm btn-danger action-btn" data-bs-toggle="modal" data-bs-target="#declineModal">
-                          <i class="bi bi-x-circle me-1"></i>Decline
-                        </button>
-                      </div>
-                    </td>                    
-                    <td>
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Carlos Mendoza</td>
-                    <td>BSECE</td>
-                    <td>Late entry</td>
-                    <td>
-                      <div class="d-flex justify-content-center gap-2">
-                        <button  id="accept_violation_btn"  class="btn btn-sm btn-success action-btn" data-bs-toggle="modal" data-bs-target="#acceptModal">
-                          <i class="bi bi-check-circle me-1"></i>Accept
-                        </button>
-                        <button id="decline_violation_btn" class="btn btn-sm btn-danger action-btn" data-bs-toggle="modal" data-bs-target="#declineModal">
-                          <i class="bi bi-x-circle me-1"></i>Decline
-                        </button>
-                      </div>
-                    </td>                    
-                    <td>
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
-                  </tr>
+                {% for v in pending_violations %}
+                <tr>
+                  <td>{{ v.first_name }} {{ v.last_name }}</td>
+                  <td>{{ v.program_course }}</td>
+                  <td>{{ v.get_violation_type_display }}</td>
+                  <td>
+                    <div class="d-flex justify-content-center gap-2">
+                      <a href="{% url 'admin_approve_violation' v.id %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-check-circle me-1"></i>Approve
+                      </a>
+                      <a href="{% url 'admin_decline_violation' v.id %}" class="btn btn-sm btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Decline
+                      </a>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm btn-outline-primary">
+                      View More
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5">No pending violations</td></tr>
+                {% endfor %}
                 </tbody>
               </table>
             </div>
@@ -262,10 +239,10 @@
 
           <!-- Search Bar for Violation History -->
           <div class="d-flex justify-content-end mb-3">
-            <div class="input-group input-group-sm" style="max-width: 400px;">
-              <input id="violation_record_search" type="text" class="form-control" placeholder="Search history">
-              <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
-            </div>
+            <form method="get" action="{% url 'admin_violation' %}" class="input-group input-group-sm" style="max-width: 400px;">
+              <input name="q_history" type="text" class="form-control" placeholder="Search history student" value="{{ request.GET.q_history }}">
+              <button class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+            </form>
           </div>
 
           <!-- Violation History Table -->
@@ -283,26 +260,19 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Maria Santos</td>
-                    <td>Cleared</td>
-                    <td>     
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>John Lee</td>
-                    <td>Pending Clearance</td>
-                    <td>     
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>                  
-                  </tr>
-                  <tr>
-                    <td>Angela Cruz</td>
-                    <td>Cleared</td>
-                    <td>     
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>                  
-                  </tr>
+                {% for v in history_violations %}
+                <tr>
+                  <td>{{ v.first_name }} {{ v.last_name }}</td>
+                  <td>{{ v.violation_date }}</td>
+                  <td>
+                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm btn-outline-primary">
+                      View More
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">No history records</td></tr>
+                {% endfor %}
                 </tbody>
               </table>
             </div>
@@ -356,7 +326,19 @@
   </div>
 </div>
 
-
+<div id="loadingOverlay" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    justify-content: center;
+    align-items: center;
+">
+  <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
 
 
 
@@ -364,7 +346,23 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+    const approveBtns = document.querySelectorAll(".btn-success");
+    const declineBtns = document.querySelectorAll(".btn-danger");
+    const loadingOverlay = document.getElementById("loadingOverlay");
 
+    approveBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            loadingOverlay.style.display = "flex";
+        });
+    });
+
+    declineBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            loadingOverlay.style.display = "flex";
+        });
+    });
+});
 /* Sidebar Functions*/
   // Toggle Sidebar
   function toggleSidebar() {

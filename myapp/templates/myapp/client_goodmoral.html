@@ -49,6 +49,20 @@
     <br>
     <h1  class="mb-4"> <i class="bi bi-file-earmark-text-fill"></i><b>  Good Moral Certificate Request Form</b></h1><hr>
     <h6 class="mb-4"> Please fill in the required information below.</h6>
+    <div id="formAlert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
+        <strong>Please fill out all required fields before proceeding.</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    {% if messages %}
+    <div class="mt-3">
+        {% for message in messages %}
+        <div class="alert alert-danger" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Step Indicator -->
     <div class="step-indicator mb-4" id="stepIndicator">
@@ -73,33 +87,29 @@
                 <div class="section-title"><i class="bi bi-person-fill"></i>Personal Information</div>
                 <hr><br>
 
-        <!-- FIRST NAME-->
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label">First Name:</label>
-                        <input type="text" id="fn_goodmoral"class="form-control" name="first_name" placeholder="Enter Your First Name" required>
+                        <input type="text" id="fn_goodmoral" class="form-control" name="first_name" maxlength="50" placeholder="Enter Your First Name" required>
                     </div>
-        <!-- MIDDLE NAME -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Middle Name:</label>
-                        <input type="text" id="mn_goodmoral" class="form-control" name="middle_name" placeholder="Enter Your Middle Name" >
+                        <input type="text" id="mn_goodmoral" class="form-control" name="middle_name" maxlength="50" placeholder="Enter Your Middle Name">
                     </div>
-        <!-- SURNAME -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Surname:</label>
-                        <input type="text" id="sn_goodmoral" class="form-control" name="surname" placeholder="Enter Your Last Name" required >
+                        <input type="text" id="sn_goodmoral" class="form-control" name="surname" maxlength="50" placeholder="Enter Your Last Name" required>
                     </div>
                 </div>
-        <!-- EXTENSION -->
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Extension (Jr., Sr.):</label>
-                        <input type="text" id="ex_goodmoral" class="form-control" name="ext" placeholder="Enter Your Extension Name">
+                        <input type="text" id="ex_goodmoral" class="form-control" name="ext" maxlength="10" placeholder="Enter Your Extension Name">
                     </div>
-        <!-- SEX -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Sex:</label>
-                        <select class="form-select"  id="sex_goodmoral" name="sex" required>
+                        <select class="form-select" id="sex_goodmoral" name="sex" required>
                             <option value="">-- Select --</option>
                             <option>Male</option>
                             <option>Female</option>
@@ -113,53 +123,53 @@
 
                 <!-- STEP 2, ACADEMIC INFORMATION -->
             <div class="step card mb-4">
-            <div class="card-body">
-                <div class="section-title"><i class="bi bi-mortarboard-fill"></i> Academic Information</div>
-                <hr><br>
+                <div class="card-body">
+                    <div class="section-title"><i class="bi bi-mortarboard-fill"></i> Academic Information</div>
+                    <hr><br>
 
-                <!-- STUDENT ID NUMBER & PROGRAM/COURSE -->
-                <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Student ID Number:</label>
-                    <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" placeholder="TUPC-XX-XXXX" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Program/Course:</label>
-                    <input type="text" id="program_goodmoral" class="form-control" name="program" placeholder="BET-COET" required>
-                </div>
-                </div>
+                    <!-- STUDENT ID NUMBER & PROGRAM/COURSE -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Student ID Number:</label>
+                            <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" maxlength="20" placeholder="TUPC-XX-XXXX" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Program/Course:</label>
+                            <input type="text" id="program_goodmoral" class="form-control" name="program" maxlength="100" placeholder="BET-COET" required>
+                        </div>
+                    </div>
 
-                <!-- STATUS & DATE GRADUATED -->
-                <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Status:</label>
-                    <select class="form-select" id="status_goodmoral" name="status" required>
-                    <option value="">-- Select Status --</option>
-                    <option value="Graduated">Graduated</option>
-                    <option value="Undergraduate">Undergraduate</option>
-                    <option value="Transferred">Transferred</option>
-                    <option value="Dropped">Dropped</option>
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Date Graduated:</label>
-                    <input type="date" class="form-control" id="date_graduated_goodmoral" name="date_graduated">
-                </div>
-                </div>
+                    <!-- STATUS & DATE GRADUATED -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status:</label>
+                            <select class="form-select" id="status_goodmoral" name="status" required>
+                                <option value="">-- Select Status --</option>
+                                <option value="Graduated">Graduated</option>
+                                <option value="Undergraduate">Undergraduate</option>
+                                <option value="Transferred">Transferred</option>
+                                <option value="Dropped">Dropped</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date Graduated:</label>
+                            <input type="date" class="form-control" id="date_graduated_goodmoral" name="date_graduated">
+                        </div>
+                    </div>
 
-                <!-- INCLUSIVE YEARS OF STAY & DATE OF ADMISSION -->
-                <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Inclusive Years of Stay:</label>
-                    <input type="text" class="form-control" id="stay_goodmoral" name="inclusive_years" placeholder="e.g., 2015-2019">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Date of Admission:</label>
-                    <input type="date" class="form-control" id="admission_date_goodmoral" name="date_admission">
-                </div>
-                </div>
+                    <!-- INCLUSIVE YEARS OF STAY & DATE OF ADMISSION -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Inclusive Years of Stay:</label>
+                            <input type="text" class="form-control" id="stay_goodmoral" name="inclusive_years" maxlength="20" placeholder="e.g., 2015-2019">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date of Admission:</label>
+                            <input type="date" class="form-control" id="admission_date_goodmoral" name="date_admission">
+                        </div>
+                    </div>
 
-            </div>
+                </div>
             </div>
 
 
@@ -169,7 +179,7 @@
             <div class="card-body">
                 <div class="section-title"><i class="bi bi-journal-text"></i> Request & Requester Information</div><hr><br>
 
-        <!-- PURPOSE -->
+                <!-- PURPOSE -->
                 <div class="mb-3">
                     <label class="form-label">Purpose of Request:</label>
                     <select class="form-select" name="purpose" id="purpose_goodmoral" required>
@@ -184,82 +194,92 @@
 
                 <hr class="m"><br>
 
-        <!-- NAME OF REQUESTER -->
+                <!-- NAME & EMAIL OF REQUESTER -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Name of Requester:</label>
-                        <input type="text" class="form-control" id="requester_goodmoral" name="requester_name" placeholder="Enter your Name" required>
+                        <input type="text" class="form-control" id="requester_goodmoral" name="requester_name" maxlength="100" placeholder="Enter your Name" required>
                     </div>
-
-        <!-- EMAIL OF REQUESTER -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Email of Requester:</label>
-                        <input type="email" class="form-control" id="email_req_goodmoral" name="requester_email" placeholder="@gmail.com" required>
+                        <input type="email" class="form-control" id="email_req_goodmoral" name="requester_email" maxlength="100" placeholder="@gmail.com" required>
                     </div>
                 </div>
 
-        <!-- CONTACT OF REQUESTER -->
+                <!-- CONTACT & RELATIONSHIP -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Contact No. of Requester:</label>
-                        <input type="tel" class="form-control" id="contact_req_goodmoral" name="requester_contact" placeholder="+63 9XXXXXXXXX" required>
+                        <input type="tel" class="form-control" id="contact_req_goodmoral" name="requester_contact" maxlength="20" placeholder="+63 9XXXXXXXXX" required>
                     </div>
-
-        <!-- RELATIONSHIP -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Relationship to Alum/Student:</label>
-                        <input type="text" class="form-control" id="relationship_goodmoral" name="relationship" placeholder="Self"  required>
+                        <input type="text" class="form-control" id="relationship_goodmoral" name="relationship" maxlength="50" placeholder="Self" required>
                     </div>
                 </div>
             </div>
         </div>
-
 
 
         <!-- STEP 4 UPLOAD -->
         <div class="step card mb-4">
             <div class="card-body">
-                <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div> <hr><br>
+                <div class="section-title"><i class="bi bi-upload"></i> Upload Document</div> <hr><br>
 
-                <!-- Select which document to upload -->
+                <!-- Select Document Type -->
                 <div class="mb-3">
                     <label class="form-label">Select Document Type:</label>
-                    <select class="form-select" id="documentTypeSelect">
+                    <select class="form-select" id="documentTypeSelect" name="document_type" required>
                         <option value="">-- Select Document Type --</option>
-                        <option value="upload_id">ID</option>
+                        <option value="upload_id">Valid Student ID</option>
                         <option value="upload_ack_receipt">Acknowledgment Receipt</option>
                         <option value="upload_diploma">Diploma</option>
                     </select>
                 </div>
 
-                <!-- Dynamic file input appears here -->
+                <!-- Upload Field -->
                 <div class="mb-3" id="fileInputContainer" style="display: none;">
                     <label id="fileInputLabel" class="form-label">Upload File:</label>
-                    <input type="file" class="form-control" id="documentFileInput" accept=".jpg,.jpeg,.png,.pdf">
-                </div><br><hr>
+                    <input type="file" class="form-control" name="uploaded_file" id="uploadedFileInput" accept=".jpg,.jpeg,.png,.pdf" required>
+                </div>
 
-                
-        <!-- Submit Button -->
+                <hr>
+
+                <!-- Submit Button -->
                 <div class="text-end mt-3">
-                    <button type="submit" id="submitButton" class="btn btn-success" disabled>
+                    <button type="submit" class="btn btn-success">
                         <i class="bi bi-send-fill"></i> Submit Request
                     </button>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
 
             <!-- Navigation Buttons (Fixed at Bottom of Form) -->
-            <div class="fixed-nav mt-4 py-3 d-flex justify-content-between align-items-center px-5">
+        <div class="fixed-nav mt-4 py-3 d-flex justify-content-between align-items-center px-5">
                 <button type="button" class="btn btn-secondary btn-lg" id="prevBtn" onclick="changeStep(-1)">
                     <i class="bi bi-arrow-left-circle-fill"></i> Previous
                 </button>
                 <button type="button" class="btn btn-primary btn-lg" id="nextBtn" onclick="changeStep(1)">
                     Next <i class="bi bi-arrow-right-circle-fill"></i>
                 </button>
-            </div>
+        </div>
+
+        <!-- Submission Modal -->
+    <div class="modal fade" id="submissionModal" tabindex="-1" aria-labelledby="submissionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="submissionModalLabel">Request Submitted</h5>
+        </div>
+        <div class="modal-body">
+            Your request has been submitted. Please wait for an email notification regarding approval or rejection.
+        </div>
+        <div class="modal-footer">
+            <a href="{% url 'client_home' %}" class="btn btn-primary">Back to Home</a>
+        </div>
+        </div>
+    </div>
+    </div>
 
 
 <!-- Bootstrap JS -->
@@ -267,93 +287,178 @@
 
 <!-- Stepper JS -->
 <script>
+    // Stepper Logic
+    let currentStep = 1;
+    const steps = document.getElementsByClassName('step');
+    const indicators = document.getElementById('stepIndicator').children;
 
-            const documentTypeSelect = document.getElementById('documentTypeSelect');
-            const fileInputContainer = document.getElementById('fileInputContainer');
-            const documentFileInput = document.getElementById('documentFileInput');
-            const fileInputLabel = document.getElementById('fileInputLabel');
-            const submitButton = document.getElementById('submitButton');
+    showStep(currentStep);
 
-            const uploadedFiles = {
-                upload_id: null,
-                upload_ack_receipt: null,
-                upload_diploma: null,
-            };
+    function showStep(step) {
+        for (let i = 0; i < steps.length; i++) {
+            steps[i].classList.remove('active');
+        }
+        steps[step - 1].classList.add('active');
 
-            // Show file input when document type changes
-            documentTypeSelect.addEventListener('change', () => {
-                const selectedType = documentTypeSelect.value;
-                fileInputContainer.style.display = selectedType ? 'block' : 'none';
-                if (selectedType) {
-                    fileInputLabel.textContent = `Upload ${documentTypeSelect.options[documentTypeSelect.selectedIndex].text}:`;
-                    documentFileInput.value = '';
+        for (let i = 0; i < indicators.length; i++) {
+            indicators[i].classList.remove('active', 'done');
+            if (i < step - 1) {
+                indicators[i].classList.add('done');
+            } else if (i === step - 1) {
+                indicators[i].classList.add('active');
+            }
+        }
+
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const fixedNav = document.querySelector('.fixed-nav');
+
+        if (step === 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+            fixedNav.classList.remove('justify-content-between');
+            fixedNav.classList.add('justify-content-end');
+        } else if (step === steps.length) {
+            prevBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none';
+            fixedNav.classList.remove('justify-content-end');
+            fixedNav.classList.add('justify-content-between');
+        } else {
+            prevBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'inline-block';
+            fixedNav.classList.remove('justify-content-end');
+            fixedNav.classList.add('justify-content-between');
+        }
+    }
+
+    function changeStep(n) {
+        const alertDiv = document.getElementById('formAlert');
+        alertDiv.classList.add('d-none'); // Hide alert initially
+        alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
+
+        if (n > 0) {
+            const currentFields = steps[currentStep - 1].querySelectorAll('input, select, textarea');
+            let valid = true;
+
+            // General required field validation (excluding middle_name)
+            currentFields.forEach(field => {
+                if (
+                    field.hasAttribute('required') &&
+                    !field.value.trim() &&
+                    field.name !== 'middle_name'
+                ) {
+                    valid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
                 }
             });
 
-            // Enable submit button when a file is uploaded
-            documentFileInput.addEventListener('change', () => {
-                const selectedType = documentTypeSelect.value;
-                const file = documentFileInput.files[0];
+            // Step 2: Academic Info validation
+            if (valid && currentStep === 2) {
+                const studentID = document.getElementById('studentID_goodmoral');
+                const stayYears = document.getElementById('stay_goodmoral');
 
-                if (file && selectedType) {
-                    uploadedFiles[selectedType] = file;
+                const idPattern = /^TUPC-\d{2}-\d{4}$/;
+                const stayPattern = /^\d{4}-\d{4}$/;
 
-                    const hasFileUploaded = Object.values(uploadedFiles).some(f => f !== null);
-                    submitButton.disabled = !hasFileUploaded;
+                if (!idPattern.test(studentID.value.trim())) {
+                    valid = false;
+                    studentID.classList.add('is-invalid');
+                    alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX';
                 }
-            });
 
-            // Stepper Logic
-            let currentStep = 1;
-            const steps = document.getElementsByClassName('step');
-            const indicators = document.getElementById('stepIndicator').children;
-
-            showStep(currentStep);
-
-            function showStep(step) {
-                for (let i = 0; i < steps.length; i++) {
-                    steps[i].classList.remove('active');
+                if (!stayPattern.test(stayYears.value.trim())) {
+                    valid = false;
+                    stayYears.classList.add('is-invalid');
+                    alertDiv.textContent = 'Inclusive Years of Stay must match the format: YYYY-YYYY';
                 }
-                steps[step - 1].classList.add('active');
+            }
 
-                for (let i = 0; i < indicators.length; i++) {
-                    indicators[i].classList.remove('active', 'done');
-                    if (i < step - 1) {
-                        indicators[i].classList.add('done');
-                    } else if (i === step - 1) {
-                        indicators[i].classList.add('active');
+            // Step 3: Requester Info validation
+            if (valid && currentStep === 3) {
+                const email = document.getElementById('email_req_goodmoral');
+                const contact = document.getElementById('contact_req_goodmoral');
+
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const contactPattern = /^\+63 9\d{9}$/;
+
+                if (!emailPattern.test(email.value.trim())) {
+                    valid = false;
+                    email.classList.add('is-invalid');
+                    alertDiv.textContent = 'Please enter a valid email address.';
+                }
+
+                if (!contactPattern.test(contact.value.trim())) {
+                    valid = false;
+                    contact.classList.add('is-invalid');
+                    alertDiv.textContent = 'Contact number must match format: +63 9XXXXXXXXX';
+                }
+            }
+
+            // Step 4: Upload Document validation
+            if (valid && currentStep === 4) {
+                const documentType = document.getElementById('documentTypeSelect');
+                const uploadedFile = document.getElementById('uploadedFileInput');
+
+                if (!documentType.value) {
+                    valid = false;
+                    documentType.classList.add('is-invalid');
+                    alertDiv.textContent = 'Please select a document type.';
+                } else {
+                    documentType.classList.remove('is-invalid');
+                }
+
+                if (!uploadedFile.value) {
+                    valid = false;
+                    uploadedFile.classList.add('is-invalid');
+                    alertDiv.textContent = 'Please upload a document file.';
+                } else {
+                    uploadedFile.classList.remove('is-invalid');
+
+                    const file = uploadedFile.files[0];
+                    const maxSize = 10 * 1024 * 1024; // 10MB
+
+                    if (file && file.size > maxSize) {
+                        valid = false;
+                        uploadedFile.classList.add('is-invalid');
+                        alertDiv.textContent = 'File size must not exceed 10MB.';
+                    } else {
+                        uploadedFile.classList.remove('is-invalid');
                     }
                 }
-
-                const prevBtn = document.getElementById('prevBtn');
-                const nextBtn = document.getElementById('nextBtn');
-                const fixedNav = document.querySelector('.fixed-nav');
-
-                if (step === 1) {
-                    prevBtn.style.display = 'none';
-                    nextBtn.style.display = 'inline-block';
-                    fixedNav.classList.remove('justify-content-between');
-                    fixedNav.classList.add('justify-content-end');
-                } else if (step === steps.length) {
-                    prevBtn.style.display = 'inline-block';
-                    nextBtn.style.display = 'none';
-                    fixedNav.classList.remove('justify-content-end');
-                    fixedNav.classList.add('justify-content-between');
-                } else {
-                    prevBtn.style.display = 'inline-block';
-                    nextBtn.style.display = 'inline-block';
-                    fixedNav.classList.remove('justify-content-end');
-                    fixedNav.classList.add('justify-content-between');
-                }
             }
 
-            function changeStep(n) {
-                if (currentStep + n < 1 || currentStep + n > steps.length) return;
-                currentStep += n;
-                showStep(currentStep);
+            // If invalid, show alert and block step transition
+            if (!valid) {
+                alertDiv.classList.remove('d-none');
+                alertDiv.scrollIntoView({ behavior: 'smooth' });
+                return;
             }
+        }
 
+        // Proceed to the next or previous step
+        if (currentStep + n < 1 || currentStep + n > steps.length) return;
+        currentStep += n;
+        showStep(currentStep);
+    }
+
+    // Document Upload Logic
+    const documentTypeSelect = document.getElementById('documentTypeSelect');
+    const fileInputContainer = document.getElementById('fileInputContainer');
+    const fileInputLabel = document.getElementById('fileInputLabel');
+
+    documentTypeSelect.addEventListener('change', () => {
+        const selected = documentTypeSelect.options[documentTypeSelect.selectedIndex].text;
+        if (documentTypeSelect.value) {
+            fileInputContainer.style.display = 'block';
+            fileInputLabel.textContent = `Upload ${selected}:`;
+        } else {
+            fileInputContainer.style.display = 'none';
+        }
+    });
 </script>
+
 
 </body>
 </html>

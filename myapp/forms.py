@@ -1,5 +1,5 @@
 from django import forms
-from .models import Violation, Scholarship
+from .models import Violation, GoodMoralRequest
 from django.core.exceptions import ValidationError
 
 
@@ -24,4 +24,15 @@ class ViolationForm(forms.ModelForm):
         if not cleaned_data.get('evidence_1'):
             raise forms.ValidationError("At least one evidence photo is required.")
         return cleaned_data
+    
+class GoodMoralRequestForm(forms.ModelForm):
+    class Meta:
+        model = GoodMoralRequest
+        fields = [
+            'first_name', 'middle_name', 'surname', 'ext', 'sex',
+            'student_id', 'program', 'status', 'date_graduated',
+            'inclusive_years', 'date_admission', 'purpose',
+            'requester_name', 'requester_email', 'requester_contact', 'relationship',
+            'document_type', 'uploaded_file'
+        ]
 

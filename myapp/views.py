@@ -5,9 +5,9 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement
 from django.db.models.functions import Lower
-from django.core.mail import send_mail
+from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
 from django.core.validators import validate_email
 from django.contrib.auth.hashers import make_password, check_password
@@ -16,16 +16,18 @@ from .decorators import role_required
 from django.core.serializers import serialize
 from django.utils.html import escape
 from django.templatetags.static import static
+from django.urls import reverse
 import uuid, os
 from django.core.files.base import ContentFile
-from .forms import ViolationForm
+from .forms import ViolationForm, GoodMoralRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
-
+from .utils import send_violation_email  
+from django.db.models import Q
 
 def current_time(request):
     return JsonResponse({'now': now().isoformat()})
@@ -83,10 +85,18 @@ def client_SurrenderingID_view(request):
     return render (request, 'myapp/client_SurrenderingID.html')
 
 def client_studentAssistantship_view(request):
-    return render (request, 'myapp/client_studentAssistantship.html')
+    try:
+        requirement = StudentAssistantshipRequirement.objects.latest('last_updated')
+    except StudentAssistantshipRequirement.DoesNotExist:
+        requirement = None
+    return render(request, 'myapp/client_studentAssistantship.html', {'requirement': requirement})
 
 def client_ACSO_view(request):
-    return render (request, 'myapp/client_ACSO.html')
+    try:
+        accreditation = ACSORequirement.objects.latest('last_updated')
+    except ACSORequirement.DoesNotExist:
+        accreditation = None
+    return render(request, 'myapp/client_ACSO.html', {'accreditation': accreditation})
 
 def client_lostandfound_view(request):
     items = LostAndFound.objects.order_by('-posted_date')
@@ -112,11 +122,43 @@ def admin_ackreq_view(request):
 
 @role_required(['admin'])
 def admin_ACSO_view(request):
-    return render (request, 'myapp/admin_ACSO.html')
+    obj, _ = ACSORequirement.objects.get_or_create(id=1)
+
+    if request.method == 'POST':
+        content = request.POST.get('description', '').strip()
+        if not content:
+            messages.error(request, "Description cannot be empty.")
+            return render(request, 'myapp/admin_ACSO.html', {'requirement': obj})
+
+        obj.content = content
+        obj.save()
+        messages.success(request, "ACSO Accreditation requirements updated successfully.")
+        return redirect('admin_ACSO')
+
+    return render(request, 'myapp/admin_ACSO.html', {'requirement': obj})
 
 @role_required(['admin'])
 def admin_assistantship_view(request):
-    return render (request, 'myapp/admin_assistantship.html')
+    obj, _ = StudentAssistantshipRequirement.objects.get_or_create(id=1)
+
+    if request.method == 'POST':
+        try:
+            content = request.POST.get('description', '').strip()
+
+            if not content:
+                messages.error(request, "Description cannot be empty.")
+                return render(request, 'myapp/admin_assistantship.html', {'requirement': obj})
+
+            obj.content = content
+            obj.save()
+            messages.success(request, "Student Assistantship requirements updated successfully.")
+            return redirect('admin_assistantship')
+
+        except Exception as e:
+            messages.error(request, f"An unexpected error occurred: {str(e)}")
+            return render(request, 'myapp/admin_assistantship.html', {'requirement': obj})
+
+    return render(request, 'myapp/admin_assistantship.html', {'requirement': obj})
 
 @role_required(['admin'])
 def admin_CS_view(request):
@@ -222,12 +264,48 @@ def admin_view_goodmoral_view(request):
     return render (request, 'myapp/admin_view_goodmoral.html')
 
 @role_required(['admin'])
-def admin_view_violation_view(request):
-    return render (request, 'myapp/admin_view_violation.html')
+def admin_view_violation(request):
+    violation_id = request.GET.get('violation_id')
+
+    if not violation_id:
+        # fallback if no id provided
+        messages.error(request, "No violation ID specified.")
+        return redirect('admin_violation')
+
+    violation = get_object_or_404(Violation, id=violation_id)
+    student = get_object_or_404(Student, tupc_id=violation.student_id)
+
+    # Approved violations (including this one if approved)
+    approved_violations = Violation.objects.filter(
+        student_id=student.tupc_id,
+        status='Approved'
+    ).select_related('settlement')
+
+    # Pending violations (including this one if still pending)
+    pending_violations = Violation.objects.filter(
+        student_id=student.tupc_id,
+        status='Pending'
+    )
+
+    total_violations = approved_violations.count()
+
+    return render(request, 'myapp/admin_view_violation.html', {
+        'violation': violation,
+        'student': student,
+        'total_violations': total_violations,
+        'approved_violations': approved_violations,
+        'pending_violations': pending_violations,
+    })
 
 @role_required(['admin'])
 def admin_violation_view(request):
-    return render (request, 'myapp/admin_violation.html')
+    pending_violations = Violation.objects.filter(status='Pending').order_by('-created_at')
+    history_violations = Violation.objects.exclude(status='Pending').order_by('-created_at')
+
+    return render(request, 'myapp/admin_violation.html', {
+        'pending_violations': pending_violations,
+        'history_violations': history_violations
+    })
 
 @role_required(['admin'])
 def admin_removedstud_view(request):
@@ -259,6 +337,37 @@ def lostandfound_feed_api(request):
         if item['image']:
             item['image'] = request.build_absolute_uri(item['image'])
     return JsonResponse({'items': data})
+
+def goodmoral_request_form(request):
+    if request.method == 'POST':
+        form = GoodMoralRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False) 
+            try:
+                send_mail(
+                    subject="Good Moral Certificate Request Received",
+                    message=(
+                        "We have received your Good Moral Certificate request.\n"
+                        "You will receive another email once it is reviewed and approved/rejected."
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[obj.requester_email],
+                    fail_silently=False
+                )
+                obj.save()
+                return render(request, 'client_goodmoral.html', {'show_modal': True})
+
+            except BadHeaderError:
+                messages.error(request, "Invalid header found. Please check your email.")
+            except Exception as e:
+                messages.error(request, f"Failed to send confirmation email: {e}")
+    else:
+        form = GoodMoralRequestForm()
+
+    return render(request, 'client_goodmoral.html', {'form': form})
+
+
+
 
 
 #########################LOGIN
@@ -332,24 +441,37 @@ def get_student_by_id(request, tupc_id):
         return JsonResponse({'success': False})
 
 def submit_violation(request):
-    submitted = False
     guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+
     if request.method == 'POST':
         form = ViolationForm(request.POST, request.FILES)
         if form.is_valid():
+            student_id = form.cleaned_data['student_id']
+            unsettled_first_violation = ViolationSettlement.objects.filter(
+                violation__student_id=student_id,
+                is_settled=False
+            ).first()
+
+            success_message = "Violation has been recorded and is pending approval."
+            if unsettled_first_violation:
+                success_message += " Note: This student has an unsettled first violation. Please confiscate the student's ID."
+
             violation = form.save(commit=False)
             violation.status = 'Pending'
             violation.save()
-            submitted = True
-            form = ViolationForm()  # clear form
+
+            messages.success(request, success_message)
+
+            return redirect('guard_violation')
     else:
         form = ViolationForm()
-        print(form.errors)
+
     return render(request, 'myapp/guard_violation.html', {
         'form': form,
-        'submitted': submitted,
-        'guards': guards
+        'guards': guards,
     })
+
+    
 
 @role_required(['guard'])
 def generate_guard_report_pdf(request):
@@ -415,6 +537,23 @@ def generate_guard_report_pdf(request):
     doc.build(elements)
     return response
 
+def scan_student(request, tupc_id):
+    has_unsettled_first = ViolationSettlement.objects.filter(
+        violation__student_id=tupc_id,
+        settlement_type='Apology Letter',
+        is_settled=False
+    ).exists()
+
+    if has_unsettled_first:
+        return JsonResponse({
+            'success': False,
+            'message': 'Student has an unsettled first violation. Please advise them to submit their apology letter.'
+        })
+    else:
+        return JsonResponse({
+            'success': True,
+            'message': 'Student cleared for entry.'
+        })
 ########################ADMIN
 
 @csrf_exempt
@@ -640,7 +779,6 @@ def ajax_delete_scholarship(request, id):
         return JsonResponse({'success': True})
     return JsonResponse({'success': False}, status=400)
 
-
 @role_required(['admin'])
 def ajax_edit_scholarship(request, id):
     if request.method == 'POST':
@@ -732,3 +870,71 @@ def delete_candidate(request, candidate_id):
 def get_academic_years(request):
     years = Candidate.objects.values_list('academic_year', flat=True).distinct()
     return JsonResponse({'status': 'success', 'academic_years': list(years)})
+
+def admin_approve_violation(request, violation_id):
+    violation = get_object_or_404(Violation, id=violation_id)
+    student = get_object_or_404(Student, tupc_id=violation.student_id)
+
+    settled_count = ViolationSettlement.objects.filter(
+        violation__student_id=student.tupc_id,
+        is_settled=True
+    ).count()
+
+    settlement_type = 'Apology Letter' if settled_count == 0 else 'Community Service'
+
+    violation.status = 'Approved'
+    violation.reviewed_at = timezone.now()
+    violation.save()
+
+    ViolationSettlement.objects.create(
+        violation=violation,
+        settlement_type=settlement_type,
+        is_settled=False
+    )
+
+    send_violation_email(
+        violation=violation,
+        student=student,
+        violation_count=settled_count + 1,
+        settlement_type=settlement_type
+    )
+
+    # ✅ Add success message
+    messages.success(
+        request,
+        f"✅ Violation for {student.first_name} {student.last_name} was successfully approved."
+    )
+
+    return redirect('admin_violation')
+
+def admin_decline_violation(request, violation_id):
+    violation = get_object_or_404(Violation, id=violation_id)
+    student = get_object_or_404(Student, tupc_id=violation.student_id)
+
+    violation.status = 'Rejected'
+    violation.reviewed_at = timezone.now()
+    violation.save()
+
+    send_violation_email(
+        violation=violation,
+        student=student,
+        declined=True
+    )
+
+    # ✅ Add decline message (style as error)
+    messages.error(
+        request,
+        f"❌ Violation for {student.first_name} {student.last_name} was successfully declined."
+    )
+
+    return redirect('admin_violation')
+
+def mark_settlement_as_settled(request, settlement_id):
+    settlement = get_object_or_404(ViolationSettlement, id=settlement_id)
+    settlement.is_settled = True
+    settlement.settled_at = timezone.now()
+    settlement.save()
+
+    # Always redirect back to the violation page with the correct student
+    violation_id = settlement.violation.id
+    return redirect(f"{reverse('admin_view_violation')}?violation_id={violation_id}")
