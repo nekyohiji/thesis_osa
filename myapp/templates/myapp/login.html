@@ -19,6 +19,7 @@
 
 <style>
 
+
             /* Reusable color */
             :root {
             --maroon: #440207;
@@ -64,6 +65,78 @@
             color: #666;
             cursor: pointer;
             }
+
+
+
+            /* Forgot Password Modal Styling aligned with login page */
+            #forgotPasswordModalContent {
+            background-color: white;
+            color: #212529;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: none;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
+            font-family: 'Segoe UI', sans-serif;
+            }
+
+            #forgotPasswordModalContent .modal-header {
+            border-bottom: 1px solid #dee2e6;
+            }
+
+            #forgotPasswordModalContent .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: #440207;
+            }
+
+            #forgotPasswordModalContent .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            }
+
+            /* Input Styling */
+            #forgotPasswordModalContent .form-control {
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            color: #212529;
+            border-radius: 8px;
+            padding-left: 2.5rem; /* space for the icon */
+            }
+
+            #forgotPasswordModalContent .form-control:focus {
+            border-color: #7b0000;
+            box-shadow: 0 0 0 0.15rem rgba(123, 0, 0, 0.2);
+            background-color: #fff;
+            color: #212529;
+            }
+
+            /* Button Styling */
+            #forgotPasswordModalContent .btn-primary {
+            background-color: #7b0000;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            }
+
+            #forgotPasswordModalContent .btn-primary:hover {
+            background-color: #5a0000;
+            }
+
+            /* Icons Inside Input */
+            #forgotPasswordModalContent .position-relative {
+            position: relative;
+            }
+
+            #forgotPasswordModalContent .icon-inside-input {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 1rem;
+            pointer-events: none;
+            }
+
 
 
   </style>
@@ -137,8 +210,57 @@
 
                     <!-- FORGOT PASSWORD -->
                     <div class="form-options">
-                        <a href="{% url 'client_home' %}" id="forgotpass_login"class="forgot-link">Forgot password?</a>
+                    <a href="#" id="forgotpass_login" class="forgot-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                        Forgot password?
+                    </a>
                     </div><br>
+
+                    <!-- Forgot Password Modal -->
+                    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" id="forgotPasswordModalContent">
+
+                        <!-- Modal Header -->
+                        <div class="modal-header">
+                            <h5 class="modal-title d-flex align-items-center" id="forgotPasswordModalLabel">
+                            <img src="{% static 'myapp/images/logo.png' %}" alt="Icon" style="width: 24px; height: 24px;" class="me-2" />
+                            Forgot Password
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Modal Body -->
+                        <div class="modal-body">
+
+                            <!-- Email Input -->
+                            <div class="mb-3">
+                            <label for="emailInput" class="form-label">Enter your email:</label>
+                            <div class="position-relative">
+                                <i class="fas fa-envelope icon-inside-input"></i>
+                                <input type="email" class="form-control with-icon" id="emailInput" placeholder="  @email.com">
+                            </div>
+                            </div>
+
+                            <!-- OTP Input -->
+                            <div class="mb-3" id="otpSection" style="display: none;">
+                            <label for="otpInput" class="form-label">Enter OTP:</label>
+                            <div class="position-relative">
+                                <i class="fas fa-shield-alt icon-inside-input"></i>
+                                <input type="text" class="form-control with-icon" id="otpInput" placeholder="  Enter OTP">
+                            </div>
+                            </div>
+
+                          
+                            <div id="actionButtons">
+                            <button type="button" class="btn btn-primary w-100" id="sendOtpBtn">Send OTP</button>
+                            </div>
+
+                        </div>
+
+                        </div>
+                    </div>
+                    </div>
+
 
                     <!-- LOGN IN BTN -->
                     <button type="submit" id="login_btn" class="btn">Sign In</button><br><hr><br>
@@ -170,6 +292,51 @@
     toggleIcon.classList.toggle('bi-eye-fill');
     toggleIcon.classList.toggle('bi-eye-slash-fill');
   });
+
+
+
+  // forgot password
+  document.addEventListener("DOMContentLoaded", function () {
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+    const emailInput = document.getElementById("emailInput");
+    const otpSection = document.getElementById("otpSection");
+    const actionButtons = document.getElementById("actionButtons");
+
+    sendOtpBtn.addEventListener("click", function () {
+      const email = emailInput.value.trim();
+
+      if (!email) {
+        alert("Please enter your email first.");
+        return;
+      }
+
+      // Simulate sending email and showing OTP input
+      emailInput.disabled = true;
+      otpSection.style.display = "block";
+
+      // Replace "Send OTP" button with "Verify OTP" button
+      actionButtons.innerHTML = `
+        <button type="button" class="btn btn-success w-100" id="verifyOtpBtn">Verify OTP</button>
+      `;
+
+      // Add event listener for the new button
+      document.getElementById("verifyOtpBtn").addEventListener("click", function () {
+        const otp = document.getElementById("otpInput").value.trim();
+        if (!otp) {
+          alert("Please enter the OTP sent to your email.");
+          return;
+        }
+
+        // Handle OTP verification logic here
+        alert("OTP Verified! Proceed to reset password.");
+        // Redirect or show next modal for new password
+      });
+    });
+  });
+
+
+
+
 </script>
 
 
