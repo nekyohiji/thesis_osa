@@ -130,10 +130,9 @@
 
   
   
-    <!-- Main Content Area -->
 <div class="main-content" style="margin-left: 250px; min-height: 100vh; background-color: #f8f9fa;">
 
-  <!--  Dashboard Header  -->
+
   <div class="container-fluid py-4 px-4">
     <div class="election-header text-white mt-4"
       style="background: linear-gradient(to right bottom, #000000, #440207,rgb(104, 3, 12));
@@ -157,9 +156,7 @@
 
   <div class="container-fluid px-4">
     <div class="bg-white p-2 rounded shadow-sm border">
-      <!-- === TABLE PANELS === -->
 
-      <!-- Pending Violations Section -->
       <div class="container-fluid pt-4 pb-5">
         <div class="bg-white p-4 rounded shadow-sm border">
        <h5 class="fw-bold mb-1">
@@ -176,7 +173,7 @@
           </div>
  
 
-          <!-- Pending Violations Table -->
+
           <div class="card shadow-sm  border">
             <div class="card-header text-white" style="background-color: #440207;">
               <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Pending  Acknowledgement Receipt Requests</h6>
@@ -195,21 +192,21 @@
                     <td>Juan Dela Cruz</td>
                     <td>06-23-2025</td>                    
                     <td>
-                      <a href="" class="btn btn-sm btn-outline-primary">View More</a>
+                      <a href="{% url 'admin_view_ackreq' %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>
                   </tr>
                   <tr>
                     <td>Anna Reyes</td>
                     <td>06-23-2025</td>                   
                     <td>
-                      <a href="" class="btn btn-sm btn-outline-primary">View More</a>
+                      <a href="{% url 'admin_view_ackreq' %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>
                   </tr>
                   <tr>
                     <td>Carlos Mendoza</td>
                     <td>06-23-2025</td>                   
                     <td>
-                      <a href="" class="btn btn-sm btn-outline-primary">View More</a>
+                      <a href="{% url 'admin_view_ackreq' %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>
                   </tr>
                 </tbody>
@@ -220,7 +217,7 @@
       </div>
 
       
-      <!-- Violation History Section -->
+      <!-- History Section -->
       <div class="container-fluid pb-4">
         <div class="bg-white p-4 rounded shadow-sm border">
        <h5 class="fw-bold mb-1">
@@ -229,7 +226,7 @@
           <small class="text-muted">Manage and review all past and current document submissions.</small>
           <hr class="border-dark">
 
-          <!-- Search Bar for Violation History -->
+          <!-- Search Bar for  History -->
           <div class="d-flex justify-content-end mb-3">
             <div class="input-group input-group-sm" style="max-width: 400px;">
               <input type="text" class="form-control" placeholder="Search history">
@@ -237,7 +234,7 @@
             </div>
           </div>
 
-          <!-- Violation History Table -->
+          <!-- History Table -->
           <div class="card shadow-sm">
             <div class="card-header text-white" style="background-color: #440207;">
               <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Requested Acknowledgement Receipt Record</h6>
@@ -257,15 +254,14 @@
                     <td>06-23-2025</td>
                     <td>Completed</td>
                     <td>     
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
+                      <a href="{% url 'admin_view_ackreq' %}" class="btn btn-sm btn-outline-primary">View More</a>
                   </tr>
                   <tr>
                     <td>John Lee</td>
                     <td>06-23-2025</td>
                     <td>Completed</td>
                     <td>     
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                      <a href="{% url 'admin_view_ackreq' %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>                  
                   </tr>
                   <tr>
@@ -273,7 +269,7 @@
                     <td>06-23-2025</td>
                     <td>Completed</td>
                     <td>     
-                      <a href="{% url 'admin_view_violation' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                      <a href="{% url 'admin_view_ackreq' %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>                  
                   </tr>
                 </tbody>
@@ -283,15 +279,11 @@
         </div>
       </div>
 
-    </div> <!-- End white content box -->
-  </div> <!-- End container -->
-</div> <!-- End main-content -->
+    </div> 
+  </div> 
+</div> 
 
 
-
-
-
-<!--///////////////// MODALS-->
 
 
       <!-- Accept Modal -->
