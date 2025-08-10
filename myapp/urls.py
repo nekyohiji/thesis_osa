@@ -45,12 +45,12 @@ urlpatterns = [
     
     
     
-    
+    ########################################client
+    path('goodmoral/request/', views.goodmoral_request_form, name='goodmoral_request'),  
     
     
     
     ########################################admin
-    
     path('upload_student_csv/', views.upload_student_csv, name='upload_student_csv'),
     path('request-otp/', views.request_otp, name='request_otp'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
@@ -65,8 +65,16 @@ urlpatterns = [
     path('violation/<int:violation_id>/approve/', views.admin_approve_violation, name='admin_approve_violation'),
     path('violation/<int:violation_id>/decline/', views.admin_decline_violation, name='admin_decline_violation'),
     path('settlement/<int:settlement_id>/settle/', views.mark_settlement_as_settled, name='mark_settlement_as_settled'),
+    path('admin_goodmoral/<int:pk>/', views.admin_view_goodmoral, name='admin_view_goodmoral'),
+    path('admin_goodmoral/<int:pk>/accept/', views.goodmoral_accept, name='goodmoral_accept'),
+    path('admin_goodmoral/<int:pk>/decline/', views.goodmoral_decline, name='goodmoral_decline'),
+    path('admin_goodmoral/<int:pk>/request-form/', views.goodmoral_request_form_pdf, name='goodmoral_request_form_pdf'),
+    path("goodmoral/<int:pk>/view/", views.view_gmf, name="view_gmf"),
 
-    ##########################################elections
+
+
+
+    #########################################elections
     path('add-candidate/', views.add_candidate, name='add_candidate'),
     path('get-candidates/', views.get_candidates, name='get_candidates'),
     path('delete-candidate/<int:candidate_id>/', views.delete_candidate, name='delete_candidate'),
@@ -77,6 +85,8 @@ urlpatterns = [
     path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),
     path('submit/', views.submit_violation, name='submit_violation'),
     path('guard_report/download_pdf/', views.generate_guard_report_pdf, name='generate_guard_report_pdf'),
-    
-    
+
+
+
+
 ]

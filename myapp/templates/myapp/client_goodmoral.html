@@ -9,15 +9,31 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />  
     <!-- Google Fonts: Roboto -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">]
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <link rel="stylesheet" href="{% static 'myapp/css/client_goodmoral.css' %}">
+    <style>
+        #pageOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.18);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: progress;
+            user-select: none;
+            pointer-events: all;
+        }
+        #pageOverlay.show {
+            display: flex;
+        }
+    </style>
 </head>
 
 <body data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="70" tabindex="0">
-
 <!-- NAVIGATION BAR -->
 <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
     <div class="container-fluid">
@@ -76,7 +92,7 @@
 
 
     <!-- Form -->
-    <form method="post" enctype="multipart/form-data">
+    <form id="gmfForm" method="post" action="{% url 'goodmoral_request' %}" enctype="multipart/form-data">
         {% csrf_token %}
 
 
@@ -135,42 +151,38 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Program/Course:</label>
-                            <select class="form-select" id="program_goodmoral" name="program"  maxlength="100" required>
-                                <option value="">-- Select Status --</option>
-                                <option value="Graduated">Alumni/Graduated</option>
-                                <option value="Former_Student">Former Student</option>
-                                <option value="Current_Student">Current Student</option>
-                            </select>            
+                            <input type="text" id="program_goodmoral" class="form-control" name="program"  minlength = "10" placeholder="Bachelor of ..." maxlength="175" required>         
                         </div>
                     </div>
 
                     <!-- STATUS & DATE GRADUATED -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Status:</label>
-                            <select class="form-select" id="status_goodmoral" name="status" required>
-                                <option value="">-- Select Status --</option>
-                                <option value="Graduated">Graduated</option>
-                                <option value="Undergraduate">Undergraduate</option>
-                                <option value="Transferred">Transferred</option>
-                                <option value="Dropped">Dropped</option>
-                            </select>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Status:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="status" id="status_graduated" value="Graduated" required onclick="toggleStatusFields()" required>
+                            <label class="form-check-label" for="status_graduated">Alum/Graduated</label>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="mt-2" id="graduated_date_field" style="display: none;">
                             <label class="form-label">Date Graduated:</label>
-                            <input type="date" class="form-control" id="date_graduated_goodmoral" name="date_graduated">
+                            <input type="date" class="form-control" name="date_graduated" id="date_graduated_goodmoral" min="1979-01-01">
                         </div>
-                    </div>
 
-                    <!-- INCLUSIVE YEARS OF STAY & DATE OF ADMISSION -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Inclusive Years of Stay:</label>
-                            <input type="text" class="form-control" id="stay_goodmoral" name="inclusive_years" maxlength="20" placeholder="e.g., 2015-2019">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="radio" name="status" id="status_former" value="Former Student" onclick="toggleStatusFields()">
+                            <label class="form-check-label" for="status_former">Former Student</label>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="mt-2" id="inclusive_years_field" style="display: none;">
+                            <label class="form-label">Inclusive Years of Stay:</label>
+                            <input type="text" class="form-control" name="inclusive_years" id="stay_goodmoral" placeholder="e.g. 2018-2022">
+                        </div>
+
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="radio" name="status" id="status_current" value="Current Student" onclick="toggleStatusFields()">
+                            <label class="form-check-label" for="status_current">Current Student</label>
+                        </div>
+                        <div class="mt-2" id="admission_date_field" style="display: none;">
                             <label class="form-label">Date of Admission:</label>
-                            <input type="date" class="form-control" id="admission_date_goodmoral" name="date_admission">
+                            <input type="text" class="form-control" name="date_admission" id="admission_date_goodmoral" placeholder="Year of Admission or Exact Date">
                         </div>
                     </div>
 
@@ -190,13 +202,10 @@
                     <select class="form-select" name="purpose" id="purpose_goodmoral" required onchange="toggleOtherInput()">
                         <option value="">-- Select Purpose of Request --</option>
                         <option value="Employment">Employment</option>
-                        <option value="Further Studies">Further Studies</option>
                         <option value="Transfer to Another School">Transfer to Another School</option>
                         <option value="SIT/OPT"> Supervised Industrial Training (SIT) / Off-Campus Practice Teaching (OPT) </option>
                         <option value="Student Development">Student Development ( COMSELEC, USG, Awards. etc.)</option>
-
                         <option value="Scholarship">Scholarship</option>
-                        <option value="Others">Others</option>
                     </select>
                 </div>
 
@@ -280,21 +289,24 @@
         </div>
 
         <!-- Submission Modal -->
-    <div class="modal fade" id="submissionModal" tabindex="-1" aria-labelledby="submissionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="submissionModalLabel">Request Submitted</h5>
+        <div class="modal fade" id="submissionModal" tabindex="-1"
+            aria-labelledby="submissionModalLabel" aria-hidden="true"
+            data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submissionModalLabel">Request Submitted</h5>
+            </div>
+            <div class="modal-body" id="submissionModalBody">
+                Your request is being submitted and is subject to approval. You’ll receive an email update. Redirecting to home in ...
+                <span id="submitCountdown">5</span> seconds…
+            </div>
+            <div class="modal-footer">
+                <a id="modalHomeBtn" class="btn btn-primary" href="{% url 'client_home' %}">Back to Home now</a>
+            </div>
+            </div>
         </div>
-        <div class="modal-body">
-            Your request has been submitted. Please wait for an email notification regarding approval or rejection.
         </div>
-        <div class="modal-footer">
-            <a href="{% url 'client_home' %}" class="btn btn-primary">Back to Home</a>
-        </div>
-        </div>
-    </div>
-    </div>
 
 
 <!-- Bootstrap JS -->
@@ -348,14 +360,14 @@
 
     function changeStep(n) {
         const alertDiv = document.getElementById('formAlert');
-        alertDiv.classList.add('d-none'); // Hide alert initially
+        alertDiv.classList.add('d-none');
         alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
 
         if (n > 0) {
             const currentFields = steps[currentStep - 1].querySelectorAll('input, select, textarea');
             let valid = true;
 
-            // General required field validation (excluding middle_name)
+            // General required field validation (except middle name)
             currentFields.forEach(field => {
                 if (
                     field.hasAttribute('required') &&
@@ -371,8 +383,21 @@
 
             // Step 2: Academic Info validation
             if (valid && currentStep === 2) {
+                const statusRadios = document.querySelectorAll('input[name="status"]');
+                const oneSelected = Array.from(statusRadios).some(r => r.checked);
+                if (!oneSelected) {
+                    valid = false;
+                    alertDiv.textContent = 'Please select your status (Current, Former, or Alum/Graduated).';
+                }
+
                 const studentID = document.getElementById('studentID_goodmoral');
                 const stayYears = document.getElementById('stay_goodmoral');
+                const dateAdmission = document.getElementById('admission_date_goodmoral');
+                const dateGraduated = document.getElementById('date_graduated_goodmoral');
+
+                const graduated = document.getElementById('status_graduated').checked;
+                const former = document.getElementById('status_former').checked;
+                const current = document.getElementById('status_current').checked;
 
                 const idPattern = /^TUPC-\d{2}-\d{4}$/;
                 const stayPattern = /^\d{4}-\d{4}$/;
@@ -381,16 +406,36 @@
                     valid = false;
                     studentID.classList.add('is-invalid');
                     alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX';
+                } else {
+                    studentID.classList.remove('is-invalid');
                 }
 
-                if (!stayPattern.test(stayYears.value.trim())) {
+                if (former && !stayPattern.test(stayYears.value.trim())) {
                     valid = false;
                     stayYears.classList.add('is-invalid');
                     alertDiv.textContent = 'Inclusive Years of Stay must match the format: YYYY-YYYY';
+                } else {
+                    stayYears.classList.remove('is-invalid');
+                }
+
+                if (current && !dateAdmission.value) {
+                    valid = false;
+                    dateAdmission.classList.add('is-invalid');
+                    alertDiv.textContent = 'Please enter your admission date.';
+                } else {
+                    dateAdmission.classList.remove('is-invalid');
+                }
+
+                if (graduated && !dateGraduated.value) {
+                    valid = false;
+                    dateGraduated.classList.add('is-invalid');
+                    alertDiv.textContent = 'Please enter your graduation date.';
+                } else {
+                    dateGraduated.classList.remove('is-invalid');
                 }
             }
 
-            // Step 3: Requester Info validation
+            // Step 3: Requester Info
             if (valid && currentStep === 3) {
                 const email = document.getElementById('email_req_goodmoral');
                 const contact = document.getElementById('contact_req_goodmoral');
@@ -402,19 +447,24 @@
                     valid = false;
                     email.classList.add('is-invalid');
                     alertDiv.textContent = 'Please enter a valid email address.';
+                } else {
+                    email.classList.remove('is-invalid');
                 }
 
                 if (!contactPattern.test(contact.value.trim())) {
                     valid = false;
                     contact.classList.add('is-invalid');
                     alertDiv.textContent = 'Contact number must match format: +63 9XXXXXXXXX';
+                } else {
+                    contact.classList.remove('is-invalid');
                 }
             }
 
-            // Step 4: Upload Document validation
+            // Step 4: File Upload
             if (valid && currentStep === 4) {
                 const documentType = document.getElementById('documentTypeSelect');
                 const uploadedFile = document.getElementById('uploadedFileInput');
+                const maxSize = 10 * 1024 * 1024; // 10MB
 
                 if (!documentType.value) {
                     valid = false;
@@ -429,11 +479,7 @@
                     uploadedFile.classList.add('is-invalid');
                     alertDiv.textContent = 'Please upload a document file.';
                 } else {
-                    uploadedFile.classList.remove('is-invalid');
-
                     const file = uploadedFile.files[0];
-                    const maxSize = 10 * 1024 * 1024; // 10MB
-
                     if (file && file.size > maxSize) {
                         valid = false;
                         uploadedFile.classList.add('is-invalid');
@@ -444,7 +490,7 @@
                 }
             }
 
-            // If invalid, show alert and block step transition
+            // Show error if invalid
             if (!valid) {
                 alertDiv.classList.remove('d-none');
                 alertDiv.scrollIntoView({ behavior: 'smooth' });
@@ -452,11 +498,14 @@
             }
         }
 
-        // Proceed to the next or previous step
-        if (currentStep + n < 1 || currentStep + n > steps.length) return;
-        currentStep += n;
-        showStep(currentStep);
+        // Advance or retreat steps
+        if (currentStep + n >= 1 && currentStep + n <= steps.length) {
+            currentStep += n;
+            showStep(currentStep);
+        }
     }
+
+
 
     // Document Upload Logic
     const documentTypeSelect = document.getElementById('documentTypeSelect');
@@ -508,10 +557,98 @@
             otherInput.placeholder = "";
         }
     }
+    window.addEventListener('load', () => {
+    const form = document.getElementById('gmfForm');
+    const modalEl = document.getElementById('submissionModal');
+    if (!form || !modalEl) return;
 
+    const modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+    const countdownEl = document.getElementById('submitCountdown');
+    const bodyEl = document.getElementById('submissionModalBody');
+    const homeUrl = "{% url 'client_home' %}";
+
+    // helper to get CSRF token (from hidden input)
+    const getCSRF = () => (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value || '';
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        // show modal immediately
+        modal.show();
+
+        // prevent double submit, but DO NOT disable form fields (we need their values)
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = true);
+
+        // 5-second countdown
+        let secs = 5;
+        countdownEl.textContent = secs;
+        const delay = new Promise(resolve => {
+        const t = setInterval(() => {
+            secs -= 1;
+            countdownEl.textContent = secs;
+            if (secs <= 0) { clearInterval(t); resolve(); }
+        }, 1000);
+        });
+
+        // post using fetch (works with files via FormData)
+        const post = fetch(form.action, {
+        method: form.method || 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-CSRFToken': getCSRF(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+        }).then(resp => {
+        if (!resp.ok) throw new Error('Submit failed');
+        return resp.text();
+        });
+
+        // redirect after BOTH finish
+        Promise.all([post, delay]).then(() => {
+        window.location.assign(homeUrl);
+        }).catch(() => {
+        bodyEl.innerHTML = '<div class="text-danger">Submission failed. Please check required fields and try again.</div>';
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = false);
+        });
+    });
+    }); 
+
+
+
+
+    (function () {
+    const el = document.getElementById('date_graduated_goodmoral');
+    if (!el) return;
+
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    el.max = `${yyyy}-${mm}-${dd}`;
+    })();
+
+    function toggleStatusFields() {
+        const graduated = document.getElementById('status_graduated').checked;
+        const former = document.getElementById('status_former').checked;
+        const current = document.getElementById('status_current').checked;
+
+        const dateGraduated = document.getElementById('date_graduated_goodmoral');
+        const inclusiveYears = document.getElementById('stay_goodmoral');
+        const dateAdmission = document.getElementById('admission_date_goodmoral');
+
+        // Show/hide fields
+        document.getElementById('graduated_date_field').style.display = graduated ? 'block' : 'none';
+        document.getElementById('inclusive_years_field').style.display = former ? 'block' : 'none';
+        document.getElementById('admission_date_field').style.display = current ? 'block' : 'none';
+
+        // Dynamically set 'required'
+        dateGraduated.required = graduated;
+        inclusiveYears.required = former;
+        dateAdmission.required = current;
+    }
 
 </script>
-
 
 </body>
 </html>

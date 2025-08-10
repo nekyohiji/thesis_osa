@@ -140,7 +140,6 @@ class Violation(models.Model):
     class Meta:
         db_table = 'violation'
 
-
 class ViolationSettlement(models.Model):
     violation = models.OneToOneField(
         Violation,
@@ -210,16 +209,16 @@ class GoodMoralRequest(models.Model):
     status = models.CharField(max_length=20)
     date_graduated = models.DateField(null=True, blank=True)
     inclusive_years = models.CharField(max_length=20, blank=True)
-    date_admission = models.DateField(null=True, blank=True)
+    date_admission = models.CharField(max_length=20, null=True, blank=True)
     purpose = models.CharField(max_length=100)
     requester_name = models.CharField(max_length=100)
     requester_email = models.EmailField()
     requester_contact = models.CharField(max_length=20)
     relationship = models.CharField(max_length=50)
-
-    # New
+    other_purpose = models.CharField(max_length=100, blank=True, null=True)
     document_type = models.CharField(max_length=30, default='unknown')
     uploaded_file = models.FileField(upload_to='uploads/goodmoral/', default='uploads/goodmoral/default.pdf')
+    certificate_pdf = models.FileField(upload_to='uploads/goodmoral/certificates/', blank=True, null=True)
 
     is_approved = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False)

@@ -29,10 +29,19 @@ class GoodMoralRequestForm(forms.ModelForm):
     class Meta:
         model = GoodMoralRequest
         fields = [
-            'first_name', 'middle_name', 'surname', 'ext', 'sex',
-            'student_id', 'program', 'status', 'date_graduated',
-            'inclusive_years', 'date_admission', 'purpose',
-            'requester_name', 'requester_email', 'requester_contact', 'relationship',
-            'document_type', 'uploaded_file'
+            'first_name','middle_name','surname','ext','sex',
+            'student_id','program','status','date_graduated',
+            'inclusive_years','date_admission','purpose','other_purpose',
+            'requester_name','requester_email','requester_contact','relationship',
+            'document_type','uploaded_file'
         ]
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        for f in ['first_name','middle_name','surname','ext']:
+            val = getattr(instance, f, "")
+            setattr(instance, f, (val or "").strip().upper())
+        if commit:
+            instance.save()
+        return instance
 

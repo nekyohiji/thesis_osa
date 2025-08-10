@@ -110,8 +110,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
+GMF_TEMPLATE_PATH = BASE_DIR / "myapp" / "cert_templates" / "good-moral-form.xlsx"
+TIME_ZONE = "Asia/Manila"
+LIBREOFFICE_PATH = Path(r"C:\Program Files\LibreOffice\program\soffice.exe")
+LIBREOFFICE_PY = Path (r"C:\Program Files\LibreOffice\program\python.exe")      # NEW
 
 USE_I18N = True
 

@@ -94,7 +94,19 @@ body {
 }
 
 
-
+#pageOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.18);   /* transparent layer */
+  z-index: 2000;                 /* above navbar & modals */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: progress;
+  user-select: none;
+  pointer-events: all;           /* actively captures clicks */
+}
+#pageOverlay.show{ display: flex; }
 
 
 
