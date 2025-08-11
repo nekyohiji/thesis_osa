@@ -22,26 +22,12 @@ from django.core.files.base import ContentFile
 from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
 from .utils import send_violation_email, generate_gmf_pdf
 from django.db.models import Q
-from django.views.decorators.http import require_POST
-from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas
-from io import BytesIO
-from django.http import FileResponse, Http404
-from django.contrib.staticfiles import finders
-from django.views.decorators.clickjacking import xframe_options_exempt
-from django.core.files.storage import default_storage
-from .libre.ack_receipt import build_ack_pdf
-import mimetypes
-
-#################################################################################################################
-
-
 
 def current_time(request):
     return JsonResponse({'now': now().isoformat()})
@@ -592,14 +578,17 @@ def submit_violation(request):
     })
 
 @role_required(['guard'])
-def generate_guard_report_pdf(request):
-    # Apply same filters as your view
-    violations = Violation.objects.all()
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    violation_type = request.GET.get('violation_type')
-    guard_name = request.GET.get('guard_name')
 
+def generate_guard_report_pdf(request):
+
+    # --- Filters ---
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+    violation_type = request.GET.get('violation_type', '').strip()
+    guard_name = request.GET.get('guard_name', '').strip()
+
+    # Query
+    violations = Violation.objects.all()
     if start_date:
         violations = violations.filter(violation_date__gte=start_date)
     if end_date:
@@ -609,71 +598,209 @@ def generate_guard_report_pdf(request):
     if guard_name:
         violations = violations.filter(guard_name=guard_name)
 
-    # Start PDF response
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="violations_report.pdf"'
 
-    doc = SimpleDocTemplate(response, pagesize=A4)
-    elements = []
+    generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
+
     styles = getSampleStyleSheet()
+    subtitle_style = ParagraphStyle(name='Subtitle', parent=styles['Normal'], fontSize=8, textColor=colors.grey)
+    table_cell_style = ParagraphStyle(name='table_cell', parent=styles['Normal'], fontSize=7, leading=9)
 
+    # ===== HEADER/FOOTER =====
+    def header_footer(canvas, doc):
+        canvas.saveState()
+        gray_tone = colors.Color(0.45, 0.45, 0.45)
+        canvas.setFillColor(gray_tone)
+
+        # Left-aligned header text
+        x_pos = 40
+        y_pos = A4[1] - 50
+        canvas.setFont("Helvetica", 10)
+        canvas.drawString(x_pos, y_pos, "Republic of the Philippines")
+        y_pos -= 13
+        canvas.setFont("Helvetica-Bold", 10)
+        canvas.drawString(x_pos, y_pos, "TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS")
+        y_pos -= 13
+        canvas.setFont("Helvetica", 10)
+        canvas.drawString(x_pos, y_pos, "Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114")
+
+        # Right-aligned images
+        image_names = ["tuplogo.png", "bgph.png", "ISO.png"]
+        img_size = 40
+        padding = 8
+        right_x = A4[0] - 40
+
+        for name in reversed(image_names):
+            img_path = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'images', name)
+            if os.path.exists(img_path):
+                try:
+                    img = Image.open(img_path)
+                    img.thumbnail((img_size, img_size), Image.LANCZOS)
+                    img_io = io.BytesIO()
+                    img.save(img_io, format='PNG')
+                    img_io.seek(0)
+                    right_x -= img.size[0]
+                    canvas.drawImage(
+                        ImageReader(img_io),
+                        right_x,
+                        A4[1] - 60,
+                        width=img.size[0],
+                        height=img.size[1],
+                        mask='auto'
+                    )
+                    right_x -= padding
+                except Exception:
+                    pass
+
+        # Footer
+        canvas.setFillColor(colors.HexColor("#666666"))
+        canvas.setFont("Helvetica", 8)
+        canvas.drawString(40, 30, f"Generated on: {generated_on}")
+        canvas.drawRightString(A4[0] - 40, 30,
+                               "This report was generated automatically by the Student Violation System.")
+
+        canvas.restoreState()
+
+    # ===== DOC SETUP =====
+    doc = BaseDocTemplate(
+        response,
+        pagesize=A4,
+        leftMargin=40,
+        rightMargin=40,
+        topMargin=110,
+        bottomMargin=60
+    )
+
+    frame_main = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
+    template = PageTemplate(id='normal', frames=[frame_main], onPage=header_footer)
+    doc.addPageTemplates([template])
+
+    elements = []
+
+    # Title & filters
     elements.append(Paragraph("Violations Report", styles['Title']))
-    elements.append(Spacer(1, 12))
+    elements.append(Spacer(1, 8))
 
-    # Table headers
-    data = [
-        ['Student Name', 'Student ID', 'Program/Course', 'Date', 'Time', 'Type of Violation', 'Reported By']
+    filters = []
+    if start_date:
+        filters.append(f"From: {start_date}")
+    if end_date:
+        filters.append(f"To: {end_date}")
+    if violation_type:
+        filters.append(f"Violation Type: {violation_type}")
+    if guard_name:
+        filters.append(f"Guard on Duty: {guard_name}")
+
+    if filters:
+        elements.append(Paragraph(", ".join(filters), subtitle_style))
+        elements.append(Spacer(1, 10))
+
+    # ===== Table with Status =====
+    headers = ['Student Name', 'Student ID', 'Program/Course', 'Date', 'Time',
+               'Type of Violation', 'Reported By', 'Status']
+    col_widths = [
+        doc.width * 0.15,
+        doc.width * 0.11,
+        doc.width * 0.18,
+        doc.width * 0.10,
+        doc.width * 0.08,
+        doc.width * 0.16,
+        doc.width * 0.12,
+        doc.width * 0.10,
     ]
 
-    for v in violations:
-        data.append([
-            f"{v.first_name} {v.last_name}",
-            v.student_id,
-            v.program_course,
-            v.violation_date.strftime("%Y-%m-%d"),
-            v.violation_time.strftime("%H:%M"),
-            v.violation_type,
-            v.guard_name
+    # Build table rows
+    rows = [[Paragraph(h, styles['Heading5']) for h in headers]]
+    for v in violations.order_by('violation_date', 'violation_time'):
+        rows.append([
+            Paragraph(f"{v.first_name} {v.last_name}", table_cell_style),
+            Paragraph(v.student_id, table_cell_style),
+            Paragraph(v.program_course, table_cell_style),
+            Paragraph(v.violation_date.strftime("%Y-%m-%d"), table_cell_style),
+            Paragraph(v.violation_time.strftime("%H:%M"), table_cell_style),
+            Paragraph(v.violation_type, table_cell_style),
+            Paragraph(v.guard_name, table_cell_style),
+            Paragraph(getattr(v, 'status', ''), table_cell_style),
         ])
 
-    table = Table(data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.grey),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0,0), (-1,0), 12),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
-    ]))
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', table_cell_style)] * len(headers))
+        total_violations = 0
+    else:
+        total_violations = len(rows) - 1
 
-    elements.append(table)
+    cardinal_red = colors.HexColor("#8C1515")
+    light_gray = colors.HexColor("#F2F2F2")
+    mid_gray = colors.HexColor("#E6E6E6")
 
-    elements.append(Spacer(1, 24))
-    elements.append(Paragraph(f"Prepared by: {guard_name or '________________'}", styles['Normal']))
-    elements.append(Paragraph(f"Noted by: Chief Security Officer", styles['Normal']))
+    # Split table into pages of 25 rows of data (plus header)
+    max_rows_per_page = 26  # header + 25 data rows
+    for start in range(0, len(rows), max_rows_per_page - 1):
+        chunk = rows[start:start + max_rows_per_page]
+        table = Table(chunk, colWidths=col_widths, repeatRows=1)
+        table_style_cmds = [
+            ('BACKGROUND', (0, 0), (-1, 0), cardinal_red),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ]
+        for i in range(1, len(chunk)):
+            bg_color = light_gray if (i + start) % 2 == 0 else mid_gray
+            table_style_cmds.append(('BACKGROUND', (0, i), (-1, i), bg_color))
+        table.setStyle(TableStyle(table_style_cmds))
+        elements.append(table)
+
+        # Add page break if more chunks remain
+        if start + max_rows_per_page - 1 < len(rows):
+            elements.append(PageBreak())
+
+    # Totals
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph(f"Total Violations: {total_violations}", styles['Normal']))
+
+    type_counts = Counter(v.violation_type for v in violations)
+    if type_counts:
+        elements.append(Spacer(1, 6))
+        for vtype, count in type_counts.items():
+            elements.append(Paragraph(f"{vtype}: {count}", styles['Normal']))
+
+    # Signatures on last page only
+    elements.append(Spacer(1, 60))
+    block_width = 150
+    sig_label_style = ParagraphStyle('sig_label_style', parent=styles['Normal'], alignment=TA_LEFT, fontSize=11)
+    sig_name_style = ParagraphStyle('sig_name_style', parent=styles['Normal'], alignment=TA_LEFT, fontSize=10)
+    sig_printed_style = ParagraphStyle('sig_printed_style', parent=styles['Normal'], alignment=TA_LEFT, fontSize=10)
+
+    def signature_block(label, name):
+        return [
+            Paragraph(label, sig_label_style),
+            Spacer(1, 18),
+            Table(
+                [[Paragraph(name, sig_name_style)]],
+                colWidths=[block_width],
+                style=[
+                    ('LINEBELOW', (0, 0), (-1, -1), 1.25, colors.black),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ],
+                hAlign='LEFT'
+            ),
+            Spacer(1, 6),
+            Paragraph("Printed Name with Signature", sig_printed_style)
+        ]
+
+    elements.extend(signature_block("Prepared by:", guard_name if guard_name else ""))
+    elements.append(Spacer(1, 40))
+    elements.extend(signature_block("Noted by:", ""))
 
     doc.build(elements)
     return response
-
-def scan_student(request, tupc_id):
-    has_unsettled_first = ViolationSettlement.objects.filter(
-        violation__student_id=tupc_id,
-        settlement_type='Apology Letter',
-        is_settled=False
-    ).exists()
-
-    if has_unsettled_first:
-        return JsonResponse({
-            'success': False,
-            'message': 'Student has an unsettled first violation. Please advise them to submit their apology letter.'
-        })
-    else:
-        return JsonResponse({
-            'success': True,
-            'message': 'Student cleared for entry.'
-        })
-
-
 
 
 
