@@ -1,6 +1,9 @@
 from django.db import models
 import random
 import string
+from django.core.validators import RegexValidator, FileExtensionValidator
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 
 class Student(models.Model):
     tupc_id = models.CharField(max_length=50, unique=True)
@@ -252,3 +255,113 @@ class ACSORequirement(models.Model):
     
     class Meta:
         db_table = 'acso'
+           
+def validate_file_size(f):
+    limit_mb = 10
+    if f.size > limit_mb * 1024 * 1024:
+        raise ValidationError(f"Max file size is {limit_mb} MB.")
+    
+class IDSurrenderRequest(models.Model):
+    DOC_ID = "id"
+    DOC_AFFIDAVIT = "affidavit"
+    DOCUMENT_TYPE_CHOICES = [
+        (DOC_ID, "School ID"),
+        (DOC_AFFIDAVIT, "Affidavit of Loss"),
+    ]
+    document_type = models.CharField(
+        max_length=16,
+        choices=DOCUMENT_TYPE_CHOICES,
+        db_index=True,
+        default=DOC_ID,  
+    )
+
+    STATUS_PENDING   = "pending"
+    STATUS_APPROVED  = "approved"
+    STATUS_DECLINED  = "declined"
+    STATUS_CHOICES = [
+        (STATUS_PENDING,  "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_DECLINED, "Declined"),
+    ]
+
+    REASON_CHOICES = [
+        ("Dropped", "Dropped"),
+        ("Graduate", "Graduate"),
+        ("Transfer", "Transfer"),
+        ("Withdrawn", "Withdrawn"),
+        ("Claim of Credentials", "Claim of Credentials"),
+        ("Worn Out", "Worn Out"),
+    ]
+
+    YEAR_LEVEL_CHOICES = [
+        ("1st Year", "1st Year"),
+        ("2nd Year", "2nd Year"),
+        ("3rd Year", "3rd Year"),
+        ("4th Year", "4th Year"),
+        ("5th Year", "5th Year"),
+        ("Graduate", "Graduate"),
+    ]
+
+    # --- Personal Information ---
+    first_name   = models.CharField(max_length=50)
+    middle_name  = models.CharField(max_length=50, blank=True)
+    surname      = models.CharField(max_length=50)
+    extension    = models.CharField(max_length=10, blank=True)  # Jr., Sr., etc.
+    program      = models.CharField(max_length=100)
+    contact_email = models.EmailField(max_length=254, blank=True, null=True, db_index=True)
+
+    # --- Academic Information ---
+    reason = models.CharField(max_length=30, choices=REASON_CHOICES)
+    student_number = models.CharField(
+        max_length=18,
+        validators=[RegexValidator(r"^TUPC-\d{2}-\d{4,10}$", message="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX.")],
+        db_index=True,  
+    )
+    year_level = models.CharField(max_length=12, choices=YEAR_LEVEL_CHOICES)
+    inclusive_years = models.CharField(
+        max_length=9,
+        validators=[RegexValidator(r"^\d{4}-\d{4}$", message="Use YYYY-YYYY (e.g., 2019-2023).")]
+    )
+
+    # --- Uploads ---
+    upload_id_front = models.FileField(
+        upload_to="surrender_ids/%Y/%m/%d/",
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png", "pdf"]), validate_file_size],
+        blank=True, null=True,
+    )
+    upload_id_back = models.FileField(
+        upload_to="surrender_ids/%Y/%m/%d/",
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png", "pdf"]), validate_file_size],
+        blank=True, null=True,
+    )
+
+    status   = models.CharField(max_length=8, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
+    message  = models.TextField(blank=True) 
+    submitted_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    acknowledgement_receipt = models.FileField(
+    upload_to="surrender_ids/receipts/%Y/%m/%d/",
+    validators=[FileExtensionValidator(["pdf"]), validate_file_size],
+    null=True, blank=True,)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["status", "submitted_at"]),
+        ]
+        verbose_name = "ID Surrender Request"
+        verbose_name_plural = "ID Surrender Requests"
+        db_table = 'Surrender_ID'
+        
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.document_type == self.DOC_ID:
+            if not self.upload_id_front:
+                raise ValidationError({"upload_id_front": "Front ID is required."})
+            if not self.upload_id_back:
+                raise ValidationError({"upload_id_back": "Back ID is required."})
+        elif self.document_type == self.DOC_AFFIDAVIT:
+            if not self.upload_id_front:
+                raise ValidationError({"upload_id_front": "Affidavit first page is required."})
+        
+    def __str__(self):
+        return f"{self.student_number} — {self.surname}, {self.first_name} ({self.status})"

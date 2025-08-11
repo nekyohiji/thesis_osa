@@ -114,7 +114,7 @@ GMF_TEMPLATE_PATH = BASE_DIR / "myapp" / "cert_templates" / "good-moral-form.xls
 TIME_ZONE = "Asia/Manila"
 LIBREOFFICE_PATH = Path(r"C:\Program Files\LibreOffice\program\soffice.exe")
 LIBREOFFICE_PY = Path (r"C:\Program Files\LibreOffice\program\python.exe")      # NEW
-
+LIBREOFFICE_BIN = Path (r"C:\Program Files\LibreOffice\program\soffice.exe")
 USE_I18N = True
 
 USE_TZ = True

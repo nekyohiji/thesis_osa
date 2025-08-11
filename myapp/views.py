@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest
 from django.db.models.functions import Lower
 from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
@@ -19,7 +19,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 import uuid, os
 from django.core.files.base import ContentFile
-from .forms import ViolationForm, GoodMoralRequestForm
+from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -36,6 +36,8 @@ from django.http import FileResponse, Http404
 from django.contrib.staticfiles import finders
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.core.files.storage import default_storage
+from .libre.ack_receipt import build_ack_pdf
+import mimetypes
 
 #################################################################################################################
 
@@ -128,9 +130,29 @@ def admin_dashboard_view(request):
 def admin_accounts_view(request):
     return render (request, 'myapp/admin_accounts.html')
 
+
 @role_required(['admin'])
 def admin_ackreq_view(request):
-    return render (request, 'myapp/admin_ackreq.html')
+    pending_requests = IDSurrenderRequest.objects.filter(
+        status=IDSurrenderRequest.STATUS_PENDING
+    ).order_by('-submitted_at')
+
+    history_requests = IDSurrenderRequest.objects.filter(
+        status__in=[IDSurrenderRequest.STATUS_APPROVED, IDSurrenderRequest.STATUS_DECLINED]
+    ).order_by('-submitted_at')
+
+    context = {
+        "pending_requests": pending_requests,
+        "history_requests": history_requests,
+        "pending_count": pending_requests.count(),
+        "history_count": history_requests.count(),
+        # make constants available to the template for clean comparisons
+        "STATUS_APPROVED": IDSurrenderRequest.STATUS_APPROVED,
+        "STATUS_DECLINED": IDSurrenderRequest.STATUS_DECLINED,
+    }
+    return render(request, "myapp/admin_ackreq.html", context)
+
+
 
 @role_required(['admin'])
 def admin_ACSO_view(request):
@@ -285,9 +307,9 @@ def admin_scholarships_view(request):
         'scholarships': scholarships
     })
 
-@role_required(['admin'])
-def admin_view_ackreq_view(request):
-    return render (request, 'myapp/admin_view_ackreq.html')
+def admin_view_ackreq_view(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+    return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
 
 @role_required(['admin'])
 def admin_view_CS_view(request):
@@ -406,7 +428,49 @@ def goodmoral_request_form(request):
 
     return render(request, template, {'form': form})
 
+def id_surrender_request(request):
+    template = 'myapp/client_SurrenderingID.html'
 
+    if request.method == 'POST':
+        form = IDSurrenderRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+
+            # If your model has submitted_by (ForeignKey to User), record it
+            if hasattr(obj, "submitted_by") and request.user.is_authenticated:
+                obj.submitted_by = request.user
+
+            obj.save()
+
+            # Choose best recipient: the form's contact_email, else logged-in user email
+            recipient = getattr(obj, "contact_email", None)
+            if not recipient and request.user.is_authenticated:
+                recipient = request.user.email
+
+            if recipient:
+                try:
+                    send_mail(
+                        subject="ID Surrender Request Received",
+                        message=("We have received your ID Surrender request.\n"
+                                 "You will receive another email once it is reviewed and approved or rejected."),
+                        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                        recipient_list=[recipient],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    messages.error(request, f"Email error: {e}")
+
+            # Re-render with a fresh form and the success modal flag
+            return render(request, template, {
+                'form': IDSurrenderRequestForm(),
+                'show_modal': True
+            })
+
+        # Invalid: redisplay with errors
+        return render(request, template, {'form': form})
+
+    # GET
+    return render(request, template, {'form': IDSurrenderRequestForm()})
 
 
 
@@ -1068,15 +1132,115 @@ def view_gmf(request, pk):
     except Exception: pass
     return resp
 
+@role_required(['admin'])
+def admin_ackreq_receipt_pdf(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
 
+    # Pull the single active admin's name and uppercase it
+    admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
+    admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
 
+    try:
+        pdf_path = build_ack_pdf(req, admin_name_upper)
+    except Exception as e:
+        # show a basic error in-browser
+        raise Http404(f"PDF generation failed: {e}")
 
+    # Stream inline so Chrome opens a new tab instead of forcing a download
+    filename = os.path.basename(pdf_path)
+    resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
 
+def _is_ajax(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
+@role_required(['admin'])
+@require_POST
+def admin_ackreq_accept(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
 
+    if req.status != IDSurrenderRequest.STATUS_PENDING:
+        if _is_ajax(request):
+            return JsonResponse({"ok": False, "error": "Request already finalized."}, status=400)
+        messages.warning(request, "This request is already finalized.")
+        return redirect("admin_view_ackreq", pk=req.pk)
 
+    msg = (request.POST.get("message") or "").strip()
+    if not msg:
+        msg = ("Your ID surrender request has been accepted. "
+               "You may claim the acknowledgement receipt at the Office of Student Affairs during office hours. "
+               "Please bring a valid ID.")
 
+    req.status = IDSurrenderRequest.STATUS_APPROVED
+    req.message = msg
+    req.save(update_fields=["status", "message"])
 
+    # best-effort email
+    if req.contact_email:
+        try:
+            send_mail(
+                subject="ID Surrender Request — Accepted",
+                message=(f"Hello {req.first_name},\n\n{msg}\n\n"
+                         f"Student Number: {req.student_number}\n"
+                         f"Program: {req.program}\n"
+                         f"Year Level: {req.year_level}\n"
+                         f"Reason: {req.get_reason_display()}\n\n— Office of Student Affairs"),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                recipient_list=[req.contact_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+    if _is_ajax(request):
+        return JsonResponse({"ok": True, "status": req.status, "message": req.message})
+
+    messages.success(request, "Request accepted and email sent.")
+    return redirect("admin_view_ackreq", pk=req.pk)
+
+@role_required(['admin'])
+@require_POST
+def admin_ackreq_decline(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+
+    if req.status != IDSurrenderRequest.STATUS_PENDING:
+        if _is_ajax(request):
+            return JsonResponse({"ok": False, "error": "Request already finalized."}, status=400)
+        messages.warning(request, "This request is already finalized.")
+        return redirect("admin_view_ackreq", pk=req.pk)
+
+    msg = (request.POST.get("message") or "").strip()
+    if not msg:
+        if _is_ajax(request):
+            return JsonResponse({"ok": False, "error": "A reason/message is required to decline."}, status=400)
+        messages.error(request, "A reason/message is required to decline.")
+        return redirect("admin_view_ackreq", pk=req.pk)
+
+    req.status = IDSurrenderRequest.STATUS_DECLINED
+    req.message = msg
+    req.save(update_fields=["status", "message"])
+
+    if req.contact_email:
+        try:
+            send_mail(
+                subject="Update on your ID Surrender Request",
+                message=(f"Hello {req.first_name},\n\n"
+                         f"Status: Declined\n"
+                         f"Reason/Notes:\n{msg}\n\n"
+                         "If you have questions, please reply to this email.\n\n— Office of Student Affairs"),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                recipient_list=[req.contact_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+    if _is_ajax(request):
+        return JsonResponse({"ok": True, "status": req.status, "message": req.message})
+
+    messages.success(request, "Request declined and email sent.")
+    return redirect("admin_view_ackreq", pk=req.pk)
 
 
 
