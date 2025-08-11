@@ -28,6 +28,30 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
 from .utils import send_violation_email, generate_gmf_pdf
 from django.db.models import Q
+from django.views.decorators.http import require_POST
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.http import FileResponse, Http404
+from django.contrib.staticfiles import finders
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.core.files.storage import default_storage
+from .libre.ack_receipt import build_ack_pdf
+import mimetypes
+
+#################################################################################################################
+
+import os
+import io
+from collections import Counter
+from django.conf import settings
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.utils import ImageReader
+from PIL import Image
+from reportlab.lib.units import inch
+from reportlab.pdfgen.canvas import Canvas
+from reportlab.platypus import Table as PlatypusTable, TableStyle as PlatypusTableStyle
 
 def current_time(request):
     return JsonResponse({'now': now().isoformat()})
