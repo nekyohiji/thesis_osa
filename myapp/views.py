@@ -17,12 +17,13 @@ from django.core.serializers import serialize
 from django.utils.html import escape
 from django.templatetags.static import static
 from django.urls import reverse
+
 import uuid, os
 from django.core.files.base import ContentFile
 from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
@@ -839,23 +840,6 @@ def generate_guard_report_pdf(request):
     return response
 
 
-<<<<<<< HEAD
-=======
-    if has_unsettled_first:
-        return JsonResponse({
-            'success': False,
-            'message': 'Student has an unsettled first violation. Please advise them to submit their apology letter.'
-        })
-    else:
-        return JsonResponse({
-            'success': True,
-            'message': 'Student cleared for entry.'
-        })
-
-
-
-
->>>>>>> origin/main
 
 
 
