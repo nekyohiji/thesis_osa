@@ -165,7 +165,7 @@
           <small class="text-muted"> Handle certificate requests, monitor progress, and maintain records..</small>
           <hr class="border-dark">
           
-          <!-- Search Bar -->
+          <!-- Search Bar for Pending-->
           <div class="d-flex justify-content-end mb-3">
             <div class="input-group input-group-sm" style="max-width: 400px;">
               <input id="goodmoral_search" type="text" class="form-control" placeholder="Search student">
@@ -177,10 +177,14 @@
           <!-- Table of Good Moral Request -->
           <div class="card shadow-sm  border">
             <div class="card-header text-white" style="background-color: #440207;">
-              <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Pending Good Moral Requests</h6>
+              <h6 class="mb-0">
+                <i class="fas fa-file-alt me-2"></i>
+                Pending Good Moral Requests
+                <span class="badge text-bg-warning">{{ pending_count }}</span>
+              </h6>
             </div>
             <div class="card-body table-responsive p-0" style="max-height: calc(49px * 5); overflow-y: auto;">
-              <table class="table table-hover table-bordered align-middle text-center mb-0">
+              <table class="table table-hover table-bordered align-middle text-center mb-0 pending-table">
                 <thead class="table-secondary sticky-top border">
                   <tr>
                     <th>Name</th>
@@ -189,28 +193,23 @@
                   </tr>
                 </thead>
                 <tbody>
+                {% for r in pending_requests %}
                   <tr>
-                    <td>Juan Dela Cruz</td>
-                    <td>06-23-2025</td>                    
                     <td>
-                      <a href="{% url 'admin_view_goodmoral' %}" class="btn btn-sm btn-outline-primary">View More</a>
+                      {{ r.surname }}, {{ r.first_name }}
+                      {% if r.middle_name %} {{ r.middle_name|first }}.{% endif %}
+                      <div class="text-muted small">{{ r.student_id }}</div>
+                    </td>
+                    <td>{{ r.submitted_at|date:"M d, Y h:i A" }}</td>
+                    <td>
+                      {# Update this URL name/arg to your detail route if different #}
+                      <a href="{% url 'admin_view_goodmoral' r.pk %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>
                   </tr>
-                  <tr>
-                    <td>Anna Reyes</td>
-                    <td>06-23-2025</td>                   
-                    <td>
-                      <a href="{% url 'admin_view_goodmoral' %}"  class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Carlos Mendoza</td>
-                    <td>06-23-2025</td>                  
-                    <td>
-                      <a href="{% url 'admin_view_goodmoral' %}"  class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>
-                  </tr>
-                </tbody>
+                {% empty %}
+                  <tr><td colspan="3">No pending requests.</td></tr>
+                {% endfor %}
+              </tbody>
               </table>
             </div>
           </div>
@@ -218,7 +217,7 @@
       </div>
 
       
-      <!-- Violation Record  -->
+      <!-- History Record Table  -->
       <div class="container-fluid pb-4">
         <div class="bg-white p-4 rounded shadow-sm border">
        <h5 class="fw-bold mb-1">
@@ -228,7 +227,7 @@
           <hr class="border-dark">
 
 
-          <!-- Search Bar for Violation Record-->
+          <!-- Search Bar for History Record-->
           <div class="d-flex justify-content-end mb-3">
             <div class="input-group input-group-sm" style="max-width: 400px;">
               <input id="goodmoral_record_search" type="text" class="form-control" placeholder="Search history">
@@ -236,13 +235,17 @@
             </div>
           </div>
 
-          <!-- Violation Record Table -->
+          <!-- History Record Table -->
           <div class="card shadow-sm">
             <div class="card-header text-white" style="background-color: #440207;">
-              <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Requested Good Moral Record</h6>
+              <h6 class="mb-0">
+                <i class="bi bi-clock-history me-2"></i>
+                Requested Good Moral Record
+                <span class="badge rounded-pill bg-warning text-dark ms-2">{{ history_count }}</span>
+              </h6>
             </div>
             <div class="card-body table-responsive p-0" style="max-height: calc(49px * 5); overflow-y: auto;">
-              <table class="table table-hover table-bordered align-middle text-center mb-0">
+              <table class="table table-hover table-bordered align-middle text-center mb-0 history-table">
                 <thead class="table-secondary sticky-top border">
                   <tr>
                     <th>Name</th>
@@ -252,30 +255,31 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Maria Santos</td>
-                    <td>06-23-2025</td>
-                    <td>Completed</td>
-                    <td>     
-                      <a href="{% url 'admin_view_goodmoral' %}"  class="btn btn-sm btn-outline-primary">View More</a>
+                {% for r in history_requests %}
+                  <tr>
+                    <td>
+                      {{ r.surname }}, {{ r.first_name }}
+                      {% if r.middle_name %} {{ r.middle_name|first }}.{% endif %}
+                      <div class="text-muted small">{{ r.student_id }}</div>
+                    </td>
+                    <td>{{ r.submitted_at|date:"M d, Y h:i A" }}</td>
+                    <td>
+                      {% if r.is_approved %}
+                        <span class="badge text-bg-success">Approved</span>
+                      {% elif r.is_rejected %}
+                        <span class="badge text-bg-danger">Rejected</span>
+                      {% else %}
+                        <span class="badge text-bg-secondary">Pending</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{% url 'admin_view_goodmoral' r.pk %}" class="btn btn-sm btn-outline-primary">View More</a>
                     </td>
                   </tr>
-                  <tr>
-                    <td>John Lee</td>
-                    <td>06-23-2025</td>
-                    <td>Completed</td>
-                    <td>     
-                      <a href="{% url 'admin_view_goodmoral' %}"  class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>                  
-                  </tr>
-                  <tr>
-                    <td>Angela Cruz</td>
-                    <td>06-23-2025</td>
-                    <td>Completed</td>
-                    <td>     
-                      <a href="{% url 'admin_view_goodmoral' %}"  class="btn btn-sm btn-outline-primary">View More</a>
-                    </td>                  
-                  </tr>
-                </tbody>
+                {% empty %}
+                  <tr><td colspan="4">No approved or rejected requests yet.</td></tr>
+                {% endfor %}
+              </tbody>
               </table>
             </div>
           </div>
@@ -379,7 +383,27 @@
     });
 
 ///////////////////////////// START HERE MAG ADD
+    function setupNameSearch(inputId, tableSelector) {
+      const input = document.getElementById(inputId);
+      const table = document.querySelector(tableSelector);
 
+      input.addEventListener('keyup', function () {
+        const filter = input.value.toLowerCase();
+        const rows = table.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+          const nameCell = row.querySelector('td'); // first column
+          if (!nameCell) return;
+
+          const nameText = nameCell.textContent.toLowerCase();
+          row.style.display = nameText.includes(filter) ? '' : 'none';
+        });
+      });
+    }
+
+  // Hook up the searches
+  setupNameSearch('goodmoral_search', '.pending-table');
+  setupNameSearch('goodmoral_record_search', '.history-table');
 
 
   </script>

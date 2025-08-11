@@ -1,0 +1,341 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>  Acknowledgement Receipt Request Form Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'myapp/css/admin_view_ackreq.css' %}">
+</head>
+
+<body style=" background: linear-gradient(to bottom right, #000000, #440207, #440207, #000000);" >
+
+<div class="container-fluid py-4">
+  <!-- Top Navigation -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'admin_ackreq' %}" class="btn text-light">
+      <i class="bi bi-arrow-left text-light"></i> Back
+    </a>
+    <a></a>
+  </div>
+
+  <!-- Main Content Card -->
+  <div class="shadow p-4 rounded">
+    <div class="row g-4">
+      <h3 class="text-dark fw-bold mb-0 text-center">
+        <i class="bi bi-pencil-square"></i>  Acknowledgement Receipt Form
+      </h3>
+      <hr>
+
+      <!-- PERSONAL INFORMATION -->
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div>
+        <div class="card-body row g-3">
+          <div class="col-md-3"><label class="form-label">First Name:</label>
+            <input class="form-control" value="{{ req.first_name }}" disabled>
+          </div>
+          <div class="col-md-3"><label class="form-label">Middle Name:</label>
+            <input class="form-control" value="{{ req.middle_name }}" disabled>
+          </div>
+          <div class="col-md-3"><label class="form-label">Surname:</label>
+            <input class="form-control" value="{{ req.surname }}" disabled>
+          </div>
+          <div class="col-md-2"><label class="form-label">Extension:</label>
+            <input class="form-control" value="{{ req.extension }}" disabled>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email:</label>
+            <input class="form-control" value="{{ req.contact_email }}" disabled>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACADEMIC INFORMATION -->
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-mortarboard-fill"></i> Academic Information</div>
+        <div class="card-body row g-3">
+          <div class="col-md-3"><label class="form-label">Student ID Number:</label>
+            <input class="form-control" value="{{ req.student_number }}" disabled>
+          </div>
+          <div class="col-md-4"><label class="form-label">Program/Course:</label>
+            <input class="form-control" value="{{ req.program }}" disabled>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Reason to Surrender:</label>
+            <input class="form-control" value="{{ req.reason }}" disabled>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Year Level:</label>
+            <input class="form-control" value="{{ req.year_level }}" disabled>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Inclusive Years of Stay:</label>
+            <input class="form-control" value="{{ req.inclusive_years }}" disabled>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOADED DOCUMENTS -->
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-upload"></i>
+          Uploaded Documents: {{ req.get_document_type_display|default:"—" }}
+        </div>
+
+        <div class="card-body d-flex flex-wrap gap-2">
+          {% if req.upload_id_front %}
+            <a class="btn btn-outline-secondary btn-sm"
+              href="{{ req.upload_id_front.url }}" target="_blank" rel="noopener">
+              <i class="bi bi-image"></i> View Uploaded File
+            </a>
+          {% endif %}
+
+          {% if req.upload_id_back %}
+            <a class="btn btn-outline-secondary btn-sm"
+              href="{{ req.upload_id_back.url }}" target="_blank" rel="noopener">
+              <i class="bi bi-file-earmark-medical"></i> View Uploaded File
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="d-flex justify-content-between mt-4 flex-wrap gap-3">
+        <!-- Safe Actions -->
+        <div class="d-flex gap-2">
+          <button class="btn btn-warning text-dark" type="button"
+                  data-bs-toggle="modal" data-bs-target="#generateModal">
+            <i class="bi bi-printer"></i> Generate Certificate
+          </button>
+        </div>
+
+        <!-- Critical Actions -->
+        <div class="d-flex gap-2">
+          {% if req.status == 'pending' %}
+            <button class="btn btn-primary" type="button"
+                    data-bs-toggle="modal" data-bs-target="#acceptModal">
+              <i class="bi bi-hand-thumbs-up"></i> Accept
+            </button>
+            <button class="btn btn-danger" type="button"
+                    data-bs-toggle="modal" data-bs-target="#declineModal">
+              <i class="bi bi-x-circle"></i> Decline
+            </button>
+          {% else %}
+            <button class="btn btn-primary" type="button" disabled aria-disabled="true" title="Request already finalized">
+              <i class="bi bi-hand-thumbs-up"></i> Accept
+            </button>
+            <button class="btn btn-danger" type="button" disabled aria-disabled="true" title="Request already finalized">
+              <i class="bi bi-x-circle"></i> Decline
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Generate Certificate Modal -->
+<div class="modal fade" id="generateModal" tabindex="-1" aria-labelledby="generateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
+      <div class="modal-header">
+      </div>
+      <div class="modal-body text-center">
+        Are you sure you want to <strong>generate</strong> the Acknowledgement Receipt Certificate?
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-dark" id="generateReceiptBtn">Generate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Accept Modal -->
+<div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel"
+     aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
+      <div class="modal-header">
+        <h5 class="modal-title" id="acceptModalLabel">Accept Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form id="acceptForm" method="post" action="{% url 'admin_ackreq_accept' req.id %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p>Are you sure you want to <strong>accept</strong> this request?</p>
+          <label for="acceptMessage" class="form-label">Message to requester (optional):</label>
+          <textarea id="acceptMessage" name="message" class="form-control" rows="3"
+                    placeholder="Leave blank to use the default acceptance message."></textarea>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button id="acceptSubmitBtn" type="submit" class="btn btn-primary">Accept</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Decline Modal -->
+<div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel"
+     aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
+      <div class="modal-header">
+        <h5 class="modal-title" id="declineModalLabel">Decline Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form id="declineForm" method="post" action="{% url 'admin_ackreq_decline' req.id %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p>Are you sure you want to <strong>decline</strong> this request?</p>
+          <label for="declineMessage" class="form-label">Reason for declining (required):</label>
+          <textarea id="declineMessage" name="message" class="form-control" rows="3"
+                    placeholder="Explain why the request is being declined." required></textarea>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button id="declineSubmitBtn" type="submit" class="btn btn-danger">Decline Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Tiny status modal shown during Accept/Decline -->
+<div class="modal fade" id="actionStatusModal" tabindex="-1" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4 text-center">
+      <div id="actionSpinner" class="spinner-border mb-3" role="status" aria-hidden="true"></div>
+      <div id="actionText" class="fw-semibold">Processing…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* Generate PDF handler (unchanged; safe if elements missing) */
+(function () {
+  const modalEl = document.getElementById('generateModal');
+  const btn     = document.getElementById('generateReceiptBtn');
+  if (!modalEl || !btn) return;
+  const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
+  const url     = "{% url 'admin_ackreq_receipt_pdf' req.id %}";
+  btn.addEventListener('click', () => { btn.blur(); modal.hide(); });
+  modalEl.addEventListener('hidden.bs.modal', () => { window.open(url, '_blank', 'noopener'); });
+})();
+
+/* Accept / Decline via AJAX with instant feedback */
+(function () {
+  function getCsrf(form) {
+    const inp = form.querySelector('input[name="csrfmiddlewaretoken"]');
+    return inp ? inp.value : '';
+  }
+  function disableModalControls(form, on) {
+    const modal = form.closest('.modal');
+    if (!modal) return;
+    modal.querySelectorAll('button, a, textarea, select, input:not([type="hidden"])')
+      .forEach(el => {
+        el.disabled = on;
+        el.setAttribute('aria-disabled', on ? 'true' : 'false');
+      });
+  }
+  function showStatus(text, spinning = true) {
+    const el = document.getElementById('actionStatusModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(el);
+    document.getElementById('actionText').textContent = text;
+    document.getElementById('actionSpinner').style.display = spinning ? '' : 'none';
+    modal.show();
+    return modal;
+  }
+
+  function ajaxSubmit(formId, submitBtnId, successText) {
+    const form = document.getElementById(formId);
+    const btn  = document.getElementById(submitBtnId);
+    if (!form || !btn) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // 1) client-side required check (because we prevented native submit)
+      const requiredField = form.querySelector('[required]');
+      if (requiredField && !requiredField.value.trim()) {
+        // show inline bootstrap alert inside the modal body
+        const body = form.querySelector('.modal-body');
+        if (body && !body.querySelector('.alert')) {
+          const al = document.createElement('div');
+          al.className = 'alert alert-light text-center border mb-3';
+          al.textContent = 'A reason/message is required to decline.';
+          body.prepend(al);
+          setTimeout(() => al.remove(), 2000);
+        }
+        requiredField.focus();
+        return;
+      }
+
+      // 2) build payload BEFORE disabling elements
+      const payload = new FormData(form);
+
+      // 3) now lock UI and show processing
+      disableModalControls(form, true);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
+      const statusModal = showStatus('Processing…', true);
+
+      // 4) send
+      fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCsrf(form),
+        },
+        body: payload,
+        redirect: 'follow'
+      })
+      .then(async (r) => {
+        const ct = (r.headers.get('Content-Type') || '').toLowerCase();
+        if (ct.includes('application/json')) {
+          const data = await r.json();
+          if (!r.ok || data.ok === false) throw new Error(data.error || 'Server error.');
+        } else {
+          if (!r.ok) throw new Error(`Server error (${r.status})`);
+        }
+        document.getElementById('actionSpinner').style.display = 'none';
+        document.getElementById('actionText').textContent = successText;
+        setTimeout(() => {
+          statusModal.hide();
+          window.location.reload();
+        }, 900);
+      })
+      .catch(err => {
+        document.getElementById('actionSpinner').style.display = 'none';
+        document.getElementById('actionText').textContent = err.message || 'Something went wrong.';
+        // re-enable so user can retry
+        disableModalControls(form, false);
+        btn.disabled = false;
+        btn.textContent = (submitBtnId === 'acceptSubmitBtn') ? 'Accept' : 'Decline Request';
+      });
+    });
+  }
+
+  ajaxSubmit('acceptForm',  'acceptSubmitBtn',  'Accepted! Email sent.');
+  ajaxSubmit('declineForm', 'declineSubmitBtn', 'Declined. Email sent.');
+})();
+</script>
+
+</body>
+</html>

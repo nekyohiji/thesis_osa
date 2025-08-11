@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest
 from django.db.models.functions import Lower
 from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
@@ -19,15 +19,16 @@ from django.templatetags.static import static
 from django.urls import reverse
 import uuid, os
 from django.core.files.base import ContentFile
-from .forms import ViolationForm, GoodMoralRequestForm
+from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
-from .utils import send_violation_email  
+from .utils import send_violation_email, generate_gmf_pdf
 from django.db.models import Q
+<<<<<<< HEAD
 import os
 import io
 from collections import Counter
@@ -39,6 +40,23 @@ from PIL import Image
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Table as PlatypusTable, TableStyle as PlatypusTableStyle
+=======
+from django.views.decorators.http import require_POST
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.http import FileResponse, Http404
+from django.contrib.staticfiles import finders
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.core.files.storage import default_storage
+from .libre.ack_receipt import build_ack_pdf
+import mimetypes
+
+#################################################################################################################
+
+
+
+>>>>>>> origin/main
 def current_time(request):
     return JsonResponse({'now': now().isoformat()})
 
@@ -126,9 +144,29 @@ def admin_dashboard_view(request):
 def admin_accounts_view(request):
     return render (request, 'myapp/admin_accounts.html')
 
+
 @role_required(['admin'])
 def admin_ackreq_view(request):
-    return render (request, 'myapp/admin_ackreq.html')
+    pending_requests = IDSurrenderRequest.objects.filter(
+        status=IDSurrenderRequest.STATUS_PENDING
+    ).order_by('-submitted_at')
+
+    history_requests = IDSurrenderRequest.objects.filter(
+        status__in=[IDSurrenderRequest.STATUS_APPROVED, IDSurrenderRequest.STATUS_DECLINED]
+    ).order_by('-submitted_at')
+
+    context = {
+        "pending_requests": pending_requests,
+        "history_requests": history_requests,
+        "pending_count": pending_requests.count(),
+        "history_count": history_requests.count(),
+        # make constants available to the template for clean comparisons
+        "STATUS_APPROVED": IDSurrenderRequest.STATUS_APPROVED,
+        "STATUS_DECLINED": IDSurrenderRequest.STATUS_DECLINED,
+    }
+    return render(request, "myapp/admin_ackreq.html", context)
+
+
 
 @role_required(['admin'])
 def admin_ACSO_view(request):
@@ -180,7 +218,29 @@ def admin_election_view(request):
 
 @role_required(['admin'])
 def admin_goodmoral_view(request):
-    return render (request, 'myapp/admin_goodmoral.html')
+    pending_qs = GoodMoralRequest.objects.filter(
+        is_approved=False, is_rejected=False
+    ).order_by('-submitted_at')
+
+    history_qs = GoodMoralRequest.objects.exclude(
+        is_approved=False, is_rejected=False
+    ).order_by('-submitted_at')
+
+    return render(
+        request,
+        'myapp/admin_goodmoral.html',
+        {
+            'pending_requests': pending_qs,
+            'history_requests': history_qs,
+            'pending_count': pending_qs.count(),
+            'history_count': history_qs.count(),
+        }
+    )
+
+@role_required(['admin'])
+def admin_view_goodmoral(request, pk):
+    r = get_object_or_404(GoodMoralRequest, pk=pk)
+    return render(request, 'myapp/admin_view_goodmoral.html', {'r': r})
 
 @role_required(['admin'])
 def admin_lostandfound_view(request):
@@ -261,9 +321,9 @@ def admin_scholarships_view(request):
         'scholarships': scholarships
     })
 
-@role_required(['admin'])
-def admin_view_ackreq_view(request):
-    return render (request, 'myapp/admin_view_ackreq.html')
+def admin_view_ackreq_view(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+    return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
 
 @role_required(['admin'])
 def admin_view_CS_view(request):
@@ -330,6 +390,8 @@ def admin_election_manage_view(request):
     return render (request, 'myapp/admin_election_manage.html')
 
 
+
+
 #########################CLIENT
 
 def scholarship_feed_api(request):
@@ -349,10 +411,16 @@ def lostandfound_feed_api(request):
     return JsonResponse({'items': data})
 
 def goodmoral_request_form(request):
+    template = 'myapp/client_goodmoral.html' 
     if request.method == 'POST':
         form = GoodMoralRequestForm(request.POST, request.FILES)
         if form.is_valid():
-            obj = form.save(commit=False) 
+            obj = form.save(commit=False)
+            needs_other = obj.purpose in ['Others', 'Scholarship', 'Transfer to Another School']
+            if needs_other and not (obj.other_purpose or '').strip():
+                messages.error(request, "You must specify your purpose.")
+                return render(request, template, {'form': form})
+            obj.save()
             try:
                 send_mail(
                     subject="Good Moral Certificate Request Received",
@@ -364,17 +432,67 @@ def goodmoral_request_form(request):
                     recipient_list=[obj.requester_email],
                     fail_silently=False
                 )
-                obj.save()
-                return render(request, 'client_goodmoral.html', {'show_modal': True})
-
-            except BadHeaderError:
-                messages.error(request, "Invalid header found. Please check your email.")
             except Exception as e:
-                messages.error(request, f"Failed to send confirmation email: {e}")
+                messages.error(request, f"Email error: {e}")
+            return render(request, template, {'form': GoodMoralRequestForm(), 'show_modal': True})
+        else:
+            print("Form errors:", form.errors)
     else:
         form = GoodMoralRequestForm()
 
-    return render(request, 'client_goodmoral.html', {'form': form})
+    return render(request, template, {'form': form})
+
+def id_surrender_request(request):
+    template = 'myapp/client_SurrenderingID.html'
+
+    if request.method == 'POST':
+        form = IDSurrenderRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+
+            # If your model has submitted_by (ForeignKey to User), record it
+            if hasattr(obj, "submitted_by") and request.user.is_authenticated:
+                obj.submitted_by = request.user
+
+            obj.save()
+
+            # Choose best recipient: the form's contact_email, else logged-in user email
+            recipient = getattr(obj, "contact_email", None)
+            if not recipient and request.user.is_authenticated:
+                recipient = request.user.email
+
+            if recipient:
+                try:
+                    send_mail(
+                        subject="ID Surrender Request Received",
+                        message=("We have received your ID Surrender request.\n"
+                                 "You will receive another email once it is reviewed and approved or rejected."),
+                        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                        recipient_list=[recipient],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    messages.error(request, f"Email error: {e}")
+
+            # Re-render with a fresh form and the success modal flag
+            return render(request, template, {
+                'form': IDSurrenderRequestForm(),
+                'show_modal': True
+            })
+
+        # Invalid: redisplay with errors
+        return render(request, template, {'form': form})
+
+    # GET
+    return render(request, template, {'form': IDSurrenderRequestForm()})
+
+
+
+
+
+
+
+
 
 
 
@@ -435,7 +553,13 @@ def logout_view(request):
     return redirect('login')
 
 
+
+
+
+
+
 ########################GUARD
+
 def get_student_by_id(request, tupc_id):
     try:
         student = Student.objects.get(tupc_id=tupc_id)
@@ -480,8 +604,6 @@ def submit_violation(request):
         'form': form,
         'guards': guards,
     })
-
-    
 
 @role_required(['guard'])
 
@@ -709,6 +831,23 @@ def generate_guard_report_pdf(request):
     return response
 
 
+<<<<<<< HEAD
+=======
+    if has_unsettled_first:
+        return JsonResponse({
+            'success': False,
+            'message': 'Student has an unsettled first violation. Please advise them to submit their apology letter.'
+        })
+    else:
+        return JsonResponse({
+            'success': True,
+            'message': 'Student cleared for entry.'
+        })
+
+
+
+
+>>>>>>> origin/main
 
 
 
@@ -955,6 +1094,332 @@ def ajax_edit_scholarship(request, id):
             'deadline_date': s.deadline_date,
         })
     return JsonResponse({'success': False}, status=400)
+
+DEFAULT_APPROVAL_MSG = (
+    "Your Good Moral Certificate request has been approved.\n\n"
+    "Please proceed to the Office of Student Affairs (OSA) to claim your request form.\n"
+    "Prepare PHP 100 cash for payment at the cashier.\n"
+    "After payment, reply to this email with a photo or copy of your receipt."
+)
+
+@role_required(['admin'])
+@require_POST
+def goodmoral_accept(request, pk):
+    r = get_object_or_404(GoodMoralRequest, pk=pk)
+    note = (request.POST.get('accept_message') or "").strip()
+    final_msg = note if note else DEFAULT_APPROVAL_MSG
+
+    r.is_approved = True
+    r.is_rejected = False
+    r.rejection_reason = ""
+    r.save()
+
+    subject = "Your Good Moral Certificate Request has been APPROVED"
+    body = (
+        f"Hello {r.requester_name},\n\n"
+        f"Your Good Moral Certificate request for {r.first_name} {r.surname} "
+        f"(Student ID: {r.student_id}) has been APPROVED.\n\n"
+        f"{final_msg}\n\n"
+        f"Purpose: {r.purpose}{(' - ' + r.other_purpose) if r.other_purpose else ''}\n"
+        f"Submitted: {r.submitted_at:%b %d, %Y %I:%M %p}\n\n"
+        "Thank you."
+    )
+    try:
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [r.requester_email], fail_silently=False)
+        messages.success(request, "Request accepted and email sent.")
+    except Exception as e:
+        messages.warning(request, f"Accepted, but email failed: {e}")
+
+    return redirect('admin_view_goodmoral', pk=pk)  
+
+@role_required(['admin'])
+@require_POST
+def goodmoral_decline(request, pk):
+    r = get_object_or_404(GoodMoralRequest, pk=pk)
+    reason = (request.POST.get('decline_message') or "").strip()
+    if not reason:
+        messages.error(request, "Decline reason is required.")
+        return redirect('admin_view_goodmoral', pk=pk)
+
+    r.is_approved = False
+    r.is_rejected = True
+    r.rejection_reason = reason
+    r.save()
+
+    subject = "Your Good Moral Certificate Request has been DECLINED"
+    body = (
+        f"Hello {r.requester_name},\n\n"
+        f"Your Good Moral Certificate request for {r.first_name} {r.surname} "
+        f"(Student ID: {r.student_id}) has been DECLINED.\n\n"
+        f"Reason from the Office:\n{reason}\n\n"
+        "If you believe this was an error or need assistance, please reply to this email."
+    )
+    try:
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [r.requester_email], fail_silently=False)
+        messages.success(request, "Request declined and email sent.")
+    except Exception as e:
+        messages.warning(request, f"Declined, but email failed: {e}")
+
+    return redirect('admin_view_goodmoral', pk=pk)
+
+TEMPLATE_PATH = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'pdf', 'GMC-request-template.pdf')
+
+@role_required(['admin'])
+def goodmoral_request_form_pdf(request, pk):
+    r = get_object_or_404(GoodMoralRequest, pk=pk)
+
+    template_path = finders.find('myapp/form/GMC-request-template.pdf')
+    if not template_path:
+        raise Http404("Template PDF not found.")
+
+    with open(template_path, 'rb') as f:
+        base_pdf_bytes = f.read()
+    base_reader = PdfReader(BytesIO(base_pdf_bytes))
+    base_page = base_reader.pages[0]
+    llx, lly, urx, ury = map(float, base_page.mediabox)
+    width, height = urx - llx, ury - lly
+
+    overlay_buf = BytesIO()
+    c = canvas.Canvas(overlay_buf, pagesize=(width, height))
+
+    # ---------- helpers ----------
+    def check(x, y):
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, y, "✓")
+
+    def text(x, y, s, bold=False, size=11):
+        c.setFont("Helvetica-Bold" if bold else "Helvetica", size)
+        c.drawString(x, y, s or "")
+
+    def draw_guides(step=25):
+        # draw a light grid to find coordinates (only when ?guide=1)
+        c.setFont("Helvetica", 6)
+        c.setFillGray(0.6)
+        for x in range(0, int(width), step):
+            c.line(x, 0, x, height)
+            c.drawString(x+1, 2, str(x))
+        for y in range(0, int(height), step):
+            c.line(0, y, width, y)
+            c.drawString(2, y+2, str(y))
+        c.setFillGray(0)  # reset
+
+    # turn on guide mode if requested (http://.../request-form/?guide=1)
+    if request.GET.get("guide") == "1":
+        draw_guides()
+
+    # ---------- PLACE FIELDS (v1 rough) ----------
+    # NOTE: origin is bottom-left. nudge by +/- 5–10 pts until it sits right.
+
+    # Header date (top-right area)
+    # Example: text(470, height-70, timezone.now().strftime('%m/%d/%Y'))
+    # Try this first; adjust after you see it.
+
+    # Name line: SURNAME, FIRST NAME, EXT, M.I.   (from your screenshot it’s near top-left)
+    surname = (r.surname or "").upper()
+    first = (r.first_name or "").upper()
+    ext = (r.ext or "").upper()
+    mi = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
+
+    text(80, 665, surname)        # ← start here; nudge until it sits on the Surname line
+    text(250, 665, first)
+    text(420, 665, ext)
+    text(505, 665, mi)
+
+    # Sex checkboxes
+    # Put ✓ in the correct box. Start with these, then nudge to fit box centers.
+    sex = (r.sex or "").lower()
+    if sex.startswith("m"):
+        check(365, 682)  # Male
+    elif sex.startswith("f"):
+        check(430, 682)  # Female
+
+    # Program & Status block (left column under name area)
+    text(115, 620, r.program)
+
+    status = (r.status or "").lower()
+    if "alum" in status or "gradu" in status:
+        check(60, 600)  # Alum/Graduated
+        # Date Graduated:
+        if r.date_graduated:
+            text(200, 600, r.date_graduated.strftime('%m/%d/%Y'))
+    elif "former" in status:
+        check(60, 585)  # Former Student
+        text(265, 585, r.inclusive_years)
+    else:
+        check(60, 570)  # Current Student
+        text(265, 570, r.date_admission)
+
+    # Purpose of Request (right column checkboxes)
+    purpose = (r.purpose or "").lower()
+    other = r.other_purpose or ""
+
+    if "transfer" in purpose:
+        check(330, 535); text(460, 535, other)
+    elif "continu" in purpose:    # Continuing Education
+        check(330, 520)
+    elif "employment" in purpose:
+        check(330, 505)
+    elif "scholar" in purpose:
+        check(330, 490); text(460, 490, other)
+    elif "sit" in purpose or "opt" in purpose:
+        check(330, 475)           # SIT/OPT
+    elif "student development" in purpose or "comselec" in purpose or "usg" in purpose or "award" in purpose:
+        check(330, 460)
+    else:
+        check(330, 445); text(420, 445, other or (r.purpose or ""))
+
+    # Requester info
+    text(110, 380, r.requester_name)
+    text(415, 380, r.requester_contact)
+    text(205, 360, r.relationship)
+
+    # done
+    c.showPage()
+    c.save()
+    overlay_buf.seek(0)
+
+    # Merge & return (view inline; no forced download)
+    overlay_reader = PdfReader(overlay_buf)
+    writer = PdfWriter()
+    page = base_reader.pages[0]
+    page.merge_page(overlay_reader.pages[0])
+    writer.add_page(page)
+
+    out = BytesIO()
+    writer.write(out)
+    out.seek(0)
+    return FileResponse(out, as_attachment=False, filename=f"GMC_RequestForm_{r.student_id or r.pk}.pdf")
+
+@role_required(['admin'])
+@xframe_options_exempt
+def view_gmf(request, pk):
+    req = get_object_or_404(GoodMoralRequest, pk=pk)
+    generate_gmf_pdf(req)  
+    if not req.certificate_pdf or not default_storage.exists(req.certificate_pdf.name):
+        raise Http404("Certificate file not found.")
+    f = req.certificate_pdf.open("rb")
+    resp = FileResponse(f, content_type="application/pdf", as_attachment=False)
+    resp["Content-Disposition"] = f'inline; filename="{os.path.basename(req.certificate_pdf.name)}"'
+    try: resp["Content-Length"] = req.certificate_pdf.size
+    except Exception: pass
+    return resp
+
+@role_required(['admin'])
+def admin_ackreq_receipt_pdf(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+
+    # Pull the single active admin's name and uppercase it
+    admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
+    admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
+
+    try:
+        pdf_path = build_ack_pdf(req, admin_name_upper)
+    except Exception as e:
+        # show a basic error in-browser
+        raise Http404(f"PDF generation failed: {e}")
+
+    # Stream inline so Chrome opens a new tab instead of forcing a download
+    filename = os.path.basename(pdf_path)
+    resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
+
+def _is_ajax(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+@role_required(['admin'])
+@require_POST
+def admin_ackreq_accept(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+
+    if req.status != IDSurrenderRequest.STATUS_PENDING:
+        if _is_ajax(request):
+            return JsonResponse({"ok": False, "error": "Request already finalized."}, status=400)
+        messages.warning(request, "This request is already finalized.")
+        return redirect("admin_view_ackreq", pk=req.pk)
+
+    msg = (request.POST.get("message") or "").strip()
+    if not msg:
+        msg = ("Your ID surrender request has been accepted. "
+               "You may claim the acknowledgement receipt at the Office of Student Affairs during office hours. "
+               "Please bring a valid ID.")
+
+    req.status = IDSurrenderRequest.STATUS_APPROVED
+    req.message = msg
+    req.save(update_fields=["status", "message"])
+
+    # best-effort email
+    if req.contact_email:
+        try:
+            send_mail(
+                subject="ID Surrender Request — Accepted",
+                message=(f"Hello {req.first_name},\n\n{msg}\n\n"
+                         f"Student Number: {req.student_number}\n"
+                         f"Program: {req.program}\n"
+                         f"Year Level: {req.year_level}\n"
+                         f"Reason: {req.get_reason_display()}\n\n— Office of Student Affairs"),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                recipient_list=[req.contact_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+    if _is_ajax(request):
+        return JsonResponse({"ok": True, "status": req.status, "message": req.message})
+
+    messages.success(request, "Request accepted and email sent.")
+    return redirect("admin_view_ackreq", pk=req.pk)
+
+@role_required(['admin'])
+@require_POST
+def admin_ackreq_decline(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+
+    if req.status != IDSurrenderRequest.STATUS_PENDING:
+        if _is_ajax(request):
+            return JsonResponse({"ok": False, "error": "Request already finalized."}, status=400)
+        messages.warning(request, "This request is already finalized.")
+        return redirect("admin_view_ackreq", pk=req.pk)
+
+    msg = (request.POST.get("message") or "").strip()
+    if not msg:
+        if _is_ajax(request):
+            return JsonResponse({"ok": False, "error": "A reason/message is required to decline."}, status=400)
+        messages.error(request, "A reason/message is required to decline.")
+        return redirect("admin_view_ackreq", pk=req.pk)
+
+    req.status = IDSurrenderRequest.STATUS_DECLINED
+    req.message = msg
+    req.save(update_fields=["status", "message"])
+
+    if req.contact_email:
+        try:
+            send_mail(
+                subject="Update on your ID Surrender Request",
+                message=(f"Hello {req.first_name},\n\n"
+                         f"Status: Declined\n"
+                         f"Reason/Notes:\n{msg}\n\n"
+                         "If you have questions, please reply to this email.\n\n— Office of Student Affairs"),
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                recipient_list=[req.contact_email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+    if _is_ajax(request):
+        return JsonResponse({"ok": True, "status": req.status, "message": req.message})
+
+    messages.success(request, "Request declined and email sent.")
+    return redirect("admin_view_ackreq", pk=req.pk)
+
+
+
+
+
+
+
 ################################ELECTIONS   
 @csrf_exempt
 def add_candidate(request):

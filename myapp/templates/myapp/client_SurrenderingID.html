@@ -47,9 +47,8 @@
     <h1 class="mb-4"><i class="bi bi-card-text"></i> <b>Surrendering of ID Form</b></h1>
     <hr>
     <h6 class="mb-4">Please fill in the required information below.</h6>
-
     <!-- Form -->
-    <form method="post" enctype="multipart/form-data">
+    <form id="surrender-form" method="post" action="{% url 'id_surrender_request' %}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- STEP 1: Personal Information -->
@@ -62,17 +61,17 @@
                     <!-- First Name -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label">First Name:</label>
-                        <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" required>
+                        <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" minlength="1" maxlength="50" required>
                     </div>
                     <!-- Middle Name -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Middle Name:</label>
-                        <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name">
+                        <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name" maxlength="50">
                     </div>
                     <!-- Surname -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Surname:</label>
-                        <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" required>
+                        <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" minlength="1" maxlength="50" required>
                     </div>
                 </div>
 
@@ -80,13 +79,19 @@
                     <!-- Extension -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Extension (Jr., Sr.):</label>
-                        <input type="text" class="form-control"id="ex_surrender" name="extension" placeholder="Enter Extension Name (if any)">
+                        <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name (if any)" maxlength="15">
                     </div>
 
                     <!-- Program -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Program:</label>
-                        <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" required>
+                        <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" maxlength="18" required>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6 mb-3">
+                    <label class="form-label">Email:</label>
+                    <input type="email" class="form-control" id="email_surrender" name="contact_email" placeholder="you@gmail.com" required>
                     </div>
                 </div>
             </div>
@@ -100,34 +105,43 @@
                 <hr><br>
 
                 <!-- Reason to Surrender -->
-                <div class="mb-3">
-                    <label class="form-label">Reason to Surrender:</label>
-                    <input type="text" class="form-control" id="reason_surrender" placeholder="Enter your reason here..." required>
+                <div class="col-md-6 mb-3">
+                <label class="form-label">Reason to Surrender:</label>
+                <select class="form-select" name="reason" id="reason_surrender" required>
+                    <option value="">-- Select Reason --</option>
+                    <option value="Dropped">Dropped</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Transfer">Transfer</option>
+                    <option value="Withdrawn">Withdrawn</option>
+                    <option value="Claim of Credentials">Claim of Credentials</option>
+                    <option value="Worn Out">Worn Out</option>
+                </select>
                 </div>
 
                 <!-- Student Number and Year Level -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Student Number:</label>
-                        <input type="text" class="form-control" name="student_number" id="studentID_surrender"placeholder="TUPC-XX-XXXX" required>
+                        <input type="text" class="form-control" name="student_number" id="studentID_surrender" placeholder="TUPC-XX-XXXXXXXXXX" required pattern="^TUPC-\d{2}-\d{4,10}$" minlength="12" maxlength="18" title="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–10 digits)"
+>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Year Level:</label>
-                        <select class="form-select" name="year_level" id="yearlevel_surrender" required>
-                            <option value="">-- Select Year Level --</option>
-                            <option value="1st Year">1st Year</option>
-                            <option value="2nd Year">2nd Year</option>
-                            <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
-                            <option value="5th Year">5th Year</option>
-                        </select>
-                    </div>
+                <!-- Year Level (corrected) -->
+                <div class="col-md-6 mb-3">
+                <label class="form-label">Year Level:</label>
+                <select class="form-select" name="year_level" id="yearlevel_surrender" required>
+                    <option value="">-- Select Year Level --</option>
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="5th Year">5th Year</option>
+                    <option value="Graduate">Graduate</option>
+                </select>
                 </div>
-
                 <!-- Inclusive Years of Stay -->
                 <div class="mb-3">
                     <label class="form-label">Inclusive Years of Stay:</label>
-                    <input type="text" class="form-control" name="inclusive_years" id="stay_surrender" placeholder="e.g., 2015-2019" required>
+                    <input type="text" class="form-control" name="inclusive_years" id="stay_surrender" placeholder="e.g., 2019-2023" required pattern="^\d{4}-\d{4}$" minlength="9" maxlength="9" >
                 </div>
             </div>
         </div>
@@ -137,32 +151,282 @@
             <div class="card-body">
                 <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div>
                 <hr><br>
-
+                <div class="mb-3">
+                  <label class="form-label">Document Type:</label>
+                  <select class="form-select" id="doc_type" name="document_type" required>
+                    <option value="">-- Select Document Type --</option>
+                    <option value="id">School ID</option>
+                    <option value="affidavit">Affidavit of Loss</option>
+                  </select>
+                </div>
                 <!-- Upload ID/Affidavit Front -->
                 <div class="mb-3">
-                    <label class="form-label">Upload ID / Affidavit (Front):</label>
-                    <input type="file" class="form-control"id="front_surrender" name="upload_id_front" accept=".jpg,.jpeg,.png,.pdf" required>
+                  <label class="form-label" id="frontLabel">Upload ID (Front) / Affidavit First Page:</label>
+                  <input type="file" class="form-control" id="front_surrender" name="upload_id_front" accept=".jpg,.jpeg,.png,.pdf">
                 </div>
 
                 <!-- Upload ID/Affidavit Back -->
                 <div class="mb-3">
-                    <label class="form-label">Upload ID / Affidavit (Back):</label>
-                    <input type="file" class="form-control" id="back_surrender" name="upload_id_back" accept=".jpg,.jpeg,.png,.pdf" required>
+                    <label class="form-label" id="backLabel">Upload ID (Back) / Affidavit Second Page:</label>
+                    <input type="file" class="form-control" id="back_surrender" name="upload_id_back" accept=".jpg,.jpeg,.png,.pdf">
                 </div>
             </div>
         </div>
 
         <!-- Submit Button -->
         <div class="text-end mb-5">
-            <button type="submit" class="btn btn-success btn-lg" disabled>
+            <button id="submitBtn" type="submit" class="btn btn-success btn-lg" disabled>
                 <i class="bi bi-send-fill"></i> Submit Request
             </button>
         </div>
     </form>
 </div>
 
+<!-- Submission Modal -->
+<div class="modal fade" id="submissionModal" tabindex="-1"
+     aria-labelledby="submissionModalLabel" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="submissionModalLabel">Request Submitted</h5>
+      </div>
+      <div class="modal-body" id="submissionModalBody">
+        Your request is being submitted and is subject to approval. You’ll receive an email update. Redirecting to home in ...
+        <span id="submitCountdown">5</span> seconds…
+      </div>
+      <div class="modal-footer">
+        <a id="modalHomeBtn" class="btn btn-primary" href="{% url 'client_home' %}">Back to Home now</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+(function () {
+  // ----- CONFIG -----
+  const FIELD_IDS = [
+    'doc_type',
+    'fn_surrender','sn_surrender','program_surrender','email_surrender',
+    'reason_surrender','studentID_surrender','yearlevel_surrender',
+    'stay_surrender','front_surrender','back_surrender'
+  ];
+  const MB = 1024 * 1024, LIMIT_MB = 10, ALLOWED_EXT = ['jpg','jpeg','png','pdf'];
+
+  // ----- ELEMENTS -----
+  const form = document.getElementById('surrender-form') || document.querySelector('form');
+  const submitBtn = document.getElementById('submitBtn') || (form && form.querySelector('button[type="submit"]'));
+  const alertBox = document.getElementById('formAlert'); // optional top "Incomplete" alert
+
+  const modalEl = document.getElementById('submissionModal');
+  const hasBootstrap = typeof bootstrap !== 'undefined' && modalEl;
+  const modal = hasBootstrap ? new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false }) : null;
+  const titleEl = modalEl ? document.getElementById('submissionModalLabel') : null;
+  const bodyEl  = modalEl ? document.getElementById('submissionModalBody') : null;
+  const footer  = modalEl ? modalEl.querySelector('.modal-footer') : null;
+
+  const docTypeSel = document.getElementById('doc_type');
+
+  if (!form || !submitBtn) return;
+
+  // ----- HELPERS -----
+  function elById(id) { return document.getElementById(id); }
+
+  function ensureFeedback(el) {
+    if (!el.nextElementSibling || !el.nextElementSibling.classList.contains('invalid-feedback')) {
+      const fb = document.createElement('div');
+      fb.className = 'invalid-feedback';
+      fb.textContent = 'This field is required.';
+      el.after(fb);
+    }
+    return el.nextElementSibling;
+  }
+
+  function setInvalid(el, msg = 'This field is required.') {
+    el.classList.add('is-invalid');
+    el.classList.remove('is-valid');
+    el.setCustomValidity(msg);
+    ensureFeedback(el).textContent = msg;
+  }
+
+  function setValid(el) {
+    el.classList.remove('is-invalid');
+    el.classList.add('is-valid');
+    el.setCustomValidity('');
+  }
+
+  function fileOk(input) {
+    const f = input.files && input.files[0];
+    if (!f) {
+      if (input.required) { setInvalid(input, 'This file is required.'); return false; }
+      setValid(input); return true; // optional and empty is OK
+    }
+    const ext = f.name.split('.').pop().toLowerCase();
+    if (!ALLOWED_EXT.includes(ext)) { setInvalid(input, `Allowed types: ${ALLOWED_EXT.join(', ')}`); return false; }
+    if (f.size > LIMIT_MB * MB) { setInvalid(input, `Max file size is ${LIMIT_MB} MB.`); return false; }
+    setValid(input); return true;
+  }
+
+  function textOk(input) {
+    const raw = input.value || '';
+    const val = raw.trim();
+    if (raw !== val) input.value = val;
+
+    if (!val) { setInvalid(input); return false; }
+
+    if (input.type === 'email') {
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      if (!ok) { setInvalid(input, 'Enter a valid email address.'); return false; }
+      setValid(input); return true;
+    }
+
+    const pattern = input.getAttribute('pattern');
+    if (pattern) {
+      try {
+        const re = new RegExp(pattern);
+        if (!re.test(val)) {
+          if (input.id === 'studentID_surrender') setInvalid(input, 'Format: TUPC-XX-XXXX (last block 4–10 digits).');
+          else if (input.id === 'stay_surrender') setInvalid(input, 'Use YYYY-YYYY (e.g., 2019-2023).');
+          else setInvalid(input, 'Invalid format.');
+          return false;
+        }
+      } catch(_) {}
+    }
+    setValid(input); return true;
+  }
+
+  function selectOk(sel) {
+    if (!sel.value) { setInvalid(sel, 'Please choose an option.'); return false; }
+    setValid(sel); return true;
+  }
+
+  function validateFieldById(id) {
+    const el = elById(id);
+    if (!el) return true;
+    if (el.type === 'file') return fileOk(el);
+    if (el.tagName === 'SELECT') return selectOk(el);
+    return textOk(el);
+  }
+
+  function firstInvalidEl() {
+    for (const id of FIELD_IDS) {
+      const el = elById(id);
+      if (!el) continue;
+      if (el.classList.contains('is-invalid')) return el;
+      const ok = validateFieldById(id);
+      if (!ok) return el;
+    }
+    return null;
+  }
+
+  function updateSubmitState(showAlert = true) {
+    let allGood = true;
+    FIELD_IDS.forEach(id => { if (!validateFieldById(id)) allGood = false; });
+    submitBtn.disabled = !allGood;
+    if (alertBox && showAlert) alertBox.classList.toggle('d-none', allGood);
+    return allGood;
+  }
+
+  function setUploadMode(mode) {
+    const front = document.getElementById('front_surrender');
+    const back  = document.getElementById('back_surrender');
+    const frontLabel = document.getElementById('frontLabel');
+    const backLabel  = document.getElementById('backLabel');
+    if (!front || !back) return;
+
+    if (mode === 'id') {
+      front.required = true;  back.required  = true;
+      if (frontLabel) frontLabel.textContent = 'Upload ID (Front):';
+      if (backLabel)  backLabel.textContent  = 'Upload ID (Back):';
+    } else if (mode === 'affidavit') {
+      front.required = true;  back.required  = false;
+      if (frontLabel) frontLabel.textContent = 'Affidavit of Loss (First Page):';
+      if (backLabel)  backLabel.textContent  = 'Affidavit of Loss (Second Page, optional):';
+    } else {
+      front.required = false; back.required  = false;
+      if (frontLabel) frontLabel.textContent = 'Upload ID (Front) / Affidavit First Page:';
+      if (backLabel)  backLabel.textContent  = 'Upload ID (Back) / Affidavit Second Page:';
+    }
+
+    [front, back].forEach(el => {
+      el.classList.remove('is-valid','is-invalid');
+      el.setCustomValidity('');
+    });
+  }
+
+  // ----- INIT + LIVE -----
+  setUploadMode(docTypeSel ? docTypeSel.value : '');
+  FIELD_IDS.forEach(id => {
+    const el = elById(id);
+    if (!el) return;
+    const evt = (el.type === 'file' || el.tagName === 'SELECT') ? 'change' : 'input';
+    el.addEventListener(evt, () => updateSubmitState(true));
+  });
+
+  if (docTypeSel) {
+    docTypeSel.addEventListener('change', () => {
+      setUploadMode(docTypeSel.value);
+      updateSubmitState(true);
+    });
+  }
+
+  updateSubmitState(false);
+
+  // ----- SUBMIT -----
+  form.addEventListener('submit', (e) => {
+    const ok = updateSubmitState(true);
+    if (!ok) {
+      e.preventDefault();
+      const bad = firstInvalidEl();
+      if (bad) bad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (modal) {
+      if (titleEl) titleEl.textContent = 'Submitting Request…';
+      if (bodyEl) {
+        bodyEl.innerHTML = `
+          <div class="d-flex align-items-center">
+            <div class="spinner-border me-3" role="status" aria-hidden="true"></div>
+            <div>Please wait while we submit your request…</div>
+          </div>`;
+      }
+      if (footer) footer.classList.add('d-none');
+      modal.show();
+    }
+  });
+})();
+</script>
+
+{% if show_modal %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modalEl = document.getElementById('submissionModal');
+  const modal   = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+  document.getElementById('submissionModalLabel').textContent = 'Request Submitted';
+  document.getElementById('submissionModalBody').innerHTML =
+    'Your request is being submitted and is subject to approval. You’ll receive an email update. Redirecting to home in ... ' +
+    '<span id="submitCountdown">5</span> seconds…';
+  modalEl.querySelector('.modal-footer').classList.remove('d-none');
+  modal.show();
+
+  let t = 5;
+  const span = document.getElementById('submitCountdown');
+  const timer = setInterval(() => {
+    t--;
+    if (span) span.textContent = t;
+    if (t <= 0) {
+      clearInterval(timer);
+      window.location.href = "{% url 'client_home' %}";
+    }
+  }, 1000);
+});
+</script>
+{% endif %}
+
 
 </body>
 </html>

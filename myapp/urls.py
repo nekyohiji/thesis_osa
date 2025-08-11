@@ -28,7 +28,7 @@ urlpatterns = [
     path('admin_lostandfound/', views.admin_lostandfound_view, name='admin_lostandfound'),
     path('admin_report/', views.admin_report_view, name='admin_report'),
     path('admin_scholarships/', views.admin_scholarships_view, name='admin_scholarships'),
-    path('admin_view_ackreq/', views.admin_view_ackreq_view, name='admin_view_ackreq'),
+    path('admin_view_ackreq/<int:pk>/', views.admin_view_ackreq_view, name='admin_view_ackreq'),
     path('admin_view_CS/', views.admin_view_CS_view, name='admin_view_CS'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_goodmoral'),
     path('admin_view_violation/', views.admin_view_violation, name='admin_view_violation'),
@@ -46,11 +46,13 @@ urlpatterns = [
     
     
     
-    
+    ########################################client
+    path('goodmoral/request/', views.goodmoral_request_form, name='goodmoral_request'),  
+    path('id-surrender/', views.id_surrender_request, name='id_surrender_request'),
+
     
     
     ########################################admin
-    
     path('upload_student_csv/', views.upload_student_csv, name='upload_student_csv'),
     path('request-otp/', views.request_otp, name='request_otp'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
@@ -65,8 +67,17 @@ urlpatterns = [
     path('violation/<int:violation_id>/approve/', views.admin_approve_violation, name='admin_approve_violation'),
     path('violation/<int:violation_id>/decline/', views.admin_decline_violation, name='admin_decline_violation'),
     path('settlement/<int:settlement_id>/settle/', views.mark_settlement_as_settled, name='mark_settlement_as_settled'),
+    path('admin_goodmoral/<int:pk>/', views.admin_view_goodmoral, name='admin_view_goodmoral'),
+    path('admin_goodmoral/<int:pk>/accept/', views.goodmoral_accept, name='goodmoral_accept'),
+    path('admin_goodmoral/<int:pk>/decline/', views.goodmoral_decline, name='goodmoral_decline'),
+    path('admin_goodmoral/<int:pk>/request-form/', views.goodmoral_request_form_pdf, name='goodmoral_request_form_pdf'),
+    path("goodmoral/<int:pk>/view/", views.view_gmf, name="view_gmf"),
+    path("admin_ackreq/<int:pk>/receipt.pdf", views.admin_ackreq_receipt_pdf, name="admin_ackreq_receipt_pdf"),
+    path("admin_ackreq/<int:pk>/accept/",  views.admin_ackreq_accept,  name="admin_ackreq_accept"),
+    path("admin_ackreq/<int:pk>/decline/", views.admin_ackreq_decline, name="admin_ackreq_decline"),
 
-    ##########################################elections
+
+    #########################################elections
     path('add-candidate/', views.add_candidate, name='add_candidate'),
     path('get-candidates/', views.get_candidates, name='get_candidates'),
     path('delete-candidate/<int:candidate_id>/', views.delete_candidate, name='delete_candidate'),
@@ -77,6 +88,8 @@ urlpatterns = [
     path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),
     path('submit/', views.submit_violation, name='submit_violation'),
     path('guard_report/download_pdf/', views.generate_guard_report_pdf, name='generate_guard_report_pdf'),
-    
-    
+
+
+
+
 ]

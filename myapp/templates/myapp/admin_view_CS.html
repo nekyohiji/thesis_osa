@@ -1,0 +1,298 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Community Service Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'myapp/css/admin_view_violation.css' %}">
+
+  <style>
+    body {
+      background: linear-gradient(to bottom, #000000, #440207);
+      min-height: 100vh;
+    }
+
+    .section-box {
+      background-color: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      color: #440207;
+    }
+
+    .violations-scroll {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .violations-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      background-color: #f8f9fa;
+      border-radius: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .violations-row a {
+      color: #440207;
+      text-decoration: underline;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+
+<body style="background: linear-gradient(to bottom right, #000000, #440207, #440207, #000000);">
+  <div class="container-fluid py-4">
+
+    <!-- Top Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="{% url 'admin_CS' %}" class="btn text-light">
+        <i class="bi bi-arrow-left text-light"></i> Back
+      </a>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
+      <div class="row g-4">
+        <h3 class="text-dark fw-bold mb-0 text-center">
+          <i class="bi bi-pencil-square"></i> Community Service Details
+        </h3>
+        <hr>
+
+        <!--Student Profile Panel  -->
+        <div class="row g-2 align-items-stretch">
+    
+          <div class="col-md-6 d-flex">
+            <div class="section-box w-100">
+              <div class="section-title">
+                <i class="bi bi-person-badge"></i> Student Profile
+                <hr>
+              </div>
+
+              <div class="mb-2">
+                <label for="studentId" class="form-label">Student ID (TUPC-ID):</label>
+                <input type="text" class="form-control fw-bold text-center" id="studentId" value="TUPC-0374" readonly>
+              </div>
+
+              <div class="row mb-2">
+                <div class="col">
+                  <label class="form-label">First Name:</label>
+                  <input type="text" class="form-control fw-bold text-center" value="LORD JAISSON" readonly>
+                </div>
+                <div class="col">
+                  <label class="form-label">Last Name:</label>
+                  <input type="text" class="form-control fw-bold text-center" value="RIBERAL" readonly>
+                </div>
+              </div>
+
+              <div class="row mb-2">
+                <div class="col">
+                  <label class="form-label">Course:</label>
+                  <input type="text" class="form-control fw-bold text-center" value="BET-COET" readonly>
+                </div>
+                <div class="col">
+                  <label class="form-label">Year Level:</label>
+                  <input type="text" class="form-control fw-bold text-center" value="3rd Year" readonly>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Remaining Community Service Hours:</label>
+                <input type="text" class="form-control fw-bold text-center text-danger" value="2" readonly>
+              </div>
+            </div>
+          </div>
+
+
+
+
+          <!-- Violations  Panel-->
+          <div class="col-md-6 d-flex">
+            <div class="section-box w-100">
+              <div class="section-title mb-2">
+                <i class="bi bi-exclamation-triangle"></i> Violations
+                <hr class="mt-1 mb-2">
+              </div>
+
+              <div class="violations-scroll flex-grow-1">
+                
+                <!-- Violation 1-->
+                <div class="bg-light border rounded px-3 py-2 mb-2">
+                  <div class="row align-items-center">
+                    <div class="col-4">
+                      <small class="text-muted d-block mb-1">Type of Violation:</small>
+                      <span class="fw-semibold small">Haircut</span>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted d-block mb-1">Date:</small>
+                      <span class="fw-semibold small">April 30, 2023</span>
+                    </div>
+                    <div class="col-4 text-end">
+                      <a href="#" class="btn btn-sm btn-outline-secondary small">View Details</a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Violation 2 -->
+                <div class="bg-light border rounded px-3 py-2 mb-2">
+                  <div class="row align-items-center">
+                    <div class="col-4">
+                      <small class="text-muted d-block mb-1">Type of Violation:</small>
+                      <span class="fw-semibold small">Haircut</span>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted d-block mb-1">Date:</small>
+                      <span class="fw-semibold small">April 30, 2023</span>
+                    </div>
+                    <div class="col-4 text-end">
+                      <a href="#" class="btn btn-sm btn-outline-secondary small">View Details</a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Violation 3 -->
+                <div class="bg-light border rounded px-3 py-2 mb-2">
+                  <div class="row align-items-center">
+                    <div class="col-4">
+                      <small class="text-muted d-block mb-1">Type of Violation:</small>
+                      <span class="fw-semibold small">Haircut</span>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted d-block mb-1">Date:</small>
+                      <span class="fw-semibold small">May 18, 2024</span>
+                    </div>
+                    <div class="col-4 text-end">
+                      <a href="#" class="btn btn-sm btn-outline-secondary small">View Details</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- Community Service Log -->
+        <div class="row g-2 mt-2">
+        <div class="col-12">
+            <div class="section-box">
+            <div class="section-title">
+                <i class="bi bi-clock-history"></i> Community Service Log
+                <hr>
+            </div>
+
+            <p><strong>Total Hours to Complete:</strong> <span class="text-danger">10 hours</span></p>
+
+            <!-- Scrollable Table Container -->
+            <div style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-hover table-bordered align-middle text-center mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
+                    <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    <td>June 18, 2025</td>
+                    <td>8:00 AM</td>
+                    <td>5:00 PM</td>
+                    <td><span class="badge bg-success"> Official</span></td>
+                    </tr>
+                    <tr>
+                    <td>June 19, 2025</td>
+                    <td>8:00 AM</td>
+                    <td>5:00 PM</td>
+                    <td><span class="badge bg-warning text-dark"> On Going</span></td>
+                    </tr>
+                    <tr>
+                    <td>June 19, 2025</td>
+                    <td>8:00 AM</td>
+                    <td>5:00 PM</td>
+                    <td><span class="badge bg-warning text-dark"> On Going</span></td>
+                    </tr>
+                    <tr>
+                    <td>June 19, 2025</td>
+                    <td>8:00 AM</td>
+                    <td>5:00 PM</td>
+                    <td><span class="badge bg-warning text-dark"> On Going</span></td>
+                    </tr>
+                    <tr>
+                    <td>June 19, 2025</td>
+                    <td>8:00 AM</td>
+                    <td>5:00 PM</td>
+                    <td><span class="badge bg-warning text-dark"> On Going</span></td>
+                    </tr>
+                    <!-- Add more rows here -->
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Time Buttons -->
+            <div class="d-flex justify-content-center gap-3 mt-3">
+                <button class="btn btn-success px-4">
+                <i class="bi bi-box-arrow-in-right"></i> Log Time In
+                </button>
+                <button class="btn btn-danger px-4">
+                <i class="bi bi-box-arrow-left"></i> Log Time Out
+                </button>
+            </div>
+            </div>
+        </div>
+        </div>
+        <hr>
+
+        <!-- Certificate Button -->
+        <div class="row">
+          <div class="col text-end mt-3">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#generateCertModal">
+              <i class="bi bi-file-earmark-text"></i> Generate Community Service Certificate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate Certificate Modal -->
+    <div class="modal fade" id="generateCertModal" tabindex="-1" aria-labelledby="generateCertModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border">
+          <div class="modal-header">
+            <h5 class="modal-title text-dark" id="generateCertModalLabel"></h5>
+          </div>
+          <div class="modal-body text-center">
+            Are you sure you want to <strong>generate the Community Service Certificate?</strong>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a href="#" class="btn btn-primary">Generate</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
