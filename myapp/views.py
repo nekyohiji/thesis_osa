@@ -22,13 +22,13 @@ from django.core.files.base import ContentFile
 from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
 from .utils import send_violation_email, generate_gmf_pdf
 from django.db.models import Q
-<<<<<<< HEAD
+
 import os
 import io
 from collections import Counter
@@ -40,7 +40,7 @@ from PIL import Image
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Table as PlatypusTable, TableStyle as PlatypusTableStyle
-=======
+
 from django.views.decorators.http import require_POST
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
@@ -54,9 +54,6 @@ import mimetypes
 
 #################################################################################################################
 
-
-
->>>>>>> origin/main
 def current_time(request):
     return JsonResponse({'now': now().isoformat()})
 
@@ -607,6 +604,7 @@ def submit_violation(request):
 
 @role_required(['guard'])
 
+
 def generate_guard_report_pdf(request):
 
     # --- Filters ---
@@ -615,6 +613,14 @@ def generate_guard_report_pdf(request):
     violation_type = request.GET.get('violation_type', '').strip()
     guard_name = request.GET.get('guard_name', '').strip()
 
+    # --- Filters ---
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+    violation_type = request.GET.get('violation_type', '').strip()
+    guard_name = request.GET.get('guard_name', '').strip()
+
+    # Query
+    violations = Violation.objects.all()
     # Query
     violations = Violation.objects.all()
     if start_date:
@@ -628,6 +634,8 @@ def generate_guard_report_pdf(request):
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="violations_report.pdf"'
+
+    generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
 
     generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
 
