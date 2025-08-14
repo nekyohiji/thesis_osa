@@ -24,12 +24,25 @@
   </div>
 
   <!-- Main Content Card -->
-  <div class="shadow p-4 rounded">
-    <div class="row g-4">
-      <h3 class="text-dark fw-bold mb-0 text-center">
-        <i class="bi bi-pencil-square"></i>  Acknowledgement Receipt Form
-      </h3>
-      <hr>
+<div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="text-dark fw-bold mb-0">
+      <i class="bi bi-pencil-square"></i> Acknowledgement Receipt Request Form
+    </h3>
+    <!-- Flex container for buttons -->
+    <div class="d-flex gap-2">
+      <a href="{% url 'admin_violation' %}" class="btn text-white" style="background:#440207;">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Search for Violation Records
+      </a>
+      <a href="{% url 'admin_old_violation' %}" class="btn text-white" style="background:#440207;">
+        <i class="bi bi-archive"></i> Search for Old Violation Records
+      </a>
+    </div>
+  </div>
+  <hr>
+  <div class="row g-4">
+
+
 
       <!-- PERSONAL INFORMATION -->
       <div class="card mb-6 p-3 border-dark">

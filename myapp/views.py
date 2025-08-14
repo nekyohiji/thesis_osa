@@ -137,6 +137,9 @@ def client_election_view(request):
 def client_view_election_view(request):
     return render (request, 'myapp/client_view_election.html')
 
+def admin_old_violation_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
+    return render (request, 'myapp/admin_old_violation.html')
+
 @role_required(['admin'])
 def admin_dashboard_view(request):
     return render (request, 'myapp/admin_dashboard.html')
