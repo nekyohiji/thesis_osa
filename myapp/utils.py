@@ -114,11 +114,10 @@ def _status_for_excel(raw: str) -> str:
 def _fmt_grad_date(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
-def generate_gmf_pdf(req: GoodMoralRequest) -> str:
+def generate_gmf_pdf(req) -> bytes:
     """
-    Use LibreOffice (UNO) to open the ORIGINAL xlsx, fill named ranges,
-    hide non-GMF sheets, and export GMF to PDF (no openpyxl).
-    Saves to FileField and returns persistent path.
+    Build the GMF PDF and return the raw bytes.
+    Does NOT save anything to a FileField.
     """
     payload = {
         "student_name": _format_student_name(req),
@@ -126,8 +125,9 @@ def generate_gmf_pdf(req: GoodMoralRequest) -> str:
         "status": _status_for_excel(req.status),
         "program": req.program or "",
         "years_of_stay": req.inclusive_years or "",
-        "admission_date": (req.date_admission or "").strip(),
-        "date_graduated": _fmt_grad_date(req.date_graduated),
+        # year-only values, per your new UI
+        "admission_date": (req.date_admission or "").strip(),  # "YYYY"
+        "date_graduated": (req.date_graduated.strftime("%Y") if req.date_graduated else ""),
         "purpose": req.purpose or "",
         "purpose_other": req.other_purpose or "",
         "osahead": _get_osa_head_name(),
@@ -139,16 +139,8 @@ def generate_gmf_pdf(req: GoodMoralRequest) -> str:
         with open(payload_path, "w", encoding="utf-8") as fh:
             json.dump(payload, fh, ensure_ascii=False)
 
-        script_path = os.path.join(
-            os.path.dirname(__file__), "libre", "lo_gmf_export.py"
-        )
-
-        cmd = [
-            str(settings.LIBREOFFICE_PY), script_path,
-            str(settings.GMF_TEMPLATE_PATH),
-            out_pdf,
-            payload_path,
-        ]
+        script_path = os.path.join(os.path.dirname(__file__), "libre", "lo_gmf_export.py")
+        cmd = [str(settings.LIBREOFFICE_PY), script_path, str(settings.GMF_TEMPLATE_PATH), out_pdf, payload_path]
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=180)
         if r.returncode != 0 or not os.path.exists(out_pdf):
             raise RuntimeError(
@@ -157,9 +149,5 @@ def generate_gmf_pdf(req: GoodMoralRequest) -> str:
                 f"stderr:\n{r.stderr.decode(errors='ignore')}"
             )
 
-        # Save to FileField
-        filename = f"GMF_{req.student_id}_{datetime.date.today().isoformat()}.pdf"
         with open(out_pdf, "rb") as fh:
-            req.certificate_pdf.save(filename, File(fh), save=True)
-
-        return req.uploaded_file.path
+            return fh.read()

@@ -142,16 +142,24 @@
       <!-- Uploaded Document -->
 
       <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-upload"></i> Uploaded Documents</div>
-        <div class="card-body d-flex flex-wrap gap-2"><br>
-            {% if r.uploaded_file %}
-              <a class="btn btn-outline-secondary btn-sm" href="{{ r.uploaded_file.url }}" target="_blank">
-                <i class="bi bi-file-earmark"></i> View Uploaded File
-              </a>
-            {% else %}
-              <span class="text-muted">No file uploaded.</span>
-            {% endif %}
-          </div>
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-upload"></i> Uploaded Documents
+        </div>
+        <div class="card-body d-flex flex-wrap gap-2">
+          {% if r.uploaded_file %}
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              id="btnPreviewUpload"
+              data-file-url="{{ r.uploaded_file.url }}"
+              data-file-name="{{ r.uploaded_file.name }}"
+              data-bs-toggle="modal"
+              data-bs-target="#filePreviewModal">
+              <i class="bi bi-eye"></i> View Uploaded File
+            </button>
+          {% else %}
+            <span class="text-muted">No file uploaded.</span>
+          {% endif %}
         </div>
       </div>
 
@@ -267,6 +275,23 @@
   </div>
 </div>
 
+<!-- File Preview Modal -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content border">
+      <div class="modal-header">
+        <h5 class="modal-title">Uploaded File Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="previewContainer" class="w-100 d-flex justify-content-center align-items-center" style="min-height:60vh;">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Hidden POST forms for Accept / Decline -->
 <form id="acceptForm" method="post" action="{% url 'goodmoral_accept' r.pk %}" style="display:none;">
   {% csrf_token %}
@@ -352,6 +377,62 @@
     document.body.classList.remove('modal-open');
     document.querySelectorAll('.modal-backdrop').forEach(function (bd) { bd.remove(); });
   });
+
+  (function () {
+    const modalEl = document.getElementById('filePreviewModal');
+    const container = document.getElementById('previewContainer');
+    const trigger = document.getElementById('btnPreviewUpload');
+    if (!modalEl || !container || !trigger) return;
+
+    function isImage(url) {
+      return /\.(png|jpe?g)$/i.test(url.split('?')[0]);
+    }
+    function isPdf(url) {
+      return /\.pdf$/i.test(url.split('?')[0]);
+    }
+
+    modalEl.addEventListener('show.bs.modal', function (ev) {
+      const btn = ev.relatedTarget || trigger;
+      const url = btn?.getAttribute('data-file-url') || '';
+      const name = btn?.getAttribute('data-file-name') || 'file';
+
+      // clear previous content
+      container.innerHTML = '';
+
+      if (isImage(url)) {
+        // Inline image preview
+        const img = new Image();
+        img.src = url;
+        img.alt = name;
+        img.className = 'img-fluid';
+        img.style.maxHeight = '82vh';
+        container.appendChild(img);
+      } else if (isPdf(url)) {
+        // PDF inside iframe (page-width)
+        const iframe = document.createElement('iframe');
+        iframe.src = url + (url.includes('#') ? '' : '#zoom=page-width');
+        iframe.style.width = '100%';
+        iframe.style.height = '82vh';
+        iframe.setAttribute('title', name);
+        iframe.setAttribute('loading', 'lazy');
+        container.appendChild(iframe);
+      } else {
+        // Fallback: unknown file types → download link
+        const div = document.createElement('div');
+        div.className = 'p-4 text-center';
+        div.innerHTML = `
+          <p class="mb-3">Preview not available for this file type.</p>
+          <a class="btn btn-dark" href="${url}" download>
+            <i class="bi bi-download"></i> Download ${name.split('/').pop()}
+          </a>`;
+        container.appendChild(div);
+      }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      container.innerHTML = '';
+    });
+  })();
 
 
 

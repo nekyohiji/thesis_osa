@@ -110,16 +110,6 @@ def client_CS_view(request):
 def client_view_CS_view(request):
     return render (request, 'myapp/client_view_CS.html')
 
-
-def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
-    return render (request, 'myapp/admin_clearance.html')
-
-
-
-
-
-
-
 def client_SurrenderingID_view(request):
     return render (request, 'myapp/client_SurrenderingID.html')
 
@@ -155,6 +145,9 @@ def admin_dashboard_view(request):
 def admin_accounts_view(request):
     return render (request, 'myapp/admin_accounts.html')
 
+@role_required(['admin'])
+def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
+    return render (request, 'myapp/admin_clearance.html')
 
 @role_required(['admin'])
 def admin_ackreq_view(request):
@@ -176,8 +169,6 @@ def admin_ackreq_view(request):
         "STATUS_DECLINED": IDSurrenderRequest.STATUS_DECLINED,
     }
     return render(request, "myapp/admin_ackreq.html", context)
-
-
 
 @role_required(['admin'])
 def admin_ACSO_view(request):
@@ -402,7 +393,6 @@ def admin_election_manage_view(request):
 
 
 
-
 #########################CLIENT
 
 def scholarship_feed_api(request):
@@ -617,8 +607,6 @@ def submit_violation(request):
     })
 
 @role_required(['guard'])
-
-
 def generate_guard_report_pdf(request):
 
     # --- Filters ---
@@ -1246,7 +1234,7 @@ def goodmoral_request_form_pdf(request, pk):
         check(60, 580)  # Alum/Graduated
         # Date Graduated:
         if r.date_graduated:
-            text(160, 565, r.date_graduated.strftime('%m/%d/%Y'))
+            text(160, 565, r.date_graduated.strftime('%Y'))
     elif "former" in status:
         check(60, 550)  # Former Student
         text(190, 535, r.inclusive_years)
@@ -1255,23 +1243,42 @@ def goodmoral_request_form_pdf(request, pk):
         text(170, 505, r.date_admission)
 
     # Purpose of Request (right column checkboxes)
-    purpose = (r.purpose or "").lower()
-    other = r.other_purpose or ""
+    purpose_raw = r.purpose or ""
+    purpose = purpose_raw.strip().lower()
+    other = (r.other_purpose or "").strip()
 
     if "transfer" in purpose:
-        check(330, 610); text(360, 595, other, size=8)
-    elif "continu" in purpose:    # Continuing Education
+        check(330, 610)
+        if other:
+            text(360, 595, other, size=8)
+
+    elif "continu" in purpose or "continuing education" in purpose:
         check(330, 585)
+
     elif "employment" in purpose:
         check(330, 555)
+
     elif "scholar" in purpose:
-        check(330, 530); text(360, 515, other)
-    elif "sit" in purpose or "opt" in purpose:
-        check(330, 500)           # SIT/OPT
-    elif "student development" in purpose or "comselec" in purpose or "usg" in purpose or "award" in purpose:
+        check(330, 530)
+        if other:
+            text(360, 515, other)
+
+    elif any(k in purpose for k in (
+            "sit",
+            "supervised industrial training",
+            "ipt",
+            "in-campus practice teaching",
+            "opt",
+            "off-campus practice teaching",
+        )):
+        check(330, 500)
+
+    elif any(k in purpose for k in ("student development", "comselec", "usg", "award")):
         check(330, 460)
+
     else:
-        check(330, 395); text(380, 395, other or (r.purpose or ""))
+        check(330, 395)
+        text(380, 395, other or purpose_raw)
 
     # Requester info
     text(85, 345, r.requester_name)
@@ -1299,14 +1306,10 @@ def goodmoral_request_form_pdf(request, pk):
 @xframe_options_exempt
 def view_gmf(request, pk):
     req = get_object_or_404(GoodMoralRequest, pk=pk)
-    generate_gmf_pdf(req)  
-    if not req.certificate_pdf or not default_storage.exists(req.certificate_pdf.name):
-        raise Http404("Certificate file not found.")
-    f = req.certificate_pdf.open("rb")
-    resp = FileResponse(f, content_type="application/pdf", as_attachment=False)
-    resp["Content-Disposition"] = f'inline; filename="{os.path.basename(req.certificate_pdf.name)}"'
-    try: resp["Content-Length"] = req.certificate_pdf.size
-    except Exception: pass
+    pdf_bytes = generate_gmf_pdf(req)  # now returns bytes
+    resp = HttpResponse(pdf_bytes, content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="GMF_{req.student_id or req.pk}.pdf"'
+    resp["Content-Length"] = str(len(pdf_bytes))
     return resp
 
 @role_required(['admin'])

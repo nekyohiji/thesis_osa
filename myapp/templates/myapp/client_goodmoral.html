@@ -85,7 +85,7 @@
         <div class="active" data-step="1"><i class="bi bi-person-fill"></i>  Personal</div>
         <div data-step="2"><i class="bi bi-mortarboard-fill"></i>  Academic</div>
         <div data-step="3"><i class="bi bi-journal-text"></i>  Request</div>
-        <div data-step="4"><i class="bi bi-upload"></i>  Upload</div>
+        <div data-step="4"><i class="bi bi-upload"></i>  Verification</div>
 
     </div>
 
@@ -129,7 +129,6 @@
                             <option value="">-- Select --</option>
                             <option>Male</option>
                             <option>Female</option>
-                            <option>Other</option>
                         </select>
                     </div>
                 </div>
@@ -157,35 +156,35 @@
 
                     <!-- STATUS & DATE GRADUATED -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Status:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="status" id="status_graduated" value="Graduated" required onclick="toggleStatusFields()" required>
-                            <label class="form-check-label" for="status_graduated">Alum/Graduated</label>
-                        </div>
-                        <div class="mt-2" id="graduated_date_field" style="display: none;">
-                            <label class="form-label">Date Graduated:</label>
-                            <input type="date" class="form-control" name="date_graduated" id="date_graduated_goodmoral" min="1979-01-01">
-                        </div>
+                    <label class="form-label">Status:</label>
 
-                        <div class="form-check mt-2">
-                            <input class="form-check-input" type="radio" name="status" id="status_former" value="Former Student" onclick="toggleStatusFields()">
-                            <label class="form-check-label" for="status_former">Former Student</label>
-                        </div>
-                        <div class="mt-2" id="inclusive_years_field" style="display: none;">
-                            <label class="form-label">Inclusive Years of Stay:</label>
-                            <input type="text" class="form-control" name="inclusive_years" id="stay_goodmoral" placeholder="e.g. 2018-2022">
-                        </div>
-
-                        <div class="form-check mt-2">
-                            <input class="form-check-input" type="radio" name="status" id="status_current" value="Current Student" onclick="toggleStatusFields()">
-                            <label class="form-check-label" for="status_current">Current Student</label>
-                        </div>
-                        <div class="mt-2" id="admission_date_field" style="display: none;">
-                            <label class="form-label">Date of Admission:</label>
-                            <input type="text" class="form-control" name="date_admission" id="admission_date_goodmoral" placeholder="Year of Admission or Exact Date">
-                        </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="status" id="status_graduated" value="Graduated" required onclick="toggleStatusFields()">
+                        <label class="form-check-label" for="status_graduated">Alum/Graduated</label>
+                    </div>
+                    <div class="mt-2" id="graduated_date_field" style="display: none;">
+                        <label class="form-label">Year Graduated:</label>
+                        <input type="number" class="form-control" name="date_graduated" id="year_graduated_goodmoral" min="1979" step="1" inputmode="numeric" placeholder="e.g., 2024">
                     </div>
 
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="status" id="status_former" value="Former Student" onclick="toggleStatusFields()">
+                        <label class="form-check-label" for="status_former">Former Student</label>
+                    </div>
+                    <div class="mt-2" id="inclusive_years_field" style="display: none;">
+                        <label class="form-label">Inclusive Years of Stay:</label>
+                        <input type="text" class="form-control" name="inclusive_years" id="stay_goodmoral" placeholder="e.g. 2018-2022">
+                    </div>
+
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="status" id="status_current" value="Current Student" onclick="toggleStatusFields()">
+                        <label class="form-check-label" for="status_current">Current Student</label>
+                    </div>
+                    <div class="mt-2" id="admission_date_field" style="display: none;">
+                        <label class="form-label">Year of Admission:</label>
+                        <input type="number" class="form-control" name="date_admission" id="year_admission_goodmoral" min="1979" step="1" inputmode="numeric" placeholder="e.g., 2021">
+                    </div>
+                    </div>
                 </div>
             </div>
 
@@ -203,7 +202,10 @@
                         <option value="">-- Select Purpose of Request --</option>
                         <option value="Employment">Employment</option>
                         <option value="Transfer to Another School">Transfer to Another School</option>
-                        <option value="SIT/OPT"> Supervised Industrial Training (SIT) / Off-Campus Practice Teaching (OPT) </option>
+                        <option value="Continuing Education">Continuing Education</option>
+                        <option value="Supervised Industrial Training (SIT)"> Supervised Industrial Training (SIT)</option>
+                        <option value="In-Campus Practice Teaching (IPT)">In-Campus Practice Teaching (IPT)</option>
+                        <option value="Off-Campus Practice Teaching (OPT)">Off-Campus Practice Teaching (OPT)</option>
                         <option value="Student Development">Student Development ( COMSELEC, USG, Awards. etc.)</option>
                         <option value="Scholarship">Scholarship</option>
                     </select>
@@ -248,7 +250,7 @@
         <!-- STEP 4 UPLOAD -->
         <div class="step card mb-4">
             <div class="card-body">
-                <div class="section-title"><i class="bi bi-upload"></i> Upload Document</div> <hr><br>
+                <div class="section-title"><i class="bi bi-upload"></i>Verification</div> <hr><br>
 
                 <!-- Select Document Type -->
                 <div class="mb-3">
@@ -312,7 +314,6 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Stepper JS -->
 <script>
     // Stepper Logic
     let currentStep = 1;
@@ -364,16 +365,14 @@
         alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
 
         if (n > 0) {
+            const steps = document.getElementsByClassName('step');
+            const currentStep = Array.from(steps).findIndex(s => s.classList.contains('active')) + 1;
             const currentFields = steps[currentStep - 1].querySelectorAll('input, select, textarea');
             let valid = true;
 
             // General required field validation (except middle name)
             currentFields.forEach(field => {
-                if (
-                    field.hasAttribute('required') &&
-                    !field.value.trim() &&
-                    field.name !== 'middle_name'
-                ) {
+                if (field.hasAttribute('required') && !field.value.trim() && field.name !== 'middle_name') {
                     valid = false;
                     field.classList.add('is-invalid');
                 } else {
@@ -390,17 +389,19 @@
                     alertDiv.textContent = 'Please select your status (Current, Former, or Alum/Graduated).';
                 }
 
-                const studentID = document.getElementById('studentID_goodmoral');
-                const stayYears = document.getElementById('stay_goodmoral');
-                const dateAdmission = document.getElementById('admission_date_goodmoral');
-                const dateGraduated = document.getElementById('date_graduated_goodmoral');
+                const studentID     = document.getElementById('studentID_goodmoral');
+                const stayYears     = document.getElementById('stay_goodmoral');
+                const yearAdmission = document.getElementById('year_admission_goodmoral');
+                const yearGraduated = document.getElementById('year_graduated_goodmoral');
 
                 const graduated = document.getElementById('status_graduated').checked;
-                const former = document.getElementById('status_former').checked;
-                const current = document.getElementById('status_current').checked;
+                const former    = document.getElementById('status_former').checked;
+                const current   = document.getElementById('status_current').checked;
 
-                const idPattern = /^TUPC-\d{2}-\d{4}$/;
+                const idPattern   = /^TUPC-\d{2}-\d{4}$/;
                 const stayPattern = /^\d{4}-\d{4}$/;
+                const yearPattern = /^\d{4}$/;
+                const CURRENT_YEAR = new Date().getFullYear();
 
                 if (!idPattern.test(studentID.value.trim())) {
                     valid = false;
@@ -418,29 +419,35 @@
                     stayYears.classList.remove('is-invalid');
                 }
 
-                if (current && !dateAdmission.value) {
-                    valid = false;
-                    dateAdmission.classList.add('is-invalid');
-                    alertDiv.textContent = 'Please enter your admission date.';
-                } else {
-                    dateAdmission.classList.remove('is-invalid');
+                if (current) {
+                    const y = yearAdmission.value.trim();
+                    if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
+                        valid = false;
+                        yearAdmission.classList.add('is-invalid');
+                        alertDiv.textContent = `Please enter a valid admission year (1979–${CURRENT_YEAR}).`;
+                    } else {
+                        yearAdmission.classList.remove('is-invalid');
+                    }
                 }
 
-                if (graduated && !dateGraduated.value) {
-                    valid = false;
-                    dateGraduated.classList.add('is-invalid');
-                    alertDiv.textContent = 'Please enter your graduation date.';
-                } else {
-                    dateGraduated.classList.remove('is-invalid');
+                if (graduated) {
+                    const y = yearGraduated.value.trim();
+                    if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
+                        valid = false;
+                        yearGraduated.classList.add('is-invalid');
+                        alertDiv.textContent = `Please enter a valid graduation year (1979–${CURRENT_YEAR}).`;
+                    } else {
+                        yearGraduated.classList.remove('is-invalid');
+                    }
                 }
             }
 
             // Step 3: Requester Info
             if (valid && currentStep === 3) {
-                const email = document.getElementById('email_req_goodmoral');
+                const email   = document.getElementById('email_req_goodmoral');
                 const contact = document.getElementById('contact_req_goodmoral');
 
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const emailPattern   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 const contactPattern = /^\+63 9\d{9}$/;
 
                 if (!emailPattern.test(email.value.trim())) {
@@ -490,7 +497,6 @@
                 }
             }
 
-            // Show error if invalid
             if (!valid) {
                 alertDiv.classList.remove('d-none');
                 alertDiv.scrollIntoView({ behavior: 'smooth' });
@@ -499,13 +505,44 @@
         }
 
         // Advance or retreat steps
+        const steps = document.getElementsByClassName('step');
+        let currentStep = Array.from(steps).findIndex(s => s.classList.contains('active')) + 1;
         if (currentStep + n >= 1 && currentStep + n <= steps.length) {
+            steps[currentStep - 1].classList.remove('active');
+            steps[currentStep + n - 1].classList.add('active');
+
+            // update indicators
+            const indicators = document.getElementById('stepIndicator').children;
+            for (let i = 0; i < indicators.length; i++) {
+                indicators[i].classList.remove('active', 'done');
+                if (i < currentStep + n - 1) indicators[i].classList.add('done');
+                else if (i === currentStep + n - 1) indicators[i].classList.add('active');
+            }
+
             currentStep += n;
-            showStep(currentStep);
+
+            // nav buttons layout
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const fixedNav = document.querySelector('.fixed-nav');
+            if (currentStep === 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'inline-block';
+                fixedNav.classList.remove('justify-content-between');
+                fixedNav.classList.add('justify-content-end');
+            } else if (currentStep === steps.length) {
+                prevBtn.style.display = 'inline-block';
+                nextBtn.style.display = 'none';
+                fixedNav.classList.remove('justify-content-end');
+                fixedNav.classList.add('justify-content-between');
+            } else {
+                prevBtn.style.display = 'inline-block';
+                nextBtn.style.display = 'inline-block';
+                fixedNav.classList.remove('justify-content-end');
+                fixedNav.classList.add('justify-content-between');
+            }
         }
     }
-
-
 
     // Document Upload Logic
     const documentTypeSelect = document.getElementById('documentTypeSelect');
@@ -521,8 +558,6 @@
             fileInputContainer.style.display = 'none';
         }
     });
-
-
 
     // "Others" - Hidden Input Text
     function toggleOtherInput() {
@@ -557,97 +592,237 @@
             otherInput.placeholder = "";
         }
     }
+
     window.addEventListener('load', () => {
-    const form = document.getElementById('gmfForm');
-    const modalEl = document.getElementById('submissionModal');
-    if (!form || !modalEl) return;
+        const form = document.getElementById('gmfForm');
+        const modalEl = document.getElementById('submissionModal');
+        if (!form || !modalEl) return;
 
-    const modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
-    const countdownEl = document.getElementById('submitCountdown');
-    const bodyEl = document.getElementById('submissionModalBody');
-    const homeUrl = "{% url 'client_home' %}";
+        const modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+        const countdownEl = document.getElementById('submitCountdown');
+        const bodyEl = document.getElementById('submissionModalBody');
+        const homeUrl = "{% url 'client_home' %}";
 
-    // helper to get CSRF token (from hidden input)
-    const getCSRF = () => (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value || '';
+        // helper to get CSRF token (from hidden input)
+        const getCSRF = () => (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value || '';
 
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
 
-        // show modal immediately
-        modal.show();
+            // show modal immediately
+            modal.show();
 
-        // prevent double submit, but DO NOT disable form fields (we need their values)
-        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = true);
+            // prevent double submit, but DO NOT disable form fields (we need their values)
+            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = true);
 
-        // 5-second countdown
-        let secs = 5;
-        countdownEl.textContent = secs;
-        const delay = new Promise(resolve => {
-        const t = setInterval(() => {
-            secs -= 1;
+            // 5-second countdown
+            let secs = 5;
             countdownEl.textContent = secs;
-            if (secs <= 0) { clearInterval(t); resolve(); }
-        }, 1000);
-        });
+            const delay = new Promise(resolve => {
+                const t = setInterval(() => {
+                    secs -= 1;
+                    countdownEl.textContent = secs;
+                    if (secs <= 0) { clearInterval(t); resolve(); }
+                }, 1000);
+            });
 
-        // post using fetch (works with files via FormData)
-        const post = fetch(form.action, {
-        method: form.method || 'POST',
-        body: new FormData(form),
-        headers: {
-            'X-CSRFToken': getCSRF(),
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
-        }).then(resp => {
-        if (!resp.ok) throw new Error('Submit failed');
-        return resp.text();
-        });
+            // post using fetch (works with files via FormData)
+            const post = fetch(form.action, {
+                method: form.method || 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-CSRFToken': getCSRF(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            }).then(resp => {
+                if (!resp.ok) throw new Error('Submit failed');
+                return resp.text();
+            });
 
-        // redirect after BOTH finish
-        Promise.all([post, delay]).then(() => {
-        window.location.assign(homeUrl);
-        }).catch(() => {
-        bodyEl.innerHTML = '<div class="text-danger">Submission failed. Please check required fields and try again.</div>';
-        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = false);
+            // redirect after BOTH finish
+            Promise.all([post, delay]).then(() => {
+                window.location.assign(homeUrl);
+            }).catch(() => {
+                bodyEl.innerHTML = '<div class="text-danger">Submission failed. Please check required fields and try again.</div>';
+                form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = false);
+            });
         });
     });
-    }); 
 
-
-
-
+    // ===== Year inputs: set dynamic max (year-only) =====
     (function () {
-    const el = document.getElementById('date_graduated_goodmoral');
-    if (!el) return;
-
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    el.max = `${yyyy}-${mm}-${dd}`;
+        const Y = new Date().getFullYear();
+        ['year_graduated_goodmoral', 'year_admission_goodmoral'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.setAttribute('max', String(Y));
+        });
     })();
 
+    // ===== Status field toggling (uses YEAR fields) =====
     function toggleStatusFields() {
         const graduated = document.getElementById('status_graduated').checked;
-        const former = document.getElementById('status_former').checked;
-        const current = document.getElementById('status_current').checked;
+        const former    = document.getElementById('status_former').checked;
+        const current   = document.getElementById('status_current').checked;
 
-        const dateGraduated = document.getElementById('date_graduated_goodmoral');
-        const inclusiveYears = document.getElementById('stay_goodmoral');
-        const dateAdmission = document.getElementById('admission_date_goodmoral');
+        const yearGraduated = document.getElementById('year_graduated_goodmoral');
+        const stayYears     = document.getElementById('stay_goodmoral');
+        const yearAdmission = document.getElementById('year_admission_goodmoral');
 
-        // Show/hide fields
+        // Show/hide wrappers
         document.getElementById('graduated_date_field').style.display = graduated ? 'block' : 'none';
         document.getElementById('inclusive_years_field').style.display = former ? 'block' : 'none';
         document.getElementById('admission_date_field').style.display = current ? 'block' : 'none';
 
-        // Dynamically set 'required'
-        dateGraduated.required = graduated;
-        inclusiveYears.required = former;
-        dateAdmission.required = current;
+        // Required flags
+        if (yearGraduated) yearGraduated.required = !!graduated;
+        if (stayYears)     stayYears.required     = !!former;
+        if (yearAdmission) yearAdmission.required = !!current;
     }
 
+    // ===== Name & Email/Relationship/Contact input rules =====
+    (function () {
+        // Names: allow internal spaces; forbid trailing spaces
+        const rtrimIds = ['fn_goodmoral','mn_goodmoral','sn_goodmoral','requester_goodmoral'];
+        rtrimIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('blur', () => {
+                el.value = (el.value || '').replace(/\s+$/, '');
+            });
+        });
+
+        // Email & Relationship: no spaces at all (block + strip)
+        const noSpaceIds = ['email_req_goodmoral','relationship_goodmoral'];
+        noSpaceIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.code === 'Space') e.preventDefault();
+            });
+            el.addEventListener('beforeinput', (e) => {
+                if (e.data && /\s/.test(e.data)) e.preventDefault();
+            });
+            const strip = () => {
+                const cleaned = (el.value || '').replace(/\s+/g, '');
+                if (el.value !== cleaned) el.value = cleaned;
+            };
+            el.addEventListener('input', strip);
+            el.addEventListener('blur', strip);
+            el.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const txt = (e.clipboardData || window.clipboardData).getData('text');
+                document.execCommand('insertText', false, (txt || '').replace(/\s+/g, ''));
+            });
+        });
+
+        (function () {
+        const el = document.getElementById('contact_req_goodmoral');
+        if (!el) return;
+
+        // ✅ Use "tel" so mobile keyboards include + and a spacebar (numeric hides spacebar)
+        el.setAttribute('pattern', '^\\+63 9\\d{9}$');
+        el.setAttribute('inputmode', 'tel');
+
+        // allow typing, but normalize as the user types
+        el.addEventListener('input', () => {
+            let v = el.value || '';
+
+            // keep only digits, single spaces, and a single leading +
+            v = v.replace(/[^\d +]/g, '');   // allow digits, space, plus
+            v = v.replace(/(?!^)\+/g, '');   // only one '+' at start
+            v = v.replace(/ {2,}/g, ' ');    // collapse multiple spaces
+            v = v.replace(/\s+$/, '');       // strip trailing spaces
+
+            // optional: enforce single space after +63 if user has typed that much
+            v = v.replace(/^\+63(?!\s|$)/, '+63 '); // ensures "+63 " once they pass "+63"
+
+            el.value = v;
+        });
+
+        // trim trailing space on blur
+        el.addEventListener('blur', () => {
+            el.value = (el.value || '').replace(/\s+$/, '');
+        });
+
+        // clean pasted content
+        el.addEventListener('paste', (e) => {
+            e.preventDefault();
+            let txt = (e.clipboardData || window.clipboardData).getData('text') || '';
+            txt = txt.replace(/[^\d +]/g, '')
+                    .replace(/(?!^)\+/g, '')
+                    .replace(/ {2,}/g, ' ')
+                    .replace(/\s+$/, '');
+            document.execCommand('insertText', false, txt);
+        });
+        })();
+
+        // Normalize again right before submit
+        const form = document.getElementById('gmfForm');
+        if (form) form.addEventListener('submit', () => {
+            rtrimIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = (el.value || '').replace(/\s+$/, '');
+            });
+            noSpaceIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = (el.value || '').replace(/\s+/g, '');
+            });
+            const c = document.getElementById('contact_req_goodmoral');
+            if (c) c.value = (c.value || '').replace(/\s+$/, '');
+        });
+    })();
+
+    /* Year fields: no trailing spaces, digits only, 4 chars, clamp to range (1979–current year) */
+    (function () {
+    const YEAR_IDS = ['year_graduated_goodmoral', 'year_admission_goodmoral'];
+    const MIN = 1979;
+    const CUR = new Date().getFullYear();
+
+    YEAR_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        // Helpful attributes
+        el.setAttribute('inputmode', 'numeric');
+        el.setAttribute('step', '1');
+        el.setAttribute('max', String(CUR)); // native constraint (does not clamp)
+
+        // Block spaces from keyboard/IME
+        el.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.code === 'Space') e.preventDefault();
+        });
+        el.addEventListener('beforeinput', (e) => {
+        if (e.data && /\s/.test(e.data)) e.preventDefault();
+        });
+
+        // While typing: remove spaces/non-digits; cap to 4 chars
+        el.addEventListener('input', () => {
+        let v = el.value || '';
+        v = v.replace(/\s+/g, ''); // kill whitespace
+        v = v.replace(/\D+/g, ''); // digits only
+        if (v.length > 4) v = v.slice(0, 4);
+        el.value = v;
+        });
+
+        // On blur: trim trailing spaces; mark invalid if out of range (do NOT change value)
+        el.addEventListener('blur', () => {
+        let v = (el.value || '').replace(/\s+$/, '').replace(/\D+/g, '').slice(0, 4);
+        el.value = v;
+
+        // Visual invalid state; your changeStep() will show the top alert and block Next
+        if (v.length === 4) {
+            const n = +v;
+            if (n < MIN || n > CUR) el.classList.add('is-invalid');
+            else el.classList.remove('is-invalid');
+        } else if (v.length > 0) {
+            el.classList.add('is-invalid');
+        } else {
+            el.classList.remove('is-invalid');
+        }
+        });
+    });
+    })();
 </script>
 
 </body>

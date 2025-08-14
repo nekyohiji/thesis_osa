@@ -2,6 +2,7 @@ from django import forms
 from .models import Violation, GoodMoralRequest, IDSurrenderRequest
 from django.core.exceptions import ValidationError
 import re
+from datetime import date
 
 class ViolationForm(forms.ModelForm):
     class Meta:
@@ -26,6 +27,10 @@ class ViolationForm(forms.ModelForm):
         return cleaned_data
     
 class GoodMoralRequestForm(forms.ModelForm):
+    # Override model fields so we can accept "YYYY" strings
+    date_graduated = forms.CharField(required=False)
+    date_admission = forms.CharField(required=False)
+
     class Meta:
         model = GoodMoralRequest
         fields = [
@@ -36,8 +41,35 @@ class GoodMoralRequestForm(forms.ModelForm):
             'document_type','uploaded_file'
         ]
 
+    def clean_date_graduated(self):
+        s = (self.cleaned_data.get('date_graduated') or '').strip()
+        if not s:
+            return None
+        if not re.fullmatch(r'\d{4}', s):
+            raise forms.ValidationError('Enter a 4-digit year for Year Graduated.')
+        y = int(s)
+        cur = date.today().year
+        if y < 1979 or y > cur:
+            raise forms.ValidationError(f'Year Graduated must be between 1979 and {cur}.')
+        # store as Jan 1 of that year (fits your DateField)
+        return date(y, 1, 1)
+
+    def clean_date_admission(self):
+        s = (self.cleaned_data.get('date_admission') or '').strip()
+        if not s:
+            return ''  # your model field is CharField(null=True, blank=True)
+        if not re.fullmatch(r'\d{4}', s):
+            raise forms.ValidationError('Enter a 4-digit year for Year of Admission.')
+        y = int(s)
+        cur = date.today().year
+        if y < 1979 or y > cur:
+            raise forms.ValidationError(f'Year of Admission must be between 1979 and {cur}.')
+        # model column is CharField → store "YYYY"
+        return str(y)
+
     def save(self, commit=True):
         instance = super().save(commit=False)
+        # normalize names
         for f in ['first_name','middle_name','surname','ext']:
             val = getattr(instance, f, "")
             setattr(instance, f, (val or "").strip().upper())

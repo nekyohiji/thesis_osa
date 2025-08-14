@@ -146,31 +146,31 @@
             </div>
         </div>
 
-        <!-- STEP 3: Upload Documents -->
         <div class="card mb-4 card-surrender-upload shadow-sm">
-            <div class="card-body">
-                <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div>
-                <hr><br>
-                <div class="mb-3">
-                  <label class="form-label">Document Type:</label>
-                  <select class="form-select" id="doc_type" name="document_type" required>
-                    <option value="">-- Select Document Type --</option>
-                    <option value="id">School ID</option>
-                    <option value="affidavit">Affidavit of Loss</option>
-                  </select>
-                </div>
-                <!-- Upload ID/Affidavit Front -->
-                <div class="mb-3">
-                  <label class="form-label" id="frontLabel">Upload ID (Front) / Affidavit First Page:</label>
-                  <input type="file" class="form-control" id="front_surrender" name="upload_id_front" accept=".jpg,.jpeg,.png,.pdf">
-                </div>
+          <div class="card-body">
+            <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div>
+            <hr><br>
 
-                <!-- Upload ID/Affidavit Back -->
-                <div class="mb-3">
-                    <label class="form-label" id="backLabel">Upload ID (Back) / Affidavit Second Page:</label>
-                    <input type="file" class="form-control" id="back_surrender" name="upload_id_back" accept=".jpg,.jpeg,.png,.pdf">
-                </div>
+            <div class="mb-3">
+              <label class="form-label">Document Type:</label>
+              <select class="form-select" id="doc_type" name="document_type" required>
+                <option value="">-- Select Document Type --</option>
+                <option value="id">School ID</option>
+                <option value="affidavit">Affidavit of Loss</option>
+              </select>
             </div>
+
+            <!-- Hidden by default; shown after a selection -->
+            <div class="mb-3 d-none" id="frontGroup">
+              <label class="form-label" id="frontLabel">Upload ID (Front) / Affidavit First Page:</label>
+              <input type="file" class="form-control" id="front_surrender" name="upload_id_front" accept=".jpg,.jpeg,.png,.pdf">
+            </div>
+
+            <div class="mb-3 d-none" id="backGroup">
+              <label class="form-label" id="backLabel">Upload ID (Back) / Affidavit Second Page:</label>
+              <input type="file" class="form-control" id="back_surrender" name="upload_id_back" accept=".jpg,.jpeg,.png,.pdf">
+            </div>
+          </div>
         </div>
 
         <!-- Submit Button -->
@@ -206,6 +206,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
+
 <script>
 (function () {
   // ----- CONFIG -----
@@ -220,7 +221,7 @@
   // ----- ELEMENTS -----
   const form = document.getElementById('surrender-form') || document.querySelector('form');
   const submitBtn = document.getElementById('submitBtn') || (form && form.querySelector('button[type="submit"]'));
-  const alertBox = document.getElementById('formAlert'); // optional top "Incomplete" alert
+  const alertBox = document.getElementById('formAlert');
 
   const modalEl = document.getElementById('submissionModal');
   const hasBootstrap = typeof bootstrap !== 'undefined' && modalEl;
@@ -263,7 +264,7 @@
     const f = input.files && input.files[0];
     if (!f) {
       if (input.required) { setInvalid(input, 'This file is required.'); return false; }
-      setValid(input); return true; // optional and empty is OK
+      setValid(input); return true;
     }
     const ext = f.name.split('.').pop().toLowerCase();
     if (!ALLOWED_EXT.includes(ext)) { setInvalid(input, `Allowed types: ${ALLOWED_EXT.join(', ')}`); return false; }
@@ -271,18 +272,26 @@
     setValid(input); return true;
   }
 
+  // UPDATED: validation (names allow internal spaces; email forbids any spaces)
   function textOk(input) {
     const raw = input.value || '';
-    const val = raw.trim();
-    if (raw !== val) input.value = val;
+    const val = raw.trim(); // validate against trimmed; don't rewrite while typing
 
-    if (!val) { setInvalid(input); return false; }
-
-    if (input.type === 'email') {
-      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    // Email: no spaces at all
+    if (input.id === 'email_surrender') {
+      if (/\s/.test(raw)) { setInvalid(input, 'Email cannot contain spaces.'); return false; }
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw);
       if (!ok) { setInvalid(input, 'Enter a valid email address.'); return false; }
       setValid(input); return true;
     }
+
+    // First/Surname: allow internal spaces, disallow spaces-only
+    if (input.id === 'fn_surrender' || input.id === 'sn_surrender') {
+      if (!val) { setInvalid(input, 'Enter a name.'); return false; }
+      setValid(input); return true;
+    }
+
+    if (!val) { setInvalid(input); return false; }
 
     const pattern = input.getAttribute('pattern');
     if (pattern) {
@@ -331,31 +340,43 @@
     return allGood;
   }
 
+  // UPDATED: show/hide upload fields based on selection + set requireds
   function setUploadMode(mode) {
     const front = document.getElementById('front_surrender');
     const back  = document.getElementById('back_surrender');
     const frontLabel = document.getElementById('frontLabel');
     const backLabel  = document.getElementById('backLabel');
-    if (!front || !back) return;
+    const frontGroup = document.getElementById('frontGroup');
+    const backGroup  = document.getElementById('backGroup');
+    if (!front || !back || !frontGroup || !backGroup) return;
 
-    if (mode === 'id') {
-      front.required = true;  back.required  = true;
-      if (frontLabel) frontLabel.textContent = 'Upload ID (Front):';
-      if (backLabel)  backLabel.textContent  = 'Upload ID (Back):';
-    } else if (mode === 'affidavit') {
-      front.required = true;  back.required  = false;
-      if (frontLabel) frontLabel.textContent = 'Affidavit of Loss (First Page):';
-      if (backLabel)  backLabel.textContent  = 'Affidavit of Loss (Second Page, optional):';
-    } else {
-      front.required = false; back.required  = false;
-      if (frontLabel) frontLabel.textContent = 'Upload ID (Front) / Affidavit First Page:';
-      if (backLabel)  backLabel.textContent  = 'Upload ID (Back) / Affidavit Second Page:';
-    }
-
+    // reset visual state
     [front, back].forEach(el => {
       el.classList.remove('is-valid','is-invalid');
       el.setCustomValidity('');
     });
+
+    if (mode === 'id') {
+      front.required = true;  back.required = true;
+      if (frontLabel) frontLabel.textContent = 'Upload ID (Front):';
+      if (backLabel)  backLabel.textContent  = 'Upload ID (Back):';
+      frontGroup.classList.remove('d-none');
+      backGroup.classList.remove('d-none');
+    } else if (mode === 'affidavit') {
+      front.required = true;  back.required = false;
+      if (frontLabel) frontLabel.textContent = 'Affidavit of Loss (First Page):';
+      if (backLabel)  backLabel.textContent  = 'Affidavit of Loss (Second Page, optional):';
+      frontGroup.classList.remove('d-none');
+      backGroup.classList.remove('d-none'); // visible but optional
+    } else {
+      // no selection: hide both, clear requirements & values
+      front.required = false; back.required = false;
+      front.value = ''; back.value = '';
+      frontGroup.classList.add('d-none');
+      backGroup.classList.add('d-none');
+      if (frontLabel) frontLabel.textContent = 'Upload ID (Front) / Affidavit First Page:';
+      if (backLabel)  backLabel.textContent  = 'Upload ID (Back) / Affidavit Second Page:';
+    }
   }
 
   // ----- INIT + LIVE -----
@@ -365,6 +386,22 @@
     if (!el) return;
     const evt = (el.type === 'file' || el.tagName === 'SELECT') ? 'change' : 'input';
     el.addEventListener(evt, () => updateSubmitState(true));
+  });
+
+  // Trim names on blur (allow internal spaces; strip ends only)
+  ['fn_surrender','sn_surrender'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', () => {
+      el.value = (el.value || '').trim();
+      updateSubmitState(true);
+    });
+  });
+
+  // Remove spaces live from email
+  const emailEl = document.getElementById('email_surrender');
+  if (emailEl) emailEl.addEventListener('input', () => {
+    const cleaned = emailEl.value.replace(/\s+/g, '');
+    if (emailEl.value !== cleaned) emailEl.value = cleaned;
   });
 
   if (docTypeSel) {
@@ -378,6 +415,11 @@
 
   // ----- SUBMIT -----
   form.addEventListener('submit', (e) => {
+    ['fn_surrender','sn_surrender'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = (el.value || '').trim();
+    });
+
     const ok = updateSubmitState(true);
     if (!ok) {
       e.preventDefault();
@@ -426,6 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endif %}
+
 
 
 </body>
