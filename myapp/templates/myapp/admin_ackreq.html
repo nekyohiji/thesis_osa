@@ -34,6 +34,7 @@
           </a>
           <div class="collapse submenu ps-3 border-start" id="violationMenu">
             <a class="nav-link" href="{% url 'admin_violation' %}"><i class="fas fa-window-maximize"></i> Violation</a>
+            <a class="nav-link" href="{% url 'admin_old_violation' %}"><i class="fas fa-archive"></i> Old Violation Record</a>
             <a class="nav-link" href="{% url 'admin_CS' %}"><i class="fas fa-people-group"></i> Community Service</a>
           </div>
         </li>
@@ -181,7 +182,7 @@
                 <span class="badge rounded-pill bg-warning text-dark ms-2">{{ pending_count }}</span>
               </h6>
             </div>
-            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 5); overflow-y: auto;">
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
               <table id="pendingTable" table class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
@@ -242,7 +243,7 @@
                 <span class="badge rounded-pill bg-warning text-dark ms-2">{{ history_count }}</span>
               </h6>
             </div>
-            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 5); overflow-y: auto;">
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
               <table id="historyTable" table class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>

@@ -115,6 +115,11 @@ def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
     return render (request, 'myapp/admin_clearance.html')
 
 
+def admin_old_violation_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
+    return render (request, 'myapp/admin_old_violation.html')
+
+
+
 
 
 
