@@ -17,6 +17,10 @@ urlpatterns = [
     path('client_lostandfound/', views.client_lostandfound_view, name='client_lostandfound'),
     path('client_view_election/', views.client_view_election_view, name='client_view_election'),
     path('client_election/', views.client_election_view, name='client_election'),
+    path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
+    
+
+    
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
@@ -37,6 +41,8 @@ urlpatterns = [
     path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
     path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
     path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
+    path('admin_clearance/', views.admin_clearance_view, name='admin_clearance'),
+
     
     
     

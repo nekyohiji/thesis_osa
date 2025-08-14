@@ -107,6 +107,19 @@ def client_scholarships_view(request):
 def client_CS_view(request):
     return render (request, 'myapp/client_CS.html')
 
+def client_view_CS_view(request):
+    return render (request, 'myapp/client_view_CS.html')
+
+
+def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
+    return render (request, 'myapp/admin_clearance.html')
+
+
+
+
+
+
+
 def client_SurrenderingID_view(request):
     return render (request, 'myapp/client_SurrenderingID.html')
 
