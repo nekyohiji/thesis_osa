@@ -1212,58 +1212,58 @@ def goodmoral_request_form_pdf(request, pk):
     ext = (r.ext or "").upper()
     mi = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
 
-    text(80, 665, surname)        # ← start here; nudge until it sits on the Surname line
-    text(250, 665, first)
-    text(420, 665, ext)
-    text(505, 665, mi)
+    text(45, 660, surname)        # ← start here; nudge until it sits on the Surname line
+    text(120, 660, first)
+    text(210, 660, ext)
+    text(240, 660, mi)
 
     # Sex checkboxes
     # Put ✓ in the correct box. Start with these, then nudge to fit box centers.
     sex = (r.sex or "").lower()
     if sex.startswith("m"):
-        check(365, 682)  # Male
+        check(320, 660)  # Male
     elif sex.startswith("f"):
-        check(430, 682)  # Female
+        check(375, 660)  # Female
 
     # Program & Status block (left column under name area)
-    text(115, 620, r.program)
+    text(45, 610, r.program, size=6.5)
 
     status = (r.status or "").lower()
     if "alum" in status or "gradu" in status:
-        check(60, 600)  # Alum/Graduated
+        check(60, 580)  # Alum/Graduated
         # Date Graduated:
         if r.date_graduated:
-            text(200, 600, r.date_graduated.strftime('%m/%d/%Y'))
+            text(160, 565, r.date_graduated.strftime('%m/%d/%Y'))
     elif "former" in status:
-        check(60, 585)  # Former Student
-        text(265, 585, r.inclusive_years)
+        check(60, 550)  # Former Student
+        text(190, 535, r.inclusive_years)
     else:
-        check(60, 570)  # Current Student
-        text(265, 570, r.date_admission)
+        check(60, 520)  # Current Student
+        text(170, 505, r.date_admission)
 
     # Purpose of Request (right column checkboxes)
     purpose = (r.purpose or "").lower()
     other = r.other_purpose or ""
 
     if "transfer" in purpose:
-        check(330, 535); text(460, 535, other)
+        check(330, 610); text(360, 595, other, size=8)
     elif "continu" in purpose:    # Continuing Education
-        check(330, 520)
+        check(330, 585)
     elif "employment" in purpose:
-        check(330, 505)
+        check(330, 555)
     elif "scholar" in purpose:
-        check(330, 490); text(460, 490, other)
+        check(330, 530); text(360, 515, other)
     elif "sit" in purpose or "opt" in purpose:
-        check(330, 475)           # SIT/OPT
+        check(330, 500)           # SIT/OPT
     elif "student development" in purpose or "comselec" in purpose or "usg" in purpose or "award" in purpose:
         check(330, 460)
     else:
-        check(330, 445); text(420, 445, other or (r.purpose or ""))
+        check(330, 395); text(380, 395, other or (r.purpose or ""))
 
     # Requester info
-    text(110, 380, r.requester_name)
-    text(415, 380, r.requester_contact)
-    text(205, 360, r.relationship)
+    text(85, 345, r.requester_name)
+    text(415, 345, r.requester_contact)
+    text(205, 330, r.relationship)
 
     # done
     c.showPage()
