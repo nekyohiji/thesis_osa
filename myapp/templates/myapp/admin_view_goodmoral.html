@@ -41,80 +41,109 @@
       </h3>
       <hr>
 
+
+
       <!-- Personal -->
-      <div class="col-md-3">
-        <label class="form-label">First Name:</label>
-        <input class="form-control" value="{{ r.first_name }}" disabled>
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div>
+        <div class="card-body row g-3">
+          <div class="col-md-3">
+            <label class="form-label">First Name:</label>
+            <input class="form-control" value="{{ r.first_name }}" disabled>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Middle Name:</label>
+            <input class="form-control" value="{{ r.middle_name }}" disabled>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Surname:</label>
+            <input class="form-control" value="{{ r.surname }}" disabled>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Extension:</label>
+            <input class="form-control" value="{{ r.ext }}" disabled>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label">Sex:</label>
+            <input class="form-control" value="{{ r.sex }}" disabled>
+          </div>
+        </div>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Middle Name:</label>
-        <input class="form-control" value="{{ r.middle_name }}" disabled>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Surname:</label>
-        <input class="form-control" value="{{ r.surname }}" disabled>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Extension:</label>
-        <input class="form-control" value="{{ r.ext }}" disabled>
-      </div>
-      <div class="col-md-1">
-        <label class="form-label">Sex:</label>
-        <input class="form-control" value="{{ r.sex }}" disabled>
-      </div>
+  
+
+
 
       <!-- Academic -->
-      <div class="col-md-3">
-        <label class="form-label">Student ID Number:</label>
-        <input class="form-control" value="{{ r.student_id }}" disabled>
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-mortarboard-fill"></i> Academic Information</div>
+        <div class="card-body row g-3">    
+          <div class="col-md-3">
+            <label class="form-label">Student ID Number:</label>
+            <input class="form-control" value="{{ r.student_id }}" disabled>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Status:</label>
+            <input class="form-control" value="{{ r.status }}" disabled>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Years of Stay:</label>
+            <input class="form-control" value="{{ r.inclusive_years }}" disabled>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Program/Course:</label>
+            <input class="form-control" value="{{ r.program }}" disabled>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Date Graduated:</label>
+            <input class="form-control" value="{{ r.date_graduated|date:'M d, Y' }}" disabled>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Date of Admission:</label>
+            <input class="form-control" value="{{ r.date_admission }}" disabled>
+          </div>
+        </div>
       </div>
-      <div class="col-md-2">
-        <label class="form-label">Status:</label>
-        <input class="form-control" value="{{ r.status }}" disabled>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Years of Stay:</label>
-        <input class="form-control" value="{{ r.inclusive_years }}" disabled>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Program/Course:</label>
-        <input class="form-control" value="{{ r.program }}" disabled>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Date Graduated:</label>
-        <input class="form-control" value="{{ r.date_graduated|date:'M d, Y' }}" disabled>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Date of Admission:</label>
-        <input class="form-control" value="{{ r.date_admission }}" disabled>
-      </div>
+     
+
+
+
+
 
       <!-- Request details -->
-      <div class="col-md-6">
-        <label class="form-label">Purpose of Request:</label>
-        <input class="form-control" value="{{ r.purpose }}{% if r.other_purpose %} - {{ r.other_purpose }}{% endif %}" disabled>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Name of Requester:</label>
-        <input class="form-control" value="{{ r.requester_name }}" disabled>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Contact Number:</label>
-        <input class="form-control" value="{{ r.requester_contact }}" disabled>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Email:</label>
-        <input class="form-control" value="{{ r.requester_email }}" disabled>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Relationship:</label>
-        <input class="form-control" value="{{ r.relationship }}" disabled>
+
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-journal-text"></i> Request Details</div>
+        <div class="card-body row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Purpose of Request:</label>
+            <input class="form-control" value="{{ r.purpose }}{% if r.other_purpose %} - {{ r.other_purpose }}{% endif %}" disabled>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Name of Requester:</label>
+            <input class="form-control" value="{{ r.requester_name }}" disabled>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Contact Number:</label>
+            <input class="form-control" value="{{ r.requester_contact }}" disabled>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email:</label>
+            <input class="form-control" value="{{ r.requester_email }}" disabled>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Relationship:</label>
+            <input class="form-control" value="{{ r.relationship }}" disabled>
+          </div>
+        </div>
       </div>
 
+
+
       <!-- Uploaded Document -->
-      <div class="col-12">
-        <div class="card">
-          <div class="card-body">
+
+      <div class="card mb-6 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-upload"></i> Uploaded Documents</div>
+        <div class="card-body d-flex flex-wrap gap-2"><br>
             {% if r.uploaded_file %}
               <a class="btn btn-outline-secondary btn-sm" href="{{ r.uploaded_file.url }}" target="_blank">
                 <i class="bi bi-file-earmark"></i> View Uploaded File
