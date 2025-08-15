@@ -214,12 +214,12 @@ def admin_assistantship_view(request):
     return render(request, 'myapp/admin_assistantship.html', {'requirement': obj})
 
 @role_required(['admin'])
-def admin_view_cs(request, student_id):
+def admin_community_service(request, student_id):
     student = get_object_or_404(Student, tupc_id=student_id)
     case = CommunityServiceCase.objects.filter(student_id=student_id).order_by("-created_at").first()
     logs = case.logs.order_by("-check_in_at") if case else []
     violations = Violation.objects.filter(student_id=student_id, status="Approved").order_by("-reviewed_at")
-    return render(request, 'myapp/admin_CS.html', {
+    return render(request, 'myapp/admin_community_service.html', {
         "student": student,
         "case": case,
         "logs": logs,
@@ -340,8 +340,8 @@ def admin_view_ackreq_view(request, pk):
     return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
 
 @role_required(['admin'])
-def admin_view_CS_view(request):
-    return render (request, 'myapp/admin_view_CS.html')
+def admin_view_community_service(request):
+    return render (request, 'myapp/admin_view_community_service.html')
 
 @role_required(['admin'])
 def admin_view_goodmoral_view(request):
@@ -1522,7 +1522,7 @@ def cs_check_in(request, student_id):
     else:
         CommunityServiceLog.objects.create(case=case)  # server time stamps in model
         messages.success(request, "Time in recorded.")
-    return redirect("myapp/admin_view_CS.html", student_id=student_id)
+    return redirect("myapp/admin_view_community_service.html", student_id=student_id)
 
 @role_required(['admin'])
 @require_POST
@@ -1535,7 +1535,7 @@ def cs_check_out(request, student_id):
     else:
         log.close()  # computes .hours, updates case.hours_completed & case.is_closed
         messages.success(request, f"Time out recorded (+{log.hours}h).")
-    return redirect("myapp/admin_view_CS.html", student_id=student_id)         
+    return redirect("myapp/admin_view_community_service.html", student_id=student_id)         
          
 @role_required(['admin']) 
 @require_POST
@@ -1545,11 +1545,11 @@ def cs_update_total_required(request, student_id):
         new_total = Decimal(request.POST.get("new_total", "0"))
     except Exception:
         messages.error(request, "Invalid number.")
-        return redirect("myapp/admin_view_CS.html", student_id=student_id)
+        return redirect("myapp/admin_view_community_service.html", student_id=student_id)
 
     case.adjust_total_required(new_total)
     messages.success(request, f"Updated total required hours to {new_total}.")
-    return redirect("myapp/admin_view_CS.html", student_id=student_id)
+    return redirect("myapp/admin_view_community_service.html", student_id=student_id)
 
 
 
