@@ -17,7 +17,7 @@ from django.core.serializers import serialize
 from django.utils.html import escape
 from django.templatetags.static import static
 from django.urls import reverse
-
+from django.utils.timezone import localtime
 import uuid, os
 from django.core.files.base import ContentFile
 from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm
@@ -29,7 +29,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
 from .utils import send_violation_email, generate_gmf_pdf
 from django.db.models import Q
-
 import os
 import io
 from collections import Counter
@@ -41,7 +40,6 @@ from PIL import Image
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Table as PlatypusTable, TableStyle as PlatypusTableStyle
-
 from django.views.decorators.http import require_POST
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
@@ -1162,6 +1160,9 @@ TEMPLATE_PATH = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'pdf
 
 @role_required(['admin'])
 def goodmoral_request_form_pdf(request, pk):
+    from django.utils import timezone
+    from io import BytesIO
+
     r = get_object_or_404(GoodMoralRequest, pk=pk)
 
     template_path = finders.find('myapp/form/GMC-request-template.pdf')
@@ -1183,105 +1184,90 @@ def goodmoral_request_form_pdf(request, pk):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(x, y, "✓")
 
-    def text(x, y, s, bold=False, size=11):
-        c.setFont("Helvetica-Bold" if bold else "Helvetica", size)
-        c.drawString(x, y, s or "")
+    def text(x, y, s, bold=False, size=11, right=False):
+        font = "Helvetica-Bold" if bold else "Helvetica"
+        c.setFont(font, size)
+        if right:
+            c.drawRightString(x, y, s or "")
+        else:
+            c.drawString(x, y, s or "")
 
     def draw_guides(step=25):
-        # draw a light grid to find coordinates (only when ?guide=1)
         c.setFont("Helvetica", 6)
         c.setFillGray(0.6)
         for x in range(0, int(width), step):
-            c.line(x, 0, x, height)
-            c.drawString(x+1, 2, str(x))
+            c.line(x, 0, x, height); c.drawString(x+1, 2, str(x))
         for y in range(0, int(height), step):
-            c.line(0, y, width, y)
-            c.drawString(2, y+2, str(y))
-        c.setFillGray(0)  # reset
+            c.line(0, y, width, y); c.drawString(2, y+2, str(y))
+        c.setFillGray(0)
 
-    # turn on guide mode if requested (http://.../request-form/?guide=1)
     if request.GET.get("guide") == "1":
         draw_guides()
 
-    # ---------- PLACE FIELDS (v1 rough) ----------
-    # NOTE: origin is bottom-left. nudge by +/- 5–10 pts until it sits right.
+    # ---------- TOP ROW: NO. and DATE ----------
+    # Use the DB primary key as the request number (zero-padded). Change to r.student_id if you prefer.
+    req_no = f"{r.pk:06d}"
+    # Coordinates are close; open with ?guide=1 and nudge ±5–15 if needed.
+    text(85, height - 95, req_no, bold=True, size=12)  # NO. (left box)
 
-    # Header date (top-right area)
-    # Example: text(470, height-70, timezone.now().strftime('%m/%d/%Y'))
-    # Try this first; adjust after you see it.
+    # Date from submitted_at, rendered as local calendar date (respects TIME_ZONE / activation)
+    date_requested = timezone.localdate(r.submitted_at).strftime('%m/%d/%Y')
+    text(width - 85, height - 95, date_requested, bold=True, size=12, right=True)  # DATE (right box)
 
-    # Name line: SURNAME, FIRST NAME, EXT, M.I.   (from your screenshot it’s near top-left)
+    # ---------- PLACE FIELDS ----------
     surname = (r.surname or "").upper()
     first = (r.first_name or "").upper()
     ext = (r.ext or "").upper()
     mi = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
 
-    text(45, 660, surname)        # ← start here; nudge until it sits on the Surname line
+    text(45, 660, surname)
     text(120, 660, first)
     text(210, 660, ext)
     text(240, 660, mi)
 
     # Sex checkboxes
-    # Put ✓ in the correct box. Start with these, then nudge to fit box centers.
     sex = (r.sex or "").lower()
     if sex.startswith("m"):
         check(320, 660)  # Male
     elif sex.startswith("f"):
         check(375, 660)  # Female
 
-    # Program & Status block (left column under name area)
+    # Program & Status
     text(45, 610, r.program, size=6.5)
 
     status = (r.status or "").lower()
     if "alum" in status or "gradu" in status:
-        check(60, 580)  # Alum/Graduated
-        # Date Graduated:
+        check(60, 580)
         if r.date_graduated:
             text(160, 565, r.date_graduated.strftime('%Y'))
     elif "former" in status:
-        check(60, 550)  # Former Student
+        check(60, 550)
         text(190, 535, r.inclusive_years)
     else:
-        check(60, 520)  # Current Student
+        check(60, 520)
         text(170, 505, r.date_admission)
 
-    # Purpose of Request (right column checkboxes)
+    # Purpose of Request
     purpose_raw = r.purpose or ""
     purpose = purpose_raw.strip().lower()
     other = (r.other_purpose or "").strip()
 
     if "transfer" in purpose:
-        check(330, 610)
-        if other:
-            text(360, 595, other, size=8)
-
+        check(330, 610);  text(360, 595, other, size=8) if other else None
     elif "continu" in purpose or "continuing education" in purpose:
         check(330, 583)
-
     elif "employment" in purpose:
         check(330, 555)
-
     elif "scholar" in purpose:
-        check(330, 530)
-        if other:
-            text(360, 515, other)
-
+        check(330, 530);  text(360, 515, other) if other else None
     elif any(k in purpose for k in (
-            "sit",
-            "supervised industrial training",
-            "ipt",
-            "in-campus practice teaching",
-            "opt",
-            "off-campus practice teaching",
-        )):
+            "sit", "supervised industrial training", "ipt",
+            "in-campus practice teaching", "opt", "off-campus practice teaching")):
         check(330, 500)
-
     elif any(k in purpose for k in ("student development", "comselec", "usg", "award")):
         check(330, 460)
-
     else:
-        check(330, 395)
-        text(380, 395, other or purpose_raw)
+        check(330, 395); text(380, 395, other or purpose_raw)
 
     # Requester info
     text(85, 345, r.requester_name)
@@ -1293,7 +1279,7 @@ def goodmoral_request_form_pdf(request, pk):
     c.save()
     overlay_buf.seek(0)
 
-    # Merge & return (view inline; no forced download)
+    # Merge & return
     overlay_reader = PdfReader(overlay_buf)
     writer = PdfWriter()
     page = base_reader.pages[0]
@@ -1304,6 +1290,7 @@ def goodmoral_request_form_pdf(request, pk):
     writer.write(out)
     out.seek(0)
     return FileResponse(out, as_attachment=False, filename=f"GMC_RequestForm_{r.student_id or r.pk}.pdf")
+
 
 @role_required(['admin'])
 @xframe_options_exempt
