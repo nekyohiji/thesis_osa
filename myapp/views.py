@@ -1208,11 +1208,11 @@ def goodmoral_request_form_pdf(request, pk):
     # Use the DB primary key as the request number (zero-padded). Change to r.student_id if you prefer.
     req_no = f"{r.pk:06d}"
     # Coordinates are close; open with ?guide=1 and nudge ±5–15 if needed.
-    text(85, height - 95, req_no, bold=True, size=12)  # NO. (left box)
+    text(70, height - 135, req_no, bold=True, size=12)  # NO. (left box)
 
     # Date from submitted_at, rendered as local calendar date (respects TIME_ZONE / activation)
     date_requested = timezone.localdate(r.submitted_at).strftime('%m/%d/%Y')
-    text(width - 85, height - 95, date_requested, bold=True, size=12, right=True)  # DATE (right box)
+    text(width - 180, height - 135, date_requested, bold=True, size=12, right=True)  # DATE (right box)
 
     # ---------- PLACE FIELDS ----------
     surname = (r.surname or "").upper()
