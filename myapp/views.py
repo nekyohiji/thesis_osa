@@ -1256,7 +1256,7 @@ def goodmoral_request_form_pdf(request, pk):
             text(360, 595, other, size=8)
 
     elif "continu" in purpose or "continuing education" in purpose:
-        check(330, 585)
+        check(330, 583)
 
     elif "employment" in purpose:
         check(330, 555)
