@@ -4,6 +4,9 @@ import string
 from django.core.validators import RegexValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from decimal import Decimal
+from django.db.models.functions import Now
+from django.utils import timezone
 
 class Student(models.Model):
     tupc_id = models.CharField(max_length=50, unique=True)
@@ -363,3 +366,91 @@ class IDSurrenderRequest(models.Model):
         
     def __str__(self):
         return f"{self.student_number} — {self.surname}, {self.first_name} ({self.status})"
+
+class CommunityServiceCase(models.Model):
+    """
+    One active community service case per student.
+    total_required_hours goes up with offenses.
+    hours_completed never resets (remaining = total - completed).
+    """
+    student_id = models.CharField(max_length=20, db_index=True)
+    total_required_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
+    hours_completed = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
+    is_closed = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "community_service_case"
+        indexes = [models.Index(fields=["student_id", "is_closed"])]
+
+    def __str__(self):
+        return f"{self.student_id} | required={self.total_required_hours} done={self.hours_completed}"
+
+    @property
+    def remaining_hours(self) -> Decimal:
+        rem = self.total_required_hours - self.hours_completed
+        return rem if rem > 0 else Decimal('0.0')
+
+    def adjust_total_required(self, new_total: Decimal) -> None:
+        """
+        Raise (or keep) the total requirement while preserving completed hours.
+        Never reduce below hours already completed. Auto-close if remaining hits 0.
+        """
+        if new_total < self.hours_completed:
+            new_total = self.hours_completed
+        self.total_required_hours = new_total
+        self.is_closed = (self.remaining_hours == 0)
+        self.save(update_fields=["total_required_hours", "is_closed", "updated_at"])
+
+class CommunityServiceLog(models.Model):
+    """
+    Server-authoritative session log:
+      - check_in_at set by DB/app server time when the row is created
+      - check_out_at set on close()
+      - hours computed on the server and added to the case
+    """
+    case = models.ForeignKey("CommunityServiceCase", on_delete=models.CASCADE, related_name="logs")
+
+    # Authoritative server/database timestamps (Django 5+ supports db_default=Now()).
+    check_in_at = models.DateTimeField(auto_now_add=True, db_default=Now())
+    check_out_at = models.DateTimeField(null=True, blank=True)
+
+    hours = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal("0.0"))
+    is_official = models.BooleanField(default=True)  # set False for manual/backfilled edits
+
+    created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "community_service_log"
+
+    def __str__(self):
+        status = "open" if self.check_out_at is None else "closed"
+        return f"{self.case.student_id} | {status} | {self.hours}h"
+
+    def close(self):
+        """
+        Close the session using server time and compute hours.
+        Also updates the parent case's hours_completed and closure status.
+        """
+        if self.check_out_at is None:
+            self.check_out_at = timezone.now()
+
+        # compute duration in hours
+        delta_seconds = (self.check_out_at - self.check_in_at).total_seconds()
+        delta_hours = Decimal(delta_seconds) / Decimal(3600)
+
+        # round to nearest 0.5h (e.g., 1.2 -> 1.0, 1.26 -> 1.5)
+        rounded = (delta_hours * 2).quantize(Decimal('1')) / Decimal(2)
+        self.hours = rounded
+
+        # save log, then apply to case
+        self.save(update_fields=["check_out_at", "hours", "updated_at"])
+
+        # accumulate into the case
+        case = self.case
+        case.hours_completed = (case.hours_completed or Decimal('0.0')) + self.hours
+        case.is_closed = (case.remaining_hours == 0)
+        case.save(update_fields=["hours_completed", "is_closed", "updated_at"])

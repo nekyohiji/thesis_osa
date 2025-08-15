@@ -276,6 +276,29 @@
       }
 
 
+
+
+
+      /* Active tab background and text color */
+.nav-tabs .nav-link.active {
+  background-color: #ffffffff !important; /* Dark red for active */
+  color: black !important;
+  border-bottom:#5e0000;
+}
+
+/* Inactive tab styles */
+.nav-tabs .nav-link {
+  background-color: #5e0000;
+  color: white;
+  border-color: #5e0000;
+}
+
+
+.nav-tabs .nav-link:hover {
+  background-color: #770000;
+  color: white;
+}
+
   </style>
 
 
@@ -308,6 +331,10 @@
         <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
     </div>
 </div>
+
+
+
+
 
 <div id="confirmDeactivateModal" class="confirm-modal">
     <div class="modal-header">
@@ -364,7 +391,7 @@
 
 
   
-  <div class="election-header text-white mt-4"
+  <div class="election-header text-white mt-2"
       style="background: linear-gradient(to right bottom, #000000, #440207,rgb(104, 3, 12));
             background-size: cover;
             background-position: center;
@@ -381,17 +408,21 @@
     </div>
     
 
+    <div class="row">
+  <!-- Left Side: Create Account -->
+  <div class="col-lg-6">
+
+    
     <!-- CREATE ACCOUNT PANEL -->
-    <div class="card shadow-sm rounded-4 mb-4" >
+    <div class="card shadow-sm rounded-4 mb-4">
       <div class="card-header text-white py-2 px-4" style="background-color: #440207;">
         <h6 class="mb-0"><i class="fas fa-user-plus me-2"></i><b> Create New Account</b></h6>
       </div>
 
-      <div class="card-body px-4 py-3" >
+      <div class="card-body px-4 py-3">
         <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 20px;">
           {% csrf_token %}
-          <div class="row g-4" >
-    
+          <div class="row g-4">
             <div class="col-md-6">
               <!-- Full Name -->
               <label for="fullName" class="form-label small"><b>Full Name:</b></label>
@@ -418,28 +449,26 @@
               </select>
             </div>
 
-
             <div class="col-md-6">
-                  <!-- Password -->
-                  <label for="createPassword" class="form-label small"><b>Password:</b></label>
-                  <div class="form-group position-relative mb-3">
-                    <input type="password" class="form-control form-control-sm pe-5" id="createPassword"
-                          name="password" minlength="8" maxlength="128" placeholder="Enter Password" required>
-                    <span class="eye-icon" onclick="togglePasswordVisibility('createPassword')">
-                      <i class="fas fa-eye"></i>
-                    </span>
-                  </div>
+              <!-- Password -->
+              <label for="createPassword" class="form-label small"><b>Password:</b></label>
+              <div class="form-group position-relative mb-3">
+                <input type="password" class="form-control form-control-sm pe-5" id="createPassword"
+                      name="password" minlength="8" maxlength="128" placeholder="Enter Password" required>
+                <span class="eye-icon" onclick="togglePasswordVisibility('createPassword')">
+                  <i class="fas fa-eye"></i>
+                </span>
+              </div>
 
-                  <!-- Confirm Password -->
-                  <label for="confirmPassword" class="form-label small"><b>Confirm Password:</b></label>
-                  <div class="form-group position-relative mb-3">
-                    <input type="password" class="form-control form-control-sm pe-5" id="confirmPassword"
-                          name="confirmPassword" minlength="8" maxlength="128" placeholder="Confirm Password" required>
-                    <span class="eye-icon" onclick="togglePasswordVisibility('confirmPassword')">
-                      <i class="fas fa-eye"></i>
-                    </span>
-                  </div>
-
+              <!-- Confirm Password -->
+              <label for="confirmPassword" class="form-label small"><b>Confirm Password:</b></label>
+              <div class="form-group position-relative mb-3">
+                <input type="password" class="form-control form-control-sm pe-5" id="confirmPassword"
+                      name="confirmPassword" minlength="8" maxlength="128" placeholder="Confirm Password" required>
+                <span class="eye-icon" onclick="togglePasswordVisibility('confirmPassword')">
+                  <i class="fas fa-eye"></i>
+                </span>
+              </div>
 
               <!-- OTP Section -->
               <div id="otpSection" style="display: none;">
@@ -450,10 +479,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div><hr>
 
           <!-- Create Button -->
-          <div style="display: flex; justify-content: center; width: 100%; margin-top: 1rem;">
+          <div class="text-center mt-3">
             <button type="button" id="createAccountBtn" class="btn btn-dark btn-sm">
               <i class="fas fa-user-plus me-1"></i> Create Account
             </button>
@@ -461,47 +490,57 @@
         </form>
       </div>
     </div>
+  </div>
 
 
-      <!-- Accounts Section -->
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card  mb-3 shadow-sm">
-            <div class="card-header text-white" style="background-color: #440207;"><i class="fas fa-check-circle me-2"></i>Active Accounts</div>
-            <div class="card-body">
-              <div id="activeAccountsList" class="text-muted text-center" style="
-                background-color: rgba(0, 0, 0, 0.04);
-                max-height: 250px;
-                overflow-y: auto;
-                padding: 10px;
-              ">
-                <p>No active accounts yet.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+
+  
+
+<!-- Right Side: Accounts -->
+<div class="col-lg-6">
+  <div class="card shadow-sm rounded-4 mb-4">
+    <div class="card-header text-white py-2 px-4" style="background-color: #5e0000;">
+      <h6 class="mb-0"><i class="fas fa-users me-2"></i><b> Accounts</b></h6>
+    </div>
+    <div class="card-body" style="background-color: rgba(255, 255, 255, 255); padding: 20px;">
+      
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs nav-fill mb-3" id="accountTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active small" style="background-color: #5e0000; " id="active-tab" data-bs-toggle="tab" data-bs-target="#activeAccountsTab" type="button" role="tab" aria-controls="activeAccountsTab" aria-selected="true">
+            <i class="fas fa-check-circle me-1"></i> Active
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link small" style="background-color: #5e0000; " id="deactivated-tab" data-bs-toggle="tab" data-bs-target="#deactivatedAccountsTab" type="button" role="tab" aria-controls="deactivatedAccountsTab" aria-selected="false">
+            <i class="fas fa-times-circle me-1"></i> Deactivated
+          </button>
+        </li>
+      </ul>
 
 
       
-        <!-- Deactivated Accounts -->
-        <div class="col-md-6">
-          <div class="card  mb-3 shadow-sm">
-            <div class="card-header  text-white" style="background-color: #440207;"><i class="fas fa-times-circle me-2"></i>Deactivated Accounts</div>
-            <div class="card-body">
-              <div id="deactivatedAccountsList" class="text-muted text-center" style="
-                background-color: rgba(0, 0, 0, 0.04);
-                max-height: 250px;
-                overflow-y: auto;
-                padding: 10px;
-              ">
-                <p>No deactivated accounts yet.</p>
-              </div>
-            </div>
+      <!-- Tabs Content -->
+      <div class="tab-content p-3" style="background-color:rgba(0, 0, 0, 0.04); border-radius: 6px; min-height: 200px;">
+        
+        <!-- Active Accounts -->
+        <div class="tab-pane fade show active" id="activeAccountsTab" role="tabpanel" aria-labelledby="active-tab">
+          <div id="activeAccountsList" class="text-muted text-center">
+            <p>No active accounts yet.</p>
           </div>
         </div>
+
+        <!-- Deactivated Accounts -->
+        <div class="tab-pane fade" id="deactivatedAccountsTab" role="tabpanel" aria-labelledby="deactivated-tab">
+          <div id="deactivatedAccountsList" class="text-muted text-center">
+            <p>No deactivated accounts yet.</p>
+          </div>
+        </div>
+
       </div>
     </div>
-
+  </div>
+</div>
 
 
 
@@ -543,21 +582,41 @@
 
 /* Start here magcode*/
 
-
-
-
-    
-  function togglePasswordVisibility(fieldId) {
+  function setupPasswordField(fieldId) {
     const field = document.getElementById(fieldId);
-    const icon = field.nextElementSibling.querySelector('i');
-    if (field.type === 'password') {
-      field.type = 'text';
-      icon.classList.replace('fa-eye', 'fa-eye-slash');
-    } else {
-      field.type = 'password';
-      icon.classList.replace('fa-eye-slash', 'fa-eye');
-    }
+    const iconWrapper = field.nextElementSibling; // the <span>
+    const icon = iconWrapper.querySelector('i');
+
+    // Hide eye initially
+    iconWrapper.style.display = 'none';
+
+    // Show eye only if there's input
+    field.addEventListener('input', () => {
+      if (field.value.length > 0) {
+        iconWrapper.style.display = 'inline-block';
+      } else {
+        iconWrapper.style.display = 'none';
+        field.type = 'password'; // reset to hidden
+        icon.classList.replace('fa-eye-slash', 'fa-eye'); // reset icon
+      }
+    });
+
+    // Toggle password visibility
+    iconWrapper.addEventListener('click', () => {
+      if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        field.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    });
   }
+
+  // Initialize both
+  setupPasswordField('createPassword');
+  setupPasswordField('confirmPassword');
+
 
 
 

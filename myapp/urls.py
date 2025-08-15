@@ -26,7 +26,7 @@ urlpatterns = [
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
-    path('admin_CS/', views.admin_CS_view, name='admin_CS'),
+    path('admin_CS/', views.admin_view_cs, name='admin_CS'),
     path('admin_election/', views.admin_election_view, name='admin_election'),
     path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
     path('admin_lostandfound/', views.admin_lostandfound_view, name='admin_lostandfound'),
@@ -75,6 +75,9 @@ urlpatterns = [
     path('violation/<int:violation_id>/approve/', views.admin_approve_violation, name='admin_approve_violation'),
     path('violation/<int:violation_id>/decline/', views.admin_decline_violation, name='admin_decline_violation'),
     path('settlement/<int:settlement_id>/settle/', views.mark_settlement_as_settled, name='mark_settlement_as_settled'),
+    path("community-service/<str:student_id>/update-total/", views.cs_update_total_required, name="cs_update_total_required"),
+    
+    
     path('admin_goodmoral/<int:pk>/', views.admin_view_goodmoral, name='admin_view_goodmoral'),
     path('admin_goodmoral/<int:pk>/accept/', views.goodmoral_accept, name='goodmoral_accept'),
     path('admin_goodmoral/<int:pk>/decline/', views.goodmoral_decline, name='goodmoral_decline'),
@@ -83,6 +86,11 @@ urlpatterns = [
     path("admin_ackreq/<int:pk>/receipt.pdf", views.admin_ackreq_receipt_pdf, name="admin_ackreq_receipt_pdf"),
     path("admin_ackreq/<int:pk>/accept/",  views.admin_ackreq_accept,  name="admin_ackreq_accept"),
     path("admin_ackreq/<int:pk>/decline/", views.admin_ackreq_decline, name="admin_ackreq_decline"),
+    
+    path("admin/cs/<str:student_id>/check-in/", views.cs_check_in, name="cs_check_in"),
+    path("admin/cs/<str:student_id>/check-out/", views.cs_check_out, name="cs_check_out"),
+    path("admin/cs/<str:student_id>/total/", views.cs_update_total_required, name="cs_update_total_required"),
+
 
 
     #########################################elections

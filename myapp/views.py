@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, ViolationSettlement, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest, CommunityServiceCase, CommunityServiceLog
 from django.db.models.functions import Lower
 from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
@@ -40,7 +40,7 @@ from PIL import Image
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Table as PlatypusTable, TableStyle as PlatypusTableStyle
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from PyPDF2 import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from io import BytesIO
@@ -50,7 +50,9 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.core.files.storage import default_storage
 from .libre.ack_receipt import build_ack_pdf
 import mimetypes
-
+from decimal import Decimal
+from myapp.services.community_service import auto_cs_after_two
+from django.db import transaction
 #################################################################################################################
 
 def current_time(request):
@@ -212,8 +214,17 @@ def admin_assistantship_view(request):
     return render(request, 'myapp/admin_assistantship.html', {'requirement': obj})
 
 @role_required(['admin'])
-def admin_CS_view(request):
-    return render (request, 'myapp/admin_CS.html')
+def admin_view_cs(request, student_id):
+    student = get_object_or_404(Student, tupc_id=student_id)
+    case = CommunityServiceCase.objects.filter(student_id=student_id).order_by("-created_at").first()
+    logs = case.logs.order_by("-check_in_at") if case else []
+    violations = Violation.objects.filter(student_id=student_id, status="Approved").order_by("-reviewed_at")
+    return render(request, 'myapp/admin_CS.html', {
+        "student": student,
+        "case": case,
+        "logs": logs,
+        "violations": violations,
+    })
 
 @role_required(['admin', 'comselec'])
 def admin_election_view(request):
@@ -1291,7 +1302,6 @@ def goodmoral_request_form_pdf(request, pk):
     out.seek(0)
     return FileResponse(out, as_attachment=False, filename=f"GMC_RequestForm_{r.student_id or r.pk}.pdf")
 
-
 @role_required(['admin'])
 @xframe_options_exempt
 def view_gmf(request, pk):
@@ -1412,6 +1422,144 @@ def admin_ackreq_decline(request, pk):
     messages.success(request, "Request declined and email sent.")
     return redirect("admin_view_ackreq", pk=req.pk)
 
+@role_required(['admin'])
+def admin_decline_violation(request, violation_id):
+    violation = get_object_or_404(Violation, id=violation_id)
+    student = get_object_or_404(Student, tupc_id=violation.student_id)
+
+    violation.status = 'Rejected'
+    violation.reviewed_at = timezone.now()
+    violation.save()
+
+    send_violation_email(
+        violation=violation,
+        student=student,
+        declined=True
+    )
+
+    # ✅ Add decline message (style as error)
+    messages.error(
+        request,
+        f"❌ Violation for {student.first_name} {student.last_name} was successfully declined."
+    )
+
+    return redirect('admin_violation')
+
+TEN_HOURS = Decimal("10.0")
+@role_required(['admin'])
+@transaction.atomic
+def admin_approve_violation(request, violation_id):
+    violation = get_object_or_404(Violation, id=violation_id)
+    student = get_object_or_404(Student, tupc_id=violation.student_id)
+
+    # Idempotent approve
+    if violation.status != 'Approved':
+        violation.status = 'Approved'
+        violation.reviewed_at = timezone.now()
+        violation.save(update_fields=["status", "reviewed_at"])
+
+    # Count approved (lock student's rows to avoid races)
+    approved_count = (
+        Violation.objects
+        .select_for_update()
+        .filter(student_id=student.tupc_id, status='Approved')
+        .count()
+    )
+
+    settlement_type = 'Apology Letter' if approved_count < 2 else 'Community Service'
+
+    ViolationSettlement.objects.update_or_create(
+        violation=violation,
+        defaults={"settlement_type": settlement_type, "is_settled": False},
+    )
+
+    # Create a 10h CS case once (2nd approved)
+    if settlement_type == 'Community Service':
+        CommunityServiceCase.objects.select_for_update().get_or_create(
+            student_id=student.tupc_id,
+            defaults={"total_required_hours": TEN_HOURS}
+        )
+
+    send_violation_email(
+        violation=violation,
+        student=student,
+        violation_count=approved_count,
+        settlement_type=settlement_type
+    )
+    messages.success(request, f"✅ Violation for {student.first_name} {student.last_name} was successfully approved.")
+    return redirect('admin_violation')
+
+@role_required(['admin'])
+@transaction.atomic
+def auto_cs_after_two(student_id: str, last_violation: Violation | None = None) -> None:
+    approved_count = (
+        Violation.objects.select_for_update()
+        .filter(student_id=student_id, status="Approved")
+        .count()
+    )
+    if approved_count < 2:
+        return
+
+    CommunityServiceCase.objects.select_for_update().get_or_create(
+        student_id=student_id,
+        defaults={"total_required_hours": TEN_HOURS}
+    )
+
+    if last_violation is not None:
+        ViolationSettlement.objects.get_or_create(
+            violation=last_violation,
+            defaults={"settlement_type": "Community Service", "is_settled": False}
+        )
+
+@role_required(['admin'])
+@require_POST
+@transaction.atomic
+def cs_check_in(request, student_id):
+    case = get_object_or_404(CommunityServiceCase.objects.select_for_update(), student_id=student_id, is_closed=False)
+    open_log = case.logs.select_for_update().filter(check_out_at__isnull=True).first()
+    if open_log:
+        messages.info(request, "Already checked in.")
+    else:
+        CommunityServiceLog.objects.create(case=case)  # server time stamps in model
+        messages.success(request, "Time in recorded.")
+    return redirect("myapp/admin_view_CS.html", student_id=student_id)
+
+@role_required(['admin'])
+@require_POST
+@transaction.atomic
+def cs_check_out(request, student_id):
+    case = get_object_or_404(CommunityServiceCase.objects.select_for_update(), student_id=student_id, is_closed=False)
+    log = case.logs.select_for_update().filter(check_out_at__isnull=True).last()
+    if not log:
+        messages.error(request, "No open session to close.")
+    else:
+        log.close()  # computes .hours, updates case.hours_completed & case.is_closed
+        messages.success(request, f"Time out recorded (+{log.hours}h).")
+    return redirect("myapp/admin_view_CS.html", student_id=student_id)         
+         
+@role_required(['admin']) 
+@require_POST
+def cs_update_total_required(request, student_id):
+    case = get_object_or_404(CommunityServiceCase, student_id=student_id)
+    try:
+        new_total = Decimal(request.POST.get("new_total", "0"))
+    except Exception:
+        messages.error(request, "Invalid number.")
+        return redirect("myapp/admin_view_CS.html", student_id=student_id)
+
+    case.adjust_total_required(new_total)
+    messages.success(request, f"Updated total required hours to {new_total}.")
+    return redirect("myapp/admin_view_CS.html", student_id=student_id)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1492,64 +1640,6 @@ def delete_candidate(request, candidate_id):
 def get_academic_years(request):
     years = Candidate.objects.values_list('academic_year', flat=True).distinct()
     return JsonResponse({'status': 'success', 'academic_years': list(years)})
-
-def admin_approve_violation(request, violation_id):
-    violation = get_object_or_404(Violation, id=violation_id)
-    student = get_object_or_404(Student, tupc_id=violation.student_id)
-
-    settled_count = ViolationSettlement.objects.filter(
-        violation__student_id=student.tupc_id,
-        is_settled=True
-    ).count()
-
-    settlement_type = 'Apology Letter' if settled_count == 0 else 'Community Service'
-
-    violation.status = 'Approved'
-    violation.reviewed_at = timezone.now()
-    violation.save()
-
-    ViolationSettlement.objects.create(
-        violation=violation,
-        settlement_type=settlement_type,
-        is_settled=False
-    )
-
-    send_violation_email(
-        violation=violation,
-        student=student,
-        violation_count=settled_count + 1,
-        settlement_type=settlement_type
-    )
-
-    # ✅ Add success message
-    messages.success(
-        request,
-        f"✅ Violation for {student.first_name} {student.last_name} was successfully approved."
-    )
-
-    return redirect('admin_violation')
-
-def admin_decline_violation(request, violation_id):
-    violation = get_object_or_404(Violation, id=violation_id)
-    student = get_object_or_404(Student, tupc_id=violation.student_id)
-
-    violation.status = 'Rejected'
-    violation.reviewed_at = timezone.now()
-    violation.save()
-
-    send_violation_email(
-        violation=violation,
-        student=student,
-        declined=True
-    )
-
-    # ✅ Add decline message (style as error)
-    messages.error(
-        request,
-        f"❌ Violation for {student.first_name} {student.last_name} was successfully declined."
-    )
-
-    return redirect('admin_violation')
 
 def mark_settlement_as_settled(request, settlement_id):
     settlement = get_object_or_404(ViolationSettlement, id=settlement_id)
