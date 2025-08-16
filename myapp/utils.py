@@ -1,62 +1,117 @@
 from django.core.mail import send_mail
 from django.conf import settings
+import os, json, datetime, tempfile, subprocess
+from django.conf import settings
+from django.core.files import File
+from django.db import connection
+from openpyxl import load_workbook
+from .models import GoodMoralRequest
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import escape
+import mimetypes
 
 
-def send_violation_email(violation, student, violation_count=None, settlement_type=None, declined=False):
+EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
+
+def _ordinal(n: int) -> str:
+    if n == 1: return "first"
+    if n == 2: return "second"
+    if n == 3: return "third"
+    return f"{n}th"
+
+def send_violation_email(request, violation, student, violation_count=None, settlement_type=None, declined=False):
     """
-    Sends an email to the student notifying them of their violation.
-    Supports both approved and declined notifications.
+    Sends an email to the student.
+    - Approved: attaches evidence images (no links in body).
+    - Declined: simple notice.
     """
+    to_addr = [student.email]
+    from_addr = settings.DEFAULT_FROM_EMAIL
+
     if declined:
-        # Declined case
         subject = "TUPC OSA: Violation Report Declined"
-        message = (
+        text_body = (
             f"Dear {student.first_name} {student.last_name},\n\n"
             f"The violation report filed under your name dated {violation.violation_date} "
             f"for '{violation.get_violation_type_display()}' has been reviewed and declined by the Office of Student Affairs.\n\n"
             f"No further action is required on your part.\n\n"
             f"Thank you."
         )
+        html_body = f"""
+            <p>Dear {escape(student.first_name)} {escape(student.last_name)},</p>
+            <p>The violation report filed under your name dated {escape(str(violation.violation_date))} for
+            "<strong>{escape(violation.get_violation_type_display())}</strong>" has been reviewed and <strong>declined</strong>
+            by the Office of Student Affairs.</p>
+            <p>No further action is required on your part.</p>
+            <p>Thank you.</p>
+        """
+        msg = EmailMultiAlternatives(subject, text_body, from_addr, to_addr)
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=False)
+        return
+
+    # --- Approved path (attachments only, no links) ---
+    ord_str = _ordinal(int(violation_count or 1))
+    subject = f"TUPC OSA: Notice of {ord_str.capitalize()} Violation"
+
+    evidence = []
+    if getattr(violation, "evidence_1", None):
+        evidence.append(("Evidence 1", violation.evidence_1))
+    if getattr(violation, "evidence_2", None):
+        evidence.append(("Evidence 2", violation.evidence_2))
+
+    # Body text without any URLs
+    if evidence:
+        evidence_line_text = "Evidence files are attached to this email."
+        evidence_line_html = "<p>Evidence files are attached to this email.</p>"
     else:
-        # Approved case
-        if violation_count == 1:
-            ordinal = "first"
-        elif violation_count == 2:
-            ordinal = "second"
-        elif violation_count == 3:
-            ordinal = "third"
-        else:
-            ordinal = f"{violation_count}th"
+        evidence_line_text = "No evidence files were attached."
+        evidence_line_html = "<p>No evidence files were attached.</p>"
 
-        subject = f"TUPC OSA: Notice of {ordinal.capitalize()} Violation"
-
-        # Collect evidence file names (if available)
-        evidence_files = []
-        if violation.evidence_1:
-            evidence_files.append(violation.evidence_1.name)  # relative path in media/
-        if violation.evidence_2:
-            evidence_files.append(violation.evidence_2.name)
-
-        evidence_text = "\n".join(evidence_files) if evidence_files else "No evidence attached."
-
-        message = (
-            f"Dear {student.first_name} {student.last_name},\n\n"
-            f"You have committed your {ordinal} violation on {violation.violation_date}.\n"
-            f"Violation Type: {violation.get_violation_type_display()}\n"
-            f"You are required to submit a {settlement_type} at the Office of Student Affairs to settle this violation.\n\n"
-            f"Evidence attached in the system:\n{evidence_text}\n\n"
-            f"Please visit the Office of Student Affairs for more details.\n\n"
-            f"Thank you."
-        )
-
-    # Send the email
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[student.email],
-        fail_silently=False
+    text_body = (
+        f"Dear {student.first_name} {student.last_name},\n\n"
+        f"You have committed your {ord_str} violation on {violation.violation_date}.\n"
+        f"Violation Type: {violation.get_violation_type_display()}\n"
+        f"You are required to submit a {settlement_type} at the Office of Student Affairs to settle this violation.\n\n"
+        f"{evidence_line_text}\n\n"
+        f"Please visit the Office of Student Affairs for more details.\n\n"
+        f"Thank you."
     )
+
+    html_body = (
+        f"<p>Dear {escape(student.first_name)} {escape(student.last_name)},</p>"
+        f"<p>You have committed your <strong>{escape(ord_str)}</strong> violation on {escape(str(violation.violation_date))}.<br>"
+        f"Violation Type: <strong>{escape(violation.get_violation_type_display())}</strong><br>"
+        f"You are required to submit a <strong>{escape(settlement_type)}</strong> at the Office of Student Affairs to settle this violation.</p>"
+        f"{evidence_line_html}"
+        f"<p>Please visit the Office of Student Affairs for more details.</p>"
+        f"<p>Thank you.</p>"
+    )
+
+    msg = EmailMultiAlternatives(subject, text_body, from_addr, to_addr)
+    msg.attach_alternative(html_body, "text/html")
+
+    # Attach images (respecting size cap)
+    for label, f in evidence:
+        try:
+            f.open("rb")
+            size = getattr(f.file, "size", None) or getattr(f, "size", None)
+            if size is None or size <= EMAIL_MAX_ATTACHMENT_SIZE:
+                content = f.read()
+                guessed = mimetypes.guess_type(f.name)[0] or "application/octet-stream"
+                filename = f.name.split("/")[-1]
+                msg.attach(filename, content, guessed)
+            # else: silently skip oversized files (no links in body)
+        except Exception:
+            # Skip if storage/backing fails; body already says "attached" or "no evidence"
+            pass
+        finally:
+            try:
+                f.close()
+            except Exception:
+                pass
+
+    msg.send(fail_silently=False)
 
 def send_status_email(to_email, approved=True, reason=None):
     subject = "Good Moral Certificate Request Status"
@@ -73,14 +128,6 @@ def send_status_email(to_email, approved=True, reason=None):
         fail_silently=False,
     )
     
-import os, json, datetime, tempfile, subprocess
-from django.conf import settings
-from django.core.files import File
-from django.db import connection
-from openpyxl import load_workbook
-from .models import GoodMoralRequest
-
-
 # ---------- helpers ----------
 def _get_osa_head_name():
     with connection.cursor() as cur:

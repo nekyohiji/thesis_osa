@@ -19,30 +19,41 @@ urlpatterns = [
     path('client_election/', views.client_election_view, name='client_election'),
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
     
-
-    
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
+    
     path('admin_community_service/', views.admin_community_service, name='admin_community_service'),
+    path('admin_community_service/<int:case_id>/', views.admin_view_community_service, name='admin_view_community_service'),
+    path('admin_community_service/<int:case_id>/update-total/', views.cs_update_total_required, name='cs_update_total_required'),
+    path('admin_community_service/<int:case_id>/scan/time-in/', views.cs_scan_time_in, name='cs_scan_time_in'),
+    path('admin_community_service/<int:case_id>/scan/time-out/', views.cs_scan_time_out, name='cs_scan_time_out'),
+    path('admin_community_service/create-or-adjust/', views.cs_create_or_adjust, name='cs_create_or_adjust'),
+    
     path('admin_election/', views.admin_election_view, name='admin_election'),
-    path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
+    
     path('admin_lostandfound/', views.admin_lostandfound_view, name='admin_lostandfound'),
     path('admin_report/', views.admin_report_view, name='admin_report'),
     path('admin_scholarships/', views.admin_scholarships_view, name='admin_scholarships'),
     path('admin_view_ackreq/<int:pk>/', views.admin_view_ackreq_view, name='admin_view_ackreq'),
-    path('admin_view_community_service/', views.admin_view_community_service, name='admin_view_community_service'),
+    
+    path('admin_clearance/', views.admin_clearance_view, name='admin_clearance'),
+    path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_goodmoral'),
+    
     path('admin_view_violation/', views.admin_view_violation, name='admin_view_violation'),
     path('admin_violation/', views.admin_violation_view, name='admin_violation'),
+    path('admin_violations/<int:violation_id>/apology/settled', views.mark_apology_settled, name='mark_apology_settled'),
+    path('admin_old_violation/', views.admin_old_violation_view, name='admin_old_violation'),
+    
     path('admin_student/', views.admin_student_view, name='admin_student'),
     path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
     path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
     path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
-    path('admin_clearance/', views.admin_clearance_view, name='admin_clearance'),
-    path('admin_old_violation/', views.admin_old_violation_view, name='admin_old_violation'),
+    
+
 
 
     
@@ -74,8 +85,8 @@ urlpatterns = [
     path('api/lostandfound/', views.lostandfound_feed_api, name='lostandfound_feed_api'),
     path('violation/<int:violation_id>/approve/', views.admin_approve_violation, name='admin_approve_violation'),
     path('violation/<int:violation_id>/decline/', views.admin_decline_violation, name='admin_decline_violation'),
-    path('settlement/<int:settlement_id>/settle/', views.mark_settlement_as_settled, name='mark_settlement_as_settled'),
-    path("community-service/<str:student_id>/update-total/", views.cs_update_total_required, name="cs_update_total_required"),
+    
+    
     
     
     path('admin_goodmoral/<int:pk>/', views.admin_view_goodmoral, name='admin_view_goodmoral'),
@@ -87,9 +98,7 @@ urlpatterns = [
     path("admin_ackreq/<int:pk>/accept/",  views.admin_ackreq_accept,  name="admin_ackreq_accept"),
     path("admin_ackreq/<int:pk>/decline/", views.admin_ackreq_decline, name="admin_ackreq_decline"),
     
-    path("admin/cs/<str:student_id>/check-in/", views.cs_check_in, name="cs_check_in"),
-    path("admin/cs/<str:student_id>/check-out/", views.cs_check_out, name="cs_check_out"),
-    path("admin/cs/<str:student_id>/total/", views.cs_update_total_required, name="cs_update_total_required"),
+
 
 
 

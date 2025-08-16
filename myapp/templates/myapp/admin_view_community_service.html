@@ -56,7 +56,7 @@
 
     <!-- Top Navigation -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <a href="{% url 'admin_CS' %}" class="btn text-light">
+      <a href="{% url 'admin_community_service' %}" class="btn text-light">
         <i class="bi bi-arrow-left text-light"></i> Back
       </a>
     </div>
@@ -80,24 +80,24 @@
 
               <div class="mb-2">
                 <label class="form-label">Student ID (TUPC-ID):</label>
-                <input type="text" class="form-control fw-bold text-center" value="TUPC-0374" readonly>
+                <input type="text" class="form-control fw-bold text-center" value="{{ case.student_id }}" readonly>
               </div>
 
               <div class="row mb-2">
                 <div class="col">
                   <label class="form-label">First Name:</label>
-                  <input type="text" class="form-control fw-bold text-center" value="LORD JAISSON" readonly>
+                  <input type="text" class="form-control fw-bold text-center" value="{{ case.first_name|upper }}" readonly>
                 </div>
                 <div class="col">
                   <label class="form-label">Last Name:</label>
-                  <input type="text" class="form-control fw-bold text-center" value="RIBERAL" readonly>
+                  <input type="text" class="form-control fw-bold text-center" value="{{ case.last_name|upper }}" readonly>
                 </div>
               </div>
 
               <div class="row mb-2">
                 <div class="col">
                   <label class="form-label">Course:</label>
-                  <input type="text" class="form-control fw-bold text-center" value="BET-COET" readonly>
+                  <input type="text" class="form-control fw-bold text-center" value="{{ case.program_course }}" readonly>
                 </div>
                 <div class="col">
                   <label class="form-label">Year Level:</label>
@@ -107,7 +107,7 @@
 
               <div class="mb-3">
                 <label class="form-label">Remaining Community Service Hours:</label>
-                <input type="text" class="form-control fw-bold text-center text-danger" value="2" readonly>
+                <input type="text" class="form-control fw-bold text-center text-danger" value="{{ case.remaining_hours }}" readonly>
               </div>
             </div>
           </div>
@@ -119,40 +119,39 @@
                 <i class="bi bi-exclamation-triangle"></i> Violations
                 <hr class="mt-1 mb-2">
               </div>
+              <div class="violations-scroll flex-grow-1" style="max-height:250px;overflow-y:auto;">
+                {% if violations %}
+                  {% for v in violations %}
+                    <div class="bg-light border rounded px-3 py-2 mb-2">
+                      <div class="d-flex justify-content-between flex-wrap">
+                        <div class="me-3">
+                          <small class="text-muted d-block mb-1">Type of Violation:</small>
+                          <span class="fw-semibold small">{{ v.get_violation_type_display }}</span>
 
-              <div class="violations-scroll flex-grow-1" style="max-height: 250px; overflow-y:auto;">
-                
-                <!-- Violation 1 -->
-                <div class="bg-light border rounded px-3 py-2 mb-2">
-                  <div class="d-flex justify-content-between flex-wrap">
-                    <div class="me-3">
-                      <small class="text-muted d-block mb-1">Type of Violation:</small>
-                      <span class="fw-semibold small">Haircut</span>
-                    </div>
-                    <div>
-                      <small class="text-muted d-block mb-1">Date:</small>
-                      <span class="fw-semibold small">April 30, 2023</span>
-                    </div>
-                  </div>
-                </div>
+                          {# Severity badge: uses v.get_severity_display() if available, else v.severity, else "Minor" #}
+                          {% with sev=v.severity %}
+                            <span class="badge ms-2 {% if sev|upper == 'MAJOR' %}bg-danger{% else %}bg-secondary{% endif %}">
+                              {% if v.get_severity_display %}{{ v.get_severity_display }}
+                              {% elif sev %}{{ sev|title }}
+                              {% else %}Minor{% endif %}
+                            </span>
+                          {% endwith %}
+                        </div>
 
-                <!-- Violation 2 -->
-                <div class="bg-light border rounded px-3 py-2 mb-2">
-                  <div class="d-flex justify-content-between flex-wrap">
-                    <div class="me-3">
-                      <small class="text-muted d-block mb-1">Type of Violation:</small>
-                      <span class="fw-semibold small">Late Submission</span>
+                        <div>
+                          <small class="text-muted d-block mb-1">Date:</small>
+                          <span class="fw-semibold small">{{ v.violation_date|date:"M d, Y" }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <small class="text-muted d-block mb-1">Date:</small>
-                      <span class="fw-semibold small">May 10, 2023</span>
-                    </div>
-                  </div>
-                </div>
-
+                  {% endfor %}
+                {% else %}
+                  <div class="text-muted small">No violations found for this student.</div>
+                {% endif %}
               </div>
             </div>
           </div>
+        
 
 
         
@@ -167,161 +166,269 @@
 
               <!-- Combo Box for Input of Community Service Hours -->
 
-          <div class="mb-3 d-flex align-items-center gap-2" style="max-width: 100%;">
-            <label class="mb-0 me-2"><strong>Input of Community Service Hours:</strong></label>
+          <div class="mb-3 d-flex align-items-center gap-2" style="max-width:100%;">
+            <label class="mb-0 me-2"><strong>Hours (Total Required):</strong></label>
      
-            <input 
-              type="number" 
-              id="communityHours" 
-              class="form-control form-control-sm text-center" 
-              value="0" 
-              min="0" 
-              max="10" 
-              step="0.5" 
-              style="padding: 0.25rem; font-size: 0.85rem; width: 60px; background-color: transparent; border: 1px solid #440207; color: #000;" 
-              disabled
-            >
+            <input type="number" id="cs_total_input" class="form-control form-control-sm text-center"
+            value="{{ case.total_required_hours }}" min="{{ case.hours_completed }}" step="0.5"
+            style="width:90px;background-color:transparent;border:1px solid #440207;color:#000;" disabled>
 
-            <!-- Buttons -->
-            <button id="editBtn" class="btn btn-sm text-light" style="background-color: #440207;">Edit</button>
-            <button id="saveBtn" class="btn btn-sm btn-success d-none">Save</button>
-            <button id="cancelBtn" class="btn btn-sm btn-secondary d-none">Cancel</button>
+            <button id="cs_edit_btn" class="btn btn-sm text-light" style="background-color:#440207;">Edit</button>
+            <button id="cs_save_btn" class="btn btn-sm btn-success d-none">Save</button>
+            <button id="cs_cancel_btn" class="btn btn-sm btn-secondary d-none">Cancel</button>
+            <span class="ms-3 small">
+              <strong>Completed:</strong> {{ case.hours_completed }}h &nbsp;|&nbsp;
+              <strong>Remaining:</strong> <span id="cs_remaining_badge" class="text-danger">{{ case.remaining_hours }}h</span>
+            </span>
           </div>
-
-          <p><strong>Total Hours to Complete:</strong> <span class="text-danger"><strong>10 hours</strong></span></p>
-
-
-
-              <div style="max-height: 250px; overflow-y: auto;">
-                <!-- Log Entry 1 -->
-                <div class="bg-light border rounded px-5 py-2 mb-2" style="border:2px solid #440207;">
-                  <div class="row align-items-center">
-                    <div class="col-3">
-                      <small class="text-muted d-block mb-1">Date:</small>
-                      <span class="fw-semibold small">June 18, 2025</span>
-                    </div>
-                    <div class="col-3">
-                      <small class="text-muted d-block mb-1">Time In:</small>
-                      <span class="fw-semibold small">8:00 AM</span>
-                    </div>
-                    <div class="col-3">
-                      <small class="text-muted d-block mb-1">Time Out:</small>
-                      <span class="fw-semibold small">5:00 PM</span>
-                    </div>
-                    <div class="col-3 text-end">
-                      <span class="badge bg-success">Official</span>
-                    </div>
+          <div style="max-height: 250px; overflow-y:auto;">
+            {% for log in logs %}
+              <div class="bg-light border rounded px-4 py-2 mb-2" style="border:2px solid #440207;">
+                <div class="row align-items-center">
+                  <div class="col-3">
+                    <small class="text-muted d-block mb-1">Date:</small>
+                    <span class="fw-semibold small">{{ log.check_in_at|date:"M d, Y" }}</span>
                   </div>
-                </div>
-
-                <!-- Log Entry 2 -->
-                <div class="bg-light border rounded px-5 py-2 mb-2">
-                  <div class="row align-items-center">
-                    <div class="col-3">
-                      <small class="text-muted d-block mb-1">Date:</small>
-                      <span class="fw-semibold small">June 19, 2025</span>
-                    </div>
-                    <div class="col-3">
-                      <small class="text-muted d-block mb-1">Time In:</small>
-                      <span class="fw-semibold small">8:00 AM</span>
-                    </div>
-                    <div class="col-3">
-                      <small class="text-muted d-block mb-1">Time Out:</small>
-                      <span class="fw-semibold small">5:00 PM</span>
-                    </div>
-                    <div class="col-3 text-end">
+                  <div class="col-3">
+                    <small class="text-muted d-block mb-1">Time In:</small>
+                    <span class="fw-semibold small">{{ log.check_in_at|date:"h:i A" }}</span>
+                  </div>
+                  <div class="col-3">
+                    <small class="text-muted d-block mb-1">Time Out:</small>
+                    <span class="fw-semibold small">
+                      {% if log.check_out_at %}{{ log.check_out_at|date:"h:i A" }}{% else %}—{% endif %}
+                    </span>
+                  </div>
+                  <div class="col-3 text-end">
+                    {% if log.check_out_at %}
+                      <span class="badge bg-success">{{ log.hours }}h</span>
+                    {% else %}
                       <span class="badge bg-warning text-dark">On Going</span>
-                    </div>
+                    {% endif %}
                   </div>
                 </div>
               </div>
-
-              <!-- Time Buttons -->
-              <div class="d-flex justify-content-center gap-3 mt-3">
-                <button class="btn btn-success px-4">
-                  <i class="bi bi-box-arrow-in-right"></i> Log Time In
-                </button>
-                <button class="btn btn-danger px-4">
-                  <i class="bi bi-box-arrow-left"></i> Log Time Out
-                </button>
+            {% empty %}
+              <div class="text-muted small">No logs yet.</div>
+            {% endfor %}
+          </div>
+          <!-- Time Buttons -->
+          <div class="d-flex justify-content-center gap-3 mt-3">
+            <button class="btn btn-success px-4" id="btn_time_in">
+              <i class="bi bi-box-arrow-in-right"></i> Log Time In
+            </button>
+            <button class="btn btn-danger px-4" id="btn_time_out">
+              <i class="bi bi-box-arrow-left"></i> Log Time Out
+            </button>
+          </div>
+          <!-- Scanner Modal -->
+          <div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content border">
+                <div class="modal-header">
+                  <h5 class="modal-title">Scan ID</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p class="mb-2 small text-muted">Please scan the student ID now. We will parse the TUPC ID before the surname.</p>
+                  <input type="text" id="scanInput" class="form-control" placeholder="Focus here and scan..." autocomplete="off">
+                  <div class="text-muted small mt-2">Expected sample: <code>TUPC-22-0374 RIBERAL LORD BET-COET 4351</code></div>
+                  <div id="scanError" class="text-danger small mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button id="scanSubmit" type="button" class="btn btn-primary">Submit</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <hr>
-
-        <!-- Certificate Button -->
-        <div class="row">
-          <div class="col text-end mt-3">
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#generateCertModal">
-              <i class="bi bi-file-earmark-text"></i> Generate Community Service Certificate
-            </button>
-          </div>
-        </div>
+      </hr>
       </div>
     </div>
-
-    <!-- Generate Certificate Modal -->
-    <div class="modal fade" id="generateCertModal" tabindex="-1" aria-labelledby="generateCertModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border">
-          <div class="modal-header">
-            <h5 class="modal-title text-dark" id="generateCertModalLabel"></h5>
-          </div>
-          <div class="modal-body text-center">
-            Are you sure you want to <strong>generate the Community Service Certificate?</strong>
-          </div>
-          <div class="modal-footer justify-content-center">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <a href="#" class="btn btn-primary">Generate</a>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+  <script>
+  (function () {
+    // ---------- CSRF ----------
+    function getCookie(name) {
+      const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return m ? m.pop() : '';
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // ---------- Hours editor ----------
+    const totalInput = document.getElementById('cs_total_input');
+    const btnEdit = document.getElementById('cs_edit_btn');
+    const btnSave = document.getElementById('cs_save_btn');
+    const btnCancel = document.getElementById('cs_cancel_btn');
+    const remainingBadge = document.getElementById('cs_remaining_badge');
+    const completedDisplay = document.getElementById('completed_display');
+    const remainingDisplay = document.getElementById('remaining_display');
+
+    let originalTotal = totalInput ? totalInput.value : null;
+
+    function toggleEdit(on) {
+      totalInput.disabled = !on;
+      btnEdit.classList.toggle('d-none', on);
+      btnSave.classList.toggle('d-none', !on);
+      btnCancel.classList.toggle('d-none', !on);
+      if (on) totalInput.focus();
+    }
+
+    if (btnEdit) btnEdit.addEventListener('click', () => toggleEdit(true));
+
+    if (btnCancel) btnCancel.addEventListener('click', () => {
+      totalInput.value = originalTotal;
+      toggleEdit(false);
+    });
+
+    if (btnSave) btnSave.addEventListener('click', () => {
+      const form = new FormData();
+      form.append('total', totalInput.value);
+      fetch("{% url 'cs_update_total_required' case.id %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrftoken },
+        body: form
+      })
+        .then(r => r.ok ? r.json() : r.json().then(x => Promise.reject(x)))
+        .then(data => {
+          originalTotal = data.total_required_hours;
+          totalInput.value = data.total_required_hours;
+          remainingBadge.textContent = data.remaining_hours + 'h';
+          if (remainingDisplay) remainingDisplay.value = data.remaining_hours + 'h';
+          if (completedDisplay) completedDisplay.textContent = data.hours_completed;
+          toggleEdit(false);
+        })
+        .catch(err => {
+          alert(err && err.error ? err.error : 'Failed to save total hours.');
+        });
+    });
+
+    // ---------- Scanner flow ----------
+    const btnIn  = document.getElementById('btn_time_in');
+    const btnOut = document.getElementById('btn_time_out');
+    const scanModalEl = document.getElementById('scanModal');
+    const scanInput = document.getElementById('scanInput');
+    const scanSubmit = document.getElementById('scanSubmit');
+    const scanError = document.getElementById('scanError');
+
+    const expectedId = "{{ case.student_id }}".toUpperCase();
+    const hasOpenSession = {{ open_log|yesno:"true,false" }};
+    const isClosed = {{ case.is_closed|yesno:"true,false" }};
+
+    // helper to hard-disable buttons
+    function setDisabled(btn, disabled) {
+      if (!btn) return;
+      btn.disabled = disabled;
+      btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+      btn.classList.toggle('disabled', !!disabled);
+      if (disabled) btn.style.pointerEvents = 'none'; else btn.style.pointerEvents = '';
+    }
+
+    // initial states: In disabled if open/closed; Out disabled if no open
+    setDisabled(btnIn, hasOpenSession || isClosed);
+    setDisabled(btnOut, !hasOpenSession);
+
+    let scanAction = null; // 'in' | 'out'
+    let submitting = false;
+
+    function extractTUPC(raw) {
+      const m = (raw || '').match(/(TUPC-\d{2}-\d+)(?=\s|$)/i);
+      return m ? m[1].toUpperCase() : null;
+    }
+
+    function showScanModal(action) {
+      scanAction = action;
+      scanError.classList.add('d-none');
+      scanInput.value = '';
+      const modal = new bootstrap.Modal(scanModalEl);
+      modal.show();
+    }
+
+    // Auto-focus input when modal shown
+    scanModalEl.addEventListener('shown.bs.modal', function () {
+      scanInput.focus();
+    });
+
+    // If modal closed without a successful scan, re-enable Time In only if still allowed
+    scanModalEl.addEventListener('hidden.bs.modal', function () {
+      submitting = false;
+      // if there wasn't an open session when we opened the modal, allow trying again
+      if (!hasOpenSession && !isClosed) setDisabled(btnIn, false);
+    });
+
+    function submitScan() {
+      if (submitting) return;
+      submitting = true;
+      scanSubmit && setDisabled(scanSubmit, true);
+
+      const parsed = extractTUPC(scanInput.value);
+      if (!parsed) {
+        scanError.textContent = "Couldn’t read a TUPC ID. Scan again.";
+        scanError.classList.remove('d-none');
+        scanInput.focus();
+        submitting = false;
+        scanSubmit && setDisabled(scanSubmit, false);
+        return;
+      }
+      if (parsed !== expectedId) {
+        scanError.textContent = `Scanned ID ${parsed} does not match case ID ${expectedId}.`;
+        scanError.classList.remove('d-none');
+        scanInput.focus();
+        submitting = false;
+        scanSubmit && setDisabled(scanSubmit, false);
+        return;
+      }
+
+      const form = new FormData();
+      form.append('scanned', scanInput.value);
+
+      const url = (scanAction === 'in')
+        ? "{% url 'cs_scan_time_in' case.id %}"
+        : "{% url 'cs_scan_time_out' case.id %}";
+
+      fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: form })
+        .then(r => r.ok ? r.json() : r.json().then(x => Promise.reject(x)))
+        .then(() => {
+          // Success: close modal and reload to refresh log/buttons
+          const modal = bootstrap.Modal.getInstance(scanModalEl);
+          if (modal) modal.hide();
+          window.location.reload();
+        })
+        .catch(err => {
+          scanError.textContent = (err && err.error) ? err.error : 'Scan failed.';
+          scanError.classList.remove('d-none');
+          scanInput.focus();
+          submitting = false;
+          scanSubmit && setDisabled(scanSubmit, false);
+        });
+    }
+
+    // Button handlers with guards
+    if (btnIn) {
+      btnIn.addEventListener('click', () => {
+        if (btnIn.disabled) return;          // hard guard
+        setDisabled(btnIn, true);            // prevent double-clicks
+        showScanModal('in');
+      });
+    }
+    if (btnOut) {
+      btnOut.addEventListener('click', () => {
+        if (btnOut.disabled) return;         // hard guard
+        showScanModal('out');
+      });
+    }
+    if (scanSubmit) scanSubmit.addEventListener('click', submitScan);
+    if (scanInput) scanInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submitScan(); }
+    });
+  })();
+  </script>
 
 
-<script>
-  const input = document.getElementById('communityHours');
-  const editBtn = document.getElementById('editBtn');
-  const saveBtn = document.getElementById('saveBtn');
-  const cancelBtn = document.getElementById('cancelBtn');
-
-  let originalValue = input.value;
-
-  editBtn.addEventListener('click', () => {
-    input.disabled = false;
-    input.focus();
-    editBtn.classList.add('d-none');
-    saveBtn.classList.remove('d-none');
-    cancelBtn.classList.remove('d-none');
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    input.value = originalValue;
-    input.disabled = true;
-    editBtn.classList.remove('d-none');
-    saveBtn.classList.add('d-none');
-    cancelBtn.classList.add('d-none');
-  });
-
-  saveBtn.addEventListener('click', () => {
-    originalValue = input.value;
-    input.disabled = true;
-    editBtn.classList.remove('d-none');
-    saveBtn.classList.add('d-none');
-    cancelBtn.classList.add('d-none');
-    // Optional: Add logic to update total hours or save to backend
-  });
-</script>
-
-
-  
 </body>
 </html>

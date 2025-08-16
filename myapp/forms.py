@@ -3,6 +3,8 @@ from .models import Violation, GoodMoralRequest, IDSurrenderRequest
 from django.core.exceptions import ValidationError
 import re
 from datetime import date
+from decimal import Decimal
+from django.core.validators import MinLengthValidator
 
 class ViolationForm(forms.ModelForm):
     class Meta:
@@ -139,3 +141,50 @@ class IDSurrenderRequestForm(forms.ModelForm):
         if not email:
             raise ValidationError("Email is required.")
         return email
+    
+class CSCreateOrAdjustForm(forms.Form):
+    last_name = forms.CharField(
+        label="Last Name",
+        max_length=50,
+        validators=[MinLengthValidator(1)],
+    )
+    first_name = forms.CharField(
+        label="First Name",
+        max_length=50,
+        validators=[MinLengthValidator(1)],
+    )
+    middle_initial = forms.CharField(
+        label="Middle Initial",
+        max_length=10,
+        required=False,
+    )
+    extension_name = forms.CharField(
+        label="Ext",
+        max_length=10,
+        required=False,
+    )
+    student_id = forms.CharField(
+        label="Student ID",
+        max_length=20,
+        validators=[MinLengthValidator(1)],
+    )
+    program_course = forms.CharField(
+        label="Program",
+        max_length=100,
+        validators=[MinLengthValidator(1)],
+    )
+    hours = forms.DecimalField(
+        label="Hours (Total Required)",
+        max_digits=5,
+        decimal_places=1,
+        min_value=Decimal("0.5"),
+        help_text="Set the TOTAL required hours (0.5 increments).",
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        # optional: strip spaces from text fields
+        for f in ("last_name","first_name","middle_initial","extension_name","student_id","program_course"):
+            if f in cleaned and isinstance(cleaned[f], str):
+                cleaned[f] = cleaned[f].strip()
+        return cleaned

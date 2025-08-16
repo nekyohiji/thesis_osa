@@ -121,7 +121,7 @@
 <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
 <!--Css-->
-    <style>
+<style>
     
 
       /*///// MODAL COMMON STYLES */
@@ -268,7 +268,7 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background-color: rgba(0, 0, 0, 0.4);
+        background-color: rgba(0, 0, 0, 0.45);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -278,28 +278,140 @@
 
 
 
+    .nav-tabs .nav-link {
+      color: #0000006c !important; /* or white if dark bg */
+      opacity: 1 !important;
+      border-radius: 3px;
+      font-size: 0.8rem; 
+    }
 
-      /* Active tab background and text color */
-.nav-tabs .nav-link.active {
-  background-color: #ffffffff !important; /* Dark red for active */
-  color: black !important;
-  border-bottom:#5e0000;
-}
-
-/* Inactive tab styles */
-.nav-tabs .nav-link {
-  background-color: #5e0000;
-  color: white;
-  border-color: #5e0000;
-}
+    .nav-tabs .nav-link.active {
+      font-weight: bold; 
+      background-color: #5e0000; 
+      color: #000000ff !important;
+      font-size: 0.9rem; 
+      border-bottom: 3px solid  #5e0000;
+    }
 
 
-.nav-tabs .nav-link:hover {
-  background-color: #770000;
-  color: white;
-}
+    .kebab-menu div {
+      transition: background-color 0.2s, color 0.2s;
+    }
 
-  </style>
+    .kebab-menu div:hover {
+      background-color: #f0f0f0; /* Light gray background on hover */
+      color: #000; /* Optional: change text color on hover */
+    }
+
+
+
+    /* Change Password Button Styles */
+    .change-password-btn {
+      background-color: #440207;
+      color: #fff;
+      border: none;
+    }
+
+    .change-password-btn:hover {
+      background-color: #5e0000; /* Slightly lighter/darker red */
+      color: #fff;
+    }
+
+
+    /* Modal Inputs */
+    #changePasswordModal .form-control {
+      padding-right: 2.5rem; /* space for the eye icon */
+      border: 0.5px solid #250104ff; /* your custom border */
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    /* Focus state for inputs */
+    #changePasswordModal .form-control:focus {
+      border-color: #250104ff;; /* slightly darker when focused */
+      box-shadow: none;
+    }
+
+    /* Eye icon */
+    #changePasswordModal .fa-eye {
+      position: absolute;
+      top: 50%;
+      right: 0.75rem;
+      transform: translateY(-50%);
+      cursor: pointer;
+      display: none; /* show only when needed */
+      color: #250104ff;; /* match your border color */
+    }
+
+    /* Show eye icon when input has value */
+    #changePasswordModal .form-control:not(:placeholder-shown) + .fa-eye {
+      display: block;
+    }
+
+    /* Labels */
+    #changePasswordModal .form-label {
+      font-weight: 500;
+      color: #250104ff;; /* match the border color */
+    }
+
+
+    /* Modal Inputs */
+    #editAccountModal .form-control {
+      padding: 0.5rem 0.75rem;
+      border: 0.5px solid #250104ff;; /* thin purple/dark-red border */
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    /* Focus state for inputs */
+    #editAccountModal .form-control:focus {
+      border-color: #88040f; /* slightly darker on focus */
+      box-shadow: none;
+    }
+
+    /* Labels */
+    #editAccountModal .form-label {
+      font-weight: 500;
+      color: #250104ff;; /* match the border color */
+    }
+
+    /* Modal header icon */
+    #editAccountModal .modal-title i {
+      color: #250104ff;; /* same as border color */
+    }
+
+    /* Change Password Button */
+    #editAccountModal .change-password-btn {
+      background-color:#250104ff;;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+
+    #editAccountModal .change-password-btn:hover {
+      background-color: #88040f;
+    }
+
+    /* Modal Footer Buttons */
+    #editAccountModal .modal-footer .btn-success {
+      background-color: #440207;
+      border: 0.5px solid #440207;
+      color: #ffffffff;
+    }
+
+    #editAccountModal .modal-footer .btn-success:hover {
+      background-color: #88040f;
+      border-color: #88040f;
+    }
+
+    #editAccountModal .modal-footer .btn-secondary {
+      border-radius: 6px;
+    }
+
+</style>
 
 
 
@@ -318,78 +430,88 @@
 
 
 
-    
-<div id="messageModal" class="message-modal">
-    <div class="modal-header">
-        <span id="messageModalTitle"></span>
-        <button type="button" class="btn-close" onclick="closeMessageModal()"></button>
+<!-- Confirm Deactivate Modal -->
+<div class="modal fade" id="confirmDeactivateModal" tabindex="-1" aria-labelledby="confirmDeactivateLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"> <!-- Added modal-dialog-centered -->
+    <div class="modal-content">
+      <div class="modal-header">
+      </div>
+      <div class="modal-body text-center">
+        <p id="confirmDeactivateMessage">Are you sure you want to deactivate this account?</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn text-light" style="background-color: #440207;" id="confirmDeactivateBtn">Deactivate</button>
+      </div>
     </div>
-    <div class="modal-body">
-        <p id="messageModalBody"></p>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="close-btn" onclick="closeMessageModal()">Close</button>
-    </div>
+  </div>
 </div>
 
 
+<!-- Edit Account Modal -->
+<div class="modal fade" id="editAccountModal" tabindex="-1" aria-labelledby="editAccountLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header ">
+        <h5 class="modal-title"  id="editAccountLabel">
+          <i class="fas fa-user-edit me-2"></i><strong> Edit Account </strong>
+        </h5>
+      </div>
+      <div class="modal-body">
+        <form id="editAccountForm">
+          <div class="mb-3">
+            <label for="editFullName" class="form-label">Full Name:</label>
+            <input type="text" class="form-control" id="editFullName" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email:</label>
+            <input type="text" class="form-control" id="editEmail" disabled>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Position:</label>
+            <input type="text" class="form-control" id="editRole" disabled>
+          </div>
 
-
-
-<div id="confirmDeactivateModal" class="confirm-modal">
-    <div class="modal-header">
-        <span class="text-light">Confirm Deactivation</span>
-        <button type="button" class="btn-close" onclick="closeConfirmModal()"></button>
+          <!-- Change Password Button -->
+          <div class="d-grid mt-3">
+            <button type="button" class="btn change-password-btn" data-bs-toggle="modal" data-bs-target="#confirmChangePasswordModal">
+              <i class="fas fa-key me-2"></i>Change Password
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn text-light"  style="background-color: #440207;" id="saveEditBtn">Save</button>
+      </div>
     </div>
-    <div class="modal-body">
-        <p id="confirmDeactivateMessage"></p>
-    </div>
-    <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">No</button>
-        <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Yes</button>
-    </div>
+  </div>
 </div>
+
+
+<!-- Confirm Change Password Modal -->
+<div class="modal fade" id="confirmChangePasswordModal" tabindex="-1" aria-labelledby="confirmChangePasswordLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+      </div>
+      <div class="modal-body text-center">
+        <p>Are you sure you want to change the password for this account?</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn text-light" style="background-color: #440207;"  id="proceedChangePasswordBtn">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 </head>
 
 
-
-
-{# // Account Details Modal #}
-    <div id="accountDetailsModal" class="account-details-modal">
-      <div class="modal-box">
-        <!-- HEADER -->
-        <div class="modal-header text-light">
-          <span>
-            <h4><i class="fas fa-user-circle me-2"></i><b>Account Details</b></h4>
-          </span>
-        </div>
-
-        <!-- BODY -->
-        <div class="modal-body">
-          <p><strong>Full Name:</strong> <span id="detailFullName"></span></p>
-          <p><strong>Email:</strong> <span id="detailEmail"></span></p>
-          <p><strong>Position:</strong> <span id="detailPosition"></span></p>
-        </div>
-
-        <!-- FOOTER -->
-        <div class="modal-footer justify-content-center">
-          <button type="button" class="deactivate-from-details-btn" id="deactivateFromDetailsBtn" style="display: none;" onclick="confirmDeactivate()">Deactivate</button>
-          <button type="button" class="close-btn" onclick="closeAccountDetailsModal()">Close</button>
-        </div>
-      </div>
-    </div>
-
-
-
-
-
-
-
 <div class="main-content" style="margin-left: 250px; padding: 30px; min-height: 100vh; background-color: #f8f9fa; overflow-y: auto;">
-
-
-
   
   <div class="election-header text-white mt-2"
       style="background: linear-gradient(to right bottom, #000000, #440207,rgb(104, 3, 12));
@@ -419,8 +541,8 @@
         <h6 class="mb-0"><i class="fas fa-user-plus me-2"></i><b> Create New Account</b></h6>
       </div>
 
-      <div class="card-body px-4 py-3">
-        <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 20px;">
+      <div class="card-body px-4 py-3" style="min-height: 400px;">
+        <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 20px; min-height: 400px;">
           {% csrf_token %}
           <div class="row g-4">
             <div class="col-md-6">
@@ -475,7 +597,7 @@
                 <label for="otp" class="form-label small">Enter OTP sent to email:</label>
                 <div class="input-group input-group-sm mb-2">
                   <input type="text" id="otp" class="form-control" maxlength="6" placeholder="6-digit OTP">
-                  <button type="button" class="btn btn-success btn-sm" id="verifyOtpBtn">Verify</button>
+                  <button type="button" class="btn text-light btn-sm" style="background-color: #440207;" id="verifyOtpBtn">Verify</button>
                 </div>
               </div>
             </div>
@@ -499,21 +621,21 @@
 <!-- Right Side: Accounts -->
 <div class="col-lg-6">
   <div class="card shadow-sm rounded-4 mb-4">
-    <div class="card-header text-white py-2 px-4" style="background-color: #5e0000;">
-      <h6 class="mb-0"><i class="fas fa-users me-2"></i><b> Accounts</b></h6>
+    <div class="card-header py-2 px-4" style="background-color: #440207;">
+      <h6 class="mb-0  text-white"><i class="fas fa-users me-2"></i><b> Accounts</b></h6>
     </div>
-    <div class="card-body" style="background-color: rgba(255, 255, 255, 255); padding: 20px;">
+    <div class="card-body" style="background-color: rgba(255, 255, 255, 255);  border-radius: 6px; min-height: 200px; max-height: 500px; overflow-y: auto;">
       
       <!-- Tabs Navigation -->
       <ul class="nav nav-tabs nav-fill mb-3" id="accountTabs" role="tablist">
         <li class="nav-item" role="presentation">
-          <button class="nav-link active small" style="background-color: #5e0000; " id="active-tab" data-bs-toggle="tab" data-bs-target="#activeAccountsTab" type="button" role="tab" aria-controls="activeAccountsTab" aria-selected="true">
-            <i class="fas fa-check-circle me-1"></i> Active
+          <button class="nav-link active small "  id="active-tab" data-bs-toggle="tab" data-bs-target="#activeAccountsTab" type="button" role="tab" aria-controls="activeAccountsTab" aria-selected="true">
+            <i class="fas fa-check-circle me-1 "></i> Active Accounts
           </button>
         </li>
         <li class="nav-item" role="presentation">
-          <button class="nav-link small" style="background-color: #5e0000; " id="deactivated-tab" data-bs-toggle="tab" data-bs-target="#deactivatedAccountsTab" type="button" role="tab" aria-controls="deactivatedAccountsTab" aria-selected="false">
-            <i class="fas fa-times-circle me-1"></i> Deactivated
+          <button class="nav-link small"   id="deactivated-tab" data-bs-toggle="tab" data-bs-target="#deactivatedAccountsTab" type="button" role="tab" aria-controls="deactivatedAccountsTab" aria-selected="false">
+            <i class="fas fa-times-circle me-1"></i> Deactivated Accounts
           </button>
         </li>
       </ul>
@@ -521,8 +643,8 @@
 
       
       <!-- Tabs Content -->
-      <div class="tab-content p-3" style="background-color:rgba(0, 0, 0, 0.04); border-radius: 6px; min-height: 200px;">
-        
+<div class="tab-content p-3" 
+     style="background-color: rgba(0, 0, 0, 0.04); border-radius: 6px; min-height: 200px; max-height: 500px; overflow-y: auto;">        
         <!-- Active Accounts -->
         <div class="tab-pane fade show active" id="activeAccountsTab" role="tabpanel" aria-labelledby="active-tab">
           <div id="activeAccountsList" class="text-muted text-center">
@@ -582,26 +704,147 @@
 
 /* Start here magcode*/
 
+
+
+ // EDIT AND CHANGE PASSWORD
+  document.getElementById('proceedChangePasswordBtn').addEventListener('click', function() {
+   
+    bootstrap.Modal.getInstance(document.getElementById('confirmChangePasswordModal')).hide();
+
+
+    const changePasswordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    changePasswordModal.show();
+  });
+
+ 
+  const changePasswordHtml = `
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+          <h5 class="modal-title" id="changePasswordLabel">
+            <i class="fas fa-key me-2"></i> Create New Password
+          </h5>
+          </div>
+          <div class="modal-body">
+
+          <form id="changePasswordForm">
+            <!-- New Password -->
+            <div class="mb-3 position-relative">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-control" style="padding-right: 2.5rem;" placeholder="Enter new password">
+              <i class="fas fa-eye" style="
+                position: absolute;
+                top: 75%;
+                right: 0.75rem;
+                transform: translateY(-50%);
+                cursor: pointer;
+                display: none;
+              "></i>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-3 position-relative">
+              <label class="form-label">Confirm Password</label>
+              <input type="password" class="form-control" style="padding-right: 2.5rem;" placeholder="Confirm new password">
+              <i class="fas fa-eye" style="
+                position: absolute;
+                top: 75%;
+                right: 0.75rem;
+                transform: translateY(-50%);
+                cursor: pointer;
+                display: none;
+              "></i>
+            </div>
+          </form>
+
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn text-light" style="background-color: #440207;"  id="savePasswordBtn">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', changePasswordHtml);
+
+  // Toggle password visibility
+  document.querySelectorAll('.position-relative').forEach(container => {
+    const input = container.querySelector('input');
+    const eye = container.querySelector('i.fas.fa-eye');
+
+    // Show/hide eye on input
+    input.addEventListener('input', () => {
+      eye.style.display = input.value.length > 0 ? 'block' : 'none';
+      if(input.value.length === 0) {
+        input.type = 'password';
+        eye.classList.remove('fa-eye-slash');
+        eye.classList.add('fa-eye');
+      }
+    });
+
+    // Toggle password visibility
+    eye.addEventListener('click', () => {
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.classList.remove('fa-eye');
+        eye.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        eye.classList.remove('fa-eye-slash');
+        eye.classList.add('fa-eye');
+      }
+    });
+  });
+
+  // password validation
+  document.addEventListener('click', function() {
+    const saveBtn = document.getElementById('savePasswordBtn');
+    if (saveBtn) {
+      saveBtn.onclick = function() {
+        const newPassword = document.getElementById('newPassword').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+        if (!newPassword || !confirmPassword) {
+          alert('Please fill in both fields.');
+          return;
+        }
+        if (newPassword !== confirmPassword) {
+          alert('Passwords do not match.');
+          return;
+        }
+
+        alert('Password changed successfully!');
+        document.getElementById('changePasswordForm').reset();
+        bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+      };
+    }
+  });
+
+
+
+
+
+ // HIDE PASSWORD IN CREATE ACCOUNT
   function setupPasswordField(fieldId) {
     const field = document.getElementById(fieldId);
-    const iconWrapper = field.nextElementSibling; // the <span>
+    const iconWrapper = field.nextElementSibling; 
     const icon = iconWrapper.querySelector('i');
 
-    // Hide eye initially
     iconWrapper.style.display = 'none';
 
-    // Show eye only if there's input
     field.addEventListener('input', () => {
       if (field.value.length > 0) {
         iconWrapper.style.display = 'inline-block';
       } else {
         iconWrapper.style.display = 'none';
-        field.type = 'password'; // reset to hidden
-        icon.classList.replace('fa-eye-slash', 'fa-eye'); // reset icon
+        field.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye'); 
       }
     });
 
-    // Toggle password visibility
+    
     iconWrapper.addEventListener('click', () => {
       if (field.type === 'password') {
         field.type = 'text';
@@ -613,7 +856,7 @@
     });
   }
 
-  // Initialize both
+  
   setupPasswordField('createPassword');
   setupPasswordField('confirmPassword');
 
@@ -738,114 +981,214 @@
     });
   });
 
-  function fetchAndDisplayAccounts() {
-    fetch('/get-accounts/')
-      .then(res => res.json())
-      .then(data => {
-        const activeList = document.getElementById('activeAccountsList');
-        const deactivatedList = document.getElementById('deactivatedAccountsList');
 
-        activeList.innerHTML = '';
-        deactivatedList.innerHTML = '';
 
-        if (data.active.length === 0) {
-          activeList.innerHTML = `<p class="text-center text-muted mt-3">No active accounts yet.</p>`;
-        } else {
-          data.active.forEach(account => {
-            const div = document.createElement('div');
-            div.className = 'account-card';
-            div.innerHTML = `
-              <div class="card-body" onclick="showAccountDetails('${account.full_name}', '${account.email}', '${account.role}', 'active')">
-                <h5 class="card-title">${account.full_name}</h5>
-                <p class="card-text">${account.email}</p>
-                <p class="card-text">${account.role}</p>
+
+
+
+    let selectedEmailToDeactivate = "";
+
+    // Fetch and display accounts
+    function fetchAndDisplayAccounts() {
+      fetch('/get-accounts/')
+        .then(res => res.json())
+        .then(data => {
+          const activeList = document.getElementById('activeAccountsList');
+          const deactivatedList = document.getElementById('deactivatedAccountsList');
+
+          // Clear lists
+          activeList.innerHTML = '';
+          deactivatedList.innerHTML = '';
+
+        function createCard(account, status) {
+        const div = document.createElement('div');
+        div.className = `card mb-3 shadow-sm ${status === 'deactivated' ? 'border-danger' : ''}`;
+          div.style.cursor = 'default';
+          div.style.fontSize = '0.8rem';
+          div.style.textAlign = 'left';
+          div.style.position = 'relative';
+          div.style.padding = '2px';
+
+        // Store account info in data attributes
+        div.dataset.fullName = account.full_name;
+        div.dataset.email = account.email;
+        div.dataset.role = account.role;
+        
+
+        div.innerHTML = `
+          <div class="card-body p-2">
+            <div class="row align-items-center">
+              <!-- Account Details -->
+              <div class="col-md-10 col-12">
+                <div class="row mb-1">
+                  <div class="col-4 col-sm-3 text-end fw-bold">Full Name:</div>
+                  <div class="col-8 col-sm-9 ${status === 'deactivated' ? 'text-danger' : ''} text-truncate">${account.full_name}</div>
+                </div>
+                <div class="row mb-1">
+                  <div class="col-4 col-sm-3 text-end fw-bold">Email:</div>
+                  <div class="col-8 col-sm-9 text-truncate">${account.email}</div>
+                </div>
+                <div class="row mb-0">
+                  <div class="col-4 col-sm-3 text-end fw-bold">Position:</div>
+                  <div class="col-8 col-sm-9"><strong>${account.role}</strong></div>
+                </div>
               </div>
-            `;
-            activeList.appendChild(div);
-          });
-        }
 
-        if (data.deactivated.length === 0) {
-          deactivatedList.innerHTML = `<p class="text-center text-muted mt-3">No deactivated accounts yet.</p>`;
-        } else {
-          data.deactivated.forEach(account => {
-            const div = document.createElement('div');
-            div.className = 'account-card';
-            div.innerHTML = `
-              <div class="card-body" onclick="showAccountDetails('${account.full_name}', '${account.email}', '${account.role}', 'deactivated')">
-                <h5 class="card-title">${account.full_name}</h5>
-                <p class="card-text">${account.email}</p>
-              </div>
-            `;
-            deactivatedList.appendChild(div);
-          });
-        }
-      });
-  }
+              <!-- Kebab Button for Active Accounts -->
+              ${status === 'active' ? `
+              <div class="col-md-2 col-12 d-flex justify-content-md-end justify-content-start mt-2 mt-md-0">
+                <div class="position-relative">
+                  <span class="kebab-btn fs-5" style="cursor:pointer;" onclick="toggleKebabMenu(this)">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </span>
+                  <div class="kebab-menu bg-white border rounded shadow position-absolute end-0 mt-2" style="display:none; z-index:1000;">
+                    <div class="px-3 py-1" style="cursor:pointer;" onclick="editAccount('${account.email}'); closeKebabMenu(this)">Edit</div>
+                    <div class="px-3 py-1 text-danger" style="cursor:pointer;" onclick="selectedEmailToDeactivate='${account.email}'; confirmDeactivate(); closeKebabMenu(this)">Deactivate</div>
+                  </div>
+                </div>
+              </div>` : ''}
+            </div>
+          </div>
+        `;
 
-  function showAccountDetails(fullName, email, position, status) {
-    document.getElementById('detailFullName').textContent = fullName;
-    document.getElementById('detailEmail').textContent = email;
-    document.getElementById('detailPosition').textContent = position;
-
-    const deactivateBtn = document.getElementById('deactivateFromDetailsBtn');
-    deactivateBtn.style.display = status === 'active' ? 'inline-block' : 'none';
-
-    document.getElementById('accountDetailsModal').style.display = 'block';
-  }
-
-  function closeAccountDetailsModal() {
-    document.getElementById('accountDetailsModal').style.display = 'none';
-  }
-
-  function showMessage(msg, type = "info") {
-    const alert = document.createElement("div");
-    alert.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-    alert.role = "alert";
-    alert.innerHTML = `
-      ${msg}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-    document.querySelector(".main-content").prepend(alert);
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    fetchAndDisplayAccounts();
-  });
-
-  let selectedEmailToDeactivate = "";
-
-  function confirmDeactivate() {
-  selectedEmailToDeactivate = document.getElementById("detailEmail").textContent;
-  document.getElementById("confirmDeactivateMessage").textContent = 
-    `Are you sure you want to deactivate ${selectedEmailToDeactivate}?`;
-  document.getElementById("accountDetailsModal").style.display = "none";
-  document.getElementById("confirmDeactivateModal").style.display = "block";
-  }
-
-  function closeConfirmModal() {
-    document.getElementById("confirmDeactivateModal").style.display = "none";
-    document.getElementById("accountDetailsModal").style.display = "block";
-  }
-
-  document.getElementById("confirmDeactivateBtn").addEventListener("click", function () {
-    fetch(`/deactivate-account/${encodeURIComponent(selectedEmailToDeactivate)}/`, {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': getCSRFToken()
+        return div;
       }
-    })
-    .then(res => {
-      if (res.ok) {
-        window.location.reload(true); 
-      } else {
-        showMessage("Failed to deactivate account.", "danger");
+
+
+
+          // Active Accounts
+          if (data.active.length === 0) {
+            activeList.innerHTML = `<p class="text-muted mt-3" style="text-align: left;">No active accounts yet.</p>`;
+          } else {
+            data.active.forEach(account => activeList.appendChild(createCard(account, 'active')));
+          }
+
+          // Deactivated Accounts
+          if (data.deactivated.length === 0) {
+            deactivatedList.innerHTML = `<p class="text-muted mt-3" style="text-align: left;">No deactivated accounts yet.</p>`;
+          } else {
+            data.deactivated.forEach(account => deactivatedList.appendChild(createCard(account, 'deactivated')));
+          }
+        });
+    }
+
+    // Kebab menu functions
+    function toggleKebabMenu(element) {
+      const menu = element.nextElementSibling;
+      const allMenus = document.querySelectorAll('.kebab-menu');
+      allMenus.forEach(m => { if(m !== menu) m.style.display = 'none'; });
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function closeKebabMenu(element) {
+      element.parentElement.style.display = 'none';
+    }
+
+    // Click outside to close all kebab menus
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.kebab-btn') && !e.target.closest('.kebab-menu')) {
+        document.querySelectorAll('.kebab-menu').forEach(menu => menu.style.display = 'none');
       }
-    })
-    .catch(err => {
-      showMessage("Error deactivating account.", "danger");
     });
-  });
+
+    // Deactivate confirmation modal
+    function confirmDeactivate() {
+      const messageEl = document.getElementById("confirmDeactivateMessage");
+      messageEl.textContent = `Are you sure you want to deactivate ${selectedEmailToDeactivate}?`;
+
+      // Use Bootstrap modal
+      const modalEl = document.getElementById('confirmDeactivateModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+
+    // Deactivate account via POST
+    document.getElementById("confirmDeactivateBtn").addEventListener("click", function () {
+      fetch(`/deactivate-account/${encodeURIComponent(selectedEmailToDeactivate)}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCSRFToken()
+        }
+      })
+      .then(res => {
+        if (res.ok) {
+          window.location.reload(true);
+        } else {
+          showMessage("Failed to deactivate account.", "danger");
+        }
+      })
+      .catch(err => {
+        showMessage("Error deactivating account.", "danger");
+      });
+    });
+
+    // Example edit function
+    function editAccount(email) {
+      // Find the card by email data attribute
+      const accountCard = [...document.querySelectorAll('.card')].find(card => card.dataset.email === email);
+      if (!accountCard) return;
+
+      // Fill modal fields using data attributes
+      document.getElementById('editFullName').value = accountCard.dataset.fullName;
+      document.getElementById('editEmail').value = accountCard.dataset.email;
+      document.getElementById('editRole').value = accountCard.dataset.role;
+
+      // Show Bootstrap modal
+      const modalEl = document.getElementById('editAccountModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+
+    document.getElementById('saveEditBtn').addEventListener('click', function() {
+      const email = document.getElementById('editEmail').value;
+      const newFullName = document.getElementById('editFullName').value.trim();
+
+      if (newFullName === '') {
+        alert('Full Name cannot be empty.');
+        return;
+      }
+
+      fetch(`/edit-account/${encodeURIComponent(email)}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ full_name: newFullName })
+      })
+      .then(res => {
+        if (res.ok) {
+          showMessage('Account updated successfully.', 'success');
+          // Close modal
+          const modalEl = document.getElementById('editAccountModal');
+          bootstrap.Modal.getInstance(modalEl).hide();
+          fetchAndDisplayAccounts(); // Refresh list
+        } else {
+          showMessage('Failed to update account.', 'danger');
+        }
+      })
+      .catch(err => showMessage('Error updating account.', 'danger'));
+    });
+
+    // Show messages
+    function showMessage(msg, type = "info") {
+      const alert = document.createElement("div");
+      alert.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+      alert.role = "alert";
+      alert.innerHTML = `
+        ${msg}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+      document.querySelector(".main-content").prepend(alert);
+    }
+
+    // Fetch accounts on page load
+    document.addEventListener('DOMContentLoaded', function () {
+      fetchAndDisplayAccounts();
+    });
+
+
+
 
 </script>
 

@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from decimal import Decimal
 from django.db.models.functions import Now
 from django.utils import timezone
+from django.db import transaction
 
 class Student(models.Model):
     tupc_id = models.CharField(max_length=50, unique=True)
@@ -92,81 +93,87 @@ class Candidate(models.Model):
         db_table = 'candidate'
         
 class Violation(models.Model):
+    # --- constants/choices
     VIOLATION_TYPES = [
-    ("Disturbance", "Causing Disturbance During Class Hours"),
-    ("Proper Uniform", "Not Wearing Proper Uniform and ID"),
-    ("Cross Dressing", "Cross Dressing in Uniform and Wash Days"),
-    ("Facial Hair", "Unwanted Facial Hair"),
-    ("Earrings", "Wearing of Earrings or Multiple Earrings"),
-    ("Caps", "Wearing of Caps or Hats inside Covered Facilities"),
-    ("Entering Classroom", "Entering Classrooms without Permission from Instructor"),
-    ("Leaving Classroom", "Leaving Classrooms without Permission from Instructor"),
-    ("Attempt Fraternity", "Attempting to Join a Fraternity"),
-    ("Posting Materials", "Unauthorized Posting Printed Materials"),
-    ("Use of University Facilities", "Unauthorized Use of University Facilities"),
-    ("Official Notices", "Unauthorized Removal of Official Notices and Posters"),
-    ("Gambling", "Possession of Gambling Paraphernalia"),
-    ("Devices", "Unauthorized Use of Devices during Class"),
-    ("Resources", "Irresponsible Use of Water and Electricity within University"),
-    ("Harrassment", "Making Lewd Gestures and Lustful Words to a Student"),
-    ("Property Damage", "Accidental Damage of University Property"),
-    ("PDA", "Public Display of Physical Intimacy or Affection"),
-    ("Cigarette", "Possession of Any type of Cigarette or Tobacco inside University"),
+        ("Disturbance", "Causing Disturbance During Class Hours"),
+        ("Proper Uniform", "Not Wearing Proper Uniform and ID"),
+        ("Cross Dressing", "Cross Dressing in Uniform and Wash Days"),
+        ("Facial Hair", "Unwanted Facial Hair"),
+        ("Earrings", "Wearing of Earrings or Multiple Earrings"),
+        ("Caps", "Wearing of Caps or Hats inside Covered Facilities"),
+        ("Entering Classroom", "Entering Classrooms without Permission from Instructor"),
+        ("Leaving Classroom", "Leaving Classrooms without Permission from Instructor"),
+        ("Attempt Fraternity", "Attempting to Join a Fraternity"),
+        ("Posting Materials", "Unauthorized Posting Printed Materials"),
+        ("Use of University Facilities", "Unauthorized Use of University Facilities"),
+        ("Official Notices", "Unauthorized Removal of Official Notices and Posters"),
+        ("Gambling", "Possession of Gambling Paraphernalia"),
+        ("Devices", "Unauthorized Use of Devices during Class"),
+        ("Resources", "Irresponsible Use of Water and Electricity within University"),
+        ("Harrassment", "Making Lewd Gestures and Lustful Words to a Student"),
+        ("Property Damage", "Accidental Damage of University Property"),
+        ("PDA", "Public Display of Physical Intimacy or Affection"),
+        ("Cigarette", "Possession of Any type of Cigarette or Tobacco inside University"),
+    ]
+    STATUS_CHOICES = [("Pending","Pending"), ("Approved","Approved"), ("Rejected","Rejected")]
+    SEVERITY_CHOICES = [("MINOR","Minor"), ("MAJOR","Major")]  # future-proof; guards submit MINOR
+    SETTLEMENT_CHOICES = [
+        ("None", "None"),
+        ("Apology Letter", "Apology Letter"),
+        ("Community Service", "Community Service"),
     ]
 
-    STATUS_CHOICES = [
-        ("Pending", "Pending"),
-        ("Approved", "Approved"),
-        ("Rejected", "Rejected"),
-    ]
-
-    first_name = models.CharField(max_length=50, blank=False)
+    # --- identity
+    first_name = models.CharField(max_length=50)
     middle_initial = models.CharField(max_length=10, blank=True)
     extension_name = models.CharField(max_length=10, blank=True)
-    last_name = models.CharField(max_length=50, blank=False)
-    student_id = models.CharField(max_length=20, blank=False)
-    program_course = models.CharField(max_length=100, blank=False)
-    violation_date = models.DateField(blank=False)
-    violation_time = models.TimeField(blank=False)
-    violation_type = models.CharField(max_length=150, choices=VIOLATION_TYPES, blank=False)
-    guard_name = models.CharField(max_length=100, blank=False)
-    evidence_1 = models.ImageField(upload_to='evidence/', null=False, blank=False)
+    last_name = models.CharField(max_length=50)
+    student_id = models.CharField(max_length=20, db_index=True)
+    program_course = models.CharField(max_length=100)
+
+    # --- violation facts
+    violation_date = models.DateField()
+    violation_time = models.TimeField()
+    violation_type = models.CharField(max_length=150, choices=VIOLATION_TYPES)
+    guard_name = models.CharField(max_length=100)
+    severity = models.CharField(max_length=5, choices=SEVERITY_CHOICES, default="MINOR")
+
+    evidence_1 = models.ImageField(upload_to='evidence/')
     evidence_2 = models.ImageField(upload_to='evidence/', null=True, blank=True)
+
+    # --- workflow
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="Pending")
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.CharField(max_length=100, blank=True)
+
+    # --- settlement (merged from ViolationSettlement)
+    settlement_type = models.CharField(max_length=50, choices=SETTLEMENT_CHOICES, default="None")
+    is_settled = models.BooleanField(default=False)
+    settled_at = models.DateTimeField(null=True, blank=True)
+
+    # --- meta
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'violation'
         indexes = [
             models.Index(fields=['status']),
+            models.Index(fields=['student_id', 'status']),
         ]
 
     def __str__(self):
         return f"{self.student_id} - {self.violation_type} ({self.status})"
-    class Meta:
-        db_table = 'violation'
 
-class ViolationSettlement(models.Model):
-    violation = models.OneToOneField(
-        Violation,
-        on_delete=models.CASCADE,
-        related_name='settlement'
-    )
-    settlement_type = models.CharField(
-        max_length=50,
-        choices=[
-            ('Apology Letter', 'Apology Letter'),
-            ('Community Service', 'Community Service'),
-        ]
-    )
-    is_settled = models.BooleanField(default=False)
-    settled_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        db_table = 'violation_settlement'
-
-    def __str__(self):
-        return f"{self.violation.student_id} - {self.settlement_type} - {'Settled' if self.is_settled else 'Unsettled'}"
+    # helpers
+    def mark_approved(self, by_user: str):
+        if self.status != "Approved":
+            now = timezone.now()
+            self.status = "Approved"
+            self.reviewed_at = now
+            self.approved_at = now
+            self.approved_by = by_user or ""
+            self.save(update_fields=["status","reviewed_at","approved_at","approved_by"])
         
 class Scholarship(models.Model):
     CATEGORY_CHOICES = [
@@ -367,13 +374,26 @@ class IDSurrenderRequest(models.Model):
     def __str__(self):
         return f"{self.student_number} — {self.surname}, {self.first_name} ({self.status})"
 
+def _q_half(x: Decimal) -> Decimal:
+    """Round to nearest 0.5 hours."""
+    return (Decimal(x) * Decimal(2)).quantize(Decimal('1')) / Decimal(2)
+
 class CommunityServiceCase(models.Model):
     """
     One active community service case per student.
-    total_required_hours goes up with offenses.
+    total_required_hours goes up with manual assignments.
     hours_completed never resets (remaining = total - completed).
     """
+    # INSERTED: denormalized student snapshot (admin types these)
+    last_name = models.CharField(max_length=50, default="", blank=True)
+    first_name = models.CharField(max_length=50, default="", blank=True)
+    middle_initial = models.CharField(max_length=10, default="", blank=True)   # optional
+    extension_name = models.CharField(max_length=10, default="", blank=True)   # optional
+    program_course = models.CharField(max_length=100, default="", blank=True)
+
+    # (kept) student id
     student_id = models.CharField(max_length=20, db_index=True)
+
     total_required_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
     hours_completed = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
     is_closed = models.BooleanField(default=False)
@@ -383,10 +403,16 @@ class CommunityServiceCase(models.Model):
 
     class Meta:
         db_table = "community_service_case"
-        indexes = [models.Index(fields=["student_id", "is_closed"])]
+        indexes = [
+            models.Index(fields=["student_id", "is_closed"]),
+            # INSERTED: quick name search
+            models.Index(fields=["last_name", "first_name"]),
+        ]
 
     def __str__(self):
-        return f"{self.student_id} | required={self.total_required_hours} done={self.hours_completed}"
+        # UPDATED: include snapshot name
+        full = f"{self.last_name}, {self.first_name}".strip(", ")
+        return f"{full} ({self.student_id}) | required={self.total_required_hours} done={self.hours_completed}"
 
     @property
     def remaining_hours(self) -> Decimal:
@@ -395,14 +421,116 @@ class CommunityServiceCase(models.Model):
 
     def adjust_total_required(self, new_total: Decimal) -> None:
         """
-        Raise (or keep) the total requirement while preserving completed hours.
-        Never reduce below hours already completed. Auto-close if remaining hits 0.
+        Set the TOTAL required hours to a new value without changing completed hours.
+        Never go below completed; auto-close when remaining hits 0.
         """
         if new_total < self.hours_completed:
             new_total = self.hours_completed
         self.total_required_hours = new_total
         self.is_closed = (self.remaining_hours == 0)
         self.save(update_fields=["total_required_hours", "is_closed", "updated_at"])
+
+    # ---------- Helpers for manual workflow ----------
+
+    @classmethod
+    @transaction.atomic
+    def get_or_create_open(
+        cls,
+        *,
+        student_id: str,
+        last_name: str = "",
+        first_name: str = "",
+        program_course: str = "",
+        middle_initial: str = "",
+        extension_name: str = "",
+    ) -> "CommunityServiceCase":
+        """
+        App-level guarantee of one open case per student.
+        If none exists, create with the admin-typed snapshot.
+        """
+        case = (cls.objects
+                  .select_for_update()
+                  .filter(student_id=student_id, is_closed=False)
+                  .first())
+        if case:
+            return case
+        return cls.objects.create(
+            student_id=student_id,
+            last_name=last_name,
+            first_name=first_name,
+            middle_initial=middle_initial or "",
+            extension_name=extension_name or "",
+            program_course=program_course,
+        )
+
+    @transaction.atomic
+    def top_up_required_hours(self, add_hours: Decimal) -> None:
+        """Manually increase the required hours."""
+        add_hours = Decimal(add_hours)
+        if add_hours <= 0:
+            return
+        self.adjust_total_required(self.total_required_hours + add_hours)
+
+    @transaction.atomic
+    def add_manual_hours(self, hours: Decimal, *, is_official: bool = False) -> "CommunityServiceLog":
+        """
+        Manually credit hours without a live timer (creates a closed log entry).
+        Rounds to nearest 0.5h, updates case completion, and auto-closes if done.
+        Safe for concurrent admin actions.
+        """
+        q = _q_half(Decimal(hours))
+        now = timezone.now()
+        log = CommunityServiceLog.objects.create(
+            case=self,
+            check_in_at=now,
+            check_out_at=now,
+            hours=q,
+            is_official=is_official,
+        )
+
+        # UPDATED: lock the case row before updating totals (multi-admin safe)
+        locked = CommunityServiceCase.objects.select_for_update().get(pk=self.pk)
+        locked.hours_completed = (locked.hours_completed or Decimal('0.0')) + q
+        locked.is_closed = (locked.remaining_hours == 0)
+        locked.save(update_fields=["hours_completed", "is_closed", "updated_at"])
+
+        # keep 'self' in sync for caller
+        self.hours_completed = locked.hours_completed
+        self.is_closed = locked.is_closed
+        return log
+
+    @transaction.atomic
+    def has_open_session(self) -> bool:
+        # UPDATED: lock when checking to avoid races
+        return self.logs.select_for_update().filter(check_out_at__isnull=True).exists()
+
+    @transaction.atomic
+    def open_session(self) -> "CommunityServiceLog":
+        """
+        Start a live timer session (Time-In). Enforce at most one open session
+        even under concurrent clicks (via row lock).
+        """
+        existing = (self.logs
+                    .select_for_update()
+                    .filter(check_out_at__isnull=True)
+                    .first())
+        if existing:
+            return existing
+        return CommunityServiceLog.objects.create(case=self)
+
+    @transaction.atomic
+    def close_open_session(self) -> "CommunityServiceLog | None":
+        """
+        Close the currently open session (Time-Out) if any, with a lock so
+        concurrent requests don't double-close.
+        """
+        log = (self.logs
+               .select_for_update()
+               .filter(check_out_at__isnull=True)
+               .first())
+        if log:
+            log.close()
+        return log
 
 class CommunityServiceLog(models.Model):
     """
@@ -412,45 +540,50 @@ class CommunityServiceLog(models.Model):
       - hours computed on the server and added to the case
     """
     case = models.ForeignKey("CommunityServiceCase", on_delete=models.CASCADE, related_name="logs")
-
-    # Authoritative server/database timestamps (Django 5+ supports db_default=Now()).
     check_in_at = models.DateTimeField(auto_now_add=True, db_default=Now())
     check_out_at = models.DateTimeField(null=True, blank=True)
 
     hours = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal("0.0"))
-    is_official = models.BooleanField(default=True)  # set False for manual/backfilled edits
+    is_official = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "community_service_log"
+        indexes = [
+            models.Index(fields=["case", "check_out_at"]),  # speeds up "find open log"
+        ]
 
     def __str__(self):
         status = "open" if self.check_out_at is None else "closed"
         return f"{self.case.student_id} | {status} | {self.hours}h"
 
+    def save(self, *args, **kwargs):
+        # guard: ensure non-negative hours
+        if self.hours and self.hours < 0:
+            self.hours = Decimal("0.0")
+        super().save(*args, **kwargs)
+
     def close(self):
         """
         Close the session using server time and compute hours.
         Also updates the parent case's hours_completed and closure status.
+        Concurrency-safe with row lock on case in the final update.
         """
         if self.check_out_at is None:
             self.check_out_at = timezone.now()
 
-        # compute duration in hours
+        # compute duration in hours, round to 0.5h
         delta_seconds = (self.check_out_at - self.check_in_at).total_seconds()
         delta_hours = Decimal(delta_seconds) / Decimal(3600)
+        self.hours = _q_half(delta_hours)
 
-        # round to nearest 0.5h (e.g., 1.2 -> 1.0, 1.26 -> 1.5)
-        rounded = (delta_hours * 2).quantize(Decimal('1')) / Decimal(2)
-        self.hours = rounded
-
-        # save log, then apply to case
+        # save log first
         self.save(update_fields=["check_out_at", "hours", "updated_at"])
 
-        # accumulate into the case
-        case = self.case
+        # UPDATED: lock case before accumulating (multi-student safe)
+        case = CommunityServiceCase.objects.select_for_update().get(pk=self.case_id)
         case.hours_completed = (case.hours_completed or Decimal('0.0')) + self.hours
         case.is_closed = (case.remaining_hours == 0)
         case.save(update_fields=["hours_completed", "is_closed", "updated_at"])
