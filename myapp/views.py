@@ -188,6 +188,13 @@ def client_election_view(request):
 def client_view_election_view(request):
     return render (request, 'myapp/client_view_election.html')
 
+def client_clearance_view(request):
+    return render (request, 'myapp/client_clearance.html')
+
+
+
+
+
 def admin_old_violation_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
     return render (request, 'myapp/admin_old_violation.html')
 
@@ -202,6 +209,11 @@ def admin_accounts_view(request):
 @role_required(['admin'])
 def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
     return render (request, 'myapp/admin_clearance.html')
+
+@role_required(['admin'])
+def admin_view_clearance_view(request):
+    return render (request, 'myapp/admin_view_clearance.html')
+
 
 @role_required(['admin'])
 def admin_ackreq_view(request):

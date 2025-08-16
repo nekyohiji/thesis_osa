@@ -14,6 +14,18 @@
 
 <body style=" background: linear-gradient(to bottom right, #000000, #440207, #440207, #000000);" >
 
+
+
+  <style>
+    .card:hover {
+      box-shadow: none !important;
+      transform: none !important;
+      transition: none !important;
+    }
+
+
+
+  </style>
 <div class="container-fluid py-4">
   <!-- Top Navigation -->
   <div class="d-flex justify-content-between align-items-center mb-3">
@@ -46,7 +58,7 @@
 
       <!-- PERSONAL INFORMATION -->
       <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div>
+        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div><br>
         <div class="card-body row g-3">
           <div class="col-md-3"><label class="form-label">First Name:</label>
             <input class="form-control" value="{{ req.first_name }}" disabled>
@@ -69,7 +81,7 @@
 
       <!-- ACADEMIC INFORMATION -->
       <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-mortarboard-fill"></i> Academic Information</div>
+        <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-mortarboard-fill"></i> Academic Information</div><br>
         <div class="card-body row g-3">
           <div class="col-md-3"><label class="form-label">Student ID Number:</label>
             <input class="form-control" value="{{ req.student_number }}" disabled>
@@ -122,7 +134,10 @@
       <div class="d-flex justify-content-between mt-4 flex-wrap gap-3">
         <!-- Safe Actions -->
         <div class="d-flex gap-2">
-          <button class="btn btn-warning text-dark" type="button"
+          <button class="btn text-light" type="button"
+                  style="background-color: #440207; border-color: #440207;"
+                  onmouseover="this.style.backgroundColor='#5e0000';"
+                  onmouseout="this.style.backgroundColor='#440207';"
                   data-bs-toggle="modal" data-bs-target="#generateModal">
             <i class="bi bi-printer"></i> Generate Certificate
           </button>

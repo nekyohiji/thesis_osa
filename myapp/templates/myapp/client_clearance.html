@@ -1,0 +1,296 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>OSA - Community Service</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />  
+
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'myapp/css/client_CS.css' %}">
+
+    <style>
+        .form-section {
+          border: 1px solid #800000; 
+          border-radius: 6px;
+          padding: 20px;
+          margin-bottom: 20px;
+          background-color: #fff;
+        }
+        .form-section h5 {
+          font-weight: bold;
+          margin-bottom: 15px;
+        }
+
+        /* Focus styles */
+        .form-control:focus,
+        .form-select:focus {
+          border-color: #5e0000;
+          box-shadow: 0 0 4px rgba(94, 0, 0, 0.4);
+          outline: none;
+        }
+
+        .btn-submit {
+          background-color: #440207; 
+          color: #fff;
+          transition: all 0.3s ease; 
+        }
+
+        .btn-submit:hover {
+          background-color: #5e0000;
+          color: #fff;
+          font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- NAVIGATION BAR -->
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+  <div class="container-fluid">
+        <a id="TUPC" class="navbar-brand" href="#home">
+          <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+          <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
+          <span class="d-inline d-sm-none"><b>TUPC</b></span>
+       </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+              <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
+              <li class="nav-item"><a class="nav-link nav-btn" href="{% url 'login' %}">Login</a></li>
+          </ul>
+      </div>
+  </div>
+</nav>
+
+
+<div class="container mt-5 mb-5 pt-5">
+
+  <!-- Header -->
+  <div class="mb-4">
+    <h1 class="mb-3">
+      <i class="fas fa-file-signature me-2"></i>
+      <b>Clearance Request Form</b>
+    </h1>
+    <hr>
+    <h6 class="text-muted">Please fill in the required information below to request clearance.</h6>
+  </div>
+
+  <!-- Alert -->
+  <div id="formAlert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
+    <strong>Please fill out all required fields before proceeding.</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- FORM START -->
+  <form >
+   
+
+    <!-- Personal Information -->
+    <div class="form-section">
+      <h5><i class="bi bi-person-fill"></i> Personal Information</h5>
+      <hr>
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Firstname:</label>
+          <input type="text" class="form-control" placeholder="Enter Your First Name" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Middle Name: (Optional)</label>
+          <input type="text" class="form-control" placeholder="Enter Your Middle Name">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Surname:</label>
+          <input type="text" class="form-control" placeholder="Enter Your Surname" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Extension: (Optional)</label>
+          <input type="text" class="form-control" placeholder="e.g., Jr., Sr., III">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Age:</label>
+          <input type="number" class="form-control" placeholder="Enter Your Age" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Sex:</label>
+          <select class="form-select" required>
+            <option selected disabled>-- Select --</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Contact Number:</label>
+          <input type="text" class="form-control" placeholder="+63-9XXXXXXXXX" required>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Email Address:</label>
+          <input type="email" class="form-control" placeholder="example@email.com" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Complete Home Address:</label>
+          <input type="text" class="form-control" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- Academic Information -->
+    <div class="form-section">
+      <h5><i class="bi bi-mortarboard-fill"></i> Academic Information</h5>
+      <hr>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">TUPC Student Number:</label>
+          <input type="text" class="form-control" placeholder="e.g., 2025-00001" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Program:</label>
+          <input type="text" class="form-control" placeholder="e.g., BSIT, BSEE, etc." required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Year Level:</label>
+          <select class="form-select" required>
+            <option selected disabled>-- Select --</option>
+            <option>First Year</option>
+            <option>Second Year</option>
+            <option>Third Year</option>
+            <option>Fourth Year</option>
+          </select>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Client Type:</label>
+          <select class="form-select" required>
+            <option selected disabled>-- Select --</option>
+            <option>Citizen</option>
+            <option>Business</option>
+            <option>Government (Employee/Agency)</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Stakeholder:</label>
+          <select class="form-select" required>
+            <option selected disabled>-- Select --</option>
+            <option>TUPC Student</option>
+            <option>Alumnus</option>
+            <option>Student from other School</option>
+            <option>External Client</option>
+            <option>Parent/Guardian</option>
+            <option>TUPC Employee</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purpose of Visit -->
+    <div class="form-section">
+      <h5><i class="bi bi-briefcase-fill fw-semibold"></i> Purpose of Visit</h5>
+      <hr>
+      <div class="mb-3">
+        <select class="form-select" id="purpose" required>
+          <option selected disabled>-- Select Purpose --</option>
+          <option>Credentials</option>
+          <option>Application of Graduation</option>
+          <option>Employment</option>
+          <option>Continuing Education</option>
+          <option value="Transfer">Transfer</option>
+          <option>Dismissal</option>
+        </select>
+      </div>
+      <!-- Transfer Details -->
+      <div class="mb-3 d-none" id="transferDetails">
+        <label class="form-label fw-semibold">Specify Transfer Details:</label>
+        <input type="text" class="form-control">
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="d-flex justify-content-end mt-4">
+      <button type="button" 
+                class="btn btn-submit d-flex align-items-center px-4"
+                data-bs-toggle="modal" data-bs-target="#confirmSubmitModal">
+        <i class="bi bi-send-fill me-2"></i> Submit Request
+      </button>
+    </div>
+
+  </form>
+  <!-- FORM END -->
+
+</div>
+
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmSubmitModalLabel"></h5>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body text-center">
+        Are you sure you want to submit this request?<br>
+        Please double-check your details before proceeding.
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn text-light"  style="background-color: #440207;" id="confirmSubmitBtn"> Submit
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- Bootstrap Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Show transfer details field when Transfer is selected
+  document.getElementById("purpose").addEventListener("change", function() {
+    let transferDetails = document.getElementById("transferDetails");
+    if (this.value === "Transfer") {
+      transferDetails.classList.remove("d-none");
+    } else {
+      transferDetails.classList.add("d-none");
+    }
+  });
+
+  // Handle confirmation modal
+  document.getElementById("confirmSubmitBtn").addEventListener("click", function () {
+    document.getElementById("clearanceForm").submit();
+  });
+</script>
+
+</body>
+</html>

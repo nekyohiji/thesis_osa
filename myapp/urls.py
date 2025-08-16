@@ -18,12 +18,15 @@ urlpatterns = [
     path('client_view_election/', views.client_view_election_view, name='client_view_election'),
     path('client_election/', views.client_election_view, name='client_election'),
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
+    path('client_clearance/', views.client_clearance_view, name='client_clearance'),
     
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
+    
+
     
     path('admin_community_service/', views.admin_community_service, name='admin_community_service'),
     path('admin_community_service/<int:case_id>/', views.admin_view_community_service, name='admin_view_community_service'),
@@ -41,6 +44,7 @@ urlpatterns = [
     path('admin_view_ackreq/<int:pk>/', views.admin_view_ackreq_view, name='admin_view_ackreq'),
     
     path('admin_clearance/', views.admin_clearance_view, name='admin_clearance'),
+    path('admin_view_clearance/', views.admin_view_clearance_view, name='admin_view_clearance'),
     path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_goodmoral'),
     

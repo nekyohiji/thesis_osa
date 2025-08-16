@@ -39,38 +39,37 @@
         </div>
     </div>
 </nav>
-
+<br><br><br>
 <!-- MAIN CONTAINER -->
-<div class="container mt-5 mb-5">
-    <br>
-    <br>
-    <h1 class="mb-4"><i class="bi bi-card-text"></i> <b>Surrendering of ID Form</b></h1>
+<div class="container mt-3 mb-3">
+  
+    <h1 class="mb-3"><i class="bi bi-card-text"></i> <b>Surrendering of ID Form</b></h1>
     <hr>
-    <h6 class="mb-4">Please fill in the required information below.</h6>
+    <h6 class="mb-3">Please fill in the required information below.</h6>
     <!-- Form -->
     <form id="surrender-form" method="post" action="{% url 'id_surrender_request' %}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- STEP 1: Personal Information -->
-        <div class="card mb-4 card-surrender-personal shadow-sm">
+        <div class="card mb-3 card-surrender-personal shadow-sm">
             <div class="card-body">
                 <div class="section-title"><i class="bi bi-person-fill"></i> Personal Information</div>
-                <hr><br>
+                <hr>
 
                 <div class="row">
                     <!-- First Name -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">First Name:</label>
+                        <label class="form-label fw-semibold">First Name:</label>
                         <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" minlength="1" maxlength="50" required>
                     </div>
                     <!-- Middle Name -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Middle Name:</label>
+                        <label class="form-label fw-semibold">Middle Name:</label>
                         <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name" maxlength="50">
                     </div>
                     <!-- Surname -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Surname:</label>
+                        <label class="form-label fw-semibold">Surname:</label>
                         <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" minlength="1" maxlength="50" required>
                     </div>
                 </div>
@@ -78,19 +77,19 @@
                 <div class="row">
                     <!-- Extension -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Extension (Jr., Sr.):</label>
+                        <label class="form-label fw-semibold">Extension (Jr., Sr.):</label>
                         <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name (if any)" maxlength="15">
                     </div>
 
                     <!-- Program -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Program:</label>
+                        <label class="form-label fw-semibold">Program:</label>
                         <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" maxlength="18" required>
                     </div>
 
                     <!-- Email -->
                     <div class="col-md-6 mb-3">
-                    <label class="form-label">Email:</label>
+                    <label class="form-label fw-semibold">Email:</label>
                     <input type="email" class="form-control" id="email_surrender" name="contact_email" placeholder="you@gmail.com" required>
                     </div>
                 </div>
@@ -99,14 +98,15 @@
 
 
         <!-- STEP 2: Academic Information -->
-        <div class="card mb-4 card-surrender-academic shadow-sm">
+        <div class="card mb-3 card-surrender-academic shadow-sm">
             <div class="card-body">
                 <div class="section-title"><i class="bi bi-book"></i> Academic Information</div>
-                <hr><br>
+                <hr>
 
                 <!-- Reason to Surrender -->
+              <div class="row"> 
                 <div class="col-md-6 mb-3">
-                <label class="form-label">Reason to Surrender:</label>
+                <label class="form-label fw-semibold">Reason to Surrender:</label>
                 <select class="form-select" name="reason" id="reason_surrender" required>
                     <option value="">-- Select Reason --</option>
                     <option value="Dropped">Dropped</option>
@@ -117,17 +117,18 @@
                     <option value="Worn Out">Worn Out</option>
                 </select>
                 </div>
+              </div>
 
                 <!-- Student Number and Year Level -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Student Number:</label>
+                        <label class="form-label fw-semibold">Student Number:</label>
                         <input type="text" class="form-control" name="student_number" id="studentID_surrender" placeholder="TUPC-XX-XXXXXXXXXX" required pattern="^TUPC-\d{2}-\d{4,10}$" minlength="12" maxlength="18" title="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–10 digits)"
 >
                     </div>
                 <!-- Year Level (corrected) -->
                 <div class="col-md-6 mb-3">
-                <label class="form-label">Year Level:</label>
+                <label class="form-label fw-semibold">Year Level:</label>
                 <select class="form-select" name="year_level" id="yearlevel_surrender" required>
                     <option value="">-- Select Year Level --</option>
                     <option value="1st Year">1st Year</option>
@@ -138,21 +139,22 @@
                     <option value="Graduate">Graduate</option>
                 </select>
                 </div>
+                </div>
                 <!-- Inclusive Years of Stay -->
                 <div class="mb-3">
-                    <label class="form-label">Inclusive Years of Stay:</label>
+                    <label class="form-label fw-semibold">Inclusive Years of Stay:</label>
                     <input type="text" class="form-control" name="inclusive_years" id="stay_surrender" placeholder="e.g., 2019-2023" required pattern="^\d{4}-\d{4}$" minlength="9" maxlength="9" >
                 </div>
             </div>
         </div>
 
-        <div class="card mb-4 card-surrender-upload shadow-sm">
+        <div class="card mb-3 card-surrender-upload shadow-sm">
           <div class="card-body">
             <div class="section-title"><i class="bi bi-upload"></i> Upload Documents</div>
-            <hr><br>
+            <hr>
 
             <div class="mb-3">
-              <label class="form-label">Document Type:</label>
+              <label class="form-label fw-semibold">Document Type:</label>
               <select class="form-select" id="doc_type" name="document_type" required>
                 <option value="">-- Select Document Type --</option>
                 <option value="id">School ID</option>
@@ -174,8 +176,10 @@
         </div>
 
         <!-- Submit Button -->
-        <div class="text-end mb-5">
-            <button id="submitBtn" type="submit" class="btn btn-success btn-lg" disabled>
+        <div class="text-end mb-3">
+            <button id="submitBtn" type="submit" class="btn btn-success btn-lg text-light" style="background-color: #440207; border-color: #440207; font-size: 17px"
+                  onmouseover="this.style.backgroundColor='#5e0000';"
+                  onmouseout="this.style.backgroundColor='#440207';" disabled>
                 <i class="bi bi-send-fill"></i> Submit Request
             </button>
         </div>
@@ -196,7 +200,9 @@
         <span id="submitCountdown">5</span> seconds…
       </div>
       <div class="modal-footer">
-        <a id="modalHomeBtn" class="btn btn-primary" href="{% url 'client_home' %}">Back to Home now</a>
+        <a id="modalHomeBtn" class="btn text-light" style="background-color: #440207; border-color: #440207;"
+                  onmouseover="this.style.backgroundColor='#5e0000';"
+                  onmouseout="this.style.backgroundColor='#440207';" href="{% url 'client_home' %}">Back to Home now</a>
       </div>
     </div>
   </div>

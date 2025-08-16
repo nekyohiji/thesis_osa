@@ -273,7 +273,9 @@
 
                 <!-- Submit Button -->
                 <div class="text-end mt-3">
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn text-light" style="background-color: #440207; border-color: #440207;"
+                  onmouseover="this.style.backgroundColor='#5e0000';"
+                  onmouseout="this.style.backgroundColor='#440207';">
                         <i class="bi bi-send-fill"></i> Submit Request
                     </button>
                 </div>
@@ -304,7 +306,9 @@
                 <span id="submitCountdown">5</span> seconds…
             </div>
             <div class="modal-footer">
-                <a id="modalHomeBtn" class="btn btn-primary" href="{% url 'client_home' %}">Back to Home now</a>
+                <a id="modalHomeBtn" class="btn text-light" style="background-color: #440207; border-color: #440207;"
+                  onmouseover="this.style.backgroundColor='#5e0000';"
+                  onmouseout="this.style.backgroundColor='#440207';" href="{% url 'client_home' %}">Back to Home now</a>
             </div>
             </div>
         </div>

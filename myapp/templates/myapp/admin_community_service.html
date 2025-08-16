@@ -99,7 +99,9 @@
               <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
               <div class="modal-footer justify-content-center">
                   <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
-                  <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+                  <a href="{% url 'logout' %}" class="btn btn-danger" style="background-color: #440207; border-color: #440207;"
+                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">Logout</a>
               </div>
           </div>
       </div>
@@ -126,6 +128,30 @@
     border-color: #440207;
     color: #440207;
   }
+
+  .btn.text-light {
+    background-color: #440207 !important;
+    padding: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .btn.text-light:hover {
+    background-color: #5e0000 !important; 
+  }
+
+  .form-control {
+    border-radius: 6px; /* optional: smoother edges */
+    box-shadow: none;  /* remove Bootstrap default glow */
+  }
+
+  .form-control:focus {
+    border: 1px solid #440207 !important;  /* darker border on focus */
+    box-shadow: 0 0 4px rgba(68, 2, 7, 0.3); /* subtle glow */
+  }
+
+
+
+
 </style>
 
 <!-- Main Content Area -->
@@ -157,24 +183,31 @@
       {% endfor %}
     </div>
   {% endif %}
-  <div class="d-flex justify-content-end mb-2">
-    <button class="btn btn-light border" data-bs-toggle="modal" data-bs-target="#csCreateAdjustModal">
-      Create / Adjust Community Service
-    </button>
-  </div>
-  
 
+
+
+  
   <div class="container-fluid px-4">
     <div class="bg-white p-2 rounded shadow-sm border">
 
       <!-- Community Service Request Section -->
       <div class="container-fluid pt-4 pb-5">
         <div class="bg-white p-4 rounded shadow-sm border">
-          <h5 class="fw-bold mb-1">
-            <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>Community Service Requests
-          </h5>
-          <small class="text-muted">Handle service requests, monitor progress, and maintain records.</small>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <h5 class="fw-bold mb-1">
+                <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
+                Community Service Requests
+              </h5>
+              <small class="text-muted">Handle service requests, monitor progress, and maintain records.</small>
+            </div>
+            <button class="btn text-light" style="background-color: #440207; padding: 10px; font-size: 17px;"
+              data-bs-toggle="modal" data-bs-target="#csCreateAdjustModal"><i class="bi bi-plus-circle-fill me-2"></i>
+              Create / Adjust Community Service
+            </button>
+          </div>
           <hr class="border-dark">
+
 
           <!-- Search Bar -->
           <div class="d-flex justify-content-end mb-3">
@@ -193,9 +226,14 @@
               <table class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
+                    <th>ID Number</th>
                     <th>Name</th>
-                    <th>Violations</th>
+                    <th>Program</th>
                     <th>Remaining Hours</th>
+                    <th>Rendered Hours</th>
+                    <th> Details </th>
+                    <th>Status</th>
+                    <th>Date</th>
                     <th> Details </th>
                   </tr>
                 </thead>
@@ -222,7 +260,9 @@
                         </td>
                         <td>{{ case.updated_at|date:"M d, Y H:i" }}</td>
                         <td>
-                          <a class="btn btn-sm btn-primary"
+                          <a class="btn btn-sm " style="color: #440207; border-color: #440207;"
+                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';"
                             href="{% url 'admin_view_community_service' case.id %}">
                             View More
                           </a>
@@ -245,13 +285,13 @@
 </div> <!-- End main-content -->
 
 
+
 <!-- Create / Adjust Community Service Modal -->
 <div class="modal fade" id="csCreateAdjustModal" tabindex="-1" aria-labelledby="csModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border">
       <div class="modal-header">
-        <h5 class="modal-title" id="csModalLabel">Create / Adjust Community Service</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title fw-semibold" id="csModalLabel"> <i class="bi bi-plus-circle-fill me-2"></i>Create / Adjust Community Service</h5>
       </div>
 
       <form method="post" action="{% url 'cs_create_or_adjust' %}{% if q %}?q={{ q|urlencode }}{% endif %}">
@@ -263,63 +303,62 @@
 
           <div class="row g-2">
             <div class="col-md-6">
-              <label class="form-label">Last Name</label>
+              <label class="form-label fw-semibold">Last Name:</label>
               <input name="{{ cs_form.last_name.name }}" type="text"
                      value="{{ cs_form.last_name.value|default_if_none:'' }}"
-                     minlength="1" maxlength="50"
+                     minlength="1" maxlength="50" placeholder="Enter last name"
                      class="form-control {% if cs_form.last_name.errors %}is-invalid{% endif %}" required>
               {% for err in cs_form.last_name.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">First Name</label>
+              <label class="form-label fw-semibold">First Name:</label>
               <input name="{{ cs_form.first_name.name }}" type="text"
                      value="{{ cs_form.first_name.value|default_if_none:'' }}"
-                     minlength="1" maxlength="50"
+                     minlength="1" maxlength="50" placeholder="Enter first name"
                      class="form-control {% if cs_form.first_name.errors %}is-invalid{% endif %}" required>
               {% for err in cs_form.first_name.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Middle Initial (optional)</label>
+              <label class="form-label fw-semibold">Middle Initial (optional):</label>
               <input name="{{ cs_form.middle_initial.name }}" type="text"
                      value="{{ cs_form.middle_initial.value|default_if_none:'' }}"
-                     maxlength="10"
+                     maxlength="10" placeholder="M."
                      class="form-control {% if cs_form.middle_initial.errors %}is-invalid{% endif %}">
               {% for err in cs_form.middle_initial.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Ext (optional)</label>
+              <label class="form-label fw-semibold">Ext (optional):</label>
               <input name="{{ cs_form.extension_name.name }}" type="text"
                      value="{{ cs_form.extension_name.value|default_if_none:'' }}"
-                     maxlength="10"
+                     maxlength="10"  placeholder="Jr., Sr., III"
                      class="form-control {% if cs_form.extension_name.errors %}is-invalid{% endif %}">
               {% for err in cs_form.extension_name.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Student ID</label>
+              <label class="form-label fw-semibold">Student ID:</label>
               <input name="{{ cs_form.student_id.name }}" type="text"
                      value="{{ cs_form.student_id.value|default_if_none:'' }}"
-                     minlength="1" maxlength="20"
+                     minlength="1" maxlength="20" placeholder="Enter student ID"
                      class="form-control {% if cs_form.student_id.errors %}is-invalid{% endif %}" required>
               {% for err in cs_form.student_id.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Program</label>
+              <label class="form-label fw-semibold">Program:</label>
               <input name="{{ cs_form.program_course.name }}" type="text"
                      value="{{ cs_form.program_course.value|default_if_none:'' }}"
-                     minlength="1" maxlength="100"
+                     minlength="1" maxlength="100" placeholder="Enter program/course"
                      class="form-control {% if cs_form.program_course.errors %}is-invalid{% endif %}" required>
               {% for err in cs_form.program_course.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
             <div class="col-12">
-              <label class="form-label">Hours (Total Required)</label>
-              <input name="{{ cs_form.hours.name }}" type="number"
-                     step="0.5" min="0.5"
+              <label class="form-label fw-semibold">Hours (Total Required):</label>
+              <input name="{{ cs_form.hours.name }}" type="number" 
                      value="{{ cs_form.hours.value|default_if_none:'' }}"
                      class="form-control {% if cs_form.hours.errors %}is-invalid{% endif %}" required>
               {% for err in cs_form.hours.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
@@ -330,7 +369,7 @@
 
         <div class="modal-footer justify-content-center">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="submit" class="btn text-light" style="background-color: #440207;">Save</button>
         </div>
       </form>
     </div>

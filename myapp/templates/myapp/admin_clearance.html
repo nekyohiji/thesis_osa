@@ -98,7 +98,9 @@
               <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
               <div class="modal-footer justify-content-center">
                   <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
-                  <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+                  <a href="{% url 'logout' %}" class="btn btn-danger" style="background-color: #440207; border-color: #440207;"
+                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">Logout</a>
               </div>
           </div>
       </div>
@@ -109,14 +111,154 @@
 
 
 
-<h1>//////////////////////////////// CLEARANCE</h1>
 
 
 
 
 
 
+  <style>
+    /* Highlight on focus */
+    .input-group-sm .form-control:focus {
+      border: 2px solid #440207;
+      box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
+    }
 
+    .input-group-sm .form-control:hover {
+      border: 1px solid #440207;
+    }
+
+    .input-group-sm:focus-within .input-group-text {
+      background-color: #f8f0f0;
+      border-color: #440207;
+      color: #440207;
+    }
+
+    .btn.text-light {
+      background-color: #440207 !important;
+      padding: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .btn.text-light:hover {
+      background-color: #5e0000 !important; 
+    }
+
+    .form-control {
+      border-radius: 6px;
+      box-shadow: none;
+    }
+
+    .form-control:focus {
+      border: 1px solid #440207 !important;
+      box-shadow: 0 0 4px rgba(68, 2, 7, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Main Content Area -->
+<div class="main-content" style="margin-left: 250px; min-height: 100vh; background-color: #f8f9fa;">
+
+  <!-- Dashboard Header -->
+  <div class="container-fluid py-4 px-4">
+    <div class="election-header text-white mt-4"
+      style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
+            padding: 50px;
+            min-height: 100px;
+            border-radius: 20px;">
+      <h2 class="fw-bold mb-0">
+        <i class="bi bi-people-fill me-2"></i>
+        Clearance Dashboard
+      </h2>
+      <p class="mb-0">Monitor, manage, and update student clearance records</p>
+    </div>
+  </div>
+
+  <div class="container-fluid px-4">
+    <div class="bg-white p-2 rounded shadow-sm border">
+
+      <!-- Clearance Section -->
+      <div class="container-fluid pt-4 pb-5">
+        <div class="bg-white p-4 rounded shadow-sm border">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <h5 class="fw-bold mb-1">
+                <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
+                Clearance Requests
+              </h5>
+              <small class="text-muted">Handle clearance requests, monitor progress, and maintain records.</small>
+            </div>
+          </div>
+          <hr class="border-dark">
+
+          <!-- Search Bar -->
+          <div class="d-flex justify-content-end mb-3">
+            <div class="input-group input-group-sm" style="max-width: 400px;">
+              <input id="clearance_search" type="text" class="form-control" placeholder="Search student">
+              <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
+            </div>
+          </div>
+
+          <!-- Table of Clearance Records -->
+          <div class="card shadow-sm border">
+            <div class="card-header text-white" style="background-color: #440207;">
+              <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Clearance Record</h6>
+            </div>
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
+              <table class="table table-hover table-bordered align-middle text-center mb-0">
+                <thead class="table-secondary sticky-top border">
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Program</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Sample rows (static since no backend) -->
+                  <tr>
+                    <td>2023-001</td>
+                    <td>Juan Dela Cruz</td>
+                    <td>BS Computer Science</td>
+                    <td><span >Cleared</span></td>
+                    <td>Aug 10, 2025 14:30</td>
+                    <td>
+                      <a href="{% url 'admin_view_clearance' %}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
+                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                        View More
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2023-002</td>
+                    <td>Maria Santos</td>
+                    <td>BS Accountancy</td>
+                    <td><span >Pending</span></td>
+                    <td>Aug 12, 2025 09:15</td>
+                  <td>
+                    <a href="{% url 'admin_view_clearance'%}" class="btn btn-sm" style="color: #440207; border-color: #440207;"
+                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                      View More
+                    </a>
+                  </td>
+                  </tr>
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No more clearance cases found.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- End white content box -->
+  </div> <!-- End container -->
+</div> <!-- End main-content -->
 
 
   <!-- Scripts -->
@@ -167,6 +309,22 @@
     });
 
 //////////////////////////// START HERE MAG ADD
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('clearance_search');
+    if (!input) return;
+
+    // Search simulation (filters table rows)
+    input.addEventListener('keyup', function () {
+      const value = input.value.toLowerCase();
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(value) ? '' : 'none';
+      });
+    });
+  });
 
 
 

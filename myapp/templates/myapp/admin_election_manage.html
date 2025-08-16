@@ -110,7 +110,9 @@
               <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
               <div class="modal-footer justify-content-center">
                   <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
-                  <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+                  <a href="{% url 'logout' %}" class="btn btn-danger" style="background-color: #440207; border-color: #440207;"
+                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">Logout</a>
               </div>
           </div>
       </div>
