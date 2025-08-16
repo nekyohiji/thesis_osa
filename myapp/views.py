@@ -108,8 +108,58 @@ def client_scholarships_view(request):
 def client_CS_view(request):
     return render (request, 'myapp/client_CS.html')
 
+
 def client_view_CS_view(request):
-    return render (request, 'myapp/client_view_CS.html')
+    q = request.GET.get('q','').strip()
+    qs = CommunityServiceCase.objects.order_by('-updated_at')
+    if q:
+        qs = qs.filter(
+            Q(last_name__icontains=q) | Q(first_name__icontains=q) |
+            Q(program_course__icontains=q) | Q(student_id__icontains=q)
+        )
+    return render(request, 'myapp/client_view_CS.html', {'cases': qs, 'q': q})
+
+def cs_case_detail_api(request, case_id):
+    case = get_object_or_404(CommunityServiceCase, id=case_id)
+    vio = (Violation.objects
+           .filter(student_id=case.student_id)
+           .order_by('-violation_date', '-created_at')
+           .values('violation_type','violation_date','status','id'))
+    # map violations to simple JSON
+    violations = [{
+        "type": Violation.VIOLATION_TYPES_DICT.get(v['violation_type'], v['violation_type']) if hasattr(Violation,'VIOLATION_TYPES_DICT') else v['violation_type'],
+        "date": v['violation_date'].strftime('%b %d, %Y') if v['violation_date'] else '',
+        "severity": getattr(Violation, 'severity', 'Minor') and 'Minor'  # fallback label
+    } for v in vio]
+
+    logs_qs = case.logs.order_by('-check_in_at')
+    logs = []
+    for l in logs_qs:
+        logs.append({
+            "date": timezone.localtime(l.check_in_at).strftime('%b %d, %Y'),
+            "in":   timezone.localtime(l.check_in_at).strftime('%I:%M %p'),
+            "out":  timezone.localtime(l.check_out_at).strftime('%I:%M %p') if l.check_out_at else None,
+            "hours": str(l.hours)
+        })
+
+    open_session = logs_qs.filter(check_out_at__isnull=True).exists()
+
+    return JsonResponse({
+        "case": {
+            "id": case.id,
+            "student_id": case.student_id,
+            "first_name": case.first_name,
+            "last_name": case.last_name,
+            "program_course": case.program_course,
+            "total_required_hours": str(case.total_required_hours),
+            "hours_completed": str(case.hours_completed),
+            "remaining_hours": str(case.remaining_hours),
+            "is_closed": case.is_closed,
+        },
+        "violations": violations,
+        "logs": logs,
+        "open_session": open_session,
+    })
 
 def client_SurrenderingID_view(request):
     return render (request, 'myapp/client_SurrenderingID.html')
@@ -1688,7 +1738,7 @@ def _extract_tupc_id(raw: str) -> str | None:
     return m.group(1).upper() if m else None
 
 # AJAX: scanner -> TIME IN
-@role_required(['admin'])
+
 @require_POST
 @transaction.atomic
 def cs_scan_time_in(request, case_id):
@@ -1703,7 +1753,7 @@ def cs_scan_time_in(request, case_id):
     return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
 
 # AJAX: scanner -> TIME OUT
-@role_required(['admin'])
+
 @require_POST
 @transaction.atomic
 def cs_scan_time_out(request, case_id):

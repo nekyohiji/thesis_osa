@@ -31,6 +31,7 @@ urlpatterns = [
     path('admin_community_service/<int:case_id>/scan/time-in/', views.cs_scan_time_in, name='cs_scan_time_in'),
     path('admin_community_service/<int:case_id>/scan/time-out/', views.cs_scan_time_out, name='cs_scan_time_out'),
     path('admin_community_service/create-or-adjust/', views.cs_create_or_adjust, name='cs_create_or_adjust'),
+    path('api/cs/case/<int:case_id>/', views.cs_case_detail_api, name='cs_case_detail_api'),
     
     path('admin_election/', views.admin_election_view, name='admin_election'),
     
