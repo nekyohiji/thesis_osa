@@ -114,7 +114,35 @@ class Violation(models.Model):
         ("Property Damage", "Accidental Damage of University Property"),
         ("PDA", "Public Display of Physical Intimacy or Affection"),
         ("Cigarette", "Possession of Any type of Cigarette or Tobacco inside University"),
+        
+        ("Liquor/Drugs", "Liquor and Prohibited Drugs"),
+        ("Illegal Assembly", "Unauthorized Activities/ Illegal Assemblies"),
+        ("Weapons", "Deadly and Dangerous Weapons"),
+        ("Threats/Coercion", "Threats/Coercion"),
+        ("Swindling", "Swindling"),
+        ("Funds Misuse", "Misuse of/ Failure to Account Funds"),
+        ("Assault/Injury", "Violence and Physical Assault/Injury"),
+        ("Robbery/Theft", "Robbery/ Theft"),
+        ("Damage to Property (Major)", "Damage to Property"),
+        ("Forced Entry", "Forcible or Unauthorized entry into the TUP premises"),
+        ("Cybercrime", "Commission of Cyber crimes as defined under R.A. No. 10175"),
+        ("Slander/Libel", "Slander/Libel/Gossip"),
+        ("Falsification", "Falsification of documents, records and credentials"),
+        ("Academic Dishonesty", "Academic Dishonesty"),
+        ("Immoral Acts", "Immoral Acts"),
+        ("Gambling (Major)", "Gambling"),
+        ("Misrepresentation", "False representation or Misrepresentation"),
+        ("Disrespect", "Acts of Disrespect"),
+        ("Bribery", "Offering or Giving Bribes"),
+        ("Smoking (Major)", "Smoking within the University premises of any type of cigarette or tabacco product"),
+        ("Littering", "Littering within the University premises"),
+        ("Borrowed ID", "Entering the University premises with a borrowed ID or registration form"),
+        ("Lending ID", "Leading of ID/ registration form to facilitate the entry of another student into the University premises"),
+        ("4th Minor", "Commission of the same or any minor offense for the 4th time"),
+        ("Probation Major", "Commission of major offense while under academic probation"),
+        ("Final Conviction", "Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances"),
     ]
+    
     STATUS_CHOICES = [("Pending","Pending"), ("Approved","Approved"), ("Rejected","Rejected")]
     SEVERITY_CHOICES = [("MINOR","Minor"), ("MAJOR","Major")]  # future-proof; guards submit MINOR
     SETTLEMENT_CHOICES = [
@@ -138,7 +166,7 @@ class Violation(models.Model):
     guard_name = models.CharField(max_length=100)
     severity = models.CharField(max_length=5, choices=SEVERITY_CHOICES, default="MINOR")
 
-    evidence_1 = models.ImageField(upload_to='evidence/')
+    evidence_1 = models.ImageField(upload_to='evidence/', null=True, blank=True)
     evidence_2 = models.ImageField(upload_to='evidence/', null=True, blank=True)
 
     # --- workflow

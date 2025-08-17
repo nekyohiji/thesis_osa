@@ -2,6 +2,7 @@ from django import forms
 from .models import Violation, GoodMoralRequest, IDSurrenderRequest
 from django.core.exceptions import ValidationError
 import re
+from django.utils import timezone
 from datetime import date
 from decimal import Decimal
 from django.core.validators import MinLengthValidator
@@ -27,7 +28,36 @@ class ViolationForm(forms.ModelForm):
         if not cleaned_data.get('evidence_1'):
             raise forms.ValidationError("At least one evidence photo is required.")
         return cleaned_data
-    
+
+class MajorViolationForm(forms.ModelForm):
+    class Meta:
+        model = Violation
+        # no evidence fields here
+        fields = [
+            "first_name","middle_initial","extension_name","last_name",
+            "student_id","program_course","violation_date","violation_time",
+            "violation_type"
+        ]
+        widgets = {
+            "violation_date": forms.DateInput(attrs={"type":"date"}),
+            "violation_time": forms.TimeInput(attrs={"type":"time"}),
+        }
+
+    def save(self, approved_by_user=None, *args, **kwargs):
+        obj = super().save(commit=False)
+        obj.severity = "MAJOR"
+        obj.status = "Approved"             # recorded, not reviewed
+        now = timezone.now()
+        obj.reviewed_at = now
+        obj.approved_at = now
+        obj.approved_by = approved_by_user or ""
+        obj.guard_name = approved_by_user or "Admin"
+        # hard-force no evidence on MAJOR, even if someone posts files manually
+        obj.evidence_1 = None
+        obj.evidence_2 = None
+        obj.save()
+        return obj
+      
 class GoodMoralRequestForm(forms.ModelForm):
     # Override model fields so we can accept "YYYY" strings
     date_graduated = forms.CharField(required=False)

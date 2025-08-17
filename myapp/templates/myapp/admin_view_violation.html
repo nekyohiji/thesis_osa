@@ -86,6 +86,7 @@
               <thead class="table-light">
                 <tr>
                   <th>Date</th>
+                  <th>Severity</th>
                   <th>Violation</th>
                   <th>Attachments</th>
                   <th>Status</th>
@@ -95,6 +96,11 @@
               {% for v in approved_violations %}
               <tr>
                 <td>{{ v.violation_date }}</td>
+                <td>
+                  <span class="badge {% if v.severity == 'MAJOR' %}bg-danger{% else %}bg-secondary{% endif %}">
+                    {{ v.get_severity_display }}
+                  </span>
+                </td>
                 <td>{{ v.get_violation_type_display }}</td>
                 <td>
                   {% if v.evidence_1 %}

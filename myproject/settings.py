@@ -25,10 +25,15 @@ SECRET_KEY = 'django-insecure-1ea*4_+3rbu-v2)go9l2=q**mb2cotr8ju9n=g9wip9%w7sg=+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".trycloudflare.com"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "tupcosa.online", ".tupcosa.online"]
 CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://tupcosa.online",
+    "https://app.tupcosa.online",
+]
 
 # Application definition
 

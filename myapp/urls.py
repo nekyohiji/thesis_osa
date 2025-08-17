@@ -53,6 +53,7 @@ urlpatterns = [
     path('admin_violations/<int:violation_id>/apology/settled', views.mark_apology_settled, name='mark_apology_settled'),
     path('admin_old_violation/', views.admin_old_violation_view, name='admin_old_violation'),
     
+    
     path('admin_student/', views.admin_student_view, name='admin_student'),
     path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
     path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),

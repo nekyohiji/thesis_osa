@@ -20,7 +20,7 @@ from django.urls import reverse
 from django.utils.timezone import localtime
 import uuid, os
 from django.core.files.base import ContentFile
-from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm, CSCreateOrAdjustForm
+from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm, CSCreateOrAdjustForm, MajorViolationForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
@@ -433,7 +433,7 @@ def admin_view_violation(request):
     violation_id = request.GET.get('violation_id')
     if not violation_id:
         messages.error(request, "No violation ID specified.")
-        return redirect('admin_violation')
+        return redirect('myapp/admin_violation.html')
 
     violation = get_object_or_404(Violation, id=violation_id)
     student   = get_object_or_404(Student, tupc_id=violation.student_id)
@@ -464,12 +464,28 @@ def admin_view_violation(request):
 
 @role_required(['admin'])
 def admin_violation_view(request):
-    # Optional search on each table (your template uses q and q_history)
+    # ----- POST: create MAJOR violation -----
+    open_major_modal = False
+    if request.method == "POST" and request.POST.get("is_major") == "1":
+        major_form = MajorViolationForm(request.POST)  # no files for major
+        if major_form.is_valid():
+            approver = getattr(request.user, "get_full_name", lambda: "")() or request.user.username
+            major_form.save(approved_by_user=approver)
+            messages.success(request, "Major violation has been recorded.")
+            return redirect("admin_violation")  # stay on the same page (PRG)
+        else:
+            open_major_modal = True  # re-open the modal to show errors
+    else:
+        major_form = MajorViolationForm()
+
+    # ----- GET + (re-render after invalid POST) -----
     q_pending  = (request.GET.get('q') or '').strip()
     q_history  = (request.GET.get('q_history') or '').strip()
+    default_violation_date = timezone.localdate().strftime("%Y-%m-%d")
+    default_violation_time = timezone.localtime().strftime("%H:%M")
 
     base = (Violation.objects
-            .defer('evidence_1','evidence_2')  # speed: don’t load file fields for list
+            .defer('evidence_1','evidence_2')
             .order_by('-created_at'))
 
     pending = base.filter(status='Pending')
@@ -477,7 +493,7 @@ def admin_violation_view(request):
         pending = pending.filter(
             Q(student_id__icontains=q_pending) |
             Q(first_name__icontains=q_pending) |
-            Q(last_name__icontains=q_pending) 
+            Q(last_name__icontains=q_pending)
         )
 
     history = base.exclude(status='Pending')
@@ -485,31 +501,32 @@ def admin_violation_view(request):
         history = history.filter(
             Q(student_id__icontains=q_history) |
             Q(first_name__icontains=q_history) |
-            Q(last_name__icontains=q_history) 
+            Q(last_name__icontains=q_history)
         )
 
-    # Simple pagination (optional)
-    p_page = int(request.GET.get('p', 1))
-    h_page = int(request.GET.get('h', 1))
-    per    = int(request.GET.get('per', 15) or 15)
+    # robust ints
+    def _toi(v, d):
+        try: return int(v)
+        except (TypeError, ValueError): return d
+
+    p_page = max(1, _toi(request.GET.get('p', 1), 1))
+    h_page = max(1, _toi(request.GET.get('h', 1), 1))
+    per    = min(max(_toi(request.GET.get('per', 15), 15), 1), 100)
 
     p_pager = Paginator(pending, per)
     h_pager = Paginator(history, per)
-
-    try:
-        pending_page = p_pager.page(p_page)
-    except EmptyPage:
-        pending_page = p_pager.page(max(p_pager.num_pages, 1))
-
-    try:
-        history_page = h_pager.page(h_page)
-    except EmptyPage:
-        history_page = h_pager.page(max(h_pager.num_pages, 1))
+    try: pending_page = p_pager.page(p_page)
+    except EmptyPage: pending_page = p_pager.page(max(p_pager.num_pages, 1))
+    try: history_page = h_pager.page(h_page)
+    except EmptyPage: history_page = h_pager.page(max(h_pager.num_pages, 1))
 
     return render(request, 'myapp/admin_violation.html', {
         'pending_violations': pending_page,
         'history_violations': history_page,
-        # the template reads request.GET for the search boxes, so no extra context needed
+        "major_form": major_form,
+        "open_major_modal": open_major_modal,
+        "default_violation_date": default_violation_date,
+        "default_violation_time": default_violation_time,
     })
 
 @role_required(['admin'])
@@ -1778,7 +1795,6 @@ def cs_scan_time_out(request, case_id):
     if not log:
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
-
 
 
 

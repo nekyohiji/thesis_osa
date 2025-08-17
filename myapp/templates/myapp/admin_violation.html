@@ -199,83 +199,123 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border">
           <div class="modal-header">
-            <h5 class="modal-title fw-semibold"  id="majorOffenseLabel">  <i class="bi bi-exclamation-triangle-fill me-2"></i> Create Major Offense</h5>
+            <h5 class="modal-title fw-semibold" id="majorOffenseLabel">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i> Create Major Offense
+            </h5>
           </div>
 
-          <div class="modal-body">
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Last Name:</label>
-                <input type="text" class="form-control" placeholder="Enter last name" required>
-              </div>
+          <form id="majorForm" method="post" action="{% url 'admin_violation' %}" novalidate>
+            {% csrf_token %}
+            <div class="modal-body">
+              {% if major_form and major_form.errors %}
+                <div class="alert alert-danger">Please correct the errors below.</div>
+              {% endif %}
 
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">First Name:</label>
-                <input type="text" class="form-control" placeholder="Enter first name" required>
-              </div>
+              <div class="row g-2">
+                <!-- identity -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Last Name:</label>
+                  <input name="last_name" type="text" class="form-control" required value="{{ major_form.last_name.value|default_if_none:'' }}">
+                  {% if major_form and major_form.last_name.errors %}<div class="text-danger small">{{ major_form.last_name.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">First Name:</label>
+                  <input name="first_name" type="text" class="form-control" required value="{{ major_form.first_name.value|default_if_none:'' }}">
+                  {% if major_form and major_form.first_name.errors %}<div class="text-danger small">{{ major_form.first_name.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Middle Initial (optional):</label>
+                  <input name="middle_initial" type="text" class="form-control" value="{{ major_form.middle_initial.value|default_if_none:'' }}">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Ext (optional):</label>
+                  <input name="extension_name" type="text" class="form-control" value="{{ major_form.extension_name.value|default_if_none:'' }}">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Student ID:</label>
+                  <input name="student_id" type="text" class="form-control" required value="{{ major_form.student_id.value|default_if_none:'' }}">
+                  {% if major_form and major_form.student_id.errors %}<div class="text-danger small">{{ major_form.student_id.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Program:</label>
+                  <input name="program_course" type="text" class="form-control" required value="{{ major_form.program_course.value|default_if_none:'' }}">
+                  {% if major_form and major_form.program_course.errors %}<div class="text-danger small">{{ major_form.program_course.errors|striptags }}</div>{% endif %}
+                </div>
 
-              <div class="col-md-6">
-                <label class="form-label  fw-semibold">Middle Initial (optional):</label>
-                <input type="text" class="form-control" placeholder="M.">
-              </div>
+                <!-- when/what -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date:</label>
+                  <input name="violation_date" type="date" class="form-control" required value="{{ major_form.violation_date.value|default:default_violation_date }}">
+                  {% if major_form and major_form.violation_date.errors %}<div class="text-danger small">{{ major_form.violation_date.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Time:</label>
+                  <input name="violation_time" type="time" class="form-control" required value="{{ major_form.violation_time.value|default:default_violation_time }}">
+                  {% if major_form and major_form.violation_time.errors %}<div class="text-danger small">{{ major_form.violation_time.errors|striptags }}</div>{% endif %}
+                </div>
 
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Ext (optional):</label>
-                <input type="text" class="form-control" placeholder="Jr., Sr., III">
-              </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">Major Offense:</label>
+                  <select name="violation_type" class="form-select" required>
+                    <option value="" disabled {% if not major_form or not major_form.violation_type.value %}selected{% endif %}>Select offense</option>
+                    <!-- keep only MAJOR options here -->
+                    <option value="Liquor/Drugs">Liquor and Prohibited Drugs</option>
+                    <option value="Illegal Assembly">Unauthorized Activities/ Illegal Assemblies</option>
+                    <option value="Weapons">Deadly and Dangerous Weapons</option>
+                    <option value="Threats/Coercion">Threats/Coercion</option>
+                    <option value="Swindling">Swindling</option>
+                    <option value="Funds Misuse">Misuse of/ Failure to Account Funds</option>
+                    <option value="Assault/Injury">Violence and Physical Assault/Injury</option>
+                    <option value="Robbery/Theft">Robbery/ Theft</option>
+                    <option value="Damage to Property (Major)">Damage to Property</option>
+                    <option value="Forced Entry">Forcible or Unauthorized entry into the TUP premises</option>
+                    <option value="Cybercrime">Commission of Cyber crimes as defined under R.A. No. 10175</option>
+                    <option value="Slander/Libel">Slander/Libel/Gossip</option>
+                    <option value="Falsification">Falsification of documents, records and credentials</option>
+                    <option value="Academic Dishonesty">Academic Dishonesty</option>
+                    <option value="Immoral Acts">Immoral Acts</option>
+                    <option value="Gambling (Major)">Gambling</option>
+                    <option value="Misrepresentation">False representation or Misrepresentation</option>
+                    <option value="Disrespect">Acts of Disrespect</option>
+                    <option value="Bribery">Offering or Giving Bribes</option>
+                    <option value="Smoking (Major)">Smoking within the University premises of any type of cigarette or tabacco product</option>
+                    <option value="Littering">Littering within the University premises</option>
+                    <option value="Borrowed ID">Entering the University premises with a borrowed ID or registration form</option>
+                    <option value="Lending ID">Leading of ID/ registration form to facilitate the entry of another student into the University premises</option>
+                    <option value="4th Minor">Commission of the same or any minor offense for the 4th time</option>
+                    <option value="Probation Major">Commission of major offense while under academic probation</option>
+                    <option value="Final Conviction">Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances</option>
+                  </select>
+                  {% if major_form and major_form.violation_type.errors %}<div class="text-danger small">{{ major_form.violation_type.errors|striptags }}</div>{% endif %}
+                </div>
 
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Student ID:</label>
-                <input type="text" class="form-control" placeholder="Enter student ID" required>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Program:</label>
-                <input type="text" class="form-control" placeholder="Enter program/course" required>
-              </div>
-
-              <div class="col-12">
-                <label class="form-label fw-semibold">Major Offense:</label>
-                <select class="form-select" required>
-                  <option value="" disabled selected>Select offense</option>
-                  <option value="major">Liquor and Prohibited Drugs</option>
-                  <option value="major">Unauthorized Activities/ Illegal Assemblies</option>
-                  <option value="major">Deadly and Dangerous Weapons</option>
-                  <option value="major">Threats/Coercion</option>
-                  <option value="major">Swindling</option>
-                  <option value="major">Misuse of/ Failure to Account Funds</option>
-                  <option value="major">Violence and Physical Assault/Injury</option>
-                  <option value="major">Robbery/ Theft</option>
-                  <option value="major">Damage to Property</option>
-                  <option value="major">Forcible or Unauthorized entry into the TUP premises</option>
-                  <option value="major">Commission of Cyber crimes as defined under R.A. No. 10175</option>
-                  <option value="major">Slander/Libel/Gossip</option>
-                  <option value="major">Falsification of documents, records and credentials</option>
-                  <option value="major">Academic Dishonesty</option>
-                  <option value="major">Immoral Acts</option>
-                  <option value="major">Gambling</option>
-                  <option value="major">False representation or Misrepresentation</option>
-                  <option value="major">Acts of Disrespect</option>
-                  <option value="major">Offering or Giving Bribes</option>
-                  <option value="major">Smoking within the University premises of any type of cigarette or tabacco product</option>
-                  <option value="major">Littering within the University premises</option>
-                  <option value="major">Entering the University premises with a borrowed ID or registration form</option>
-                  <option value="major">Leading of ID/ registration form to facilitate the entry of another student into the University premises</option>
-                  <option value="major">Commission of the same or any minor offense for the 4th time</option>
-                  <option value="major">Commission of major offense while under academic probation</option>
-                  <option value="major">Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances</option>
-                </select>
+                <!-- no evidence fields here -->
+                <input type="hidden" name="severity" value="MAJOR">
               </div>
             </div>
-          </div>
 
-          <div class="modal-footer justify-content-center">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn text-light"  style="background-color: #440207;">Save</button>
-          </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn text-light" style="background-color: #440207;">Save</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
+
+    {% if open_major_modal %}
+    <script>
+    document.addEventListener("DOMContentLoaded", function(){
+      new bootstrap.Modal(document.getElementById('majorOffenseModal')).show();
+    });
+    </script>
+    {% endif %}
+    <script>
+    document.getElementById("majorForm")?.addEventListener("submit", function(){
+      const overlay = document.getElementById("loadingOverlay");
+      if (overlay) overlay.style.display = "flex";
+    });
+    </script>
 
   <div class="container-fluid px-4">
     <div class="bg-white p-2 rounded shadow-sm border">
