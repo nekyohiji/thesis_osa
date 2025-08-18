@@ -1249,7 +1249,7 @@ def ajax_edit_scholarship(request, id):
 DEFAULT_APPROVAL_MSG = (
     "Your Good Moral Certificate request has been approved.\n\n"
     "Please proceed to the Office of Student Affairs (OSA) to claim your request form.\n"
-    "Prepare PHP 100 cash for payment at the cashier.\n"
+    "Prepare PHP 100 for payment at the cashier's office.\n"
     "After payment, reply to this email with a photo or copy of your receipt."
 )
 
@@ -1257,15 +1257,21 @@ DEFAULT_APPROVAL_MSG = (
 @require_POST
 def goodmoral_accept(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
-    note = (request.POST.get('accept_message') or "").strip()
-    final_msg = note if note else DEFAULT_APPROVAL_MSG
 
+    # Build a human-friendly reference using the DB primary key
+    ref = f"GM-{r.pk:06d}"  # e.g., GM-000117
+
+    note = (request.POST.get('accept_message') or "").strip()
+    base_msg = DEFAULT_APPROVAL_MSG
+    final_msg = (note if note else base_msg) + f"\n\nReference ID: {ref}"
+
+    # Update status
     r.is_approved = True
     r.is_rejected = False
     r.rejection_reason = ""
-    r.save()
+    r.save(update_fields=['is_approved', 'is_rejected', 'rejection_reason'])
 
-    subject = "Your Good Moral Certificate Request has been APPROVED"
+    subject = f"[{ref}] Your Good Moral Certificate Request has been APPROVED"
     body = (
         f"Hello {r.requester_name},\n\n"
         f"Your Good Moral Certificate request for {r.first_name} {r.surname} "
@@ -1275,13 +1281,23 @@ def goodmoral_accept(request, pk):
         f"Submitted: {r.submitted_at:%b %d, %Y %I:%M %p}\n\n"
         "Thank you."
     )
-    try:
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [r.requester_email], fail_silently=False)
-        messages.success(request, "Request accepted and email sent.")
-    except Exception as e:
-        messages.warning(request, f"Accepted, but email failed: {e}")
 
-    return redirect('admin_view_goodmoral', pk=pk)  
+    try:
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [r.requester_email],
+            fail_silently=False,
+        )
+        messages.success(request,
+                 f"Request accepted and email sent. Ref: {ref}",
+                 extra_tags='gm-admin')
+    except Exception as e:
+        messages.warning(request, f"Accepted, but email failed: {e}. Ref: {ref}")
+
+    return redirect('admin_view_goodmoral', pk=pk)
+
 
 @role_required(['admin'])
 @require_POST

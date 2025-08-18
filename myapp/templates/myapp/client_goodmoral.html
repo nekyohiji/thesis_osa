@@ -73,9 +73,11 @@
     {% if messages %}
     <div class="mt-3">
         {% for message in messages %}
-        <div class="alert alert-danger" role="alert">
-            {{ message }}
-        </div>
+            {% if 'gm-admin' not in message.tags %}
+                <div class="alert alert-danger" role="alert">
+                    {{ message }}
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
     {% endif %}
@@ -120,7 +122,7 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Extension (Jr., Sr.):</label>
+                        <label class="form-label">Extension (Jr., Sr.): OPTIONAL</label>
                         <input type="text" id="ex_goodmoral" class="form-control" name="ext" maxlength="10" placeholder="Enter Your Extension Name">
                     </div>
                     <div class="col-md-6 mb-3">
@@ -149,8 +151,10 @@
                             <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" maxlength="20" placeholder="TUPC-XX-XXXX" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Program/Course:</label>
-                            <input type="text" id="program_goodmoral" class="form-control" name="program"  minlength = "10" placeholder="Bachelor of ..." maxlength="175" required>         
+                        <label class="form-label">Program/Course:</label>
+                            <select id="program_goodmoral" class="form-select" name="program" required>
+                                <option value="">-- Select Program --</option>
+                            </select>
                         </div>
                     </div>
 
@@ -202,7 +206,7 @@
                         <option value="">-- Select Purpose of Request --</option>
                         <option value="Employment">Employment</option>
                         <option value="Transfer to Another School">Transfer to Another School</option>
-                        <option value="Continuing Education">Continuing Education</option>
+                        <option value="continuing education">Continuing Education</option>
                         <option value="Supervised Industrial Training (SIT)"> Supervised Industrial Training (SIT)</option>
                         <option value="In-Campus Practice Teaching (IPT)">In-Campus Practice Teaching (IPT)</option>
                         <option value="Off-Campus Practice Teaching (OPT)">Off-Campus Practice Teaching (OPT)</option>
@@ -266,7 +270,7 @@
                 <!-- Upload Field -->
                 <div class="mb-3" id="fileInputContainer" style="display: none;">
                     <label id="fileInputLabel" class="form-label">Upload File:</label>
-                    <input type="file" class="form-control" name="uploaded_file" id="uploadedFileInput" accept=".jpg,.jpeg,.png,.pdf" required>
+                    <input type="file" class="form-control" name="uploaded_file" id="uploadedFileInput" accept="application/pdf,image/jpeg,image/png">
                 </div>
 
                 <hr>
@@ -318,39 +322,377 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+{% load static %}
 <script>
-    // Stepper Logic
-    let currentStep = 1;
-    const steps = document.getElementsByClassName('step');
-    const indicators = document.getElementById('stepIndicator').children;
+    (() => {
+    /* =========================
+        Helpers & initial wiring
+        ========================= */
 
-    showStep(currentStep);
+    // Ensure Purpose has "Others" (backend expects it)
+    function ensureOthersPurpose() {
+        const sel = document.getElementById('purpose_goodmoral');
+        if (!sel) return;
+        const hasOthers = Array.from(sel.options).some(o => o.value === 'Others');
+        if (!hasOthers) {
+        const opt = document.createElement('option');
+        opt.value = 'Others';
+        opt.textContent = 'Others';
+        sel.appendChild(opt);
+        }
+    }
+
+    // Populate Program/Course from CSV (or replace text input with <select>)
+    function populateProgramsFromCSV() {
+        const csvUrl = "{% static 'myapp/data/programs.csv' %}";
+
+        // Prefer an existing <select>; otherwise, replace an <input name="program">
+        let select = document.querySelector('#program_goodmoral, select[name="program"]');
+        const input = select ? null : document.querySelector('input[name="program"]');
+        if (!select && !input) return;
+
+        // If only an input exists, swap it for a select (keeping name/id/required)
+        if (!select) {
+        select = document.createElement('select');
+        select.id = input.id || 'program_goodmoral';
+        select.name = input.name || 'program';
+        select.className = 'form-select';
+        if (input.required) select.required = true;
+        input.replaceWith(select);
+        }
+
+        const keepPlaceholder = () => {
+        const first = select.querySelector('option');
+        select.innerHTML = '';
+        if (first && first.value === '') {
+            select.appendChild(first);
+        } else {
+            const ph = document.createElement('option');
+            ph.value = '';
+            ph.textContent = '-- Select Program --';
+            ph.disabled = true; ph.selected = true; ph.hidden = true;
+            select.appendChild(ph);
+        }
+        };
+
+        fetch(csvUrl, { cache: 'no-store' })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(text => {
+            const current = (select.value || '').trim();
+            text = text.replace(/^\uFEFF/, ''); // strip BOM
+            const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            const seen = new Set();
+            keepPlaceholder();
+            for (const p of lines) {
+            if (seen.has(p)) continue;
+            seen.add(p);
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            if (p === current) opt.selected = true; // preserve prefilled
+            select.appendChild(opt);
+            }
+        })
+        .catch(err => console.warn('Programs CSV not loaded; leaving field as-is.', err));
+    }
+
+    // Show/hide status-dependent fields
+    function toggleStatusFields() {
+        const graduated = document.getElementById('status_graduated')?.checked;
+        const former    = document.getElementById('status_former')?.checked;
+        const current   = document.getElementById('status_current')?.checked;
+
+        const yearGraduated = document.getElementById('year_graduated_goodmoral');
+        const stayYears     = document.getElementById('stay_goodmoral');
+        const yearAdmission = document.getElementById('year_admission_goodmoral');
+
+        // Show/hide wrappers
+        const gradWrap  = document.getElementById('graduated_date_field');
+        const stayWrap  = document.getElementById('inclusive_years_field');
+        const admWrap   = document.getElementById('admission_date_field');
+
+        if (gradWrap) gradWrap.style.display = graduated ? 'block' : 'none';
+        if (stayWrap) stayWrap.style.display = former ? 'block' : 'none';
+        if (admWrap)  admWrap.style.display  = current ? 'block' : 'none';
+
+        // Required flags
+        if (yearGraduated) yearGraduated.required = !!graduated;
+        if (stayYears)     stayYears.required     = !!former;
+        if (yearAdmission) yearAdmission.required = !!current;
+    }
+
+    // Purpose “Others / Scholarship / Transfer” → reveal text box
+    function toggleOtherInput() {
+        const purposeSelect       = document.getElementById("purpose_goodmoral");
+        const otherInputContainer = document.getElementById("otherPurposeContainer");
+        const otherInput          = document.getElementById("other_purpose");
+        if (!purposeSelect || !otherInputContainer || !otherInput) return;
+
+        const selected = purposeSelect.value;
+        let placeholderText = "";
+
+        switch (selected) {
+        case "Others":                        placeholderText = "Please specify your purpose"; break;
+        case "Transfer to Another School":    placeholderText = "Enter the School Name";       break;
+        case "Scholarship":                   placeholderText = "Specify Scholarship";          break;
+        }
+
+        if (placeholderText) {
+        otherInputContainer.style.display = "block";
+        otherInput.required = true;
+        otherInput.placeholder = placeholderText;
+        } else {
+        otherInputContainer.style.display = "none";
+        otherInput.required = false;
+        otherInput.value = "";
+        otherInput.placeholder = "";
+        }
+    }
+
+    // Verification: document type → file input visible + required
+    function updateUploadRequired() {
+        const documentTypeSelect = document.getElementById('documentTypeSelect');
+        const fileInputContainer = document.getElementById('fileInputContainer');
+        const fileInputLabel     = document.getElementById('fileInputLabel');
+        const uploadedFileInput  = document.getElementById('uploadedFileInput');
+        if (!documentTypeSelect || !fileInputContainer || !fileInputLabel || !uploadedFileInput) return;
+
+        const selectedText = documentTypeSelect.options[documentTypeSelect.selectedIndex]?.text || 'File';
+        if (documentTypeSelect.value) {
+        fileInputContainer.style.display = 'block';
+        fileInputLabel.textContent = `Upload ${selectedText}:`;
+        uploadedFileInput.required = true;
+        } else {
+        fileInputContainer.style.display = 'none';
+        uploadedFileInput.required = false;
+        uploadedFileInput.value = '';
+        uploadedFileInput.classList.remove('is-invalid');
+        }
+    }
+
+    // Run your togglers on load so prefilled values render correctly
+    function initTogglesOnLoad() {
+        try { toggleStatusFields(); } catch(_) {}
+        try { toggleOtherInput();   } catch(_) {}
+        try { updateUploadRequired(); } catch(_) {}
+    }
+
+    /* ===============
+        Stepper logic
+        =============== */
+    let currentStep = 1;
+    const steps = () => document.getElementsByClassName('step');
+    const indicators = () => document.getElementById('stepIndicator')?.children || [];
 
     function showStep(step) {
-        for (let i = 0; i < steps.length; i++) {
-            steps[i].classList.remove('active');
-        }
-        steps[step - 1].classList.add('active');
+        const S = steps();
+        for (let i = 0; i < S.length; i++) S[i].classList.remove('active');
+        if (S[step - 1]) S[step - 1].classList.add('active');
 
-        for (let i = 0; i < indicators.length; i++) {
-            indicators[i].classList.remove('active', 'done');
-            if (i < step - 1) {
-                indicators[i].classList.add('done');
-            } else if (i === step - 1) {
-                indicators[i].classList.add('active');
-            }
+        const I = indicators();
+        for (let i = 0; i < I.length; i++) {
+        I[i].classList.remove('active', 'done');
+        if (i < step - 1) I[i].classList.add('done');
+        else if (i === step - 1) I[i].classList.add('active');
         }
 
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const fixedNav = document.querySelector('.fixed-nav');
+        if (!prevBtn || !nextBtn || !fixedNav) return;
 
         if (step === 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'inline-block';
+        fixedNav.classList.remove('justify-content-between');
+        fixedNav.classList.add('justify-content-end');
+        } else if (step === S.length) {
+        prevBtn.style.display = 'inline-block';
+        nextBtn.style.display = 'none';
+        fixedNav.classList.remove('justify-content-end');
+        fixedNav.classList.add('justify-content-between');
+        } else {
+        prevBtn.style.display = 'inline-block';
+        nextBtn.style.display = 'inline-block';
+        fixedNav.classList.remove('justify-content-end');
+        fixedNav.classList.add('justify-content-between');
+        }
+    }
+
+    function changeStep(n) {
+        const alertDiv = document.getElementById('formAlert');
+        if (alertDiv) {
+        alertDiv.classList.add('d-none');
+        alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
+        }
+
+        if (n > 0) {
+        const S = steps();
+        const stepIndex = Array.from(S).findIndex(s => s.classList.contains('active'));
+        const curStep = stepIndex + 1;
+        const currentFields = S[stepIndex]?.querySelectorAll('input, select, textarea') || [];
+        let valid = true;
+
+        // General required field validation (middle_name not required)
+        currentFields.forEach(field => {
+            if (field.hasAttribute('required') && !field.value.trim() && field.name !== 'middle_name') {
+            valid = false;
+            field.classList.add('is-invalid');
+            } else {
+            field.classList.remove('is-invalid');
+            }
+        });
+
+        // Step 2: Academic Info validation
+        if (valid && curStep === 2) {
+            const statusRadios = document.querySelectorAll('input[name="status"]');
+            const oneSelected = Array.from(statusRadios).some(r => r.checked);
+            if (!oneSelected) {
+            valid = false;
+            if (alertDiv) alertDiv.textContent = 'Please select your status (Current, Former, or Alum/Graduated).';
+            }
+
+            const studentID     = document.getElementById('studentID_goodmoral');
+            const stayYears     = document.getElementById('stay_goodmoral');
+            const yearAdmission = document.getElementById('year_admission_goodmoral');
+            const yearGraduated = document.getElementById('year_graduated_goodmoral');
+
+            const graduated = document.getElementById('status_graduated')?.checked;
+            const former    = document.getElementById('status_former')?.checked;
+            const current   = document.getElementById('status_current')?.checked;
+
+            const idPattern   = /^TUPC-\d{2}-\d{4}$/;
+            const stayPattern = /^\d{4}-\d{4}$/;
+            const yearPattern = /^\d{4}$/;
+            const CURRENT_YEAR = new Date().getFullYear();
+
+            if (studentID && !idPattern.test(studentID.value.trim())) {
+            valid = false;
+            studentID.classList.add('is-invalid');
+            if (alertDiv) alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX';
+            } else if (studentID) studentID.classList.remove('is-invalid');
+
+            if (former) {
+            if (!stayYears || !stayPattern.test(stayYears.value.trim())) {
+                valid = false;
+                if (stayYears) stayYears.classList.add('is-invalid');
+                if (alertDiv) alertDiv.textContent = 'Inclusive Years of Stay must match the format: YYYY-YYYY';
+            } else {
+                // Extra ordering/range guard
+                const [a,b] = stayYears.value.split('-').map(Number);
+                if (a < 1979 || b < a || b > CURRENT_YEAR) {
+                valid = false;
+                stayYears.classList.add('is-invalid');
+                if (alertDiv) alertDiv.textContent = `Inclusive Years must be 1979–${CURRENT_YEAR} and in order (e.g., 2018-2022).`;
+                } else {
+                stayYears.classList.remove('is-invalid');
+                }
+            }
+            } else if (stayYears) stayYears.classList.remove('is-invalid');
+
+            if (current) {
+            const y = yearAdmission?.value.trim() || '';
+            if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
+                valid = false;
+                if (yearAdmission) yearAdmission.classList.add('is-invalid');
+                if (alertDiv) alertDiv.textContent = `Please enter a valid admission year (1979–${CURRENT_YEAR}).`;
+            } else if (yearAdmission) yearAdmission.classList.remove('is-invalid');
+            }
+
+            if (graduated) {
+            const y = yearGraduated?.value.trim() || '';
+            if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
+                valid = false;
+                if (yearGraduated) yearGraduated.classList.add('is-invalid');
+                if (alertDiv) alertDiv.textContent = `Please enter a valid graduation year (1979–${CURRENT_YEAR}).`;
+            } else if (yearGraduated) yearGraduated.classList.remove('is-invalid');
+            }
+        }
+
+        // Step 3: Requester Info
+        if (valid && curStep === 3) {
+            const email   = document.getElementById('email_req_goodmoral');
+            const contact = document.getElementById('contact_req_goodmoral');
+
+            const emailPattern   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const contactPattern = /^\+63 9\d{9}$/;
+
+            if (email && !emailPattern.test(email.value.trim())) {
+            valid = false;
+            email.classList.add('is-invalid');
+            if (alertDiv) alertDiv.textContent = 'Please enter a valid email address.';
+            } else if (email) email.classList.remove('is-invalid');
+
+            if (contact && !contactPattern.test(contact.value.trim())) {
+            valid = false;
+            contact.classList.add('is-invalid');
+            if (alertDiv) alertDiv.textContent = 'Contact number must match format: +63 9XXXXXXXXX';
+            } else if (contact) contact.classList.remove('is-invalid');
+        }
+
+        // Step 4: File Upload step validation
+        if (valid && curStep === 4) {
+            const documentType = document.getElementById('documentTypeSelect');
+            const uploadedFile = document.getElementById('uploadedFileInput');
+            const maxSize = 10 * 1024 * 1024; // 10MB
+
+            if (!documentType?.value) {
+            valid = false;
+            if (documentType) documentType.classList.add('is-invalid');
+            if (alertDiv) alertDiv.textContent = 'Please select a document type.';
+            } else if (documentType) documentType.classList.remove('is-invalid');
+
+            if (!uploadedFile?.value) {
+            valid = false;
+            if (uploadedFile) uploadedFile.classList.add('is-invalid');
+            if (alertDiv) alertDiv.textContent = 'Please upload a document file.';
+            } else {
+            const file = uploadedFile.files?.[0];
+            if (file && file.size > maxSize) {
+                valid = false;
+                uploadedFile.classList.add('is-invalid');
+                if (alertDiv) alertDiv.textContent = 'File size must not exceed 10MB.';
+            } else {
+                uploadedFile.classList.remove('is-invalid');
+            }
+            }
+        }
+
+        if (!valid) {
+            if (alertDiv) {
+            alertDiv.classList.remove('d-none');
+            alertDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+            return;
+        }
+        }
+
+        // Advance or retreat steps
+        const S = steps();
+        let stepIndex = Array.from(S).findIndex(s => s.classList.contains('active'));
+        const target = stepIndex + 1 + n;
+        if (target >= 1 && target <= S.length) {
+        S[stepIndex].classList.remove('active');
+        S[target - 1].classList.add('active');
+
+        const I = indicators();
+        for (let i = 0; i < I.length; i++) {
+            I[i].classList.remove('active', 'done');
+            if (i < target - 1) I[i].classList.add('done');
+            else if (i === target - 1) I[i].classList.add('active');
+        }
+
+        currentStep = target;
+
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const fixedNav = document.querySelector('.fixed-nav');
+        if (currentStep === 1) {
             prevBtn.style.display = 'none';
             nextBtn.style.display = 'inline-block';
             fixedNav.classList.remove('justify-content-between');
             fixedNav.classList.add('justify-content-end');
-        } else if (step === steps.length) {
+        } else if (currentStep === S.length) {
             prevBtn.style.display = 'inline-block';
             nextBtn.style.display = 'none';
             fixedNav.classList.remove('justify-content-end');
@@ -361,395 +703,179 @@
             fixedNav.classList.remove('justify-content-end');
             fixedNav.classList.add('justify-content-between');
         }
+        }
     }
 
-    function changeStep(n) {
+    // Expose these for your HTML onclick handlers
+    window.showStep = showStep;
+    window.changeStep = changeStep;
+    window.toggleStatusFields = toggleStatusFields;
+    window.toggleOtherInput = toggleOtherInput;
+
+    /* =======================================
+        Submit: enforce required upload + size
+        ======================================= */
+    function wireSubmit() {
+        const form     = document.getElementById('gmfForm');
         const alertDiv = document.getElementById('formAlert');
-        alertDiv.classList.add('d-none');
-        alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
+        const modalEl  = document.getElementById('submissionModal');
+        if (!form) return;
 
-        if (n > 0) {
-            const steps = document.getElementsByClassName('step');
-            const currentStep = Array.from(steps).findIndex(s => s.classList.contains('active')) + 1;
-            const currentFields = steps[currentStep - 1].querySelectorAll('input, select, textarea');
-            let valid = true;
-
-            // General required field validation (except middle name)
-            currentFields.forEach(field => {
-                if (field.hasAttribute('required') && !field.value.trim() && field.name !== 'middle_name') {
-                    valid = false;
-                    field.classList.add('is-invalid');
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-
-            // Step 2: Academic Info validation
-            if (valid && currentStep === 2) {
-                const statusRadios = document.querySelectorAll('input[name="status"]');
-                const oneSelected = Array.from(statusRadios).some(r => r.checked);
-                if (!oneSelected) {
-                    valid = false;
-                    alertDiv.textContent = 'Please select your status (Current, Former, or Alum/Graduated).';
-                }
-
-                const studentID     = document.getElementById('studentID_goodmoral');
-                const stayYears     = document.getElementById('stay_goodmoral');
-                const yearAdmission = document.getElementById('year_admission_goodmoral');
-                const yearGraduated = document.getElementById('year_graduated_goodmoral');
-
-                const graduated = document.getElementById('status_graduated').checked;
-                const former    = document.getElementById('status_former').checked;
-                const current   = document.getElementById('status_current').checked;
-
-                const idPattern   = /^TUPC-\d{2}-\d{4}$/;
-                const stayPattern = /^\d{4}-\d{4}$/;
-                const yearPattern = /^\d{4}$/;
-                const CURRENT_YEAR = new Date().getFullYear();
-
-                if (!idPattern.test(studentID.value.trim())) {
-                    valid = false;
-                    studentID.classList.add('is-invalid');
-                    alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX';
-                } else {
-                    studentID.classList.remove('is-invalid');
-                }
-
-                if (former && !stayPattern.test(stayYears.value.trim())) {
-                    valid = false;
-                    stayYears.classList.add('is-invalid');
-                    alertDiv.textContent = 'Inclusive Years of Stay must match the format: YYYY-YYYY';
-                } else {
-                    stayYears.classList.remove('is-invalid');
-                }
-
-                if (current) {
-                    const y = yearAdmission.value.trim();
-                    if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
-                        valid = false;
-                        yearAdmission.classList.add('is-invalid');
-                        alertDiv.textContent = `Please enter a valid admission year (1979–${CURRENT_YEAR}).`;
-                    } else {
-                        yearAdmission.classList.remove('is-invalid');
-                    }
-                }
-
-                if (graduated) {
-                    const y = yearGraduated.value.trim();
-                    if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
-                        valid = false;
-                        yearGraduated.classList.add('is-invalid');
-                        alertDiv.textContent = `Please enter a valid graduation year (1979–${CURRENT_YEAR}).`;
-                    } else {
-                        yearGraduated.classList.remove('is-invalid');
-                    }
-                }
-            }
-
-            // Step 3: Requester Info
-            if (valid && currentStep === 3) {
-                const email   = document.getElementById('email_req_goodmoral');
-                const contact = document.getElementById('contact_req_goodmoral');
-
-                const emailPattern   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                const contactPattern = /^\+63 9\d{9}$/;
-
-                if (!emailPattern.test(email.value.trim())) {
-                    valid = false;
-                    email.classList.add('is-invalid');
-                    alertDiv.textContent = 'Please enter a valid email address.';
-                } else {
-                    email.classList.remove('is-invalid');
-                }
-
-                if (!contactPattern.test(contact.value.trim())) {
-                    valid = false;
-                    contact.classList.add('is-invalid');
-                    alertDiv.textContent = 'Contact number must match format: +63 9XXXXXXXXX';
-                } else {
-                    contact.classList.remove('is-invalid');
-                }
-            }
-
-            // Step 4: File Upload
-            if (valid && currentStep === 4) {
-                const documentType = document.getElementById('documentTypeSelect');
-                const uploadedFile = document.getElementById('uploadedFileInput');
-                const maxSize = 10 * 1024 * 1024; // 10MB
-
-                if (!documentType.value) {
-                    valid = false;
-                    documentType.classList.add('is-invalid');
-                    alertDiv.textContent = 'Please select a document type.';
-                } else {
-                    documentType.classList.remove('is-invalid');
-                }
-
-                if (!uploadedFile.value) {
-                    valid = false;
-                    uploadedFile.classList.add('is-invalid');
-                    alertDiv.textContent = 'Please upload a document file.';
-                } else {
-                    const file = uploadedFile.files[0];
-                    if (file && file.size > maxSize) {
-                        valid = false;
-                        uploadedFile.classList.add('is-invalid');
-                        alertDiv.textContent = 'File size must not exceed 10MB.';
-                    } else {
-                        uploadedFile.classList.remove('is-invalid');
-                    }
-                }
-            }
-
-            if (!valid) {
-                alertDiv.classList.remove('d-none');
-                alertDiv.scrollIntoView({ behavior: 'smooth' });
-                return;
-            }
-        }
-
-        // Advance or retreat steps
-        const steps = document.getElementsByClassName('step');
-        let currentStep = Array.from(steps).findIndex(s => s.classList.contains('active')) + 1;
-        if (currentStep + n >= 1 && currentStep + n <= steps.length) {
-            steps[currentStep - 1].classList.remove('active');
-            steps[currentStep + n - 1].classList.add('active');
-
-            // update indicators
-            const indicators = document.getElementById('stepIndicator').children;
-            for (let i = 0; i < indicators.length; i++) {
-                indicators[i].classList.remove('active', 'done');
-                if (i < currentStep + n - 1) indicators[i].classList.add('done');
-                else if (i === currentStep + n - 1) indicators[i].classList.add('active');
-            }
-
-            currentStep += n;
-
-            // nav buttons layout
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const fixedNav = document.querySelector('.fixed-nav');
-            if (currentStep === 1) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'inline-block';
-                fixedNav.classList.remove('justify-content-between');
-                fixedNav.classList.add('justify-content-end');
-            } else if (currentStep === steps.length) {
-                prevBtn.style.display = 'inline-block';
-                nextBtn.style.display = 'none';
-                fixedNav.classList.remove('justify-content-end');
-                fixedNav.classList.add('justify-content-between');
-            } else {
-                prevBtn.style.display = 'inline-block';
-                nextBtn.style.display = 'inline-block';
-                fixedNav.classList.remove('justify-content-end');
-                fixedNav.classList.add('justify-content-between');
-            }
-        }
-    }
-
-    // Document Upload Logic
-    const documentTypeSelect = document.getElementById('documentTypeSelect');
-    const fileInputContainer = document.getElementById('fileInputContainer');
-    const fileInputLabel = document.getElementById('fileInputLabel');
-
-    documentTypeSelect.addEventListener('change', () => {
-        const selected = documentTypeSelect.options[documentTypeSelect.selectedIndex].text;
-        if (documentTypeSelect.value) {
-            fileInputContainer.style.display = 'block';
-            fileInputLabel.textContent = `Upload ${selected}:`;
-        } else {
-            fileInputContainer.style.display = 'none';
-        }
-    });
-
-    // "Others" - Hidden Input Text
-    function toggleOtherInput() {
-        const purposeSelect = document.getElementById("purpose_goodmoral");
-        const otherInputContainer = document.getElementById("otherPurposeContainer");
-        const otherInput = document.getElementById("other_purpose");
-
-        const selected = purposeSelect.value;
-
-        let placeholderText = "";
-
-        switch (selected) {
-            case "Others":
-                placeholderText = "Please specify your purpose";
-                break;
-            case "Transfer to Another School":
-                placeholderText = "Enter the School Name";
-                break;
-            case "Scholarship":
-                placeholderText = "Specify Scholarship";
-                break;
-        }
-
-        if (placeholderText !== "") {
-            otherInputContainer.style.display = "block";
-            otherInput.required = true;
-            otherInput.placeholder = placeholderText;
-        } else {
-            otherInputContainer.style.display = "none";
-            otherInput.required = false;
-            otherInput.value = "";
-            otherInput.placeholder = "";
-        }
-    }
-
-    window.addEventListener('load', () => {
-        const form = document.getElementById('gmfForm');
-        const modalEl = document.getElementById('submissionModal');
-        if (!form || !modalEl) return;
-
-        const modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+        const modal       = modalEl ? new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false }) : null;
         const countdownEl = document.getElementById('submitCountdown');
-        const bodyEl = document.getElementById('submissionModalBody');
-        const homeUrl = "{% url 'client_home' %}";
-
-        // helper to get CSRF token (from hidden input)
-        const getCSRF = () => (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value || '';
+        const bodyEl      = document.getElementById('submissionModalBody');
+        const homeUrl     = "{% url 'client_home' %}";
+        const getCSRF     = () => (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value || '';
 
         form.addEventListener('submit', (e) => {
-            e.preventDefault();
+        e.preventDefault();
 
-            // show modal immediately
-            modal.show();
+        // 1) Native HTML5 validation first
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            if (alertDiv) {
+            alertDiv.textContent = 'Please fill out all required fields correctly before submitting.';
+            alertDiv.classList.remove('d-none');
+            }
+            const firstInvalid = form.querySelector(':invalid');
+            if (firstInvalid) {
+            // Jump to the step containing the first invalid field
+            const stepEl = firstInvalid.closest('.step');
+            const S = Array.from(steps());
+            const idx = S.indexOf(stepEl);
+            if (idx >= 0) showStep(idx + 1);
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus({ preventScroll: true });
+            }
+            return;
+        }
 
-            // prevent double submit, but DO NOT disable form fields (we need their values)
-            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = true);
+        // 2) Extra guards for Verification step
+        const documentTypeSelect = document.getElementById('documentTypeSelect');
+        const uploadedFileInput  = document.getElementById('uploadedFileInput');
+        const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+        let ok = true;
 
-            // 5-second countdown
-            let secs = 5;
-            countdownEl.textContent = secs;
-            const delay = new Promise(resolve => {
-                const t = setInterval(() => {
-                    secs -= 1;
-                    countdownEl.textContent = secs;
-                    if (secs <= 0) { clearInterval(t); resolve(); }
-                }, 1000);
-            });
+        if (!documentTypeSelect?.value) {
+            ok = false;
+            documentTypeSelect?.classList.add('is-invalid');
+        } else {
+            documentTypeSelect?.classList.remove('is-invalid');
+        }
 
-            // post using fetch (works with files via FormData)
-            const post = fetch(form.action, {
-                method: form.method || 'POST',
-                body: new FormData(form),
-                headers: {
-                    'X-CSRFToken': getCSRF(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin'
-            }).then(resp => {
-                if (!resp.ok) throw new Error('Submit failed');
-                return resp.text();
-            });
+        const file = uploadedFileInput?.files?.[0];
+        if (!file) {
+            ok = false;
+            uploadedFileInput?.classList.add('is-invalid');
+        } else if (file.size > MAX_SIZE) {
+            ok = false;
+            uploadedFileInput?.classList.add('is-invalid');
+            if (alertDiv) {
+            alertDiv.textContent = 'File size must not exceed 10MB.';
+            alertDiv.classList.remove('d-none');
+            }
+            showStep(4);
+            return;
+        } else {
+            uploadedFileInput?.classList.remove('is-invalid');
+        }
 
-            // redirect after BOTH finish
-            Promise.all([post, delay]).then(() => {
-                window.location.assign(homeUrl);
-            }).catch(() => {
-                bodyEl.innerHTML = '<div class="text-danger">Submission failed. Please check required fields and try again.</div>';
-                form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = false);
-            });
+        if (!ok) {
+            if (alertDiv) {
+            alertDiv.textContent = 'Please select a document type and upload the file.';
+            alertDiv.classList.remove('d-none');
+            }
+            showStep(4);
+            uploadedFileInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            uploadedFileInput?.focus({ preventScroll: true });
+            return;
+        }
+
+        // 3) Modal + 5s countdown + AJAX submit
+        modal?.show();
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = true);
+
+        let secs = 5;
+        if (countdownEl) countdownEl.textContent = secs;
+        const delay = new Promise(resolve => {
+            const t = setInterval(() => {
+            secs -= 1;
+            if (countdownEl) countdownEl.textContent = secs;
+            if (secs <= 0) { clearInterval(t); resolve(); }
+            }, 1000);
         });
-    });
 
-    // ===== Year inputs: set dynamic max (year-only) =====
-    (function () {
-        const Y = new Date().getFullYear();
-        ['year_graduated_goodmoral', 'year_admission_goodmoral'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.setAttribute('max', String(Y));
+        const post = fetch(form.action, {
+            method: form.method || 'POST',
+            body: new FormData(form),
+            headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(resp => {
+            if (!resp.ok) throw new Error('Submit failed');
+            return resp.text();
         });
-    })();
 
-    // ===== Status field toggling (uses YEAR fields) =====
-    function toggleStatusFields() {
-        const graduated = document.getElementById('status_graduated').checked;
-        const former    = document.getElementById('status_former').checked;
-        const current   = document.getElementById('status_current').checked;
-
-        const yearGraduated = document.getElementById('year_graduated_goodmoral');
-        const stayYears     = document.getElementById('stay_goodmoral');
-        const yearAdmission = document.getElementById('year_admission_goodmoral');
-
-        // Show/hide wrappers
-        document.getElementById('graduated_date_field').style.display = graduated ? 'block' : 'none';
-        document.getElementById('inclusive_years_field').style.display = former ? 'block' : 'none';
-        document.getElementById('admission_date_field').style.display = current ? 'block' : 'none';
-
-        // Required flags
-        if (yearGraduated) yearGraduated.required = !!graduated;
-        if (stayYears)     stayYears.required     = !!former;
-        if (yearAdmission) yearAdmission.required = !!current;
+        Promise.all([post, delay]).then(() => {
+            window.location.assign(homeUrl);
+        }).catch(() => {
+            if (bodyEl) bodyEl.innerHTML = '<div class="text-danger">Submission failed. Please check required fields and try again.</div>';
+            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = false);
+        });
+        });
     }
 
-    // ===== Name & Email/Relationship/Contact input rules =====
-    (function () {
+    /* ======================================
+        Field normalizers & year constraints
+        ====================================== */
+
+    // Names: strip trailing spaces; Email/Relationship: no spaces; Contact: normalize + pattern
+    function wireFieldNormalizers() {
         // Names: allow internal spaces; forbid trailing spaces
         const rtrimIds = ['fn_goodmoral','mn_goodmoral','sn_goodmoral','requester_goodmoral'];
         rtrimIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener('blur', () => {
-                el.value = (el.value || '').replace(/\s+$/, '');
-            });
-        });
-
-        // Email & Relationship: no spaces at all (block + strip)
-        const noSpaceIds = ['email_req_goodmoral','relationship_goodmoral'];
-        noSpaceIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener('keydown', (e) => {
-                if (e.key === ' ' || e.code === 'Space') e.preventDefault();
-            });
-            el.addEventListener('beforeinput', (e) => {
-                if (e.data && /\s/.test(e.data)) e.preventDefault();
-            });
-            const strip = () => {
-                const cleaned = (el.value || '').replace(/\s+/g, '');
-                if (el.value !== cleaned) el.value = cleaned;
-            };
-            el.addEventListener('input', strip);
-            el.addEventListener('blur', strip);
-            el.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const txt = (e.clipboardData || window.clipboardData).getData('text');
-                document.execCommand('insertText', false, (txt || '').replace(/\s+/g, ''));
-            });
-        });
-
-        (function () {
-        const el = document.getElementById('contact_req_goodmoral');
+        const el = document.getElementById(id);
         if (!el) return;
-
-        // ✅ Use "tel" so mobile keyboards include + and a spacebar (numeric hides spacebar)
-        el.setAttribute('pattern', '^\\+63 9\\d{9}$');
-        el.setAttribute('inputmode', 'tel');
-
-        // allow typing, but normalize as the user types
-        el.addEventListener('input', () => {
-            let v = el.value || '';
-
-            // keep only digits, single spaces, and a single leading +
-            v = v.replace(/[^\d +]/g, '');   // allow digits, space, plus
-            v = v.replace(/(?!^)\+/g, '');   // only one '+' at start
-            v = v.replace(/ {2,}/g, ' ');    // collapse multiple spaces
-            v = v.replace(/\s+$/, '');       // strip trailing spaces
-
-            // optional: enforce single space after +63 if user has typed that much
-            v = v.replace(/^\+63(?!\s|$)/, '+63 '); // ensures "+63 " once they pass "+63"
-
-            el.value = v;
-        });
-
-        // trim trailing space on blur
         el.addEventListener('blur', () => {
             el.value = (el.value || '').replace(/\s+$/, '');
         });
+        });
 
-        // clean pasted content
+        // Email & Relationship: block/strip spaces
+        const noSpaceIds = ['email_req_goodmoral','relationship_goodmoral'];
+        noSpaceIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('keydown', (e) => { if (e.key === ' ' || e.code === 'Space') e.preventDefault(); });
+        el.addEventListener('beforeinput', (e) => { if (e.data && /\s/.test(e.data)) e.preventDefault(); });
+        const strip = () => {
+            const cleaned = (el.value || '').replace(/\s+/g, '');
+            if (el.value !== cleaned) el.value = cleaned;
+        };
+        el.addEventListener('input', strip);
+        el.addEventListener('blur', strip);
+        el.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const txt = (e.clipboardData || window.clipboardData).getData('text');
+            document.execCommand('insertText', false, (txt || '').replace(/\s+/g, ''));
+        });
+        });
+
+        // Contact: keep "+63 9XXXXXXXXX" shape usable on mobile
+        (function () {
+        const el = document.getElementById('contact_req_goodmoral');
+        if (!el) return;
+        el.setAttribute('pattern', '^\\+63 9\\d{9}$');
+        el.setAttribute('inputmode', 'tel');
+        el.addEventListener('input', () => {
+            let v = el.value || '';
+            v = v.replace(/[^\d +]/g, '');   // allow digits, single spaces, single leading +
+            v = v.replace(/(?!^)\+/g, '');
+            v = v.replace(/ {2,}/g, ' ');
+            v = v.replace(/\s+$/, '');
+            v = v.replace(/^\+63(?!\s|$)/, '+63 ');
+            el.value = v;
+        });
+        el.addEventListener('blur', () => { el.value = (el.value || '').replace(/\s+$/, ''); });
         el.addEventListener('paste', (e) => {
             e.preventDefault();
             let txt = (e.clipboardData || window.clipboardData).getData('text') || '';
@@ -761,73 +887,85 @@
         });
         })();
 
-        // Normalize again right before submit
+        // Normalize again right before submit (defense in depth)
         const form = document.getElementById('gmfForm');
         if (form) form.addEventListener('submit', () => {
-            rtrimIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = (el.value || '').replace(/\s+$/, '');
-            });
-            noSpaceIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = (el.value || '').replace(/\s+/g, '');
-            });
-            const c = document.getElementById('contact_req_goodmoral');
-            if (c) c.value = (c.value || '').replace(/\s+$/, '');
+        rtrimIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = (el.value || '').replace(/\s+$/, '');
         });
-    })();
+        noSpaceIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = (el.value || '').replace(/\s+/g, '');
+        });
+        const c = document.getElementById('contact_req_goodmoral');
+        if (c) c.value = (c.value || '').replace(/\s+$/, '');
+        });
+    }
 
-    /* Year fields: no trailing spaces, digits only, 4 chars, clamp to range (1979–current year) */
-    (function () {
-    const YEAR_IDS = ['year_graduated_goodmoral', 'year_admission_goodmoral'];
-    const MIN = 1979;
-    const CUR = new Date().getFullYear();
+    // Year inputs: numeric only, clamp visually, mark invalid if out of 1979–current
+    function wireYearFields() {
+        const YEAR_IDS = ['year_graduated_goodmoral', 'year_admission_goodmoral'];
+        const MIN = 1979;
+        const CUR = new Date().getFullYear();
 
-    YEAR_IDS.forEach(id => {
+        YEAR_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-
-        // Helpful attributes
         el.setAttribute('inputmode', 'numeric');
         el.setAttribute('step', '1');
-        el.setAttribute('max', String(CUR)); // native constraint (does not clamp)
+        el.setAttribute('max', String(CUR));
 
-        // Block spaces from keyboard/IME
-        el.addEventListener('keydown', (e) => {
-        if (e.key === ' ' || e.code === 'Space') e.preventDefault();
-        });
-        el.addEventListener('beforeinput', (e) => {
-        if (e.data && /\s/.test(e.data)) e.preventDefault();
-        });
+        el.addEventListener('keydown', (e) => { if (e.key === ' ' || e.code === 'Space') e.preventDefault(); });
+        el.addEventListener('beforeinput', (e) => { if (e.data && /\s/.test(e.data)) e.preventDefault(); });
 
-        // While typing: remove spaces/non-digits; cap to 4 chars
         el.addEventListener('input', () => {
-        let v = el.value || '';
-        v = v.replace(/\s+/g, ''); // kill whitespace
-        v = v.replace(/\D+/g, ''); // digits only
-        if (v.length > 4) v = v.slice(0, 4);
-        el.value = v;
+            let v = el.value || '';
+            v = v.replace(/\s+/g, '');
+            v = v.replace(/\D+/g, '');
+            if (v.length > 4) v = v.slice(0, 4);
+            el.value = v;
         });
 
-        // On blur: trim trailing spaces; mark invalid if out of range (do NOT change value)
         el.addEventListener('blur', () => {
-        let v = (el.value || '').replace(/\s+$/, '').replace(/\D+/g, '').slice(0, 4);
-        el.value = v;
-
-        // Visual invalid state; your changeStep() will show the top alert and block Next
-        if (v.length === 4) {
+            let v = (el.value || '').replace(/\s+$/, '').replace(/\D+/g, '').slice(0, 4);
+            el.value = v;
+            if (v.length === 4) {
             const n = +v;
             if (n < MIN || n > CUR) el.classList.add('is-invalid');
             else el.classList.remove('is-invalid');
-        } else if (v.length > 0) {
+            } else if (v.length > 0) {
             el.classList.add('is-invalid');
-        } else {
+            } else {
             el.classList.remove('is-invalid');
-        }
+            }
         });
+        });
+    }
+
+    /* =================
+        Event listeners
+        ================= */
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial step render (safe if HTML sets active manually)
+        try { showStep(currentStep); } catch(_) {}
+
+        ensureOthersPurpose();
+        populateProgramsFromCSV();
+        wireFieldNormalizers();
+        wireYearFields();
+        wireSubmit();
+
+        // Upload area
+        document.getElementById('documentTypeSelect')?.addEventListener('change', updateUploadRequired);
+    });
+
+    window.addEventListener('load', () => {
+        initTogglesOnLoad();
     });
     })();
 </script>
+
 
 </body>
 </html>

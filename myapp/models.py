@@ -258,7 +258,7 @@ class GoodMoralRequest(models.Model):
     relationship = models.CharField(max_length=50)
     other_purpose = models.CharField(max_length=100, blank=True, null=True)
     document_type = models.CharField(max_length=30, default='unknown')
-    uploaded_file = models.FileField(upload_to='uploads/goodmoral/', default='uploads/goodmoral/default.pdf')
+    uploaded_file = models.FileField(upload_to='uploads/goodmoral/', blank=False, null=False)  
     is_approved = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False)
     rejection_reason = models.TextField(blank=True)
