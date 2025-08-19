@@ -22,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1ea*4_+3rbu-v2)go9l2=q**mb2cotr8ju9n=g9wip9%w7sg=+'
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "tupcosa.online", ".tupcosa.online"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "tupcosa.online", ".tupcosa.online", ".onrender.com"]
 CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
@@ -35,6 +35,7 @@ USE_X_FORWARDED_HOST = True
 CSRF_TRUSTED_ORIGINS = [
     "https://tupcosa.online",
     "https://app.tupcosa.online",
+    "https://*.onrender.com",
 ]
 
 # Application definition
