@@ -188,7 +188,6 @@ hr {
 }
 
 .dashboard-header-bg {
-  background: linear-gradient(to right, #440207, #7b000a);
   color: #fff;
   padding: 1.5rem 2rem;
   border-radius: 8px;
@@ -208,82 +207,4 @@ hr {
 
 .dashboard-header-bg h2 i {
   font-size: 2rem;
-}
-
-.monthly-records-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(195, 10, 10, 0.1);
-}
-
-.monthly-records-card .card-header {
-  background-color: #7b000a;
-  color: #fff;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  padding: 1rem 1.5rem;
-}
-
-.monthly-records-card .card-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-}
-
-.monthly-records-card .card-body {
-  padding: 0;
-}
-
-/* This is the key change to make the table scrollable */
-.table-scroll-container {
-  max-height: 400px; 
-  overflow-y: auto;
-  overflow-x: auto;
-  border-left: 1px solid #dee2e6;
-  border-right: 1px solid #dee2e6;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.table {
-  width: 100%;
-  margin-bottom: 0;
-  border-collapse: collapse;
-}
-
-.table thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.table tfoot {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background-color: #979797;
-}
-
-.table th, .table td {
-  padding: 0.75rem;
-  vertical-align: middle;
-  border: 1px solid #dee2e6;
-  white-space: nowrap;
-}
-
-.table-dark th {
-  background-color: #440207;
-  color: #fff;
-  border-color: #440207;
-}
-
-.table-striped tbody tr:nth-of-type(odd) {
-  background-color: #fff;
-}
-
-.table-striped tbody tr:nth-of-type(even) {
-  background-color: #f8f9fa;
-}
-
-.table-warning th, .table-warning td {
-  background-color: #fff3cd !important;
-  font-weight: bold;
-  color: #000;
 }
