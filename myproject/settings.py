@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import os
+import dj_database_url
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -81,19 +83,31 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',  # or 'django.db.backends.mysql' if using mysqlclient
-        'NAME': 'osasystemdb',
-        'USER': 'osathesis',
-        'PASSWORD': 'osathesis25',
-        'HOST': 'localhost',
-        'PORT': '3306',
+DATABASES = {}
+
+if os.getenv("DATABASE_URL"):
+    import dj_database_url
+    DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+elif DEBUG:
+    # local MySQL while developing on your machine
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "osasystemdb",
+        "USER": "osathesis",
+        "PASSWORD": "osathesis25",
+        "HOST": "localhost",
+        "PORT": "3306",
     }
-}
+else:
+    # fallback so the app can boot on Render before you add a cloud DB
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 
 
 # Password validation
