@@ -27,10 +27,11 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "tupcosa.online", ".tupcosa.online", ".onrender.com"]
-CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com"]
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-USE_X_FORWARDED_HOST = True
+ALLOWED_HOSTS = [
+    "127.0.0.1", "localhost",
+    "tupcosa.online", ".tupcosa.online",
+    ".onrender.com",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://tupcosa.online",
@@ -38,6 +39,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
 ]
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 # Application definition
 
 INSTALLED_APPS = [
@@ -82,8 +85,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -91,10 +93,10 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DATABASES = {}
 
 if os.getenv("DATABASE_URL"):
-    import dj_database_url
+    # Cloud DB (Render Postgres or hosted MySQL) – we’ll add env later
     DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 elif DEBUG:
-    # local MySQL while developing on your machine
+    # Your local MySQL while developing
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "osasystemdb",
@@ -104,7 +106,7 @@ elif DEBUG:
         "PORT": "3306",
     }
 else:
-    # fallback so the app can boot on Render before you add a cloud DB
+    # Fallback so first Render deploy can boot without a cloud DB
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
@@ -136,9 +138,16 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 GMF_TEMPLATE_PATH = BASE_DIR / "myapp" / "cert_templates" / "good-moral-form.xlsx"
 TIME_ZONE = "Asia/Manila"
-LIBREOFFICE_PATH = Path(r"C:\Program Files\LibreOffice\program\soffice.exe")
-LIBREOFFICE_PY = Path (r"C:\Program Files\LibreOffice\program\python.exe")      # NEW
-LIBREOFFICE_BIN = Path (r"C:\Program Files\LibreOffice\program\soffice.exe")
+
+if os.name == "nt":
+    DEFAULT_SOFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
+else:
+    DEFAULT_SOFFICE = None  # Render/Linux: leave unset unless installed
+
+LIBREOFFICE_BIN  = os.getenv("LIBREOFFICE_BIN", DEFAULT_SOFFICE)
+LIBREOFFICE_PATH = LIBREOFFICE_BIN
+LIBREOFFICE_PY   = os.getenv("LIBREOFFICE_PY")  # optional; usually not needed
+
 USE_I18N = True
 USE_TZ = True
 
@@ -147,6 +156,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -158,10 +169,10 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EMAIL_HOST_USER = 'jxhotel0@gmail.com'  # ← your Gmail address
-EMAIL_HOST_PASSWORD = 'ywbr yuah tzzy nxjt'  # ← your app password (no quotes if using .env)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
