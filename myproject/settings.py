@@ -141,13 +141,21 @@ GMF_TEMPLATE_PATH = BASE_DIR / "myapp" / "cert_templates" / "good-moral-form.xls
 TIME_ZONE = "Asia/Manila"
 
 if os.name == "nt":
-    DEFAULT_SOFFICE = r"C:\Program Files\LibreOffice\program\soffice.exe"
-else:
-    DEFAULT_SOFFICE = None  # Render/Linux: leave unset unless installed
+    # 1) LibreOffice's Python (needed for UNO imports in your script)
+    DEFAULT_LO_PY = r"C:\Program Files\LibreOffice\program\python.exe"
 
-LIBREOFFICE_BIN  = os.getenv("LIBREOFFICE_BIN", DEFAULT_SOFFICE)
-LIBREOFFICE_PATH = LIBREOFFICE_BIN
-LIBREOFFICE_PY   = os.getenv("LIBREOFFICE_PY")  # optional; usually not needed
+    # 2) CLI binary (handy if you ever call soffice directly)
+    win_soffice = r"C:\Program Files\LibreOffice\program\soffice.com"
+    if not Path(win_soffice).exists():
+        win_soffice = r"C:\Program Files\LibreOffice\program\soffice.exe"
+    DEFAULT_SOFFICE = win_soffice
+else:
+    DEFAULT_LO_PY = None          # leave unset on Render unless installed via Docker
+    DEFAULT_SOFFICE = None
+
+LIBREOFFICE_PY  = os.getenv("LIBREOFFICE_PY", DEFAULT_LO_PY)
+LIBREOFFICE_BIN = os.getenv("LIBREOFFICE_BIN", DEFAULT_SOFFICE)
+LIBREOFFICE_PATH = LIBREOFFICE_BIN  # alias if your code references this
 
 USE_I18N = True
 USE_TZ = True

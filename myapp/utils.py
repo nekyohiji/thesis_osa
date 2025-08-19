@@ -9,7 +9,7 @@ from .models import GoodMoralRequest
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 import mimetypes
-
+from pathlib import Path
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -185,6 +185,12 @@ def generate_gmf_pdf(req) -> bytes:
         payload_path = os.path.join(tmpdir, "payload.json")
         with open(payload_path, "w", encoding="utf-8") as fh:
             json.dump(payload, fh, ensure_ascii=False)
+        lo_py = settings.LIBREOFFICE_PY
+        if not lo_py or not Path(lo_py).exists():
+            raise FileNotFoundError(
+                "LibreOffice Python not found. Set LIBREOFFICE_PY to something like "
+                r"C:\Program Files\LibreOffice\program\python.exe"
+            )
 
         script_path = os.path.join(os.path.dirname(__file__), "libre", "lo_gmf_export.py")
         cmd = [str(settings.LIBREOFFICE_PY), script_path, str(settings.GMF_TEMPLATE_PATH), out_pdf, payload_path]
