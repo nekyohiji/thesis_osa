@@ -1406,7 +1406,16 @@ def goodmoral_request_form_pdf(request, pk):
         check(375, 660)  # Female
 
     # Program & Status
-    text(45, 610, r.program, size=6.5)
+    styles = getSampleStyleSheet()
+    styleN = styles["Normal"]
+    styleN.fontSize = 8
+    styleN.leading = 8  # spacing between wrapped lines
+
+    # Wrap program text inside a fixed width
+    max_width = 280  # adjust to fit your table cell
+    prog_para = Paragraph(r.program or "", styleN)
+    prog_para.wrapOn(c, max_width, 100)   # ✅ use c (the Canvas instance)
+    prog_para.drawOn(c, 45, 610)          # ✅ use c (the Canvas instance)
 
     status = (r.status or "").lower()
     if "alum" in status or "gradu" in status:
@@ -1440,7 +1449,7 @@ def goodmoral_request_form_pdf(request, pk):
     elif any(k in purpose for k in ("student development", "comselec", "usg", "award")):
         check(330, 460)
     else:
-        check(330, 395); text(380, 395, other or purpose_raw)
+        check(330, 420); text(420, 420, other or purpose_raw)
 
     # Requester info
     text(85, 345, r.requester_name)
