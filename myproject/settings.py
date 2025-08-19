@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +37,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://tupcosa.online",
     "https://app.tupcosa.online",
     "https://*.onrender.com",
+    "https://www.tupcosa.online",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
