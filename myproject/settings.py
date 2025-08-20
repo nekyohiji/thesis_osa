@@ -74,6 +74,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.media',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -92,12 +93,14 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {}
+DATABASES = {}
+db_url = os.getenv("DATABASE_URL")
 
-if os.getenv("DATABASE_URL"):
-    # Cloud DB (Render Postgres or hosted MySQL) – we’ll add env later
+if db_url:
+    # Cloud DB (Render, etc.)
     DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 elif DEBUG:
-    # Your local MySQL while developing
+    # Local dev DB (use the one that already has your data)
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "osasystemdb",
@@ -106,17 +109,18 @@ elif DEBUG:
         "HOST": "localhost",
         "PORT": "3306",
     }
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    
 else:
-    # Fallback so first Render deploy can boot without a cloud DB
+    # Fallback only when NOT debug and no DATABASE_URL
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
+
+# Keep security flags separate from DB selection:
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
 
 
 # Password validation
@@ -190,4 +194,4 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / 'media')
