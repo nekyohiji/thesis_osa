@@ -112,7 +112,7 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Middle Name:</label>
-                        <input type="text" id="mn_goodmoral" class="form-control" name="middle_name" maxlength="50" placeholder="Enter Your Middle Name">
+                        <input type="text" id="mn_goodmoral" class="form-control" name="middle_name" maxlength="50" placeholder="Enter Your Middle Name" >
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Surname:</label>
@@ -535,11 +535,27 @@
 
         // General required field validation (middle_name not required)
         currentFields.forEach(field => {
+            // Required field check (skip middle_name)
             if (field.hasAttribute('required') && !field.value.trim() && field.name !== 'middle_name') {
-            valid = false;
-            field.classList.add('is-invalid');
-            } else {
-            field.classList.remove('is-invalid');
+                valid = false;
+                field.classList.add('is-invalid');
+                field.setCustomValidity("This field is required.");
+                field.reportValidity();
+            } 
+            // No numbers allowed: first, middle, surname
+            else if (
+                (field.name === 'first_name' || field.name === 'middle_name' || field.name === 'surname') 
+                && field.value.trim() !== "" 
+                && /\d/.test(field.value)
+            ) {
+                valid = false;
+                field.classList.add('is-invalid');
+                field.setCustomValidity("Numbers are not allowed in this field.");
+                field.reportValidity();
+            } 
+            else {
+                field.classList.remove('is-invalid');
+                field.setCustomValidity(""); // clear error state
             }
         });
 
