@@ -409,62 +409,44 @@
      File preview (image / PDF)
      --------------------------- */
 
-  // Normalize a possibly-bare path like "uploads/..." into an absolute /media URL.
-  function absolutizeMediaUrl(u) {
-    if (!u) return u;
-
-    // Already absolute or special schemes
-    if (/^https?:\/\//i.test(u) || /^data:|^blob:/i.test(u)) return u;
-
-    // Already an absolute /media path
-    if (u.startsWith('/media/')) return u;
-
-    // If backend handed us "/uploads/..." or "uploads/..."
-    const needsMediaPrefix = u.startsWith('uploads/') || u.startsWith('/uploads/');
-
-    // If it starts with "/" but not /media/, keep as-is unless it's /uploads/
-    if (u.startsWith('/')) {
-      return needsMediaPrefix
-        ? (MEDIA_URL.replace(/\/?$/, '/') + u.replace(/^\/+/, ''))
-        : u;
-    }
-
-    // Relative path like "uploads/..." → prefix MEDIA_URL
-    let base = MEDIA_URL || '/media/';
-    if (!base.endsWith('/')) base += '/';
-    return base + u.replace(/^\/+/, '');
+  function ensureAbsoluteMediaUrl(url) {
+    if (!url) return '';
+    // already absolute
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('//')) return window.location.protocol + url;
+    // "/media/..." -> "https://host/media/..."
+    if (url.startsWith('/')) return window.location.origin + url;
+    // "media/..." (missing leading slash) -> add it
+    if (url.startsWith('media/')) return window.location.origin + '/' + url;
+    // anything else, leave as-is
+    return url;
   }
 
   (function () {
-    const modalEl = document.getElementById('filePreviewModal');
+    const modalEl   = document.getElementById('filePreviewModal');
     const container = document.getElementById('previewContainer');
-    const trigger = document.getElementById('btnPreviewUpload');
+    const trigger   = document.getElementById('btnPreviewUpload');
     if (!modalEl || !container || !trigger) return;
 
-    function isImage(url) { return /\.(png|jpe?g|gif|webp|bmp)$/i.test(url.split('?')[0]); }
-    function isPdf(url)   { return /\.pdf$/i.test(url.split('?')[0]); }
-
-    function renderFallback(url, name) {
-      const div = document.createElement('div');
-      div.className = 'p-4 text-center';
-      div.innerHTML = `
-        <p class="mb-3">Preview not available or failed to load.</p>
-        <a class="btn btn-dark" href="${url}" target="_blank" rel="noopener">
-          <i class="bi bi-box-arrow-up-right"></i> Open ${name.split('/').pop()}
-        </a>`;
-      container.appendChild(div);
+    function isImage(url) {
+      return /\.(png|jpe?g)$/i.test(url.split('?')[0]);
+    }
+    function isPdf(url) {
+      return /\.pdf$/i.test(url.split('?')[0]);
     }
 
     modalEl.addEventListener('show.bs.modal', function (ev) {
       const btn  = ev.relatedTarget || trigger;
       const raw  = btn?.getAttribute('data-file-url') || '';
       const name = btn?.getAttribute('data-file-name') || 'file';
+      const url  = ensureAbsoluteMediaUrl(raw);
 
-      // ✅ Ensure the URL is correct even if backend gave "uploads/..."
-      const url = absolutizeMediaUrl(raw);
-
-      // Clear any previous content
       container.innerHTML = '';
+
+      if (!url) {
+        container.innerHTML = '<div class="p-4 text-danger">No file URL found.</div>';
+        return;
+      }
 
       if (isImage(url)) {
         const img = new Image();
@@ -472,19 +454,25 @@
         img.alt = name;
         img.className = 'img-fluid';
         img.style.maxHeight = '82vh';
-        img.onerror = () => { container.innerHTML = ''; renderFallback(url, name); };
         container.appendChild(img);
       } else if (isPdf(url)) {
         const iframe = document.createElement('iframe');
         iframe.src = url + (url.includes('#') ? '' : '#zoom=page-width');
         iframe.style.width = '100%';
         iframe.style.height = '82vh';
-        iframe.title = name;
-        iframe.loading = 'lazy';
-        iframe.onerror = () => { container.innerHTML = ''; renderFallback(url, name); };
+        iframe.setAttribute('title', name);
+        iframe.setAttribute('loading', 'lazy');
         container.appendChild(iframe);
       } else {
-        renderFallback(url, name);
+        const div = document.createElement('div');
+        div.className = 'p-4 text-center';
+        const filename = name.split('/').pop();
+        div.innerHTML = `
+          <p class="mb-3">Preview not available for this file type.</p>
+          <a class="btn btn-dark" href="${url}" download>
+            <i class="bi bi-download"></i> Download ${filename}
+          </a>`;
+        container.appendChild(div);
       }
     });
 
