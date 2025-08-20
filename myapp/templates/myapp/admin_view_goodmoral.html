@@ -336,13 +336,19 @@
 
 
 <script>
-  document.getElementById('acceptSubmitBtn').addEventListener('click', function() {
+  // Make MEDIA_URL available to JS (works even if the context processor is missing)
+  const MEDIA_URL = "{{ MEDIA_URL|default:'/media/' }}";
+
+  /* ---------------------------
+     Accept / Decline handlers
+     --------------------------- */
+  document.getElementById('acceptSubmitBtn')?.addEventListener('click', function () {
     const msg = (document.getElementById('acceptMessage').value || '').trim();
     document.getElementById('acceptMessageInput').value = msg;
     document.getElementById('acceptForm').submit();
   });
 
-  document.getElementById('declineSubmitBtn').addEventListener('click', function() {
+  document.getElementById('declineSubmitBtn')?.addEventListener('click', function () {
     const reasonEl = document.getElementById('declineMessage');
     const reason = (reasonEl.value || '').trim();
     if (!reason) {
@@ -355,44 +361,37 @@
     document.getElementById('declineForm').submit();
   });
 
-  const declineModalEl = document.getElementById('declineModal');
-  declineModalEl.addEventListener('hidden.bs.modal', function () {
+  document.getElementById('declineModal')?.addEventListener('hidden.bs.modal', function () {
     const reasonEl = document.getElementById('declineMessage');
-    reasonEl.value = '';
-    reasonEl.classList.remove('is-invalid');
+    if (reasonEl) {
+      reasonEl.value = '';
+      reasonEl.classList.remove('is-invalid');
+    }
   });
 
-  const acceptModalEl = document.getElementById('acceptModal');
-  acceptModalEl.addEventListener('hidden.bs.modal', function () {
+  document.getElementById('acceptModal')?.addEventListener('hidden.bs.modal', function () {
     const msgEl = document.getElementById('acceptMessage');
-    msgEl.value = '';
+    if (msgEl) msgEl.value = '';
   });
-  
-  document.querySelectorAll('.navigate-after-close').forEach(function(link){
+
+  // Buttons that should navigate only after the modal closes
+  document.querySelectorAll('.navigate-after-close').forEach(function (link) {
     link.addEventListener('click', function (e) {
       e.preventDefault();
       const url = this.getAttribute('href');
-
-      // find the modal this button is inside
       const modalEl = this.closest('.modal');
 
       if (modalEl) {
         const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-
         const go = function () {
           modalEl.removeEventListener('hidden.bs.modal', go);
-          // new tab (safer: no BFCache issues, your page stays put)
           window.open(url, '_blank', 'noopener');
-          // if you prefer same tab, use:
-          // window.location.href = url;
+          // If you prefer same tab: window.location.href = url;
         };
-
         modalEl.addEventListener('hidden.bs.modal', go, { once: true });
         modal.hide();
       } else {
-        // fallback if not inside a modal
         window.open(url, '_blank', 'noopener');
-        // or window.location.href = url;
       }
     });
   });
@@ -406,10 +405,27 @@
     document.querySelectorAll('.modal-backdrop').forEach(function (bd) { bd.remove(); });
   });
 
+  /* ---------------------------
+     File preview (image / PDF)
+     --------------------------- */
+
+  function ensureAbsoluteMediaUrl(url) {
+    if (!url) return '';
+    // already absolute
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('//')) return window.location.protocol + url;
+    // "/media/..." -> "https://host/media/..."
+    if (url.startsWith('/')) return window.location.origin + url;
+    // "media/..." (missing leading slash) -> add it
+    if (url.startsWith('media/')) return window.location.origin + '/' + url;
+    // anything else, leave as-is
+    return url;
+  }
+
   (function () {
-    const modalEl = document.getElementById('filePreviewModal');
+    const modalEl   = document.getElementById('filePreviewModal');
     const container = document.getElementById('previewContainer');
-    const trigger = document.getElementById('btnPreviewUpload');
+    const trigger   = document.getElementById('btnPreviewUpload');
     if (!modalEl || !container || !trigger) return;
 
     function isImage(url) {
@@ -420,15 +436,19 @@
     }
 
     modalEl.addEventListener('show.bs.modal', function (ev) {
-      const btn = ev.relatedTarget || trigger;
-      const url = btn?.getAttribute('data-file-url') || '';
+      const btn  = ev.relatedTarget || trigger;
+      const raw  = btn?.getAttribute('data-file-url') || '';
       const name = btn?.getAttribute('data-file-name') || 'file';
+      const url  = ensureAbsoluteMediaUrl(raw);
 
-      // clear previous content
       container.innerHTML = '';
 
+      if (!url) {
+        container.innerHTML = '<div class="p-4 text-danger">No file URL found.</div>';
+        return;
+      }
+
       if (isImage(url)) {
-        // Inline image preview
         const img = new Image();
         img.src = url;
         img.alt = name;
@@ -436,7 +456,6 @@
         img.style.maxHeight = '82vh';
         container.appendChild(img);
       } else if (isPdf(url)) {
-        // PDF inside iframe (page-width)
         const iframe = document.createElement('iframe');
         iframe.src = url + (url.includes('#') ? '' : '#zoom=page-width');
         iframe.style.width = '100%';
@@ -445,13 +464,13 @@
         iframe.setAttribute('loading', 'lazy');
         container.appendChild(iframe);
       } else {
-        // Fallback: unknown file types → download link
         const div = document.createElement('div');
         div.className = 'p-4 text-center';
+        const filename = name.split('/').pop();
         div.innerHTML = `
           <p class="mb-3">Preview not available for this file type.</p>
           <a class="btn btn-dark" href="${url}" download>
-            <i class="bi bi-download"></i> Download ${name.split('/').pop()}
+            <i class="bi bi-download"></i> Download ${filename}
           </a>`;
         container.appendChild(div);
       }
@@ -461,9 +480,6 @@
       container.innerHTML = '';
     });
   })();
-
-
-
 </script>
 
 </body>

@@ -6,3 +6,4 @@ reportlab
 Pillow
 PyPDF2
 openpyxl
+psycopg2-binary
