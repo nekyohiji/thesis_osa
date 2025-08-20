@@ -336,13 +336,19 @@
 
 
 <script>
-  document.getElementById('acceptSubmitBtn').addEventListener('click', function() {
+  // Make MEDIA_URL available to JS (works even if the context processor is missing)
+  const MEDIA_URL = "{{ MEDIA_URL|default:'/media/' }}";
+
+  /* ---------------------------
+     Accept / Decline handlers
+     --------------------------- */
+  document.getElementById('acceptSubmitBtn')?.addEventListener('click', function () {
     const msg = (document.getElementById('acceptMessage').value || '').trim();
     document.getElementById('acceptMessageInput').value = msg;
     document.getElementById('acceptForm').submit();
   });
 
-  document.getElementById('declineSubmitBtn').addEventListener('click', function() {
+  document.getElementById('declineSubmitBtn')?.addEventListener('click', function () {
     const reasonEl = document.getElementById('declineMessage');
     const reason = (reasonEl.value || '').trim();
     if (!reason) {
@@ -355,44 +361,37 @@
     document.getElementById('declineForm').submit();
   });
 
-  const declineModalEl = document.getElementById('declineModal');
-  declineModalEl.addEventListener('hidden.bs.modal', function () {
+  document.getElementById('declineModal')?.addEventListener('hidden.bs.modal', function () {
     const reasonEl = document.getElementById('declineMessage');
-    reasonEl.value = '';
-    reasonEl.classList.remove('is-invalid');
+    if (reasonEl) {
+      reasonEl.value = '';
+      reasonEl.classList.remove('is-invalid');
+    }
   });
 
-  const acceptModalEl = document.getElementById('acceptModal');
-  acceptModalEl.addEventListener('hidden.bs.modal', function () {
+  document.getElementById('acceptModal')?.addEventListener('hidden.bs.modal', function () {
     const msgEl = document.getElementById('acceptMessage');
-    msgEl.value = '';
+    if (msgEl) msgEl.value = '';
   });
-  
-  document.querySelectorAll('.navigate-after-close').forEach(function(link){
+
+  // Buttons that should navigate only after the modal closes
+  document.querySelectorAll('.navigate-after-close').forEach(function (link) {
     link.addEventListener('click', function (e) {
       e.preventDefault();
       const url = this.getAttribute('href');
-
-      // find the modal this button is inside
       const modalEl = this.closest('.modal');
 
       if (modalEl) {
         const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-
         const go = function () {
           modalEl.removeEventListener('hidden.bs.modal', go);
-          // new tab (safer: no BFCache issues, your page stays put)
           window.open(url, '_blank', 'noopener');
-          // if you prefer same tab, use:
-          // window.location.href = url;
+          // If you prefer same tab: window.location.href = url;
         };
-
         modalEl.addEventListener('hidden.bs.modal', go, { once: true });
         modal.hide();
       } else {
-        // fallback if not inside a modal
         window.open(url, '_blank', 'noopener');
-        // or window.location.href = url;
       }
     });
   });
@@ -406,54 +405,86 @@
     document.querySelectorAll('.modal-backdrop').forEach(function (bd) { bd.remove(); });
   });
 
+  /* ---------------------------
+     File preview (image / PDF)
+     --------------------------- */
+
+  // Normalize a possibly-bare path like "uploads/..." into an absolute /media URL.
+  function absolutizeMediaUrl(u) {
+    if (!u) return u;
+
+    // Already absolute or special schemes
+    if (/^https?:\/\//i.test(u) || /^data:|^blob:/i.test(u)) return u;
+
+    // Already an absolute /media path
+    if (u.startsWith('/media/')) return u;
+
+    // If backend handed us "/uploads/..." or "uploads/..."
+    const needsMediaPrefix = u.startsWith('uploads/') || u.startsWith('/uploads/');
+
+    // If it starts with "/" but not /media/, keep as-is unless it's /uploads/
+    if (u.startsWith('/')) {
+      return needsMediaPrefix
+        ? (MEDIA_URL.replace(/\/?$/, '/') + u.replace(/^\/+/, ''))
+        : u;
+    }
+
+    // Relative path like "uploads/..." → prefix MEDIA_URL
+    let base = MEDIA_URL || '/media/';
+    if (!base.endsWith('/')) base += '/';
+    return base + u.replace(/^\/+/, '');
+  }
+
   (function () {
     const modalEl = document.getElementById('filePreviewModal');
     const container = document.getElementById('previewContainer');
     const trigger = document.getElementById('btnPreviewUpload');
     if (!modalEl || !container || !trigger) return;
 
-    function isImage(url) {
-      return /\.(png|jpe?g)$/i.test(url.split('?')[0]);
-    }
-    function isPdf(url) {
-      return /\.pdf$/i.test(url.split('?')[0]);
+    function isImage(url) { return /\.(png|jpe?g|gif|webp|bmp)$/i.test(url.split('?')[0]); }
+    function isPdf(url)   { return /\.pdf$/i.test(url.split('?')[0]); }
+
+    function renderFallback(url, name) {
+      const div = document.createElement('div');
+      div.className = 'p-4 text-center';
+      div.innerHTML = `
+        <p class="mb-3">Preview not available or failed to load.</p>
+        <a class="btn btn-dark" href="${url}" target="_blank" rel="noopener">
+          <i class="bi bi-box-arrow-up-right"></i> Open ${name.split('/').pop()}
+        </a>`;
+      container.appendChild(div);
     }
 
     modalEl.addEventListener('show.bs.modal', function (ev) {
-      const btn = ev.relatedTarget || trigger;
-      const url = btn?.getAttribute('data-file-url') || '';
+      const btn  = ev.relatedTarget || trigger;
+      const raw  = btn?.getAttribute('data-file-url') || '';
       const name = btn?.getAttribute('data-file-name') || 'file';
 
-      // clear previous content
+      // ✅ Ensure the URL is correct even if backend gave "uploads/..."
+      const url = absolutizeMediaUrl(raw);
+
+      // Clear any previous content
       container.innerHTML = '';
 
       if (isImage(url)) {
-        // Inline image preview
         const img = new Image();
         img.src = url;
         img.alt = name;
         img.className = 'img-fluid';
         img.style.maxHeight = '82vh';
+        img.onerror = () => { container.innerHTML = ''; renderFallback(url, name); };
         container.appendChild(img);
       } else if (isPdf(url)) {
-        // PDF inside iframe (page-width)
         const iframe = document.createElement('iframe');
         iframe.src = url + (url.includes('#') ? '' : '#zoom=page-width');
         iframe.style.width = '100%';
         iframe.style.height = '82vh';
-        iframe.setAttribute('title', name);
-        iframe.setAttribute('loading', 'lazy');
+        iframe.title = name;
+        iframe.loading = 'lazy';
+        iframe.onerror = () => { container.innerHTML = ''; renderFallback(url, name); };
         container.appendChild(iframe);
       } else {
-        // Fallback: unknown file types → download link
-        const div = document.createElement('div');
-        div.className = 'p-4 text-center';
-        div.innerHTML = `
-          <p class="mb-3">Preview not available for this file type.</p>
-          <a class="btn btn-dark" href="${url}" download>
-            <i class="bi bi-download"></i> Download ${name.split('/').pop()}
-          </a>`;
-        container.appendChild(div);
+        renderFallback(url, name);
       }
     });
 
@@ -461,9 +492,6 @@
       container.innerHTML = '';
     });
   })();
-
-
-
 </script>
 
 </body>

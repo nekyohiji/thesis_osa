@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from django.core.files.storage import FileSystemStorage
 import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -193,5 +194,6 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 
-MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+MEDIA_URL  = '/media/'
 MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / 'media')
