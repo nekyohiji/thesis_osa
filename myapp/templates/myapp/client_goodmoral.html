@@ -116,6 +116,12 @@
                         <input type="text" id="sn_goodmoral" class="form-control" name="surname" maxlength="50" placeholder="Enter Your Last Name" required>
                     </div>
                 </div>
+
+
+
+
+
+
                 
                 <div class="mb-3 d-flex align-items-center">
                     <label class="form-label me-3 mb-0">Do you have an extension name?</label>
@@ -136,11 +142,9 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3" id="extensionRow" style="display: none;">
-                        <label class="form-label">Extension (Jr., Sr.):</label>
-                        <input type="text" id="ex_goodmoral" class="form-control" name="ext" maxlength="10" placeholder="Enter Extension Name">
+                        <label class="form-label">Extension (Jr., Sr.): OPTIONAL</label>
+                        <input type="text" id="ex_goodmoral" class="form-control" name="ext" maxlength="10" placeholder="Enter Your Extension Name">
                     </div>
-
-                    
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Sex:</label>
                         <select class="form-select" id="sex_goodmoral" name="sex" required>
@@ -150,7 +154,8 @@
                         </select>
                     </div>
                 </div>
-    
+            </div>
+        </div>
 
 
                 <!-- STEP 2, ACADEMIC INFORMATION -->
@@ -339,35 +344,6 @@
 
 {% load static %}
 <script>
-
-
-
-
-
-    document.addEventListener("DOMContentLoaded", function () {
-    const row = document.getElementById("extensionRow");
-    const yes = document.getElementById("extYes");
-    const no = document.getElementById("extNo");
-    const input = document.getElementById("ex_goodmoral");
-
-    yes.addEventListener("change", function () {
-        if (this.checked) {
-            row.style.display = "block";
-            input.focus();
-        }
-    });
-
-    no.addEventListener("change", function () {
-        if (this.checked) {
-            row.style.display = "none";
-            input.value = "";
-        }
-    });
-});
-
-
-
-
     (() => {
     /* =========================
         Helpers & initial wiring
@@ -1024,6 +1000,36 @@
         initTogglesOnLoad();
     });
     })();
+
+
+
+
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+    const row = document.getElementById("extensionRow");
+    const yes = document.getElementById("extYes");
+    const no = document.getElementById("extNo");
+    const input = document.getElementById("ex_goodmoral");
+
+    yes.addEventListener("change", function () {
+        if (this.checked) {
+            row.style.display = "block";
+            input.focus();
+        }
+    });
+
+    no.addEventListener("change", function () {
+        if (this.checked) {
+            row.style.display = "none";
+            input.value = "";
+        }
+    });
+});
+
+
+
+
 </script>
 
 
