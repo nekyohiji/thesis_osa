@@ -562,32 +562,43 @@ def lostandfound_feed_api(request):
     return JsonResponse({'items': data})
 
 def goodmoral_request_form(request):
-    template = 'myapp/client_goodmoral.html' 
+    template = 'myapp/client_goodmoral.html'
+    # Clear any stray messages from previous requests
+    list(messages.get_messages(request))
+
     if request.method == 'POST':
         form = GoodMoralRequestForm(request.POST, request.FILES)
         if form.is_valid():
             obj = form.save(commit=False)
             needs_other = obj.purpose in ['Others', 'Scholarship', 'Transfer to Another School']
             if needs_other and not (obj.other_purpose or '').strip():
-                messages.error(request, "You must specify your purpose.")
+                messages.error(request, "You must specify your purpose.", extra_tags="gm-client")
                 return render(request, template, {'form': form})
+
             obj.save()
             try:
                 send_mail(
                     subject="Good Moral Certificate Request Received",
-                    message=(
-                        "We have received your Good Moral Certificate request.\n"
-                        "You will receive another email once it is reviewed and approved/rejected."
-                    ),
+                    message=("We have received your Good Moral Certificate request.\n"
+                             "You will receive another email once it is reviewed and approved/rejected."),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[obj.requester_email],
-                    fail_silently=False
+                    fail_silently=False,
                 )
-            except Exception as e:
-                messages.error(request, f"Email error: {e}")
+            except Exception:
+                # Log the real error for admins, show a safe message to the client
+                logger.exception("Good Moral: send_mail failed for id=%s email=%s", obj.id, obj.requester_email)
+                messages.error(
+                    request,
+                    "Your request was submitted, but email notification could not be sent. We’ll follow up.",
+                    extra_tags="gm-client",
+                )
+
             return render(request, template, {'form': GoodMoralRequestForm(), 'show_modal': True})
         else:
-            print("Form errors:", form.errors)
+            # Let your HTML show field errors; optionally add a non-field error for general problems
+            # form.add_error(None, "Please correct the errors below.")
+            return render(request, template, {'form': form})
     else:
         form = GoodMoralRequestForm()
 
