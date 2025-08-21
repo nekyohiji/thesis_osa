@@ -196,4 +196,5 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 MEDIA_URL  = '/media/'
-MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / 'media')
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", Path(BASE_DIR) / "media"))
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)

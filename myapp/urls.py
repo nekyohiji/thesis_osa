@@ -134,5 +134,5 @@ if settings.DEBUG:
 
 # Prod (Render): explicitly serve media even when DEBUG=False
 urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': str(settings.MEDIA_ROOT)}),
 ]
