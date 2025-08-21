@@ -60,81 +60,112 @@
         background-repeat: no-repeat;
         background-attachment: fixed;
         color: white;
-
     }
-        #btn-scan-qr {
-        background-color:#7b0000;
-        border: none;
-        font-weight: 600;
-        border-radius: 8px;
-        color: white;
-        padding-left: 3rem;  /* equivalent to px-5 */
-        padding-right: 3rem;
-        font-size: 1.25rem;  /* approximate size for btn-lg */
-        }
 
-        #btn-scan-qr:hover {
-        background-color: #5a0000;
-        color: white;
-        }
+/* Faculty ID Input */
+form .form-control {
+  background: #2a2a2a; 
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  color: #ffffff;
+  text-align: center;
+  box-shadow: inset 4px 4px 8px #121212, 
+              inset -4px -4px 8px #323232;
+  transition: all 0.3s ease-in-out;
+}
 
+form .form-control::placeholder {
+  color: #aaa;
+  opacity: 0.7;
+}
 
+form .form-control:focus {
+  background: #2a2a2a; 
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  color: #ffffff;
+  text-align: center;
+  box-shadow: inset 4px 4px 8px #121212, 
+              inset -4px -4px 8px #323232;
+  transition: all 0.3s ease-in-out;
+}
 
+form .btn {
+  background: #440207 !important;
+  color: #fff !important;
+  border-radius: 12px;
+  padding: 12px;
+  width: 100%;   /* 🔥 makes button full width */
+  font-size: 16px;
+  border: none;
+}
+
+@media (max-width: 767px) {
+  .col-md-7 {
+    text-align: center;
+  }
+  .col-md-7 ul {
+    margin: 0 auto;   /* centers the bullet list */
+  }
+}
 
 
 </style>
 
 
-
 <div class="container mt-5 pt-4">
   <div class="row align-items-center">
+
     <!-- Left side: Welcome and instructions -->
-    <div class="col-md-7 mb-4">
+    <div class="col-md-7 mb-4 text-center text-md-start">
       <h2 class="display-5 fw-bold text-light">Welcome to Community Service Page</h2><br>
       <p class="fs-6 text-secondary fw-normal">
-       Please log in by scanning your Faculty ID QR code. Once authenticated, you can monitor and 
-       record student community service attendance, including time-in and time-out.
+        Please log in by entering your Faculty ID. Once authenticated, you can monitor and 
+        record student community service attendance, including time-in and time-out.
       </p>
 
-        <ul class="list-group list-group-flush mt-4 text-light" style="max-width: 480px;">
-            <li class="list-group-item text-light fw-normal bg-transparent border-0">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>Scan your Faculty ID to log in securely
-            </li>
-            <li class="list-group-item text-light fw-normal bg-transparent border-0">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>Record student logs during community service
-            </li>
-            <li class="list-group-item text-light fw-normal bg-transparent border-0">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>Access and manage community service attendance records
-            </li>
-            </ul>
-
+      <ul class="list-group list-group-flush mt-4 text-light" style="max-width: 480px;">
+        <li class="list-group-item text-light fw-normal bg-transparent border-0">
+          <i class="bi bi-check-circle-fill text-success me-2"></i>Enter your Faculty ID to log in securely
+        </li>
+        <li class="list-group-item text-light fw-normal bg-transparent border-0">
+          <i class="bi bi-check-circle-fill text-success me-2"></i>Record student logs during community service
+        </li>
+        <li class="list-group-item text-light fw-normal bg-transparent border-0">
+          <i class="bi bi-check-circle-fill text-success me-2"></i>Access and manage community service attendance records
+        </li>
+      </ul>
     </div>
 
-            <!-- Right side: QR code scanner button -->
-            <div class="col-md-5 text-center">
-            <div class="border rounded shadow-sm p-5" style="border-width: 0.5px; border-color: #7b0000;">                <i class="bi bi-qr-code-scan display-1 text-light mb-3"></i>
-                <h4 class="mb-3">Scan Your QR Code</h4>
-               <a
-                id="btn-scan-qr"
-                href="{% url 'client_view_CS' %}"
-                class="btn btn-lg fw-normal"
-                >
-                Start Scanner
-                </a>
-            </div>
-            </div>
+    <!-- Right side: Faculty ID input -->
+    <div class="col-md-5 text-center">
+      <div class="border rounded shadow-sm p-5" style="border-width: 0.5px; border-color: #7b0000;">
+        <i class="bi bi-person-badge display-1 text-light mb-3"></i>
+        <h4 class="mb-3">Enter Your Faculty ID</h4>
+        
+        <form method="post" action="{% url 'client_view_CS' %}">
 
-
-  </div>
-
- 
-
-  <!-- Placeholder for QR Scanner -->
-  <div id="qr-scanner-container" class="mt-4" style="display:none;">
-    <!-- Insert QR scanner component here -->
+          <div class="mb-3">
+            <input type="text" 
+                   name="faculty_id" 
+                   class="form-control form-control-lg text-center" 
+                   placeholder="Enter Faculty ID" 
+                   required>
+          </div>
+            <button type="submit" 
+                    class="btn btn-lg fw-normal" 
+                    style="background-color:#440207; color:white; width:100%;">
+            Login
+            </button>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
-
 
     
 

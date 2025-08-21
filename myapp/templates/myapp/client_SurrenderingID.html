@@ -74,18 +74,36 @@
                     </div>
                 </div>
 
-                <div class="row">
+            
+                <!-- Question row -->
+                  <div class="row mb-3">
+                      <div class="col-md-12 d-flex align-items-center">
+                          <label class="form-label fw-semibold me-3 mb-0">Do you have an extension name?</label>
+                          <div class="form-check form-check-inline mb-0">
+                              <input class="form-check-input" type="radio" name="hasExtension" id="extYes" value="yes">
+                              <label class="form-check-label" for="extYes">Yes</label>
+                          </div>
+                          <div class="form-check form-check-inline mb-0">
+                              <input class="form-check-input" type="radio" name="hasExtension" id="extNo" value="no" checked>
+                              <label class="form-check-label" for="extNo">No</label>
+                          </div>
+                      </div>
+                  </div>
+
+
+                  <div class="row">
                     <!-- Extension -->
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-3 d-none"  id="extensionCol" >
                         <label class="form-label fw-semibold">Extension (Jr., Sr.):</label>
-                        <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name (if any)" maxlength="15">
+                        <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name" maxlength="15">
                     </div>
 
                     <!-- Program -->
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-3" id="programCol">
                         <label class="form-label fw-semibold">Program:</label>
                         <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" maxlength="18" required>
                     </div>
+                
 
                     <!-- Email -->
                     <div class="col-md-6 mb-3">
@@ -214,6 +232,29 @@
 
 
 <script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    const extYes = document.getElementById("extYes");
+    const extNo = document.getElementById("extNo");
+    const extensionCol = document.getElementById("extensionCol");
+    const extensionInput = document.getElementById("ex_surrender");
+
+    function toggleExtension() {
+        if (extYes.checked) {
+            extensionCol.classList.remove("d-none");  // Show extension
+            extensionInput.focus();
+        } else {
+            extensionCol.classList.add("d-none");     // Hide extension
+            extensionInput.value = "";
+        }
+    }
+
+    toggleExtension();
+    extYes.addEventListener("change", toggleExtension);
+    extNo.addEventListener("change", toggleExtension);
+});
+
+
 (function () {
   // ----- CONFIG -----
   const FIELD_IDS = [
