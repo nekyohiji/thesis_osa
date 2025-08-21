@@ -56,6 +56,11 @@ from django.core.paginator import Paginator, EmptyPage
 from django.http import JsonResponse, HttpResponseBadRequest
 import logging
 logger = logging.getLogger(__name__)
+# views.py
+from io import BytesIO
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.db.models import Q
+from PyPDF2 import PdfMerger  # pip install pypdf or PyPDF2
 #################################################################################################################
 
 def current_time(request):
@@ -1494,6 +1499,57 @@ def view_gmf(request, pk):
     resp = HttpResponse(pdf_bytes, content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="GMF_{req.student_id or req.pk}.pdf"'
     resp["Content-Length"] = str(len(pdf_bytes))
+    return resp
+
+
+@role_required(['admin'])
+@xframe_options_exempt
+def batch_view_gmf(request):
+    """
+    /gmf/batch-preview?frm=1&to=10
+    Returns one inline PDF for all GoodMoralRequest where is_rejected=False,
+    sliced by the provided 1-based indices.
+    """
+    def _num(x, default):
+        try:
+            v = int(x)
+            return v if v >= 1 else default
+        except Exception:
+            return default
+
+    frm = _num(request.GET.get('frm'), 1)
+    to  = _num(request.GET.get('to'),  frm)
+    if to < frm:
+        return HttpResponseBadRequest("Invalid range.")
+
+    # Filter first, slice second. This includes pending+approved, excludes rejected.
+    qs = (GoodMoralRequest.objects
+          .filter(is_rejected=False)
+          .order_by('submitted_at', 'pk'))  # mirror your UI sort if needed
+
+    start = frm - 1
+    end   = to
+    rows = list(qs[start:end])
+    if not rows:
+        return HttpResponseBadRequest("No requests in that range (after filtering).")
+
+    merger = PdfMerger(strict=False)
+    for req in rows:
+        try:
+            pdf_bytes = generate_gmf_pdf(req)  # your existing function
+            merger.append(BytesIO(pdf_bytes))
+        except Exception:
+            # Skip problematic rows silently; log if you prefer
+            continue
+
+    out = BytesIO()
+    merger.write(out)
+    merger.close()
+    out.seek(0)
+
+    resp = HttpResponse(out.getvalue(), content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="GMF_batch_{frm}-{to}.pdf"'
+    resp["Content-Length"] = str(len(out.getvalue()))
     return resp
 
 @role_required(['admin'])

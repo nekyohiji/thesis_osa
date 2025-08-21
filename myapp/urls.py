@@ -29,7 +29,7 @@ urlpatterns = [
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
-    
+    path("gmf/batch-preview", views.batch_view_gmf, name="gmf_batch_preview"),
 
     
     path('admin_community_service/', views.admin_community_service, name='admin_community_service'),
