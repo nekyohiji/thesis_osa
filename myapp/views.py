@@ -54,6 +54,8 @@ from decimal import Decimal
 from django.db import transaction
 from django.core.paginator import Paginator, EmptyPage
 from django.http import JsonResponse, HttpResponseBadRequest
+import logging
+logger = logging.getLogger(__name__)
 #################################################################################################################
 
 def current_time(request):
