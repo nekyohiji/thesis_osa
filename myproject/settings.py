@@ -160,9 +160,8 @@ def _find_lo_python():
             return str(p)
     return None
 
-LIBREOFFICE_PY = os.environ.get("LIBREOFFICE_PY") or _find_lo_python()
-print(f"[LO] ENV LIBREOFFICE_PY={os.environ.get('LIBREOFFICE_PY')}  RESOLVED={LIBREOFFICE_PY}")
-
+LIBREOFFICE_PY = sys.executable
+print(f"[LO] Using system Python for UNO: {LIBREOFFICE_PY}")
 # --------------------------------------------------------------------------------------
 # Static / Media
 # --------------------------------------------------------------------------------------
