@@ -6,3 +6,4 @@ fonts-noto
 libxext6
 libxrender1
 libxinerama1
+python3-uno
