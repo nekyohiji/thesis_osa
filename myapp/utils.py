@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.files import File
 from django.db import connection
 from openpyxl import load_workbook
-from .models import GoodMoralRequest
+from .models import GoodMoralRequest, UserAccount
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 import mimetypes
@@ -130,16 +130,14 @@ def send_status_email(to_email, approved=True, reason=None):
     
 # ---------- helpers ----------
 def _get_osa_head_name():
-    with connection.cursor() as cur:
-        cur.execute("""
-            SELECT full_name
-            FROM user_accounts
-            WHERE LOWER(role)='admin' AND is_active=1
-            ORDER BY created_at DESC, id DESC
-            LIMIT 1
-        """)
-        row = cur.fetchone()
-    return (row[0].strip() if row and row[0] else "BEVERLY M. DE VEGA")
+    row = (
+        UserAccount.objects
+        .filter(Q(role__iexact="admin"), Q(is_active=True))
+        .order_by("-created_at", "-id")
+        .values_list("full_name", flat=True)
+        .first()
+    )
+    return (row.strip() if row else "BEVERLY M. DE VEGA")
 
 def _format_student_name(req: GoodMoralRequest) -> str:
     parts = [(req.first_name or "").strip()]
