@@ -130,14 +130,16 @@ def send_status_email(to_email, approved=True, reason=None):
     
 # ---------- helpers ----------
 def _get_osa_head_name():
-    row = (
+    from myapp.models import UserAccount 
+
+    name = (
         UserAccount.objects
-        .filter(Q(role__iexact="admin"), Q(is_active=True))
-        .order_by("-created_at", "-id")
-        .values_list("full_name", flat=True)
+        .filter(role='admin', is_active=True)
+        .order_by('-created_at', '-id')
+        .values_list('full_name', flat=True)
         .first()
     )
-    return (row.strip() if row else "BEVERLY M. DE VEGA")
+    return name.strip() if name else "BEVERLY M. DE VEGA"
 
 def _format_student_name(req: GoodMoralRequest) -> str:
     parts = [(req.first_name or "").strip()]
