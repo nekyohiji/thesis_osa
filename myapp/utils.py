@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.conf import settings
-import os, json, datetime, tempfile, subprocess, uuid
+import os, json, datetime, tempfile, subprocess, uuid, sys, importlib
 from django.conf import settings
 from django.core.files import File
 from django.db import connection
@@ -162,26 +162,32 @@ def _fmt_grad_date(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
 def generate_gmf_pdf(req) -> bytes:
-    lo_py = getattr(settings, "LIBREOFFICE_PY", None)
-    script_path = Path(getattr(settings, "LO_EXPORT_SCRIPT", 
-                        Path(settings.BASE_DIR) / "myapp" / "libre" / "lo_gmf_export.py"))
+    # 0) Use current Python executable unconditionally
+    lo_py = sys.executable
+
+    # 0.1) Verify UNO bridge is present (installed via apt: python3-uno)
+    try:
+        importlib.import_module("uno")
+        importlib.import_module("officehelper")
+    except Exception as e:
+        raise RuntimeError(
+            "UNO bridge not available. On Render you must apt-install 'python3-uno' "
+            "(add it to apt.txt) so system Python can talk to LibreOffice."
+        ) from e
+
+    # 1) Resolve script/template paths exactly
+    script_path = Path(getattr(
+        settings, "LO_EXPORT_SCRIPT",
+        Path(settings.BASE_DIR) / "myapp" / "libre" / "lo_gmf_export.py"
+    ))
     template_path = Path(getattr(settings, "GMF_TEMPLATE_PATH"))
-    if not lo_py or not Path(lo_py).exists():
-        # try system Python (works if python3-uno from apt.txt was installed)
-        try:
-            import importlib
-            importlib.import_module("uno")
-            importlib.import_module("officehelper")
-            lo_py = sys.executable
-            print(f"[LO] Falling back to system Python: {lo_py}")
-        except Exception:
-            lo_py = None
+
     if not script_path.exists():
-        raise FileNotFoundError(f"LO export script not found: {script_path}")
+        raise FileNotFoundError(f"LO script not found: {script_path}")
     if not template_path.exists():
         raise FileNotFoundError(f"GMF template not found: {template_path}")
 
-    # Build payload from your request object
+    # 2) Build payload (same as you had)
     payload = {
         "student_name": getattr(req, "student_name", "") or "",
         "sex": getattr(req, "sex", "") or "",
@@ -192,7 +198,7 @@ def generate_gmf_pdf(req) -> bytes:
         "date_graduated": getattr(req, "date_graduated", "") or "",
         "purpose": getattr(req, "purpose", "") or "",
         "purpose_other": getattr(req, "purpose_other", "") or "",
-        "osahead": _get_osa_head_name(),  # your fixed ORM-based function
+        "osahead": _get_osa_head_name(),
     }
 
     with tempfile.TemporaryDirectory() as td:
@@ -201,6 +207,7 @@ def generate_gmf_pdf(req) -> bytes:
         out_pdf = td / f"gmf_{uuid.uuid4().hex}.pdf"
         payload_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
+        # 3) Run the LO script with system python
         cmd = [str(lo_py), str(script_path), str(template_path), str(out_pdf), str(payload_json)]
         proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if proc.returncode != 0:
@@ -212,4 +219,5 @@ def generate_gmf_pdf(req) -> bytes:
 
         if not out_pdf.exists() or out_pdf.stat().st_size == 0:
             raise RuntimeError("LibreOffice export produced no PDF output.")
+
         return out_pdf.read_bytes()
