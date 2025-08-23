@@ -161,63 +161,53 @@ def _status_for_excel(raw: str) -> str:
 def _fmt_grad_date(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
-def generate_gmf_pdf(req) -> bytes:
-    # 0) Use current Python executable unconditionally
-    lo_py = sys.executable
+def _lo_python_path():
+    for p in [
+        os.environ.get("LIBREOFFICE_PY"),
+        "/usr/lib/libreoffice/program/python3",
+        "/usr/lib/libreoffice/program/python",
+    ]:
+        if p and os.path.exists(p):
+            return p
+    return None
 
-    # 0.1) Verify UNO bridge is present (installed via apt: python3-uno)
-    try:
-        importlib.import_module("uno")
-        importlib.import_module("officehelper")
-    except Exception as e:
-        raise RuntimeError(
-            "UNO bridge not available. On Render you must apt-install 'python3-uno' "
-            "(add it to apt.txt) so system Python can talk to LibreOffice."
-        ) from e
+def generate_gmf_pdf(req):
+    lo_py = _lo_python_path()
+    if not lo_py:
+        raise FileNotFoundError(
+            "LibreOffice Python not found. Set LIBREOFFICE_PY to /usr/lib/libreoffice/program/python3"
+        )
 
-    # 1) Resolve script/template paths exactly
-    script_path = Path(getattr(
-        settings, "LO_EXPORT_SCRIPT",
-        Path(settings.BASE_DIR) / "myapp" / "libre" / "lo_gmf_export.py"
-    ))
-    template_path = Path(getattr(settings, "GMF_TEMPLATE_PATH"))
-
-    if not script_path.exists():
-        raise FileNotFoundError(f"LO script not found: {script_path}")
-    if not template_path.exists():
-        raise FileNotFoundError(f"GMF template not found: {template_path}")
-
-    # 2) Build payload (same as you had)
+    # build payload for the LO script
     payload = {
-        "student_name": getattr(req, "student_name", "") or "",
-        "sex": getattr(req, "sex", "") or "",
-        "status": getattr(req, "student_status", "") or "",
-        "program": getattr(req, "program", "") or "",
-        "years_of_stay": getattr(req, "years_of_stay", "") or "",
-        "admission_date": getattr(req, "admission_date", "") or "",
-        "date_graduated": getattr(req, "date_graduated", "") or "",
-        "purpose": getattr(req, "purpose", "") or "",
-        "purpose_other": getattr(req, "purpose_other", "") or "",
+        "student_name": req.student_name,
+        "program": req.program or "",
+        "sex": req.sex or "",
+        "status": req.status or "",
+        "years_of_stay": req.years_of_stay or "",
+        "admission_date": req.admission_date or "",
+        "date_graduated": req.date_graduated or "",
+        "purpose": req.purpose or "",
+        "purpose_other": req.purpose_other or "",
         "osahead": _get_osa_head_name(),
     }
 
-    with tempfile.TemporaryDirectory() as td:
-        td = Path(td)
-        payload_json = td / "payload.json"
-        out_pdf = td / f"gmf_{uuid.uuid4().hex}.pdf"
+    script = Path(settings.BASE_DIR) / "lo_gmf_export.py"
+    template = Path(settings.GMF_TEMPLATE_PATH)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out_pdf = Path(tmp) / "gmf.pdf"
+        payload_json = Path(tmp) / "payload.json"
         payload_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
-        # 3) Run the LO script with system python
-        cmd = [str(lo_py), str(script_path), str(template_path), str(out_pdf), str(payload_json)]
+        cmd = [lo_py, str(script), str(template), str(out_pdf), str(payload_json)]
         proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if proc.returncode != 0:
+
+        if proc.returncode != 0 or not out_pdf.exists():
             raise RuntimeError(
-                "LibreOffice export failed.\n"
-                f"CMD: {' '.join(cmd)}\n\nSTDOUT:\n{proc.stdout.decode(errors='ignore')}\n\n"
+                f"LibreOffice export failed (rc={proc.returncode})\n"
+                f"STDOUT:\n{proc.stdout.decode(errors='ignore')}\n"
                 f"STDERR:\n{proc.stderr.decode(errors='ignore')}"
             )
-
-        if not out_pdf.exists() or out_pdf.stat().st_size == 0:
-            raise RuntimeError("LibreOffice export produced no PDF output.")
 
         return out_pdf.read_bytes()

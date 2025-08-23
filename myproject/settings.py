@@ -161,7 +161,7 @@ def _find_lo_python():
     return None
 
 LIBREOFFICE_PY = sys.executable
-print(f"[LO] Using system Python for UNO: {LIBREOFFICE_PY}")
+LIBREOFFICE_PY = os.getenv("LIBREOFFICE_PY", "/usr/lib/libreoffice/program/python3")
 # --------------------------------------------------------------------------------------
 # Static / Media
 # --------------------------------------------------------------------------------------
