@@ -137,21 +137,32 @@ GMF_TEMPLATE_PATH = BASE_DIR / "myapp" / "cert_templates" / "good-moral-form.xls
 # --------------------------------------------------------------------------------------
 # LibreOffice paths (used by myapp.apps.AppConfig.ready)
 # --------------------------------------------------------------------------------------
-if os.name == "nt":
-    # 1) LibreOffice's embedded Python (for UNO scripts if you use them)
-    DEFAULT_LO_PY = r"C:\Program Files\LibreOffice\program\python.exe"
-    # 2) LibreOffice CLI binary
-    win_soffice = r"C:\Program Files\LibreOffice\program\soffice.com"
-    if not Path(win_soffice).exists():
-        win_soffice = r"C:\Program Files\LibreOffice\program\soffice.exe"
-    DEFAULT_SOFFICE = win_soffice
-else:
-    DEFAULT_LO_PY = None
-    DEFAULT_SOFFICE = None
+def _find_lo_python():
+    candidates = []
+    if os.name == "nt":  # Windows
+        program_files = [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]
+        for base in filter(None, program_files):
+            candidates += [
+                Path(base) / "LibreOffice" / "program" / "python.exe",
+                Path(base) / "LibreOffice" / "program" / "python3.exe",
+            ]
+    elif sys.platform == "darwin":  # macOS
+        candidates += [
+            Path("/Applications/LibreOffice.app/Contents/Resources/python"),
+            Path("/Applications/LibreOffice.app/Contents/MacOS/python"),
+        ]
+    else:  # Linux
+        candidates += [
+            Path("/usr/lib/libreoffice/program/python3"),
+            Path("/usr/lib/libreoffice/program/python"),
+        ]
+    for p in candidates:
+        if p and p.exists():
+            return str(p)
+    return None
 
-LIBREOFFICE_PY  = os.getenv("LIBREOFFICE_PY", DEFAULT_LO_PY)
-LIBREOFFICE_BIN = os.getenv("LIBREOFFICE_BIN", DEFAULT_SOFFICE)
-LIBREOFFICE_PATH = LIBREOFFICE_BIN  # alias if referenced elsewhere
+# if not explicitly set via env, auto-detect it
+LIBREOFFICE_PY = os.environ.get("LIBREOFFICE_PY") or _find_lo_python()
 
 # --------------------------------------------------------------------------------------
 # Static / Media

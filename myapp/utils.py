@@ -1,6 +1,6 @@
 from django.core.mail import send_mail
 from django.conf import settings
-import os, json, datetime, tempfile, subprocess
+import os, json, datetime, tempfile, subprocess, uuid
 from django.conf import settings
 from django.core.files import File
 from django.db import connection
@@ -162,45 +162,52 @@ def _fmt_grad_date(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
 def generate_gmf_pdf(req) -> bytes:
-    """
-    Build the GMF PDF and return the raw bytes.
-    Does NOT save anything to a FileField.
-    """
+    lo_py = getattr(settings, "LIBREOFFICE_PY", None)
+    script_path = Path(getattr(settings, "LO_EXPORT_SCRIPT", 
+                        Path(settings.BASE_DIR) / "myapp" / "libre" / "lo_gmf_export.py"))
+    template_path = Path(getattr(settings, "GMF_TEMPLATE_PATH"))
+
+    if not lo_py or not Path(lo_py).exists():
+        raise FileNotFoundError(
+            "LibreOffice not found. Install LibreOffice or set LIBREOFFICE_PY to its bundled interpreter.\n"
+            "Windows: C:\\Program Files\\LibreOffice\\program\\python.exe\n"
+            "macOS:   /Applications/LibreOffice.app/Contents/Resources/python\n"
+            "Linux:   /usr/lib/libreoffice/program/python3"
+        )
+    if not script_path.exists():
+        raise FileNotFoundError(f"LO export script not found: {script_path}")
+    if not template_path.exists():
+        raise FileNotFoundError(f"GMF template not found: {template_path}")
+
+    # Build payload from your request object
     payload = {
-        "student_name": _format_student_name(req),
-        "sex": (req.sex or "").strip(),
-        "status": _status_for_excel(req.status),
-        "program": req.program or "",
-        "years_of_stay": req.inclusive_years or "",
-        # year-only values, per your new UI
-        "admission_date": (req.date_admission or "").strip(),  # "YYYY"
-        "date_graduated": (req.date_graduated.strftime("%Y") if req.date_graduated else ""),
-        "purpose": req.purpose or "",
-        "purpose_other": req.other_purpose or "",
-        "osahead": _get_osa_head_name(),
+        "student_name": getattr(req, "student_name", "") or "",
+        "sex": getattr(req, "sex", "") or "",
+        "status": getattr(req, "student_status", "") or "",
+        "program": getattr(req, "program", "") or "",
+        "years_of_stay": getattr(req, "years_of_stay", "") or "",
+        "admission_date": getattr(req, "admission_date", "") or "",
+        "date_graduated": getattr(req, "date_graduated", "") or "",
+        "purpose": getattr(req, "purpose", "") or "",
+        "purpose_other": getattr(req, "purpose_other", "") or "",
+        "osahead": _get_osa_head_name(),  # your fixed ORM-based function
     }
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        out_pdf = os.path.join(tmpdir, "gmf.pdf")
-        payload_path = os.path.join(tmpdir, "payload.json")
-        with open(payload_path, "w", encoding="utf-8") as fh:
-            json.dump(payload, fh, ensure_ascii=False)
-        lo_py = settings.LIBREOFFICE_PY
-        if not lo_py or not Path(lo_py).exists():
-            raise FileNotFoundError(
-                "LibreOffice Python not found. Set LIBREOFFICE_PY to something like "
-                r"C:\Program Files\LibreOffice\program\python.exe"
-            )
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        payload_json = td / "payload.json"
+        out_pdf = td / f"gmf_{uuid.uuid4().hex}.pdf"
+        payload_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
-        script_path = os.path.join(os.path.dirname(__file__), "libre", "lo_gmf_export.py")
-        cmd = [str(settings.LIBREOFFICE_PY), script_path, str(settings.GMF_TEMPLATE_PATH), out_pdf, payload_path]
-        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=180)
-        if r.returncode != 0 or not os.path.exists(out_pdf):
+        cmd = [str(lo_py), str(script_path), str(template_path), str(out_pdf), str(payload_json)]
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if proc.returncode != 0:
             raise RuntimeError(
-                "LibreOffice UNO export failed.\n"
-                f"stdout:\n{r.stdout.decode(errors='ignore')}\n\n"
-                f"stderr:\n{r.stderr.decode(errors='ignore')}"
+                "LibreOffice export failed.\n"
+                f"CMD: {' '.join(cmd)}\n\nSTDOUT:\n{proc.stdout.decode(errors='ignore')}\n\n"
+                f"STDERR:\n{proc.stderr.decode(errors='ignore')}"
             )
 
-        with open(out_pdf, "rb") as fh:
-            return fh.read()
+        if not out_pdf.exists() or out_pdf.stat().st_size == 0:
+            raise RuntimeError("LibreOffice export produced no PDF output.")
+        return out_pdf.read_bytes()
