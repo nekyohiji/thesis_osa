@@ -1,0 +1,9 @@
+libreoffice
+libreoffice-calc
+libreoffice-writer
+fonts-dejavu-core
+fonts-noto
+libxext6
+libxrender1
+libxinerama1
+python3-uno
