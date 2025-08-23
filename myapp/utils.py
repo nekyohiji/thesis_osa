@@ -166,14 +166,16 @@ def generate_gmf_pdf(req) -> bytes:
     script_path = Path(getattr(settings, "LO_EXPORT_SCRIPT", 
                         Path(settings.BASE_DIR) / "myapp" / "libre" / "lo_gmf_export.py"))
     template_path = Path(getattr(settings, "GMF_TEMPLATE_PATH"))
-
     if not lo_py or not Path(lo_py).exists():
-        raise FileNotFoundError(
-            "LibreOffice not found. Install LibreOffice or set LIBREOFFICE_PY to its bundled interpreter.\n"
-            "Windows: C:\\Program Files\\LibreOffice\\program\\python.exe\n"
-            "macOS:   /Applications/LibreOffice.app/Contents/Resources/python\n"
-            "Linux:   /usr/lib/libreoffice/program/python3"
-        )
+        # try system Python (works if python3-uno from apt.txt was installed)
+        try:
+            import importlib
+            importlib.import_module("uno")
+            importlib.import_module("officehelper")
+            lo_py = sys.executable
+            print(f"[LO] Falling back to system Python: {lo_py}")
+        except Exception:
+            lo_py = None
     if not script_path.exists():
         raise FileNotFoundError(f"LO export script not found: {script_path}")
     if not template_path.exists():

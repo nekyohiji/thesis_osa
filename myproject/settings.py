@@ -139,30 +139,29 @@ GMF_TEMPLATE_PATH = BASE_DIR / "myapp" / "cert_templates" / "good-moral-form.xls
 # --------------------------------------------------------------------------------------
 def _find_lo_python():
     candidates = []
-    if os.name == "nt":  # Windows
-        program_files = [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]
-        for base in filter(None, program_files):
+    if os.name == "nt":
+        for base in filter(None, [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]):
             candidates += [
                 Path(base) / "LibreOffice" / "program" / "python.exe",
                 Path(base) / "LibreOffice" / "program" / "python3.exe",
             ]
-    elif sys.platform == "darwin":  # macOS
+    elif sys.platform == "darwin":
         candidates += [
             Path("/Applications/LibreOffice.app/Contents/Resources/python"),
             Path("/Applications/LibreOffice.app/Contents/MacOS/python"),
         ]
-    else:  # Linux
+    else:  # Linux (Render)
         candidates += [
-            Path("/usr/lib/libreoffice/program/python3"),
             Path("/usr/lib/libreoffice/program/python"),
+            Path("/usr/lib/libreoffice/program/python3"),
         ]
     for p in candidates:
-        if p and p.exists():
+        if p.exists():
             return str(p)
     return None
 
-# if not explicitly set via env, auto-detect it
 LIBREOFFICE_PY = os.environ.get("LIBREOFFICE_PY") or _find_lo_python()
+print(f"[LO] ENV LIBREOFFICE_PY={os.environ.get('LIBREOFFICE_PY')}  RESOLVED={LIBREOFFICE_PY}")
 
 # --------------------------------------------------------------------------------------
 # Static / Media
