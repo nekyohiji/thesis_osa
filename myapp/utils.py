@@ -130,8 +130,7 @@ def send_status_email(to_email, approved=True, reason=None):
     
 # ---------- helpers ----------
 def _get_osa_head_name():
-    from myapp.models import UserAccount 
-
+    from myapp.models import UserAccount
     name = (
         UserAccount.objects
         .filter(role='admin', is_active=True)
@@ -141,15 +140,47 @@ def _get_osa_head_name():
     )
     return name.strip() if name else "BEVERLY M. DE VEGA"
 
-def _format_student_name(req: GoodMoralRequest) -> str:
-    parts = [(req.first_name or "").strip()]
-    mi = (req.middle_name or "").strip()
+
+def _clean_suffix(ext) -> str:
+    """
+    Return a cleaned suffix (e.g., 'Jr.', 'III') or '' if it's a junk value like NA/N-A/None/--.
+    """
+    if not ext:
+        return ""
+    raw = str(ext).strip()
+    if not raw:
+        return ""
+
+    # normalize for comparison: keep only letters/digits
+    norm = "".join(ch for ch in raw if ch.isalnum()).upper()
+
+    # values to treat as "no suffix"
+    ignore = {"NA", "NONE", "NULL", "NAN"}  # covers 'na', 'n/a', 'N.A.', etc. after normalization
+    if norm in ignore or raw in {"-", "--"}:
+        return ""
+    return raw  # keep user's casing/punctuation for real suffixes
+
+
+def _format_student_name(req):
+    """Build 'First M. Last Suffix' with suffix cleaned."""
+    # prefer req.student_name if present
+    if getattr(req, "student_name", None):
+        return (req.student_name or "").strip()
+
+    parts = [(getattr(req, "first_name", "") or "").strip()]
+
+    mi = (getattr(req, "middle_name", "") or "").strip()
     if mi:
         parts.append(f"{mi[0].upper()}.")
-    parts.append((req.surname or "").strip())
-    if req.ext:
-        parts.append(req.ext.strip())
-    return " ".join([p for p in parts if p])
+
+    parts.append((getattr(req, "surname", "") or "").strip())
+
+    ext_clean = _clean_suffix(getattr(req, "ext", ""))
+    if ext_clean:
+        parts.append(ext_clean)
+
+    return " ".join(p for p in parts if p)
+
 
 def _status_for_excel(raw: str) -> str:
     s = (raw or "").strip().lower()
@@ -158,54 +189,105 @@ def _status_for_excel(raw: str) -> str:
     if "grad" in s or "alum" in s:                      return "Graduate"
     return "Graduate"
 
-def _fmt_grad_date(dt):
+
+def _fmt_yyyy_mm_dd(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
-def _lo_python_path():
-    for p in [
-        os.environ.get("LIBREOFFICE_PY"),
-        "/usr/lib/libreoffice/program/python3",
-        "/usr/lib/libreoffice/program/python",
-    ]:
+
+def _lo_python_path() -> str | None:
+    """
+    Find LibreOffice's bundled Python.
+    Priority: ENV -> common Windows/macOS/Linux locations.
+    """
+    cand = []
+
+    # explicit override
+    env = os.environ.get("LIBREOFFICE_PY")
+    if env:
+        cand.append(env)
+
+    # Windows
+    if os.name == "nt":
+        for base in filter(None, [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]):
+            cand += [
+                str(Path(base) / "LibreOffice" / "program" / "python.exe"),
+                str(Path(base) / "LibreOffice" / "program" / "python3.exe"),
+            ]
+    else:
+        # macOS
+        cand += [
+            "/Applications/LibreOffice.app/Contents/Resources/python",
+            "/Applications/LibreOffice.app/Contents/MacOS/python",
+        ]
+        # Linux
+        cand += [
+            "/usr/lib/libreoffice/program/python3",
+            "/usr/lib/libreoffice/program/python",
+        ]
+
+    for p in cand:
         if p and os.path.exists(p):
             return p
     return None
 
+
 def generate_gmf_pdf(req):
+    """
+    Calls LibreOffice's bundled Python to run lo_gmf_export.py (which uses UNO inside LO).
+    This avoids importing 'uno' in Django's interpreter.
+    """
     lo_py = _lo_python_path()
     if not lo_py:
         raise FileNotFoundError(
-            "LibreOffice Python not found. Set LIBREOFFICE_PY to /usr/lib/libreoffice/program/python3"
+            "LibreOffice Python not found. Set LIBREOFFICE_PY to the LO python path.\n"
+            "Windows: C:\\Program Files\\LibreOffice\\program\\python.exe\n"
+            "macOS:   /Applications/LibreOffice.app/Contents/Resources/python\n"
+            "Linux:   /usr/lib/libreoffice/program/python3"
         )
 
-    # build payload for the LO script
+    script = Path(settings.BASE_DIR) / "lo_gmf_export.py"
+    if not script.exists():
+        raise FileNotFoundError(f"Export script not found: {script}")
+
+    template = Path(settings.GMF_TEMPLATE_PATH)
+    if not template.exists():
+        raise FileNotFoundError(f"GMF template not found at: {template}")
+
+    # Build payload expected by your LO script / named ranges
     payload = {
-        "student_name": req.student_name,
-        "program": req.program or "",
-        "sex": req.sex or "",
-        "status": req.status or "",
-        "years_of_stay": req.years_of_stay or "",
-        "admission_date": req.admission_date or "",
-        "date_graduated": req.date_graduated or "",
-        "purpose": req.purpose or "",
-        "purpose_other": req.purpose_other or "",
+        "student_name": _format_student_name(req),
+        "program": (getattr(req, "program", "") or "").strip(),
+        "sex": (getattr(req, "sex", "") or "").strip().upper(),
+        "status": _status_for_excel(getattr(req, "status", "")),
+        "years_of_stay": str(getattr(req, "years_of_stay", "") or ""),
+        "admission_date": str(getattr(req, "admission_date", "") or ""),
+        "date_graduated": _fmt_yyyy_mm_dd(getattr(req, "date_graduated", None)),
+        "purpose": (getattr(req, "purpose", "") or "").strip(),
+        "purpose_other": (getattr(req, "purpose_other", "") or "").strip(),
         "osahead": _get_osa_head_name(),
     }
 
-    script = Path(settings.BASE_DIR) / "lo_gmf_export.py"
-    template = Path(settings.GMF_TEMPLATE_PATH)
-
     with tempfile.TemporaryDirectory() as tmp:
-        out_pdf = Path(tmp) / "gmf.pdf"
-        payload_json = Path(tmp) / "payload.json"
+        tmp = Path(tmp)
+        out_pdf = tmp / "gmf.pdf"
+        payload_json = tmp / "payload.json"
         payload_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
         cmd = [lo_py, str(script), str(template), str(out_pdf), str(payload_json)]
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            proc = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=120  # prevent runaway LO
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("LibreOffice export timed out (120s).")
 
         if proc.returncode != 0 or not out_pdf.exists():
             raise RuntimeError(
-                f"LibreOffice export failed (rc={proc.returncode})\n"
+                "LibreOffice export failed.\n"
+                f"CMD: {' '.join(cmd)}\n"
                 f"STDOUT:\n{proc.stdout.decode(errors='ignore')}\n"
                 f"STDERR:\n{proc.stderr.decode(errors='ignore')}"
             )
