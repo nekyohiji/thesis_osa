@@ -225,16 +225,16 @@ def generate_gmf_pdf(req) -> bytes:
         raise FileNotFoundError(f"GMF template not found at {template}")
 
     values = {
-        # Names must match your Excel Name Manager exactly
         "student_name":   _format_student_name(req),
         "program":        (getattr(req, "program", "") or "").strip(),
-        "sex":            (getattr(req, "sex", "") or "").strip().upper(),
+        "sex":            (getattr(req, "sex", "") or "").strip().upper(),  # Excel lowers it anyway
         "status":         _status_for_excel(getattr(req, "status", "")),
-        "years_of_stay":  str(getattr(req, "years_of_stay", "") or ""),
-        "admission_date": str(getattr(req, "admission_date", "") or ""),
+        # 👇 map to your model field names
+        "years_of_stay":  (getattr(req, "inclusive_years", "") or "").strip(),
+        "admission_date": (getattr(req, "date_admission", "") or "").strip(),
         "date_graduated": _fmt_yyyy_mm_dd(getattr(req, "date_graduated", None)),
         "purpose":        (getattr(req, "purpose", "") or "").strip(),
-        "purpose_other":  (getattr(req, "purpose_other", "") or "").strip(),
+        "purpose_other":  (getattr(req, "other_purpose", "") or "").strip(),
         "osahead":        _get_osa_head_name(),
     }
 

@@ -1501,7 +1501,6 @@ def view_gmf(request, pk):
     resp["Content-Length"] = str(len(pdf_bytes))
     return resp
 
-
 @role_required(['admin'])
 @xframe_options_exempt
 def batch_view_gmf(request):
