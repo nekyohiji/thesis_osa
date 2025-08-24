@@ -10,6 +10,11 @@ from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 import mimetypes
 from pathlib import Path
+import os, json, subprocess, tempfile, shutil
+from pathlib import Path
+from django.conf import settings
+from openpyxl import load_workbook
+from .models import UserAccount
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -129,58 +134,29 @@ def send_status_email(to_email, approved=True, reason=None):
     )
     
 # ---------- helpers ----------
-def _get_osa_head_name():
-    from myapp.models import UserAccount
-    name = (
-        UserAccount.objects
-        .filter(role='admin', is_active=True)
-        .order_by('-created_at', '-id')
-        .values_list('full_name', flat=True)
-        .first()
-    )
-    return name.strip() if name else "BEVERLY M. DE VEGA"
-
-
 def _clean_suffix(ext) -> str:
-    """
-    Return a cleaned suffix (e.g., 'Jr.', 'III') or '' if it's a junk value like NA/N-A/None/--.
-    """
     if not ext:
         return ""
     raw = str(ext).strip()
     if not raw:
         return ""
-
-    # normalize for comparison: keep only letters/digits
     norm = "".join(ch for ch in raw if ch.isalnum()).upper()
-
-    # values to treat as "no suffix"
-    ignore = {"NA", "NONE", "NULL", "NAN"}  # covers 'na', 'n/a', 'N.A.', etc. after normalization
-    if norm in ignore or raw in {"-", "--"}:
+    if norm in {"NA", "NONE", "NULL", "NAN"} or raw in {"-", "--"}:
         return ""
-    return raw  # keep user's casing/punctuation for real suffixes
-
+    return raw
 
 def _format_student_name(req):
-    """Build 'First M. Last Suffix' with suffix cleaned."""
-    # prefer req.student_name if present
     if getattr(req, "student_name", None):
         return (req.student_name or "").strip()
-
     parts = [(getattr(req, "first_name", "") or "").strip()]
-
     mi = (getattr(req, "middle_name", "") or "").strip()
     if mi:
         parts.append(f"{mi[0].upper()}.")
-
     parts.append((getattr(req, "surname", "") or "").strip())
-
     ext_clean = _clean_suffix(getattr(req, "ext", ""))
     if ext_clean:
         parts.append(ext_clean)
-
     return " ".join(p for p in parts if p)
-
 
 def _status_for_excel(raw: str) -> str:
     s = (raw or "").strip().lower()
@@ -189,107 +165,107 @@ def _status_for_excel(raw: str) -> str:
     if "grad" in s or "alum" in s:                      return "Graduate"
     return "Graduate"
 
-
 def _fmt_yyyy_mm_dd(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
+def _get_osa_head_name():
+    name = (UserAccount.objects
+            .filter(role__iexact='admin', is_active=True)
+            .order_by('-created_at', '-id')
+            .values_list('full_name', flat=True)
+            .first())
+    return name.strip() if name else "BEVERLY M. DE VEGA"
 
-def _lo_python_path() -> str | None:
-    """
-    Find LibreOffice's bundled Python.
-    Priority: ENV -> common Windows/macOS/Linux locations.
-    """
-    cand = []
-
-    # explicit override
-    env = os.environ.get("LIBREOFFICE_PY")
-    if env:
-        cand.append(env)
-
-    # Windows
-    if os.name == "nt":
-        for base in filter(None, [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]):
-            cand += [
-                str(Path(base) / "LibreOffice" / "program" / "python.exe"),
-                str(Path(base) / "LibreOffice" / "program" / "python3.exe"),
-            ]
-    else:
-        # macOS
-        cand += [
-            "/Applications/LibreOffice.app/Contents/Resources/python",
-            "/Applications/LibreOffice.app/Contents/MacOS/python",
-        ]
-        # Linux
-        cand += [
-            "/usr/lib/libreoffice/program/python3",
-            "/usr/lib/libreoffice/program/python",
-        ]
-
-    for p in cand:
+def _find_soffice() -> str | None:
+    for p in (
+        os.environ.get("SOFFICE_BIN"),
+        shutil.which("soffice"),
+        shutil.which("libreoffice"),
+        "/usr/bin/soffice", "/usr/bin/libreoffice", "/snap/bin/libreoffice",
+    ):
         if p and os.path.exists(p):
             return p
     return None
 
+# ---------- Excel filling (named ranges) ----------
+def _fill_named_ranges(template_xlsx: Path, values: dict,
+                       inputs_sheet="inputs", cert_sheet="GMF") -> Path:
+    wb = load_workbook(str(template_xlsx))
+    # write to single-cell defined names
+    for key, val in values.items():
+        dn = wb.defined_names.get(key)
+        if not dn:
+            continue
+        for sheet_name, coord in dn.destinations:
+            ws = wb[sheet_name]
+            cell = coord.split(":")[0]  # top-left if it was a range
+            ws[cell].value = val
 
-def generate_gmf_pdf(req):
-    """
-    Calls LibreOffice's bundled Python to run lo_gmf_export.py (which uses UNO inside LO).
-    This avoids importing 'uno' in Django's interpreter.
-    """
-    lo_py = _lo_python_path()
-    if not lo_py:
-        raise FileNotFoundError(
-            "LibreOffice Python not found. Set LIBREOFFICE_PY to the LO python path.\n"
-            "Windows: C:\\Program Files\\LibreOffice\\program\\python.exe\n"
-            "macOS:   /Applications/LibreOffice.app/Contents/Resources/python\n"
-            "Linux:   /usr/lib/libreoffice/program/python3"
-        )
+    # force recalculation in LO on open
+    try:
+        wb.calculation.fullCalcOnLoad = True
+    except Exception:
+        pass
 
-    script = Path(settings.BASE_DIR) / "lo_gmf_export.py"
-    if not script.exists():
-        raise FileNotFoundError(f"Export script not found: {script}")
+    # show GMF, hide inputs, activate GMF
+    if inputs_sheet in wb.sheetnames:
+        wb[inputs_sheet].sheet_state = "hidden"
+    if cert_sheet in wb.sheetnames:
+        wb[cert_sheet].sheet_state = "visible"
+        wb.active = wb.index(wb[cert_sheet])
 
+    out_xlsx = Path(tempfile.gettempdir()) / f"gmf_fill_{next(tempfile._get_candidate_names())}.xlsx"
+    wb.save(str(out_xlsx))
+    return out_xlsx
+
+# ---------- main entry ----------
+def generate_gmf_pdf(req) -> bytes:
     template = Path(settings.GMF_TEMPLATE_PATH)
     if not template.exists():
-        raise FileNotFoundError(f"GMF template not found at: {template}")
+        raise FileNotFoundError(f"GMF template not found at {template}")
 
-    # Build payload expected by your LO script / named ranges
-    payload = {
-        "student_name": _format_student_name(req),
-        "program": (getattr(req, "program", "") or "").strip(),
-        "sex": (getattr(req, "sex", "") or "").strip().upper(),
-        "status": _status_for_excel(getattr(req, "status", "")),
-        "years_of_stay": str(getattr(req, "years_of_stay", "") or ""),
+    values = {
+        # Names must match your Excel Name Manager exactly
+        "student_name":   _format_student_name(req),
+        "program":        (getattr(req, "program", "") or "").strip(),
+        "sex":            (getattr(req, "sex", "") or "").strip().upper(),
+        "status":         _status_for_excel(getattr(req, "status", "")),
+        "years_of_stay":  str(getattr(req, "years_of_stay", "") or ""),
         "admission_date": str(getattr(req, "admission_date", "") or ""),
         "date_graduated": _fmt_yyyy_mm_dd(getattr(req, "date_graduated", None)),
-        "purpose": (getattr(req, "purpose", "") or "").strip(),
-        "purpose_other": (getattr(req, "purpose_other", "") or "").strip(),
-        "osahead": _get_osa_head_name(),
+        "purpose":        (getattr(req, "purpose", "") or "").strip(),
+        "purpose_other":  (getattr(req, "purpose_other", "") or "").strip(),
+        "osahead":        _get_osa_head_name(),
     }
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        out_pdf = tmp / "gmf.pdf"
-        payload_json = tmp / "payload.json"
-        payload_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    soffice = _find_soffice()
+    if not soffice:
+        raise FileNotFoundError(
+            "LibreOffice 'soffice' not found. Install libreoffice-calc/writer "
+            "or set SOFFICE_BIN to its path."
+        )
 
-        cmd = [lo_py, str(script), str(template), str(out_pdf), str(payload_json)]
-        try:
-            proc = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=120  # prevent runaway LO
-            )
-        except subprocess.TimeoutExpired:
-            raise RuntimeError("LibreOffice export timed out (120s).")
+    filled_xlsx = _fill_named_ranges(template, values, inputs_sheet="inputs", cert_sheet="GMF")
 
-        if proc.returncode != 0 or not out_pdf.exists():
+    out_dir = Path(tempfile.mkdtemp())
+    try:
+        cmd = [
+            soffice, "--headless",
+            "--convert-to", "pdf:calc_pdf_Export",
+            "--outdir", str(out_dir),
+            str(filled_xlsx),
+        ]
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+        pdf_path = out_dir / (filled_xlsx.stem + ".pdf")
+        if proc.returncode != 0 or not pdf_path.exists():
             raise RuntimeError(
                 "LibreOffice export failed.\n"
                 f"CMD: {' '.join(cmd)}\n"
                 f"STDOUT:\n{proc.stdout.decode(errors='ignore')}\n"
                 f"STDERR:\n{proc.stderr.decode(errors='ignore')}"
             )
-
-        return out_pdf.read_bytes()
+        return pdf_path.read_bytes()
+    finally:
+        try: os.remove(filled_xlsx)
+        except Exception: pass
+        shutil.rmtree(out_dir, ignore_errors=True)

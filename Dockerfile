@@ -8,19 +8,14 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Optional: let you override soffice path if needed
+# ENV SOFFICE_BIN=/usr/bin/soffice
 
-# Tell Django where LO’s bundled python is
-ENV LIBREOFFICE_PY=/usr/lib/libreoffice/program/python3
-
-# Create dirs used by collectstatic & media
 RUN mkdir -p /app/staticfiles /app/media
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
 CMD python manage.py migrate && \
