@@ -21,7 +21,7 @@ CMD python manage.py migrate && \
     gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
 RUN mkdir -p /app/staticfiles /opt/render/project/src/media
 # Use system Python (has python3-uno) to run the LO script
-ENV LIBREOFFICE_PY=/usr/local/bin/python
+ENV LIBREOFFICE_PY=/usr/lib/libreoffice/program/python
 
 CMD gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
 RUN mkdir -p /opt/render/project/src/media
