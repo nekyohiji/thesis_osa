@@ -9,19 +9,21 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+ENV PYTHONDONTWRITEBYTECODE=1 
+ENV PYTHONUNBUFFERED=1
+# Fix the LibreOffice Python path
+ENV LIBREOFFICE_PY=/usr/lib/libreoffice/program/python3
+
+# Create necessary directories
+RUN mkdir -p /app/staticfiles /opt/render/project/src/media
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Single CMD with all startup commands
 CMD python manage.py migrate && \
     python manage.py collectstatic --noinput && \
     gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
-RUN mkdir -p /app/staticfiles /opt/render/project/src/media
-# Use system Python (has python3-uno) to run the LO script
-ENV LIBREOFFICE_PY=/usr/lib/libreoffice/program/python
-
-CMD gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
-RUN mkdir -p /opt/render/project/src/media
