@@ -455,7 +455,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header ">
-        <h5 class="modal-title"  id="editAccountLabel">
+        <h5 class="modal-title" id="editAccountLabel">
           <i class="fas fa-user-edit me-2"></i><strong> Edit Account </strong>
         </h5>
       </div>
@@ -465,10 +465,19 @@
             <label for="editFullName" class="form-label">Full Name:</label>
             <input type="text" class="form-control" id="editFullName" required>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Email:</label>
-            <input type="text" class="form-control" id="editEmail" disabled>
+
+          <!-- Email + verify badge + change button -->
+          <div class="mb-2 d-flex align-items-center justify-content-between">
+            <label class="form-label mb-0">Email:</label>
+            <span id="editEmailBadge" class="badge bg-secondary" style="display:none;">Unverified</span>
           </div>
+          <div class="input-group mb-3">
+            <input type="email" class="form-control" id="editEmail" required disabled>
+            <button type="button" class="btn btn-outline-primary" id="openChangeEmailModalBtn">
+              Change Email
+            </button>
+          </div>
+
           <div class="mb-3">
             <label class="form-label">Position:</label>
             <input type="text" class="form-control" id="editRole" disabled>
@@ -484,7 +493,42 @@
       </div>
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn text-light"  style="background-color: #440207;" id="saveEditBtn">Save</button>
+        <button type="button" class="btn text-light" style="background-color: #440207;" id="saveEditBtn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Email Modal -->
+<div class="modal fade" id="changeEmailModal" tabindex="-1" aria-labelledby="changeEmailLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="changeEmailLabel">
+          <i class="fas fa-envelope me-2"></i> Change Email
+        </h5>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="newEmail" class="form-label">New Email</label>
+          <input type="email" class="form-control" id="newEmail" placeholder="name@example.com">
+        </div>
+
+        <div id="emailOtpSection" style="display:none;">
+          <label for="emailOtp" class="form-label">Enter OTP sent to the new email</label>
+          <div class="input-group">
+            <input type="text" id="emailOtp" class="form-control" maxlength="6" placeholder="6-digit OTP">
+            <button type="button" class="btn btn-outline-success" id="verifyEmailOtpBtn">Verify</button>
+          </div>
+          <small class="text-muted d-block mt-2" id="emailOtpHint"></small>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="sendEmailOtpBtn">Send OTP</button>
+        <div>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="applyNewEmailBtn" disabled>Apply</button>
+        </div>
       </div>
     </div>
   </div>
@@ -670,7 +714,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-
 /* sidebar Funtions*/
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -701,342 +744,77 @@
       }
     });
   }
+</script>
 
-
-
-/* Start here magcode*/
-
-
-
- // EDIT AND CHANGE PASSWORD
-  document.getElementById('proceedChangePasswordBtn').addEventListener('click', function() {
-   
-    bootstrap.Modal.getInstance(document.getElementById('confirmChangePasswordModal')).hide();
-
-
-    const changePasswordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
-    changePasswordModal.show();
-  });
-
- 
-  const changePasswordHtml = `
-    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-          <h5 class="modal-title" id="changePasswordLabel">
-            <i class="fas fa-key me-2"></i> Create New Password
-          </h5>
-          </div>
-          <div class="modal-body">
-
-          <form id="changePasswordForm">
-            <!-- New Password -->
-            <div class="mb-3 position-relative">
-              <label class="form-label">New Password</label>
-              <input type="password" class="form-control" style="padding-right: 2.5rem;" placeholder="Enter new password">
-              <i class="fas fa-eye" style="
-                position: absolute;
-                top: 75%;
-                right: 0.75rem;
-                transform: translateY(-50%);
-                cursor: pointer;
-                display: none;
-              "></i>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="mb-3 position-relative">
-              <label class="form-label">Confirm Password</label>
-              <input type="password" class="form-control" style="padding-right: 2.5rem;" placeholder="Confirm new password">
-              <i class="fas fa-eye" style="
-                position: absolute;
-                top: 75%;
-                right: 0.75rem;
-                transform: translateY(-50%);
-                cursor: pointer;
-                display: none;
-              "></i>
-            </div>
-          </form>
-
-          </div>
-          <div class="modal-footer justify-content-center">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn text-light" style="background-color: #440207;"  id="savePasswordBtn">Save</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', changePasswordHtml);
-
-  // Toggle password visibility
-  document.querySelectorAll('.position-relative').forEach(container => {
-    const input = container.querySelector('input');
-    const eye = container.querySelector('i.fas.fa-eye');
-
-    // Show/hide eye on input
-    input.addEventListener('input', () => {
-      eye.style.display = input.value.length > 0 ? 'block' : 'none';
-      if(input.value.length === 0) {
-        input.type = 'password';
-        eye.classList.remove('fa-eye-slash');
-        eye.classList.add('fa-eye');
-      }
-    });
-
-    // Toggle password visibility
-    eye.addEventListener('click', () => {
-      if (input.type === 'password') {
-        input.type = 'text';
-        eye.classList.remove('fa-eye');
-        eye.classList.add('fa-eye-slash');
-      } else {
-        input.type = 'password';
-        eye.classList.remove('fa-eye-slash');
-        eye.classList.add('fa-eye');
-      }
-    });
-  });
-
-  // password validation
-  document.addEventListener('click', function() {
-    const saveBtn = document.getElementById('savePasswordBtn');
-    if (saveBtn) {
-      saveBtn.onclick = function() {
-        const newPassword = document.getElementById('newPassword').value.trim();
-        const confirmPassword = document.getElementById('confirmPassword').value.trim();
-
-        if (!newPassword || !confirmPassword) {
-          alert('Please fill in both fields.');
-          return;
-        }
-        if (newPassword !== confirmPassword) {
-          alert('Passwords do not match.');
-          return;
-        }
-
-        alert('Password changed successfully!');
-        document.getElementById('changePasswordForm').reset();
-        bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
-      };
-    }
-  });
-
-
-
-
-
- // HIDE PASSWORD IN CREATE ACCOUNT
-  function setupPasswordField(fieldId) {
-    const field = document.getElementById(fieldId);
-    const iconWrapper = field.nextElementSibling; 
-    const icon = iconWrapper.querySelector('i');
-
-    iconWrapper.style.display = 'none';
-
-    field.addEventListener('input', () => {
-      if (field.value.length > 0) {
-        iconWrapper.style.display = 'inline-block';
-      } else {
-        iconWrapper.style.display = 'none';
-        field.type = 'password';
-        icon.classList.replace('fa-eye-slash', 'fa-eye'); 
-      }
-    });
-
-    
-    iconWrapper.addEventListener('click', () => {
-      if (field.type === 'password') {
-        field.type = 'text';
-        icon.classList.replace('fa-eye', 'fa-eye-slash');
-      } else {
-        field.type = 'password';
-        icon.classList.replace('fa-eye-slash', 'fa-eye');
-      }
-    });
+<script>
+/* ---------- GLOBAL HELPERS ---------- */
+function getCSRFToken() {
+  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+function showMessage(text, type = 'success', timeout = 4000) {
+  let box = document.getElementById('flashContainer');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'flashContainer';
+    box.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 z-3';
+    box.style.cssText = 'width:100%;max-width:600px;padding:0 15px;';
+    document.body.appendChild(box);
   }
+  const el = document.createElement('div');
+  el.className = `alert alert-${type} alert-dismissible fade show`;
+  el.role = 'alert';
+  el.style.cssText = 'word-wrap:break-word;white-space:normal;';
+  el.innerHTML = `${text}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+  box.appendChild(el);
+  if (timeout) setTimeout(() => bootstrap.Alert.getOrCreateInstance(el).close(), timeout);
+}
+function isArray(x) { return Array.isArray(x); }
 
-  
-  setupPasswordField('createPassword');
-  setupPasswordField('confirmPassword');
-
-
-
-
-
-  function getCSRFToken() {
-    const name = 'csrftoken';
-    const cookie = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-    return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
-  }
-
-  let otpCooldownSeconds = 0;
-  let cooldownTimer = null;
-
-  function startOtpCooldown(seconds) {
-    otpCooldownSeconds = seconds;
-    const btn = document.getElementById('createAccountBtn');
-    btn.disabled = true;
-    btn.textContent = `Wait ${otpCooldownSeconds}s`;
-
-    cooldownTimer = setInterval(() => {
-      otpCooldownSeconds--;
-      if (otpCooldownSeconds <= 0) {
-        clearInterval(cooldownTimer);
-        btn.disabled = false;
-        btn.textContent = 'CREATE';
-      } else {
-        btn.textContent = `Wait ${otpCooldownSeconds}s`;
-      }
-    }, 1000);
-  }
-
-  document.getElementById('createAccountBtn').addEventListener('click', function () {
-  const fullName = document.getElementById('fullName').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const position = document.getElementById('position').value;
-  const password = document.getElementById('createPassword').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
-
-  if (!fullName || !email || !position || !password || !confirmPassword) {
-    showMessage("All fields are required.", "danger");
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    showMessage("Passwords do not match.", "danger");
-    return;
-  }
-
-  const overlay = document.getElementById('loadingOverlay');
-  overlay.style.display = 'flex';
-
-  const createBtn = document.getElementById('createAccountBtn');
-  createBtn.disabled = true;
-  createBtn.textContent = 'Sending...';
-
-  fetch('/request-otp/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken()
-    },
-    body: JSON.stringify({
-      fullName: fullName,
-      email: email,
-      position: position,
-      password: password
+/* ---------- ACCOUNTS LIST (uses your existing endpoint) ---------- */
+function fetchAndDisplayAccounts() {
+  fetch('/get-accounts/')
+    .then(async res => {
+      if (!res.ok) throw new Error(`GET /get-accounts/ ${res.status} ${(await res.text().catch(()=>''))}`);
+      return res.json().catch(() => { throw new Error('Invalid JSON from /get-accounts/'); });
     })
-  })
-    .then(response => response.json())
     .then(data => {
-      overlay.style.display = 'none';
-      createBtn.disabled = false;
-      createBtn.textContent = 'CREATE';
+      const active = isArray(data?.active) ? data.active : [];
+      const deactivated = isArray(data?.deactivated) ? data.deactivated : [];
 
-      if (data.status === 'ok') {
-        document.getElementById('otpSection').style.display = 'block';
-        startOtpCooldown(300);
-        showMessage("OTP sent to email!", "success");
-      } else if (data.status === 'wait') {
-        const match = data.message.match(/\d+/);
-        if (match) startOtpCooldown(parseInt(match[0]));
-        showMessage(data.message, "warning");
-      } else {
-        showMessage(data.message || "Failed to send OTP.", "danger");
-      }
-    })
-    .catch(err => {
-      overlay.style.display = 'none';
-      createBtn.disabled = false;
-      createBtn.textContent = 'CREATE';
-      showMessage("An error occurred. Please try again.", "danger");
-    });
-  });
+      const activeList = document.getElementById('activeAccountsList');
+      const deactivatedList = document.getElementById('deactivatedAccountsList');
+      if (!activeList || !deactivatedList) { console.error('Lists not found'); showMessage('Accounts containers missing from DOM.', 'danger'); return; }
 
-  document.getElementById('verifyOtpBtn').addEventListener('click', function () {
-    const otp = document.getElementById('otp').value.trim();
-    const email = document.getElementById('email').value.trim();
+      activeList.innerHTML = '';
+      deactivatedList.innerHTML = '';
 
-    if (!otp) {
-      showMessage("Enter the OTP.", "danger");
-      return;
-    }
-
-    fetch('/verify-otp/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCSRFToken()
-      },
-      body: JSON.stringify({ email: email, otp: otp })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'ok') {
-        window.location.reload(true);
-      } else {
-        showMessage(data.message || "Invalid OTP.", "danger");
-      }
-    });
-  });
-
-
-
-
-
-
-    let selectedEmailToDeactivate = "";
-
-    // Fetch and display accounts
-    function fetchAndDisplayAccounts() {
-      fetch('/get-accounts/')
-        .then(res => res.json())
-        .then(data => {
-          const activeList = document.getElementById('activeAccountsList');
-          const deactivatedList = document.getElementById('deactivatedAccountsList');
-
-          // Clear lists
-          activeList.innerHTML = '';
-          deactivatedList.innerHTML = '';
-
-        function createCard(account, status) {
+      function createCard(account, status) {
         const div = document.createElement('div');
         div.className = `card mb-3 shadow-sm ${status === 'deactivated' ? 'border-danger' : ''}`;
-          div.style.cursor = 'default';
-          div.style.fontSize = '0.8rem';
-          div.style.textAlign = 'left';
-          div.style.position = 'relative';
-          div.style.padding = '2px';
-
-        // Store account info in data attributes
-        div.dataset.fullName = account.full_name;
-        div.dataset.email = account.email;
-        div.dataset.role = account.role;
-        
+        div.style.cssText = 'cursor:default;font-size:.8rem;text-align:left;position:relative;padding:2px;';
+        div.dataset.fullName = account?.full_name ?? '';
+        div.dataset.email = account?.email ?? '';
+        div.dataset.role = account?.role ?? '';
 
         div.innerHTML = `
           <div class="card-body p-2">
             <div class="row align-items-center">
-              <!-- Account Details -->
               <div class="col-md-10 col-12">
                 <div class="row mb-1">
                   <div class="col-4 col-sm-3 text-end fw-bold">Full Name:</div>
-                  <div class="col-8 col-sm-9 ${status === 'deactivated' ? 'text-danger' : ''} text-truncate">${account.full_name}</div>
+                  <div class="col-8 col-sm-9 ${status === 'deactivated' ? 'text-danger' : ''} text-truncate">${div.dataset.fullName || '-'}</div>
                 </div>
                 <div class="row mb-1">
                   <div class="col-4 col-sm-3 text-end fw-bold">Email:</div>
-                  <div class="col-8 col-sm-9 text-truncate">${account.email}</div>
+                  <div class="col-8 col-sm-9 text-truncate">${div.dataset.email || '-'}</div>
                 </div>
                 <div class="row mb-0">
                   <div class="col-4 col-sm-3 text-end fw-bold">Position:</div>
-                  <div class="col-8 col-sm-9"><strong>${account.role}</strong></div>
+                  <div class="col-8 col-sm-9"><strong>${div.dataset.role || '-'}</strong></div>
                 </div>
               </div>
 
-              <!-- Kebab Button for Active Accounts -->
               ${status === 'active' ? `
               <div class="col-md-2 col-12 d-flex justify-content-md-end justify-content-start mt-2 mt-md-0">
                 <div class="position-relative">
@@ -1044,154 +822,507 @@
                     <i class="fas fa-ellipsis-v"></i>
                   </span>
                   <div class="kebab-menu bg-white border rounded shadow position-absolute end-0 mt-2" style="display:none; z-index:1000;">
-                    <div class="px-3 py-1" style="cursor:pointer;" onclick="editAccount('${account.email}'); closeKebabMenu(this)">Edit</div>
-                    <div class="px-3 py-1 text-danger" style="cursor:pointer;" onclick="selectedEmailToDeactivate='${account.email}'; confirmDeactivate(); closeKebabMenu(this)">Deactivate</div>
+                    <div class="px-3 py-1" style="cursor:pointer;" onclick="editAccount('${(div.dataset.email||'').replace(/'/g, "\\'")}'); closeKebabMenu(this)">Edit</div>
+                    <div class="px-3 py-1 text-danger" style="cursor:pointer;" onclick="window.selectedEmailToDeactivate='${(div.dataset.email||'').replace(/'/g, "\\'")}'; confirmDeactivate(); closeKebabMenu(this)">Deactivate</div>
                   </div>
                 </div>
               </div>` : ''}
             </div>
-          </div>
-        `;
-
+          </div>`;
         return div;
       }
 
+      if (active.length === 0) activeList.innerHTML = `<p class="text-muted mt-3" style="text-align:left;">No active accounts yet.</p>`;
+      else active.forEach(acc => activeList.appendChild(createCard(acc, 'active')));
 
+      if (deactivated.length === 0) deactivatedList.innerHTML = `<p class="text-muted mt-3" style="text-align:left;">No deactivated accounts yet.</p>`;
+      else deactivated.forEach(acc => deactivatedList.appendChild(createCard(acc, 'deactivated')));
+    })
+    .catch(err => { console.error(err); showMessage('Unable to load accounts. Check server or payload format.', 'danger'); });
+}
 
-          // Active Accounts
-          if (data.active.length === 0) {
-            activeList.innerHTML = `<p class="text-muted mt-3" style="text-align: left;">No active accounts yet.</p>`;
-          } else {
-            data.active.forEach(account => activeList.appendChild(createCard(account, 'active')));
-          }
+/* ---------- KEBAB + EDIT MODAL ---------- */
+window.selectedEmailToDeactivate = null;
 
-          // Deactivated Accounts
-          if (data.deactivated.length === 0) {
-            deactivatedList.innerHTML = `<p class="text-muted mt-3" style="text-align: left;">No deactivated accounts yet.</p>`;
-          } else {
-            data.deactivated.forEach(account => deactivatedList.appendChild(createCard(account, 'deactivated')));
-          }
-        });
-    }
+window.toggleKebabMenu = function (el) {
+  const menu = el.nextElementSibling;
+  const isOpen = menu && menu.style.display === 'block';
+  document.querySelectorAll('.kebab-menu').forEach(k => k.style.display = 'none');
+  if (menu) menu.style.display = isOpen ? 'none' : 'block';
+};
+window.closeKebabMenu = function (child) {
+  const menu = child.closest('.kebab-menu');
+  if (menu) menu.style.display = 'none';
+};
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.kebab-menu') && !e.target.closest('.kebab-btn')) {
+    document.querySelectorAll('.kebab-menu').forEach(k => k.style.display = 'none');
+  }
+});
 
-    // Kebab menu functions
-    function toggleKebabMenu(element) {
-      const menu = element.nextElementSibling;
-      const allMenus = document.querySelectorAll('.kebab-menu');
-      allMenus.forEach(m => { if(m !== menu) m.style.display = 'none'; });
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    }
+window.editAccount = function (email) {
+  const card = [...document.querySelectorAll('#activeAccountsList .card')].find(c => c.dataset.email === email);
+  if (!card) return showMessage('Unable to find selected account.', 'danger');
+  document.getElementById('editFullName').value = card.dataset.fullName || '';
+  document.getElementById('editEmail').value = card.dataset.email || '';
+  document.getElementById('editRole').value = card.dataset.role || '';
+  document.getElementById('editEmailBadge').style.display = 'none';
+  new bootstrap.Modal(document.getElementById('editAccountModal')).show();
+};
 
-    function closeKebabMenu(element) {
-      element.parentElement.style.display = 'none';
-    }
-
-    // Click outside to close all kebab menus
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.kebab-btn') && !e.target.closest('.kebab-menu')) {
-        document.querySelectorAll('.kebab-menu').forEach(menu => menu.style.display = 'none');
-      }
+/* ---------- DEACTIVATE (matches your existing URL) ---------- */
+window.confirmDeactivate = function () {
+  new bootstrap.Modal(document.getElementById('confirmDeactivateModal')).show();
+};
+document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async () => {
+  const email = window.selectedEmailToDeactivate;
+  if (!email) return;
+  try {
+    const res = await fetch(`/deactivate-account/${encodeURIComponent(email)}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRFToken() }
     });
+    const data = await res.json().catch(()=>null);
+    if (!res.ok || data?.status === 'error') throw new Error((data && data.message) || 'Failed to deactivate.');
+    showMessage('Account deactivated.', 'success');
+    fetchAndDisplayAccounts();
+  } catch (e) {
+    showMessage(e.message || 'Error deactivating account.', 'danger');
+  } finally {
+    bootstrap.Modal.getInstance(document.getElementById('confirmDeactivateModal'))?.hide();
+    window.selectedEmailToDeactivate = null;
+  }
+});
 
-    // Deactivate confirmation modal
-    function confirmDeactivate() {
-      const messageEl = document.getElementById("confirmDeactivateMessage");
-      messageEl.textContent = `Are you sure you want to deactivate ${selectedEmailToDeactivate}?`;
+/* ---------- EDIT: Save (name) ---------- */
+(function () {
+  const saveBtn = document.getElementById('saveEditBtn');
+  if (!saveBtn) return;
 
-      // Use Bootstrap modal
-      const modalEl = document.getElementById('confirmDeactivateModal');
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    }
+  saveBtn.addEventListener('click', async function () {
+    const nameEl = document.getElementById('editFullName');
+    const emailEl = document.getElementById('editEmail');
+    const roleEl  = document.getElementById('editRole'); // currently disabled
 
-    // Deactivate account via POST
-    document.getElementById("confirmDeactivateBtn").addEventListener("click", function () {
-      fetch(`/deactivate-account/${encodeURIComponent(selectedEmailToDeactivate)}/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': getCSRFToken()
-        }
-      })
-      .then(res => {
-        if (res.ok) {
-          window.location.reload(true);
+    const full_name = (nameEl?.value || '').trim();
+    const email = (emailEl?.value || '').trim();
+    const role = (roleEl?.value || null);
+
+    if (!email) { showMessage('No account selected.', 'danger'); return; }
+    if (!full_name) { showMessage('Full name is required.', 'warning'); nameEl?.focus(); return; }
+    if (full_name.length > 128) { showMessage('Full name must be at most 128 characters.', 'warning'); nameEl?.focus(); return; }
+
+    const btn = this, txt = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    try {
+      const res = await fetch(`/edit-account/${encodeURIComponent(email)}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ full_name, ...(roleEl && !roleEl.disabled && role ? { role } : {}) })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || data?.status === 'error') {
+        if (data?.errors) {
+          const firstKey = Object.keys(data.errors)[0];
+          showMessage(data.errors[firstKey] || data.message || 'Failed to update account.', 'danger');
         } else {
-          showMessage("Failed to deactivate account.", "danger");
+          showMessage((data && data.message) || 'Failed to update account.', 'danger');
         }
-      })
-      .catch(err => {
-        showMessage("Error deactivating account.", "danger");
+        return;
+      }
+      showMessage(data?.message || 'Account updated successfully.', 'success');
+      if (typeof fetchAndDisplayAccounts === 'function') fetchAndDisplayAccounts();
+      bootstrap.Modal.getInstance(document.getElementById('editAccountModal'))?.hide();
+    } catch (e) {
+      showMessage('Network error while saving account.', 'danger');
+    } finally {
+      btn.disabled = false; btn.textContent = txt;
+    }
+  });
+})();
+
+/* ---------- CHANGE EMAIL (Send OTP → Verify → Apply) ---------- */
+(function () {
+  const openBtn   = document.getElementById('openChangeEmailModalBtn');
+  const modalEl   = document.getElementById('changeEmailModal');
+  if (!openBtn || !modalEl) return;
+
+  const newEmailEl   = document.getElementById('newEmail');
+  const sendOtpBtn   = document.getElementById('sendEmailOtpBtn');
+  const otpSection   = document.getElementById('emailOtpSection');
+  const otpInput     = document.getElementById('emailOtp');
+  const verifyOtpBtn = document.getElementById('verifyEmailOtpBtn');
+  const otpHint      = document.getElementById('emailOtpHint');
+  const applyBtn     = document.getElementById('applyNewEmailBtn');
+
+  let pendingNewEmail = null;
+  const gmailOnly = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // align with your create form; remove if not needed
+
+  function resetModalState() {
+    pendingNewEmail = null;
+    newEmailEl.value = '';
+    otpInput.value = '';
+    otpSection.style.display = 'none';
+    applyBtn.disabled = true;
+    otpHint.textContent = '';
+  }
+
+  openBtn.addEventListener('click', () => {
+    resetModalState();
+    new bootstrap.Modal(modalEl).show();
+  });
+
+  sendOtpBtn.addEventListener('click', async () => {
+    const currentEmail = (document.getElementById('editEmail')?.value || '').trim();
+    const proposed = newEmailEl.value.trim();
+    if (!currentEmail) return showMessage('No account selected.', 'danger');
+    if (!proposed) return showMessage('Please enter the new email.', 'warning');
+    if (proposed === currentEmail) return showMessage('New email must be different from current email.', 'warning');
+    if (!gmailOnly.test(proposed)) return showMessage('Email must be a Gmail address.', 'warning'); // remove if not needed
+
+    sendOtpBtn.disabled = true;
+    try {
+      const res = await fetch('/email-change/request/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ current_email: currentEmail, new_email: proposed })
+      });
+      const data = await res.json().catch(()=>null);
+      if (!res.ok || data?.status === 'error') throw new Error(data?.message || 'Failed to send OTP.');
+      pendingNewEmail = proposed;
+      otpSection.style.display = 'block';
+      otpHint.textContent = 'OTP sent. It expires in 10 minutes.';
+      showMessage('OTP sent to the new email.', 'success');
+    } catch (e) {
+      showMessage(e.message || 'Error sending OTP.', 'danger');
+    } finally {
+      sendOtpBtn.disabled = false;
+    }
+  });
+
+  verifyOtpBtn.addEventListener('click', async () => {
+    const code = otpInput.value.trim();
+    if (!pendingNewEmail) return showMessage('Please send an OTP first.', 'warning');
+    if (!/^\d{6}$/.test(code)) return showMessage('Enter the 6-digit OTP.', 'warning');
+
+    verifyOtpBtn.disabled = true;
+    try {
+      const res = await fetch('/email-change/verify/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ new_email: pendingNewEmail, otp: code })
+      });
+      const data = await res.json().catch(()=>null);
+      if (!res.ok || data?.status === 'error') throw new Error(data?.message || 'OTP verification failed.');
+
+      otpHint.textContent = 'OTP verified. You can now apply the change.';
+      applyBtn.disabled = false;
+      showMessage('OTP verified.', 'success');
+    } catch (e) {
+      showMessage(e.message || 'Error verifying OTP.', 'danger');
+    } finally {
+      verifyOtpBtn.disabled = false;
+    }
+  });
+
+  applyBtn.addEventListener('click', async () => {
+    const currentEmail = (document.getElementById('editEmail')?.value || '').trim();
+    if (!pendingNewEmail) return showMessage('No verified email to apply.', 'warning');
+
+    applyBtn.disabled = true;
+    try {
+      const res = await fetch('/email-change/apply/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        body: JSON.stringify({ current_email: currentEmail, new_email: pendingNewEmail })
+      });
+      const data = await res.json().catch(()=>null);
+      if (!res.ok || data?.status === 'error') throw new Error(data?.message || 'Failed to update email.');
+
+      document.getElementById('editEmail').value = data?.email || pendingNewEmail;
+      const badge = document.getElementById('editEmailBadge');
+      if (badge) { badge.textContent = 'Verified'; badge.className = 'badge bg-success'; badge.style.display = 'inline-block'; }
+      if (typeof fetchAndDisplayAccounts === 'function') fetchAndDisplayAccounts();
+
+      showMessage('Email updated successfully.', 'success');
+      bootstrap.Modal.getInstance(modalEl)?.hide();
+    } catch (e) {
+      showMessage(e.message || 'Error applying email change.', 'danger');
+      applyBtn.disabled = false;
+    }
+  });
+})();
+
+/* ---------- CHANGE PASSWORD with live match + OTP ---------- */
+(function () {
+  let pwOtpVerified = false;
+
+  document.getElementById('proceedChangePasswordBtn').addEventListener('click', function () {
+    const confirmEl = document.getElementById('confirmChangePasswordModal');
+    bootstrap.Modal.getInstance(confirmEl)?.hide();
+
+    ensureChangePasswordModal();
+    resetPwModalState();
+    new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
+  });
+
+  function ensureChangePasswordModal() {
+    if (document.getElementById('changePasswordModal')) return;
+
+    // Use input-group so the eye buttons are always visible
+    const html = `
+      <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="changePasswordLabel">
+                <i class="fas fa-key me-2"></i> Create New Password
+              </h5>
+            </div>
+            <div class="modal-body">
+              <form id="changePasswordForm" novalidate>
+                <label class="form-label" for="newPassword">New Password</label>
+                <div class="input-group mb-2">
+                  <input id="newPassword" type="password" class="form-control" placeholder="Enter new password" minlength="8" required>
+                  <button type="button" class="btn btn-outline-secondary toggle-visibility" data-target="newPassword" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <div class="form-text mb-3">At least 8 characters.</div>
+
+                <label class="form-label" for="confirmPassword">Confirm Password</label>
+                <div class="input-group mb-1">
+                  <input id="confirmPassword" type="password" class="form-control" placeholder="Confirm new password" minlength="8" required>
+                  <button type="button" class="btn btn-outline-secondary toggle-visibility" data-target="confirmPassword" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <small id="pwMatchHint" class="d-block mb-3 text-muted"></small>
+
+                <hr class="my-3">
+
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <label class="form-label mb-0">Verify via OTP</label>
+                  <button type="button" class="btn btn-outline-primary btn-sm" id="pwSendOtpBtn" disabled>Send OTP</button>
+                </div>
+
+                <div id="pwOtpSection" style="display:none;">
+                  <label class="form-label" for="pwOtp">Enter the 6-digit OTP sent to the registered email</label>
+                  <div class="input-group">
+                    <input id="pwOtp" type="text" class="form-control" maxlength="6" placeholder="6-digit OTP" inputmode="numeric" pattern="\\d{6}">
+                    <button type="button" class="btn btn-outline-success" id="pwVerifyOtpBtn" disabled>Verify</button>
+                  </div>
+                  <small class="text-muted d-block mt-2" id="pwOtpHint"></small>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn text-light" style="background-color:#440207;" id="savePasswordBtn" disabled>Save</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // Eye toggles (works for both fields)
+    document.querySelectorAll('#changePasswordModal .toggle-visibility').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const icon = btn.querySelector('i');
+        if (!input) return;
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.replace('fa-eye', 'fa-eye-slash');
+          btn.setAttribute('aria-label', 'Hide password');
+        } else {
+          input.type = 'password';
+          icon.classList.replace('fa-eye-slash', 'fa-eye');
+          btn.setAttribute('aria-label', 'Show password');
+        }
       });
     });
 
-    // Example edit function
-    function editAccount(email) {
-      // Find the card by email data attribute
-      const accountCard = [...document.querySelectorAll('.card')].find(card => card.dataset.email === email);
-      if (!accountCard) return;
+    wirePwOtpAndSave();
+  }
 
-      // Fill modal fields using data attributes
-      document.getElementById('editFullName').value = accountCard.dataset.fullName;
-      document.getElementById('editEmail').value = accountCard.dataset.email;
-      document.getElementById('editRole').value = accountCard.dataset.role;
+  function resetPwModalState() {
+    pwOtpVerified = false;
+    const modal = document.getElementById('changePasswordModal');
+    if (!modal) return;
+    modal.querySelector('#changePasswordForm')?.reset();
+    modal.querySelector('#pwOtpSection').style.display = 'none';
+    modal.querySelector('#pwOtpHint').textContent = '';
+    modal.querySelector('#pwMatchHint').textContent = '';
+    modal.querySelector('#newPassword').classList.remove('is-valid','is-invalid');
+    modal.querySelector('#confirmPassword').classList.remove('is-valid','is-invalid');
+    modal.querySelector('#pwSendOtpBtn').disabled = true;
+    modal.querySelector('#pwVerifyOtpBtn').disabled = true;
+    modal.querySelector('#savePasswordBtn').disabled = true;
+  }
 
-      // Show Bootstrap modal
-      const modalEl = document.getElementById('editAccountModal');
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
+  function wirePwOtpAndSave() {
+    const modal = document.getElementById('changePasswordModal');
+    const newPw   = modal.querySelector('#newPassword');
+    const confPw  = modal.querySelector('#confirmPassword');
+    const matchHint = modal.querySelector('#pwMatchHint');
+
+    const sendBtn   = modal.querySelector('#pwSendOtpBtn');
+    const otpSec    = modal.querySelector('#pwOtpSection');
+    const otpInput  = modal.querySelector('#pwOtp');
+    const verifyBtn = modal.querySelector('#pwVerifyOtpBtn');
+    const otpHint   = modal.querySelector('#pwOtpHint');
+    const saveBtn   = modal.querySelector('#savePasswordBtn');
+
+    function passwordsValid() {
+      const a = newPw.value.trim();
+      const b = confPw.value.trim();
+      const lenOK = a.length >= 8 && b.length >= 8;
+      const match = a === b && a !== '';
+      return { lenOK, match };
     }
 
-    document.getElementById('saveEditBtn').addEventListener('click', function() {
-      const email = document.getElementById('editEmail').value;
-      const newFullName = document.getElementById('editFullName').value.trim();
+    function updateUiValidity() {
+      const { lenOK, match } = passwordsValid();
 
-      if (newFullName === '') {
-        alert('Full Name cannot be empty.');
-        return;
+      // classes
+      newPw.classList.toggle('is-invalid', !lenOK);
+      newPw.classList.toggle('is-valid', lenOK);
+      confPw.classList.toggle('is-invalid', !(lenOK && match));
+      confPw.classList.toggle('is-valid', lenOK && match);
+
+      // hint
+      if (!lenOK) {
+        matchHint.textContent = 'Password must be at least 8 characters.';
+        matchHint.className = 'd-block mb-3 text-danger';
+      } else if (!match) {
+        matchHint.textContent = 'Passwords do not match.';
+        matchHint.className = 'd-block mb-3 text-danger';
+      } else {
+        matchHint.textContent = 'Passwords match.';
+        matchHint.className = 'd-block mb-3 text-success';
       }
 
-      fetch(`/edit-account/${encodeURIComponent(email)}/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCSRFToken()
-        },
-        body: JSON.stringify({ full_name: newFullName })
-      })
-      .then(res => {
-        if (res.ok) {
-          showMessage('Account updated successfully.', 'success');
-          // Close modal
-          const modalEl = document.getElementById('editAccountModal');
-          bootstrap.Modal.getInstance(modalEl).hide();
-          fetchAndDisplayAccounts(); // Refresh list
-        } else {
-          showMessage('Failed to update account.', 'danger');
-        }
-      })
-      .catch(err => showMessage('Error updating account.', 'danger'));
-    });
+      // gating
+      sendBtn.disabled   = !(lenOK && match);
+      verifyBtn.disabled = !(lenOK && match);
+      saveBtn.disabled   = !(lenOK && match && pwOtpVerified);
 
-    // Show messages
-    function showMessage(msg, type = "info") {
-      const alert = document.createElement("div");
-      alert.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-      alert.role = "alert";
-      alert.innerHTML = `
-        ${msg}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      `;
-      document.querySelector(".main-content").prepend(alert);
+      // if user edits after OTP verified, force re-verify and clear OTP input
+      if (pwOtpVerified && (!lenOK || !match)) {
+        pwOtpVerified = false;
+        otpInput.value = '';     // <-- clear stale code
+        otpHint.textContent = 'Passwords changed; please verify OTP again.';
+      }
+
+      // also clear OTP input whenever passwords aren’t valid
+      if (!(lenOK && match)) {
+        otpInput.value = '';
+      }
     }
 
-    // Fetch accounts on page load
-    document.addEventListener('DOMContentLoaded', function () {
-      fetchAndDisplayAccounts();
+    // Live validation
+    newPw.addEventListener('input', updateUiValidity);
+    confPw.addEventListener('input', updateUiValidity);
+    // run once
+    updateUiValidity();
+
+    // Send OTP
+    sendBtn.addEventListener('click', async () => {
+      const targetEmail = (document.getElementById('editEmail')?.value || '').trim();
+      if (!targetEmail) return showMessage('No account selected for password change.', 'danger');
+
+      sendBtn.disabled = true;
+      try {
+        const res = await fetch('/password-otp/request/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+          body: JSON.stringify({ email: targetEmail })
+        });
+        const data = await res.json().catch(()=>null);
+        if (!res.ok || data?.status === 'error') throw new Error(data?.message || 'Failed to send OTP.');
+
+        otpSec.style.display = 'block';
+        otpHint.textContent = 'OTP sent. It expires in 10 minutes.';
+        showMessage('OTP sent to registered email.', 'success');
+      } catch (e) {
+        showMessage(e.message || 'Error sending OTP.', 'danger');
+      } finally {
+        // re-enable only if still valid
+        updateUiValidity();
+      }
     });
 
+    // Verify OTP (only when passwords are valid & matching)
+    verifyBtn.addEventListener('click', async () => {
+      const { lenOK, match } = passwordsValid();
+      if (!(lenOK && match)) return; // guard
 
+      const targetEmail = (document.getElementById('editEmail')?.value || '').trim();
+      const code = (otpInput?.value || '').trim();
+      if (!/^\d{6}$/.test(code)) return showMessage('Enter the 6-digit OTP.', 'warning');
 
+      verifyBtn.disabled = true;
+      try {
+        const res = await fetch('/password-otp/verify/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+          body: JSON.stringify({ email: targetEmail, otp: code })
+        });
+        const data = await res.json().catch(()=>null);
+        if (!res.ok || data?.status === 'error') throw new Error(data?.message || 'OTP verification failed.');
 
+        pwOtpVerified = true;
+        otpHint.textContent = 'OTP verified. You can now save the new password.';
+        sendBtn.disabled = true;        // <-- optional
+        showMessage('OTP verified.', 'success');
+      } catch (e) {
+        pwOtpVerified = false;
+        otpHint.textContent = '';
+        showMessage(e.message || 'Error verifying OTP.', 'danger');
+      } finally {
+        updateUiValidity(); // will enable Save when appropriate
+      }
+    });
+
+    // Save (server already enforces OTP)
+    modal.querySelector('#savePasswordBtn').addEventListener('click', async function () {
+      const a = newPw.value.trim();
+      const b = confPw.value.trim();
+      if (a !== b) return; // should never happen due to gating
+
+      const targetEmail = (document.getElementById('editEmail')?.value || '').trim();
+      if (!targetEmail) return showMessage('No account selected for password change.', 'danger');
+
+      const btn = this, txt = btn.textContent; btn.disabled = true; btn.textContent = 'Saving...';
+      try {
+        const res = await fetch(`/change-password/${encodeURIComponent(targetEmail)}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+          body: JSON.stringify({ new_password: a })
+        });
+        const data = await res.json().catch(()=>null);
+        if (!res.ok || data?.status === 'error') throw new Error(data?.message || 'Failed to change password.');
+
+        showMessage('Password changed successfully.', 'success');
+        bootstrap.Modal.getInstance(modal)?.hide();
+      } catch (e) {
+        showMessage(e.message || 'Error changing password.', 'danger');
+      } finally {
+        btn.disabled = false; btn.textContent = txt;
+      }
+    });
+  }
+})();
+
+/* ---------- BOOT ---------- */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', fetchAndDisplayAccounts);
+} else {
+  fetchAndDisplayAccounts();
+}
 </script>
 
 

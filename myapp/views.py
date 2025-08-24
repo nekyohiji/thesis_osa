@@ -61,6 +61,7 @@ from io import BytesIO
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import Q
 from PyPDF2 import PdfMerger  # pip install pypdf or PyPDF2
+from django.views.decorators.http import require_http_methods
 #################################################################################################################
 
 def current_time(request):
@@ -114,7 +115,6 @@ def client_scholarships_view(request):
 
 def client_CS_view(request):
     return render (request, 'myapp/client_CS.html')
-
 
 def client_view_CS_view(request):
     q = request.GET.get('q','').strip()
@@ -198,10 +198,6 @@ def client_view_election_view(request):
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
 
-
-
-
-
 def admin_old_violation_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
     return render (request, 'myapp/admin_old_violation.html')
 
@@ -220,7 +216,6 @@ def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
 @role_required(['admin'])
 def admin_view_clearance_view(request):
     return render (request, 'myapp/admin_view_clearance.html')
-
 
 @role_required(['admin'])
 def admin_ackreq_view(request):
@@ -1165,6 +1160,7 @@ def request_otp(request):
 
     return JsonResponse({'status': 'ok'})
 
+
 @csrf_exempt
 def verify_otp(request):
     data = json.loads(request.body)
@@ -1215,6 +1211,318 @@ def get_accounts_data(request):
             'active': active_accounts,
             'deactivated': deactivated_accounts
         })
+            
+OTP_TTL_MINUTES = 10
+
+# ----- helpers -----
+def _json_err(msg, status=400, **extra):
+    payload = {"status": "error", "message": msg}
+    payload.update(extra)
+    return JsonResponse(payload, status=status)
+
+def _safe_body(request):
+    try:
+        return json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON payload.")
+
+def _gen_otp():
+    return f"{random.randint(0, 999999):06d}"
+
+def _expired(dt):
+    return dt < timezone.now() - timedelta(minutes=OTP_TTL_MINUTES)
+
+# =========================
+#  NAME EDIT
+# =========================
+@require_http_methods(["POST", "PATCH"])
+def edit_account(request, user_email: str):
+    """
+    Edit name (and optionally role if you enable it in UI).
+    Body: { "full_name": "...", "role": "admin" (optional) }
+    """
+    account = get_object_or_404(UserAccount, email=user_email)
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    full_name = (body.get("full_name") or "").strip()
+    role      = body.get("role", None)
+
+    errors = {}
+    if not full_name:
+        errors["full_name"] = "Full name is required."
+    elif len(full_name) > 128:
+        errors["full_name"] = "Full name must be at most 128 characters."
+    if role is not None and role not in {c[0] for c in UserAccount.ROLE_CHOICES}:
+        errors["role"] = "Invalid role."
+
+    if errors:
+        return JsonResponse({"status": "error", "message": "Validation failed.", "errors": errors}, status=400)
+
+    try:
+        with transaction.atomic():
+            account.full_name = full_name
+            if role is not None:
+                account.role = role
+            fields = ["full_name"] + (["role"] if role is not None else [])
+            account.save(update_fields=fields)
+    except Exception as e:
+        return _json_err(f"Unable to update the account: {e}", 500)
+
+    return JsonResponse({
+        "status": "ok",
+        "message": "Account updated successfully.",
+        "account": {"full_name": account.full_name, "email": account.email, "role": account.role}
+    })
+
+# =========================
+#  EMAIL CHANGE (OTP)
+# =========================
+@require_http_methods(["POST"])
+def email_change_request(request):
+    """
+    Body: { "current_email": "...", "new_email": "..." }
+    Send OTP to the NEW email, stored in OTPVerification keyed by new_email.
+    """
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    current_email = (body.get("current_email") or "").strip()
+    new_email     = (body.get("new_email") or "").strip()
+
+    if not current_email or not new_email:
+        return _json_err("Both current_email and new_email are required.")
+    if current_email == new_email:
+        return _json_err("New email must be different from current email.")
+
+    account = get_object_or_404(UserAccount, email=current_email)
+
+    # Prevent duplicates
+    if UserAccount.objects.filter(email=new_email).exists():
+        return _json_err("That email is already in use.", 409)
+
+    otp = _gen_otp()
+
+    # Upsert OTPVerification by email=new_email
+    obj, created = OTPVerification.objects.get_or_create(
+        email=new_email,
+        defaults={
+            "otp": otp,
+            "full_name": account.full_name,
+            "role": account.role,
+            "password": account.password,
+            "is_active": False,
+        }
+    )
+    if not created:
+        obj.otp = otp
+        obj.full_name = account.full_name
+        obj.role = account.role
+        obj.password = account.password
+        obj.is_active = False
+        obj.created_at = timezone.now()
+        obj.save(update_fields=["otp", "full_name", "role", "password", "is_active", "created_at"])
+
+    try:
+        send_mail(
+            subject="Email Change OTP",
+            message=f"Your verification code is: {otp}\nIt expires in {OTP_TTL_MINUTES} minutes.",
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[new_email],
+            fail_silently=False,
+        )
+    except (BadHeaderError, Exception) as e:
+        if settings.DEBUG:
+            # In development we can reveal the OTP to make testing easier
+            return JsonResponse({"status": "ok", "message": "OTP generated (DEBUG).", "dev_otp": otp})
+        return _json_err(f"Failed to send OTP: {e}", 500)
+
+    return JsonResponse({"status": "ok", "message": "OTP sent to new email."})
+
+@require_http_methods(["POST"])
+def email_change_verify(request):
+    """
+    Body: { "new_email": "...", "otp": "123456" }
+    Mark OTPVerification.is_active=True (verified) for that new email.
+    """
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    new_email = (body.get("new_email") or "").strip()
+    otp       = (body.get("otp") or "").strip()
+    if not new_email or not otp:
+        return _json_err("new_email and otp are required.")
+
+    try:
+        rec = OTPVerification.objects.get(email=new_email)
+    except OTPVerification.DoesNotExist:
+        return _json_err("No OTP request found for that email.", 404)
+
+    if _expired(rec.created_at):
+        return _json_err("OTP expired. Please request a new one.", 400)
+    if rec.otp != otp:
+        return _json_err("Invalid OTP.", 400)
+
+    rec.is_active = True
+    rec.save(update_fields=["is_active"])
+    return JsonResponse({"status": "ok", "message": "OTP verified."})
+
+@require_http_methods(["POST"])
+def email_change_apply(request):
+    """
+    Body: { "current_email": "...", "new_email": "..." }
+    Requires verified + unexpired OTPVerification for new_email, then updates UserAccount.email.
+    """
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    current_email = (body.get("current_email") or "").strip()
+    new_email     = (body.get("new_email") or "").strip()
+    if not current_email or not new_email:
+        return _json_err("Both current_email and new_email are required.")
+
+    account = get_object_or_404(UserAccount, email=current_email)
+
+    try:
+        rec = OTPVerification.objects.get(email=new_email)
+    except OTPVerification.DoesNotExist:
+        return _json_err("No OTP verification found for that email.", 404)
+
+    if _expired(rec.created_at):
+        return _json_err("OTP expired. Please request a new one.", 400)
+    if not rec.is_active:
+        return _json_err("OTP not verified yet.", 400)
+    if UserAccount.objects.filter(email=new_email).exclude(pk=account.pk).exists():
+        return _json_err("That email is already in use.", 409)
+
+    with transaction.atomic():
+        account.email = new_email
+        account.save(update_fields=["email"])
+        rec.delete()  # clean up
+
+    return JsonResponse({"status": "ok", "message": "Email updated successfully.", "email": new_email})
+
+# =========================
+#  PASSWORD CHANGE (OTP)
+# =========================
+@require_http_methods(["POST"])
+def password_otp_request(request):
+    """Body: { email } — send a 6-digit OTP to the registered email for password change."""
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    email = (body.get("email") or "").strip()
+    if not email:
+        return _json_err("Email is required.")
+
+    account = get_object_or_404(UserAccount, email=email)
+
+    otp = _gen_otp()
+    obj, created = OTPVerification.objects.get_or_create(
+        email=email,
+        defaults={
+            "otp": otp,
+            "full_name": account.full_name,
+            "role": account.role,
+            "password": account.password,
+            "is_active": False,
+        }
+    )
+    if not created:
+        obj.otp = otp
+        obj.full_name = account.full_name
+        obj.role = account.role
+        obj.password = account.password
+        obj.is_active = False
+        obj.created_at = timezone.now()
+        obj.save(update_fields=["otp", "full_name", "role", "password", "is_active", "created_at"])
+
+    try:
+        send_mail(
+            subject="Your OTP for Password Change",
+            message=f"Your verification code is: {otp}\nIt expires in {OTP_TTL_MINUTES} minutes.",
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except (BadHeaderError, Exception) as e:
+        if settings.DEBUG:
+            return JsonResponse({"status": "ok", "message": "OTP generated (DEBUG).", "dev_otp": otp})
+        return _json_err(f"Failed to send OTP: {e}", 500)
+
+    return JsonResponse({"status": "ok", "message": "OTP sent to registered email."})
+
+@require_http_methods(["POST"])
+def password_otp_verify(request):
+    """Body: { email, otp } — verify password-change OTP (marks OTPVerification.is_active=True)."""
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    email = (body.get("email") or "").strip()
+    otp   = (body.get("otp") or "").strip()
+    if not email or not otp:
+        return _json_err("Email and OTP are required.")
+
+    try:
+        rec = OTPVerification.objects.get(email=email)
+    except OTPVerification.DoesNotExist:
+        return _json_err("No OTP request found for that email.", 404)
+
+    if _expired(rec.created_at):
+        return _json_err("OTP expired. Please request a new one.", 400)
+    if rec.otp != otp:
+        return _json_err("Invalid OTP.", 400)
+
+    rec.is_active = True
+    rec.save(update_fields=["is_active"])
+    return JsonResponse({"status": "ok", "message": "OTP verified."})
+
+@require_http_methods(["POST"])
+def change_password(request, email: str):
+    """Body: { new_password } — requires a verified, unexpired OTPVerification for this email."""
+    try:
+        body = _safe_body(request)
+    except ValueError as e:
+        return _json_err(str(e), 400)
+
+    new_password = (body.get("new_password") or "").strip()
+    if len(new_password) < 8:
+        return _json_err("Password must be at least 8 characters.", 400)
+
+    account = get_object_or_404(UserAccount, email=email)
+
+    try:
+        rec = OTPVerification.objects.get(email=email)
+    except OTPVerification.DoesNotExist:
+        return _json_err("Please request and verify an OTP before changing password.", 400)
+
+    if _expired(rec.created_at):
+        return _json_err("OTP expired. Please request a new one.", 400)
+    if not rec.is_active:
+        return _json_err("OTP not verified yet.", 400)
+
+    try:
+        with transaction.atomic():
+            account.password = make_password(new_password)
+            account.save(update_fields=["password"])
+            rec.delete()  # consume OTP once used
+    except Exception as e:
+        return _json_err(f"Unable to change password right now: {e}", 500)
+
+    return JsonResponse({"status": "ok", "message": "Password changed successfully."})
+
 
 @role_required(['admin'])
 def ajax_delete_lostandfound(request, item_id):

@@ -26,6 +26,20 @@ urlpatterns = [
     
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
+    # --- name edit ---
+    path('edit-account/<str:user_email>/', views.edit_account, name='edit_account'),
+
+    # --- email change (OTP → verify → apply) ---
+    path('email-change/request/', views.email_change_request, name='email_change_request'),
+    path('email-change/verify/',  views.email_change_verify,  name='email_change_verify'),
+    path('email-change/apply/',   views.email_change_apply,   name='email_change_apply'),
+
+    # --- password change (OTP required) ---
+    path('password-otp/request/', views.password_otp_request, name='password_otp_request'),
+    path('password-otp/verify/',  views.password_otp_verify,  name='password_otp_verify'),
+    path('change-password/<str:email>/', views.change_password, name='change_password'),
+    
+    
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
