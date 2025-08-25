@@ -275,32 +275,6 @@ def generate_gmf_pdf(req) -> bytes:
 
 
 #######################
-def format_full_name(
-    first: str,
-    middle: str | None,
-    last: str,
-    extension: str | None = None,
-    use_middle_initial: bool = False,
-) -> str:
-    """
-    Build a clean full name with optional middle and extension.
-    Examples:
-      "Juan D. Dela Cruz, Jr."  |  "Juan Dela Cruz"
-    """
-    first = (first or "").strip()
-    middle = (middle or "").strip()
-    last = (last or "").strip()
-    ext = (extension or "").strip()
-
-    mid = ""
-    if middle:
-        mid = f"{middle[0]}." if use_middle_initial else middle
-        mid = f" {mid}"
-
-    name = f"{first}{mid} {last}".strip()
-    if ext:
-        name = f"{name}, {ext}"
-    return name
 
 def format_full_name(first: str, middle: str | None, last: str, extension: str | None = None, use_middle_initial: bool = False) -> str:
     first = (first or "").strip()
