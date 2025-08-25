@@ -195,7 +195,10 @@ else:
 
 # Optional: allow one-off override via env (e.g., filebased backend in dev)
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", EMAIL_BACKEND)
+OSA_INBOX = os.getenv("OSA_INBOX", "osa@tupcosa.online")
 
+# Whether to send the user their own copy (defaults True if unset)
+OSA_SEND_USER_COPY = os.getenv("OSA_SEND_USER_COPY", "True").lower() == "true"
 # --------------------------------------------------------------------------------------
 # Logging (to console; visible in Render logs and local runserver)
 # --------------------------------------------------------------------------------------

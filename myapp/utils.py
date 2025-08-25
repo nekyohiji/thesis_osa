@@ -15,6 +15,9 @@ from pathlib import Path
 from django.conf import settings
 from openpyxl import load_workbook
 from .models import UserAccount
+from django.utils.timezone import localtime
+from django.utils.html import strip_tags, escape
+from textwrap import dedent
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -269,3 +272,105 @@ def generate_gmf_pdf(req) -> bytes:
         try: os.remove(filled_xlsx)
         except Exception: pass
         shutil.rmtree(out_dir, ignore_errors=True)
+
+
+#######################
+def format_full_name(
+    first: str,
+    middle: str | None,
+    last: str,
+    extension: str | None = None,
+    use_middle_initial: bool = False,
+) -> str:
+    """
+    Build a clean full name with optional middle and extension.
+    Examples:
+      "Juan D. Dela Cruz, Jr."  |  "Juan Dela Cruz"
+    """
+    first = (first or "").strip()
+    middle = (middle or "").strip()
+    last = (last or "").strip()
+    ext = (extension or "").strip()
+
+    mid = ""
+    if middle:
+        mid = f"{middle[0]}." if use_middle_initial else middle
+        mid = f" {mid}"
+
+    name = f"{first}{mid} {last}".strip()
+    if ext:
+        name = f"{name}, {ext}"
+    return name
+
+def format_full_name(first: str, middle: str | None, last: str, extension: str | None = None, use_middle_initial: bool = False) -> str:
+    first = (first or "").strip()
+    mid   = (middle or "").strip()
+    last  = (last or "").strip()
+    ext   = (extension or "").strip()
+    if mid:
+        mid = f"{mid[0]}." if use_middle_initial else mid
+        name = f"{first} {mid} {last}"
+    else:
+        name = f"{first} {last}"
+    if ext:
+        name = f"{name}, {ext}"
+    return name
+
+def _from_email() -> str:
+    return getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(settings, "EMAIL_HOST_USER", "")
+
+def send_clearance_confirmation(obj) -> None:
+    subject = "TUPC-Cavite OSA — Clearance Request Received"
+    from_email = _from_email()
+
+    # routing
+    send_user_copy = getattr(settings, "OSA_SEND_USER_COPY", True)
+    osa_inbox = getattr(settings, "OSA_INBOX", None)
+    to = [obj.email] if (obj.email and send_user_copy) else []
+    bcc = [osa_inbox] if osa_inbox else []
+    reply_to = [osa_inbox] if osa_inbox else None
+
+    submitted_local = localtime(obj.created_at)
+    full_name = format_full_name(obj.first_name, obj.middle_name, obj.last_name, obj.extension)
+
+    # ---------- Plain-text (nice labels + newlines) ----------
+    text = dedent(f"""
+        Clearance Request Received
+        Thank you for your submission. Here are the details you provided:
+
+        Name: {full_name}
+        Email: {obj.email}
+        Contact: {obj.contact}
+        Student No.: {obj.student_number}
+        Program: {obj.program}
+        Year Level: {obj.year_level}
+        Client Type: {obj.client_type}
+        Stakeholder: {obj.stakeholder}
+        Purpose: {obj.purpose}
+        Submitted: {submitted_local:%B %d, %Y %I:%M %p}
+    """).strip()
+
+    # ---------- HTML (escaped vars, same content) ----------
+    e = lambda s: escape(s or "")
+    html = f"""
+    <div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45">
+      <h2 style="margin:0 0 12px">Clearance Request Received</h2>
+      <p style="margin:0 0 12px">Thank you for your submission. Here are the details you provided:</p>
+      <table cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+        <tr><td><b>Name</b></td><td>{e(full_name)}</td></tr>
+        <tr><td><b>Email</b></td><td>{e(obj.email)}</td></tr>
+        <tr><td><b>Contact</b></td><td>{e(obj.contact)}</td></tr>
+        <tr><td><b>Student No.</b></td><td>{e(obj.student_number)}</td></tr>
+        <tr><td><b>Program</b></td><td>{e(obj.program)}</td></tr>
+        <tr><td><b>Year Level</b></td><td>{e(obj.year_level)}</td></tr>
+        <tr><td><b>Client Type</b></td><td>{e(obj.client_type)}</td></tr>
+        <tr><td><b>Stakeholder</b></td><td>{e(obj.stakeholder)}</td></tr>
+        <tr><td><b>Purpose</b></td><td>{e(obj.purpose)}</td></tr>
+        <tr><td><b>Submitted</b></td><td>{submitted_local:%B %d, %Y %I:%M %p}</td></tr>
+      </table>
+    </div>
+    """.strip()
+
+    msg = EmailMultiAlternatives(subject, text, from_email, to, bcc=bcc, reply_to=reply_to)
+    msg.attach_alternative(html, "text/html")
+    msg.send(fail_silently=False)

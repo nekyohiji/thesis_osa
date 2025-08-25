@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest, CommunityServiceCase, CommunityServiceLog
+from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest, CommunityServiceCase, CommunityServiceLog, ClearanceRequest
 from django.db.models.functions import Lower
 from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
@@ -20,14 +20,14 @@ from django.urls import reverse
 from django.utils.timezone import localtime
 import uuid, os
 from django.core.files.base import ContentFile
-from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm, CSCreateOrAdjustForm, MajorViolationForm
+from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm, CSCreateOrAdjustForm, MajorViolationForm, ClearanceRequestForm
 from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.utils.dateparse import parse_date
-from .utils import send_violation_email, generate_gmf_pdf
+from .utils import send_violation_email, generate_gmf_pdf, send_clearance_confirmation
 from django.db.models import Q
 import os
 import io
@@ -62,6 +62,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import Q
 from PyPDF2 import PdfMerger  # pip install pypdf or PyPDF2
 from django.views.decorators.http import require_http_methods
+from django.template.loader import render_to_string
 #################################################################################################################
 
 def current_time(request):
@@ -198,6 +199,9 @@ def client_view_election_view(request):
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
 
+
+
+
 def admin_old_violation_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
     return render (request, 'myapp/admin_old_violation.html')
 
@@ -210,12 +214,18 @@ def admin_accounts_view(request):
     return render (request, 'myapp/admin_accounts.html')
 
 @role_required(['admin'])
-def admin_clearance_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
-    return render (request, 'myapp/admin_clearance.html')
+def admin_clearance(request):
+    records = ClearanceRequest.objects.all().order_by('-created_at')  # newest first
+    return render(request, 'myapp/admin_clearance.html', {
+        'records': records,
+        'total': records.count(),
+    })
+
 
 @role_required(['admin'])
-def admin_view_clearance_view(request):
-    return render (request, 'myapp/admin_view_clearance.html')
+def admin_view_clearance_view(request, pk):
+    obj = get_object_or_404(ClearanceRequest, pk=pk)
+    return render(request, 'myapp/admin_view_clearance.html', {'obj': obj})
 
 @role_required(['admin'])
 def admin_ackreq_view(request):
@@ -650,6 +660,27 @@ def id_surrender_request(request):
     # GET
     return render(request, template, {'form': IDSurrenderRequestForm()})
 
+@require_http_methods(["GET", "POST"])
+def clearance_request_view(request):
+    if request.method == "POST":
+        form = ClearanceRequestForm(request.POST)
+        if not form.is_valid():
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+            return render(request, "myapp/client_clearance.html", {"form": form})
+        obj = form.save()
+
+        # send confirmation to the client
+        try:
+            send_clearance_confirmation(obj)
+        except Exception as e:
+            # don't block UX on email failure; log as needed
+            print("Email send failed:", e)
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"ok": True, "id": obj.pk})
+        return render(request, "myapp/client_clearance.html", {"form": ClearanceRequestForm()})
+    return render(request, "myapp/client_clearance.html", {"form": ClearanceRequestForm()})
 
 
 
@@ -1410,9 +1441,6 @@ def email_change_apply(request):
 
     return JsonResponse({"status": "ok", "message": "Email updated successfully.", "email": new_email})
 
-# =========================
-#  PASSWORD CHANGE (OTP)
-# =========================
 @require_http_methods(["POST"])
 def password_otp_request(request):
     """Body: { email } — send a 6-digit OTP to the registered email for password change."""
@@ -1523,7 +1551,6 @@ def change_password(request, email: str):
 
     return JsonResponse({"status": "ok", "message": "Password changed successfully."})
 
-
 @role_required(['admin'])
 def ajax_delete_lostandfound(request, item_id):
     if request.method == 'POST':
@@ -1623,7 +1650,6 @@ def goodmoral_accept(request, pk):
         messages.warning(request, f"Accepted, but email failed: {e}. Ref: {ref}")
 
     return redirect('admin_view_goodmoral', pk=pk)
-
 
 @role_required(['admin'])
 @require_POST

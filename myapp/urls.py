@@ -23,6 +23,8 @@ urlpatterns = [
     path('client_election/', views.client_election_view, name='client_election'),
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
     path('client_clearance/', views.client_clearance_view, name='client_clearance'),
+    path("clearance/", views.clearance_request_view, name="clearance_request"),
+
     
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
@@ -61,8 +63,9 @@ urlpatterns = [
     path('admin_scholarships/', views.admin_scholarships_view, name='admin_scholarships'),
     path('admin_view_ackreq/<int:pk>/', views.admin_view_ackreq_view, name='admin_view_ackreq'),
     
-    path('admin_clearance/', views.admin_clearance_view, name='admin_clearance'),
-    path('admin_view_clearance/', views.admin_view_clearance_view, name='admin_view_clearance'),
+    path('admin_clearance/', views.admin_clearance, name='admin_clearance'),
+    path('admin_clearance/<int:pk>/', views.admin_view_clearance_view, name='admin_view_clearance'),
+    
     path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_goodmoral'),
     

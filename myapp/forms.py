@@ -1,11 +1,14 @@
 from django import forms
 from .models import Violation, GoodMoralRequest, IDSurrenderRequest
 from django.core.exceptions import ValidationError
-import re
+import re, csv
 from django.utils import timezone
 from datetime import date
 from decimal import Decimal
 from django.core.validators import MinLengthValidator
+from django.contrib.staticfiles import finders
+from .models import ClearanceRequest, YEAR_LEVEL_CHOICES, CLIENT_TYPE_CHOICES, STAKEHOLDER_CHOICES, PURPOSE_CHOICES
+
 
 class ViolationForm(forms.ModelForm):
     class Meta:
@@ -217,4 +220,102 @@ class CSCreateOrAdjustForm(forms.Form):
         for f in ("last_name","first_name","middle_initial","extension_name","student_id","program_course"):
             if f in cleaned and isinstance(cleaned[f], str):
                 cleaned[f] = cleaned[f].strip()
+        return cleaned
+    
+def load_programs_from_csv():
+    path = finders.find('myapp/data/programs.csv')
+    programs = []
+    if path:
+        with open(path, newline='', encoding='utf-8') as f:
+            for row in csv.reader(f):
+                if not row: continue
+                val = row[0].rstrip()
+                if val and val.lower() != "program":
+                    programs.append(val)
+    return programs
+
+STUDENT_RE = re.compile(r'^TUPC-[A-Z0-9]{2}-\d{4,10}$')
+
+class ClearanceRequestForm(forms.ModelForm):
+    hasExtension = forms.ChoiceField(
+        choices=[('yes','Yes'), ('no','No')],
+        widget=forms.RadioSelect,
+        initial='no'
+    )
+
+    first_name = forms.CharField(min_length=2, max_length=50)
+    last_name  = forms.CharField(min_length=2, max_length=50)
+    middle_name = forms.CharField(required=False, min_length=1, max_length=50)  
+    extension  = forms.CharField(required=False, min_length=2, max_length=15)
+    email      = forms.EmailField()
+    contact    = forms.CharField(min_length=14, max_length=14)
+
+    # 12–18 chars total: "TUPC-XX-" (8) + 4..10 digits
+    student_number = forms.CharField(min_length=12, max_length=18)
+
+    # Accept CSV or typed "Other"
+    program    = forms.CharField(min_length=2, max_length=100)
+
+    year_level = forms.ChoiceField(choices=[('', '-- Select --')] + YEAR_LEVEL_CHOICES)
+    client_type= forms.ChoiceField(choices=[('', '-- Select --')] + CLIENT_TYPE_CHOICES)
+    stakeholder= forms.ChoiceField(choices=[('', '-- Select --')] + STAKEHOLDER_CHOICES)
+    purpose    = forms.ChoiceField(choices=[('', '-- Select Purpose --')] + PURPOSE_CHOICES)
+
+    class Meta:
+        model = ClearanceRequest
+        fields = [
+            "first_name", "middle_name", "last_name","extension","email","contact",
+            "student_number","program","year_level","client_type","stakeholder","purpose"
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Client-side hints (match your HTML)
+        self.fields["contact"].widget.attrs.update({
+            "placeholder": "+63 XXXXXXXXXX",
+            "pattern": r"^\+63\s\d{10}$"
+        })
+        self.fields["student_number"].widget.attrs.update({
+            "placeholder": "TUPC-XX-XXXXXXXX (4–10 digits)",
+            "pattern": r"^TUPC-[A-Z0-9]{2}-\d{4,10}$"
+        })
+        # Optional: you can still surface CSV for autocomplete on the UI if desired,
+        # but DO NOT reject non-CSV values server-side anymore.
+
+    def clean(self):
+        cleaned = super().clean()
+
+        # Trailing-space trim
+        for fld in ["first_name","last_name","extension","email","student_number","program"]:
+            if fld in cleaned and isinstance(cleaned[fld], str):
+                cleaned[fld] = cleaned[fld].rstrip()
+
+        # Extension logic
+        has_ext = (self.data.get("hasExtension") or "no").lower()
+        if has_ext == "yes":
+            if not cleaned.get("extension"):
+                self.add_error("extension", "Extension is required when 'Yes' is selected.")
+        else:
+            cleaned["extension"] = ""
+
+        # Phone strict format
+        contact = cleaned.get("contact","")
+        if contact and not re.fullmatch(r"\+63\s\d{10}", contact):
+            self.add_error("contact", "Contact number must be exactly: +63 XXXXXXXXXX.")
+
+        # Student number strict format, normalize to uppercase
+        sn = cleaned.get("student_number","")
+        if sn:
+            sn = sn.upper()
+            cleaned["student_number"] = sn
+            if not STUDENT_RE.fullmatch(sn):
+                self.add_error("student_number",
+                               "Use TUPC-XX-XXXXXXXX (XX letters/digits; 4–10 digits at end).")
+
+        # Program: allow any non-empty string (CSV suggestions handled on front-end)
+        prog = cleaned.get("program","")
+        if not prog:
+            self.add_error("program", "Program is required.")
+
         return cleaned

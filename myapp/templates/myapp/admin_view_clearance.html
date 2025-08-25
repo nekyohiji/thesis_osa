@@ -22,14 +22,10 @@
       <i class="bi bi-arrow-left text-light"></i> Back
     </a>
 
-
-    <!-- Status badge -->
-    <div>
-        <span class="badge text-bg-success">Approved</span>
-        <span class="badge text-bg-danger">Rejected</span>
-        <span class="badge text-bg-warning text-dark">Pending</span>
-    
-    </div>
+    <!-- Submitted at (12-hour, AM/PM) -->
+    <span class="badge text-bg-light">
+      Submitted: {{ obj.created_at|date:"M d, Y h:i A" }}
+    </span>
   </div>
 
   <div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
@@ -52,232 +48,78 @@
 
       <!-- Personal Information -->
       <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div>
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-person-fill"></i> Personal Information
+        </div>
         <div class="card-body row g-3">
           <div class="col-md-3">
             <label class="form-label">First Name:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.first_name }}" disabled>
           </div>
+
           <div class="col-md-3">
-            <label class="form-label">Middle Name:</label>
-            <input class="form-control" disabled>
+            <label class="form-label">Last Name:</label>
+            <input class="form-control" value="{{ obj.last_name }}" disabled>
           </div>
-          <div class="col-md-3">
-            <label class="form-label">Surname:</label>
-            <input class="form-control"  disabled>
-          </div>
+
           <div class="col-md-2">
             <label class="form-label">Extension:</label>
-            <input class="form-control" disabled>
+            <input class="form-control" value="{{ obj.extension|default_if_none:'' }}" disabled>
           </div>
-          <div class="col-md-1">
-            <label class="form-label">Age:</label>
-            <input class="form-control" disabled>
-          </div>
+
           <div class="col-md-2">
-            <label class="form-label">Sex:</label>
-            <input class="form-control"  disabled>
-          </div>
-          <div class="col-md-3">
             <label class="form-label">Contact Number:</label>
-            <input class="form-control" disabled>
+            <input class="form-control" value="{{ obj.contact }}" disabled>
           </div>
+
           <div class="col-md-4">
             <label class="form-label">Email Address:</label>
-            <input class="form-control"  disabled>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Complete Home Address:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.email }}" disabled>
           </div>
         </div>
       </div>
 
       <!-- Academic Information -->
       <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-mortarboard-fill"></i> Academic Information</div>
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-mortarboard-fill"></i> Academic Information
+        </div>
         <div class="card-body row g-3">
           <div class="col-md-3">
-            <label class="form-label">TUPC ID Number:</label>
-            <input class="form-control"  disabled>
+            <label class="form-label">TUPC Student Number:</label>
+            <input class="form-control" value="{{ obj.student_number }}" disabled>
           </div>
-          <div class="col-md-3">
+
+          <div class="col-md-4">
             <label class="form-label">Program:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.program }}" disabled>
           </div>
+
           <div class="col-md-2">
             <label class="form-label">Year Level:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.year_level }}" disabled>
           </div>
-          <div class="col-md-2">
+
+          <div class="col-md-3">
             <label class="form-label">Client Type:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.client_type }}" disabled>
           </div>
-          <div class="col-md-2">
+
+          <div class="col-md-3">
             <label class="form-label">Stakeholder:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.stakeholder }}" disabled>
           </div>
+
           <div class="col-md-12">
             <label class="form-label">Purpose of Visit:</label>
-            <input class="form-control"  disabled>
+            <input class="form-control" value="{{ obj.purpose }}" disabled>
           </div>
-        </div>
-      </div>
-
-      <!-- Request Details -->
-      <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-journal-text"></i> Request Details</div>
-        <div class="card-body row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Name of Requester:</label>
-            <input class="form-control"  disabled>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Contact Number:</label>
-            <input class="form-control"  disabled>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Email:</label>
-            <input class="form-control"  disabled>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Relationship:</label>
-            <input class="form-control"  disabled>
-          </div>
-        </div>
-      </div>
-
-      <!-- Uploaded Documents -->
-      <div class="card mb-6 p-3 border-dark">
-        <div class="card-header bg-white text-dark fw-bold">
-          <i class="bi bi-upload"></i> Uploaded Documents
-        </div>
-        <div class="card-body d-flex flex-wrap gap-2">
-          
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              id="btnPreviewUpload"
-              data-bs-toggle="modal"
-              data-bs-target="#filePreviewModal">
-              <i class="bi bi-eye"></i> View Uploaded File
-            </button>
-      
-            <span class="text-muted">No file uploaded.</span>
-       
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="d-flex justify-content-between mt-4 flex-wrap gap-3">
-        <div class="d-flex gap-2">
-          <button class="btn text-light" 
-                  style="background-color: #440207; border-color: #440207;"
-                  onmouseover="this.style.backgroundColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207';" type="button" data-bs-toggle="modal" data-bs-target="#generateClearanceModal">
-            <i class="bi bi-printer"></i> Generate Clearance
-          </button>
-        </div>
-        <div class="d-flex gap-2">
-            <!-- Buttons -->
-            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#acceptModal">
-              <i class="bi bi-hand-thumbs-up"></i> Accept
-            </button>
-
-            <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#declineModal">
-              <i class="bi bi-x-circle"></i> Decline
-            </button>
         </div>
       </div>
 
     </div>
   </div>
 </div>
-
-<!-- File Preview Modal -->
-<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content border">
-      <div class="modal-header">
-        <h5 class="modal-title">Uploaded File Preview</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body p-0">
-        <div id="previewContainer" class="w-100 d-flex justify-content-center align-items-center" style="min-height:60vh;">
-          
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-
-
-<!-- Accept Modal -->
-<div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border">
-      <div class="modal-header">
-        <h5 class="modal-title" id="acceptModalLabel">Accept Request</h5>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to <strong>accept</strong> this request?</p>
-        <label for="acceptMessage" class="form-label">Message to requester:</label>
-        <textarea id="acceptMessage" class="form-control" rows="3" placeholder="Write your message here..."></textarea>
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-success" id="acceptSubmitBtn">Accept</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Decline Modal -->
-<div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border">
-      <div class="modal-header">
-        <h5 class="modal-title" id="declineModalLabel">Decline Request</h5>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to <strong>decline</strong> this request?</p>
-        <label for="declineMessage" class="form-label">Message to requester:</label>
-        <textarea id="declineMessage" class="form-control" rows="3" placeholder="Write your message here..."></textarea>
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" id="declineSubmitBtn">Decline</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- Generate Clearance Modal -->
-<div class="modal fade" id="generateClearanceModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border">
-    
-      <div class="modal-header">
-        <h5 class="modal-title"></h5>
-      </div>
-      <div class="modal-body text-center">
-        Generate the Clearance PDF?
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a class="btn btn-dark" href="#">Generate</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

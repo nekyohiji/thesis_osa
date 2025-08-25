@@ -615,3 +615,77 @@ class CommunityServiceLog(models.Model):
         case.hours_completed = (case.hours_completed or Decimal('0.0')) + self.hours
         case.is_closed = (case.remaining_hours == 0)
         case.save(update_fields=["hours_completed", "is_closed", "updated_at"])
+
+PH_PHONE_RE = RegexValidator(
+    regex=r'^\+63\s\d{10}$',
+    message="Contact number must be exactly in the format: +63 XXXXXXXXXX (10 digits after a space)."
+)
+
+# TUPC-XX-<4–10 digits>, where XX can be letters or digits
+STUDENT_NO_RE = RegexValidator(
+    regex=r'^TUPC-[A-Z0-9]{2}-\d{4,10}$',
+    message="Student number must match TUPC-XX-XXXXXXXX (4–10 digits at the end)."
+)
+
+YEAR_LEVEL_CHOICES = [
+    ("First Year", "First Year"),
+    ("Second Year", "Second Year"),
+    ("Third Year", "Third Year"),
+    ("Fourth Year", "Fourth Year"),
+    ("Fifth Year", "Fifth Year"),
+]
+CLIENT_TYPE_CHOICES = [
+    ("Citizen", "Citizen"),
+    ("Business", "Business"),
+    ("Government (Employee/Agency)", "Government (Employee/Agency)"),
+]
+STAKEHOLDER_CHOICES = [
+    ("TUPC Student", "TUPC Student"),
+    ("Alumnus", "Alumnus"),
+    ("Student from other School", "Student from other School"),
+    ("External Client", "External Client"),
+    ("Parent/Guardian", "Parent/Guardian"),
+    ("TUPC Employee", "TUPC Employee"),
+]
+PURPOSE_CHOICES = [
+    ("Credentials", "Credentials"),
+    ("Application of Graduation", "Application of Graduation"),
+    ("Employment", "Employment"),
+    ("Continuing Education", "Continuing Education"),
+    ("Transfer", "Transfer"),
+    ("Dismissal", "Dismissal"),
+]
+
+class ClearanceRequest(models.Model):
+    # Personal
+    first_name = models.CharField(max_length=50)
+    last_name  = models.CharField(max_length=50)
+    middle_name = models.CharField(max_length=50, blank=True, null=True)  # ← NEW (optional)
+    extension  = models.CharField(max_length=15, blank=True, null=True)
+    email      = models.EmailField()
+    contact    = models.CharField(max_length=14, validators=[PH_PHONE_RE])
+
+    # Academic
+    # Max length still 23: len("TUPC-")=5 + 2 + 1 + 10 = 18 (but we allow up to 23 for safety)
+    student_number = models.CharField(max_length=23, validators=[STUDENT_NO_RE])
+    program    = models.CharField(max_length=100)  # free text OK (CSV-guided on the UI)
+    year_level = models.CharField(max_length=20, choices=YEAR_LEVEL_CHOICES)
+    client_type= models.CharField(max_length=50, choices=CLIENT_TYPE_CHOICES)
+    stakeholder= models.CharField(max_length=50, choices=STAKEHOLDER_CHOICES)
+
+    # Visit
+    purpose    = models.CharField(max_length=50, choices=PURPOSE_CHOICES)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["student_number"]),
+            models.Index(fields=["created_at"]),
+        ]
+        verbose_name = "Clearance"
+        verbose_name_plural = "Clearance Requests"
+        db_table = 'Clearance'
+
+    def __str__(self):
+        return f"{self.last_name}, {self.first_name} - {self.student_number}"

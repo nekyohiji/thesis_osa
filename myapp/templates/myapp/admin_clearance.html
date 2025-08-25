@@ -194,10 +194,14 @@
 
           <!-- Search Bar -->
           <div class="d-flex justify-content-end mb-3">
-            <div class="input-group input-group-sm" style="max-width: 400px;">
-              <input id="clearance_search" type="text" class="form-control" placeholder="Search student">
-              <span class="input-group-text bg-white border"><i class="bi bi-search text-muted"></i></span>
-            </div>
+            <form method="get" class="input-group input-group-sm" style="max-width: 480px;">
+              <input id="clearance_search" name="q" type="text" class="form-control"
+                    placeholder="Search by Name, and Student No."
+                    value="{{ q }}">
+              <button class="input-group-text bg-white border" type="submit" title="Search">
+                <i class="bi bi-search text-muted"></i>
+              </button>
+            </form>
           </div>
 
           <!-- Table of Clearance Records -->
@@ -206,50 +210,40 @@
               <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Clearance Record</h6>
             </div>
             <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
-              <table class="table table-hover table-bordered align-middle text-center mb-0">
+              <table class="table table-hover table-bordered align-middle text-center mb-0 clearance-table">
                 <thead class="table-secondary sticky-top border">
                   <tr>
                     <th>Student ID</th>
                     <th>Name</th>
                     <th>Program</th>
-                    <th>Status</th>
-                    <th>Updated</th>
+                    <th>Date</th>
                     <th>Details</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <!-- Sample rows (static since no backend) -->
-                  <tr>
-                    <td>2023-001</td>
-                    <td>Juan Dela Cruz</td>
-                    <td>BS Computer Science</td>
-                    <td><span >Cleared</span></td>
-                    <td>Aug 10, 2025 14:30</td>
-                    <td>
-                      <a href="{% url 'admin_view_clearance' %}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
-                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
-                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
-                        View More
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2023-002</td>
-                    <td>Maria Santos</td>
-                    <td>BS Accountancy</td>
-                    <td><span >Pending</span></td>
-                    <td>Aug 12, 2025 09:15</td>
-                  <td>
-                    <a href="{% url 'admin_view_clearance'%}" class="btn btn-sm" style="color: #440207; border-color: #440207;"
-                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
-                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
-                      View More
-                    </a>
-                  </td>
-                  </tr>
-                  <tr>
-                    <td colspan="6" class="text-center text-muted">No more clearance cases found.</td>
-                  </tr>
+                <tbody id="clearance_tbody">
+                  {% if records %}
+                    {% for c in records %}
+                      <tr>
+                        <td>{{ c.student_number }}</td>
+                        <td>{{ c.last_name }}, {{ c.first_name }}</td>
+                        <td>{{ c.program }}</td>
+                        <td>{{ c.created_at|date:"M d, Y h:i A" }}</td>
+                        <td>
+                          <a href="{% url 'admin_view_clearance' c.pk %}"
+                            class="btn btn-sm"
+                            style="color:#440207; border-color:#440207;"
+                            onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                            onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                            View More
+                          </a>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="5" class="text-center text-muted">No clearance requests found.</td>
+                    </tr>
+                  {% endif %}
                 </tbody>
               </table>
             </div>
@@ -261,11 +255,9 @@
 </div> <!-- End main-content -->
 
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-
-
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
 /* Sidebar Functions*/
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('show');
@@ -307,27 +299,36 @@
         }
       });
     });
+</script>
+<script>
+(function () {
+  const input = document.getElementById('clearance_search');
+  const form  = input ? input.closest('form') : null;
+  const table = document.querySelector('.clearance-table');
+  const tbody = table ? table.querySelector('tbody') : null;
+  if (!input || !tbody) return;
 
-//////////////////////////// START HERE MAG ADD
+  // Don’t submit/refresh the page
+  if (form) form.addEventListener('submit', (e) => e.preventDefault());
 
-
-  document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('clearance_search');
-    if (!input) return;
-
-    // Search simulation (filters table rows)
-    input.addEventListener('keyup', function () {
-      const value = input.value.toLowerCase();
-      const rows = document.querySelectorAll('tbody tr');
-      rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(value) ? '' : 'none';
-      });
+  function filterRows() {
+    const q = input.value.trim().toLowerCase();
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.forEach(tr => {
+      const cells = tr.children;
+      // columns: 0 = Student ID, 1 = Name
+      const student = (cells[0]?.textContent || '').toLowerCase();
+      const name    = (cells[1]?.textContent || '').toLowerCase();
+      const match   = !q || student.includes(q) || name.includes(q);
+      tr.style.display = match ? '' : 'none';
     });
-  });
+  }
 
+  // Live as you type; clearing the box shows all again
+  input.addEventListener('input', filterRows);
+  document.addEventListener('DOMContentLoaded', filterRows);
+})();
+</script>
 
-
-  </script>
 </body>
 </html>

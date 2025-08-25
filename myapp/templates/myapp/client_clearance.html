@@ -3,84 +3,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-    <title>OSA - Community Service</title>
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+  <title>OSA - Clearance Request</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap CSS + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
 
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />  
+  <!-- Fonts + FA (optional) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-    <!-- Google Fonts: Roboto -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="{% static 'myapp/css/client_CS.css' %}">
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'myapp/css/client_CS.css' %}">
-
-    <style>
-        .form-section {
-          border: 1px solid #800000; 
-          border-radius: 6px;
-          padding: 20px;
-          margin-bottom: 20px;
-          background-color: #fff;
-        }
-        .form-section h5 {
-          font-weight: bold;
-          margin-bottom: 15px;
-        }
-
-        /* Focus styles */
-        .form-control:focus,
-        .form-select:focus {
-          border-color: #5e0000;
-          box-shadow: 0 0 4px rgba(94, 0, 0, 0.4);
-          outline: none;
-        }
-
-        .btn-submit {
-          background-color: #440207; 
-          color: #fff;
-          transition: all 0.3s ease; 
-        }
-
-        .btn-submit:hover {
-          background-color: #5e0000;
-          color: #fff;
-          font-weight: bold;
-        }
-    </style>
+  <style>
+    .form-section {
+      border: 1px solid #800000; border-radius: 6px; padding: 20px; margin-bottom: 20px; background-color: #fff;
+    }
+    .form-section h5 { font-weight: bold; margin-bottom: 15px; }
+    .form-control:focus, .form-select:focus {
+      border-color: #5e0000; box-shadow: 0 0 4px rgba(94,0,0,.4); outline: none;
+    }
+    .btn-submit { background-color: #440207; color:#fff; transition: .2s; }
+    .btn-submit:hover { background-color: #5e0000; color:#fff; font-weight: 600; }
+    .hint { font-size: .85rem; color:#6c757d; }
+    .status-wrap { position: relative; }
+    .status-icon {
+      position: absolute; right: .65rem; top: 50%; transform: translateY(-50%);
+      font-size: 1.05rem; pointer-events: none;
+    }
+    .status-wrap .form-control, .status-wrap .form-select { padding-right: 2rem; }
+  </style>
 </head>
 <body class="bg-light">
 
-<!-- NAVIGATION BAR -->
+<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
   <div class="container-fluid">
-        <a id="TUPC" class="navbar-brand" href="#home">
-          <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
-          <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
-          <span class="d-inline d-sm-none"><b>TUPC</b></span>
-       </a>
+    <a id="TUPC" class="navbar-brand" href="{% url 'client_home' %}">
+      <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+      <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
+      <span class="d-inline d-sm-none"><b>TUPC</b></span>
+    </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
-      </button>
+    </button>
 
-      <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-              <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
-              <li class="nav-item"><a class="nav-link nav-btn" href="{% url 'login' %}">Login</a></li>
-          </ul>
-      </div>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
+        <li class="nav-item"><a class="nav-link nav-btn" href="{% url 'login' %}">Login</a></li>
+      </ul>
+    </div>
   </div>
 </nav>
-
 
 <div class="container mt-5 mb-5 pt-5">
 
@@ -94,226 +74,573 @@
     <h6 class="text-muted">Please fill in the required information below to request clearance.</h6>
   </div>
 
-  <!-- Alert -->
+  <!-- Top alert -->
   <div id="formAlert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
-    <strong>Please fill out all required fields before proceeding.</strong>
+    <strong>Some fields need attention.</strong> Look for red ❌ icons and messages beside the fields.
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 
-  <!-- FORM START -->
-  <form >
+  <!-- FORM -->
+  <form id="clearanceForm" method="post" action="{% url 'clearance_request' %}" novalidate>
+    {% csrf_token %}
 
-    <!-- Personal Information -->
-      <div class="form-section">
-        <div class="card-body">
-          <h5 class="fw-bold mb-3">Personal Information</h5>
+    <!-- Personal -->
+    <div class="form-section">
+      <div class="card-body">
+        <h5 class="fw-bold mb-3">Personal Information</h5>
 
-          <div class="row">
-            <!-- First Name -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-semibold">First Name:</label>
-              <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter First Name" required>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold" for="first_name">First Name:</label>
+            <div class="status-wrap">
+              <input type="text" class="form-control" id="first_name" name="first_name"
+                     placeholder="Enter First Name" minlength="2" maxlength="50" required>
+              <i id="first_name_status" class="status-icon bi d-none"></i>
             </div>
-
-            <!-- Last Name -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-semibold">Last Name:</label>
-              <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter Last Name" required>
-            </div>
-
-            <!-- Extension Toggle + Input -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-semibold">Extension:</label>
-              <div class="d-flex align-items-center gap-2">
-                <!-- Yes / No options -->
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="hasExtension" id="extYes" value="yes">
-                  <label class="form-check-label" for="extYes">Yes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="hasExtension" id="extNo" value="no" checked>
-                  <label class="form-check-label" for="extNo">No</label>
-                </div>
-                <!-- Extension input field inline with Yes/No -->
-                <div id="extensionField" class="flex-grow-1 d-none">
-                  
-                  <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name" maxlength="15">
-                </div>
-              </div>
-            </div>
+            <div class="valid-feedback">Looks good.</div>
+            <div class="invalid-feedback">First name is required (2–50 characters).</div>
           </div>
 
-          <div class="row">
-            <!-- Program -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-semibold">Program:</label>
-              <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" maxlength="18" required>
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold" for="last_name">Last Name:</label>
+            <div class="status-wrap">
+              <input type="text" class="form-control" id="last_name" name="last_name"
+                     placeholder="Enter Last Name" minlength="2" maxlength="50" required>
+              <i id="last_name_status" class="status-icon bi d-none"></i>
             </div>
+            <div class="valid-feedback">Looks good.</div>
+            <div class="invalid-feedback">Last name is required (2–50 characters).</div>
+          </div>
 
-            <!-- Email -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-semibold">Email:</label>
-              <input type="email" class="form-control" id="email_surrender" name="email" placeholder="Enter Email" required>
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold">Extension:</label>
+            <div class="d-flex align-items-center gap-2">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="hasExtension" id="extYes" value="yes">
+                <label class="form-check-label" for="extYes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="hasExtension" id="extNo" value="no" checked>
+                <label class="form-check-label" for="extNo">No</label>
+              </div>
+              <div id="extensionField" class="flex-grow-1 d-none">
+                <div class="status-wrap">
+                  <input type="text" class="form-control" id="extension" name="extension"
+                         placeholder="e.g., Jr., III" minlength="2" maxlength="15">
+                  <i id="extension_status" class="status-icon bi d-none"></i>
+                </div>
+                <div class="valid-feedback">Looks good.</div>
+                <div class="invalid-feedback">Provide an extension (2–15 chars) or select “No”.</div>
+              </div>
             </div>
+            <div class="hint mt-1">Select “Yes” only if you use suffixes like Jr., Sr., II, III, etc.</div>
+          </div>
+        </div>
 
-            <!-- Contact Number -->
-            <div class="col-md-4 mb-3">
-              <label class="form-label fw-semibold">Contact No.:</label>
-              <input type="text" class="form-control" id="contact_surrender" name="contact" placeholder="+63 XXXXXXXXX" maxlength="11" required>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold" for="email_surrender">Email:</label>
+            <div class="status-wrap">
+              <input type="email" class="form-control" id="email_surrender" name="email"
+                     placeholder="Enter Email" required>
+              <i id="email_surrender_status" class="status-icon bi d-none"></i>
             </div>
+            <div class="valid-feedback">Looks good.</div>
+            <div class="invalid-feedback">Valid email required.</div>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
+            <div class="status-wrap">
+              <input type="text" class="form-control" id="contact_surrender" name="contact"
+                    value="+63 "
+                    placeholder="+63 XXXXXXXXXX" minlength="14" maxlength="14"
+                    pattern="^\+63\s\d{10}$" required>
+              <i id="contact_surrender_status" class="status-icon bi d-none"></i>
+            </div>
+            <div class="valid-feedback">Format OK.</div>
+            <div class="invalid-feedback">Format must be exactly: +63 XXXXXXXXXX (10 digits after a space).</div>
           </div>
         </div>
       </div>
+    </div>
 
-
-
-    <!-- Academic Information -->
+    <!-- Academic -->
     <div class="form-section">
       <h5><i class="bi bi-mortarboard-fill"></i> Academic Information</h5>
       <hr>
       <div class="row mb-3">
         <div class="col-md-4">
-          <label class="form-label fw-semibold">TUPC Student Number:</label>
-          <input type="text" class="form-control" placeholder="e.g., 2025-00001" required>
+          <label class="form-label fw-semibold" for="student_number">TUPC Student Number:</label>
+          <div class="status-wrap">
+            <input type="text" class="form-control" id="student_number" name="student_number"
+                   placeholder="TUPC-XX-XXXXXXXX (4–10 digits)"
+                   minlength="12" maxlength="18"
+                   pattern="^TUPC-[A-Z0-9]{2}-\d{4,10}$" required>
+            <i id="student_number_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="valid-feedback">Looks good.</div>
+          <div class="invalid-feedback">Use <b>TUPC-XX-XXXXXXXX</b> (XX letters/digits; 4–10 digits at end).</div>
+          <div class="hint mt-1">Examples: TUPC-CS-2025 (4 digits) • TUPC-CS-2025000012 (10 digits)</div>
         </div>
+
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Program:</label>
-          <input type="text" class="form-control" placeholder="e.g., BSIT, BSEE, etc." required>
+          <label class="form-label fw-semibold" for="program">Program:</label>
+          <div class="status-wrap">
+            <select class="form-select" id="program" name="program" required>
+              <option value="" selected disabled>-- Select Program --</option>
+            </select>
+            <i id="program_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="invalid-feedback">Please select your program.</div>
         </div>
+
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Year Level:</label>
-          <select class="form-select" required>
-            <option selected disabled>-- Select --</option>
-            <option>First Year</option>
-            <option>Second Year</option>
-            <option>Third Year</option>
-            <option>Fourth Year</option>
-          </select>
+          <label class="form-label fw-semibold" for="year_level">Year Level:</label>
+          <div class="status-wrap">
+            <select class="form-select" id="year_level" name="year_level" required>
+              <option value="" selected disabled>-- Select --</option>
+              <option>First Year</option><option>Second Year</option><option>Third Year</option>
+              <option>Fourth Year</option><option>Fifth Year</option>
+            </select>
+            <i id="year_level_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="valid-feedback">Looks good.</div>
+          <div class="invalid-feedback">Please select a year level.</div>
         </div>
       </div>
+
       <div class="row mb-3">
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Client Type:</label>
-          <select class="form-select" required>
-            <option selected disabled>-- Select --</option>
-            <option>Citizen</option>
-            <option>Business</option>
-            <option>Government (Employee/Agency)</option>
-          </select>
+          <label class="form-label fw-semibold" for="client_type">Client Type:</label>
+          <div class="status-wrap">
+            <select class="form-select" id="client_type" name="client_type" required>
+              <option value="" selected disabled>-- Select --</option>
+              <option>Citizen</option><option>Business</option><option>Government (Employee/Agency)</option>
+            </select>
+            <i id="client_type_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="valid-feedback">Looks good.</div>
+          <div class="invalid-feedback">Please select a client type.</div>
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-semibold">Stakeholder:</label>
-          <select class="form-select" required>
-            <option selected disabled>-- Select --</option>
-            <option>TUPC Student</option>
-            <option>Alumnus</option>
-            <option>Student from other School</option>
-            <option>External Client</option>
-            <option>Parent/Guardian</option>
-            <option>TUPC Employee</option>
-          </select>
+          <label class="form-label fw-semibold" for="stakeholder">Stakeholder:</label>
+          <div class="status-wrap">
+            <select class="form-select" id="stakeholder" name="stakeholder" required>
+              <option value="" selected disabled>-- Select --</option>
+              <option>TUPC Student</option><option>Alumnus</option><option>Student from other School</option>
+              <option>External Client</option><option>Parent/Guardian</option><option>TUPC Employee</option>
+            </select>
+            <i id="stakeholder_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="valid-feedback">Looks good.</div>
+          <div class="invalid-feedback">Please select a stakeholder.</div>
         </div>
       </div>
     </div>
 
-    <!-- Purpose of Visit -->
+    <!-- Purpose -->
     <div class="form-section">
       <h5><i class="bi bi-briefcase-fill fw-semibold"></i> Purpose of Visit</h5>
       <hr>
       <div class="mb-3">
-        <select class="form-select" id="purpose" required>
-          <option selected disabled>-- Select Purpose --</option>
-          <option>Credentials</option>
-          <option>Application of Graduation</option>
-          <option>Employment</option>
-          <option>Continuing Education</option>
-          <option value="Transfer">Transfer</option>
-          <option>Dismissal</option>
-        </select>
-      </div>
-      <!-- Transfer Details -->
-      <div class="mb-3 d-none" id="transferDetails">
-        <label class="form-label fw-semibold">Specify Transfer Details:</label>
-        <input type="text" class="form-control">
+        <div class="status-wrap">
+          <select class="form-select" id="purpose" name="purpose" required>
+            <option value="" selected disabled>-- Select Purpose --</option>
+            <option>Credentials</option><option>Application of Graduation</option><option>Employment</option>
+            <option>Continuing Education</option><option>Transfer</option><option>Dismissal</option>
+          </select>
+          <i id="purpose_status" class="status-icon bi d-none"></i>
+        </div>
+        <div class="valid-feedback">Looks good.</div>
+        <div class="invalid-feedback">Please select a purpose.</div>
       </div>
     </div>
 
-    <!-- Submit Button -->
+    <!-- Submit -->
     <div class="d-flex justify-content-end mt-4">
-      <button type="button" 
-                class="btn btn-submit d-flex align-items-center px-4"
-                data-bs-toggle="modal" data-bs-target="#confirmSubmitModal">
+      <button type="button"
+              id="openConfirmModal"
+              class="btn btn-submit d-flex align-items-center px-4"
+              data-bs-toggle="modal" data-bs-target="#confirmSubmitModal"
+              disabled>
         <i class="bi bi-send-fill me-2"></i> Submit Request
       </button>
     </div>
-
   </form>
-  <!-- FORM END -->
-
 </div>
 
-
-<!-- Confirmation Modal -->
+<!-- Confirm Modal -->
 <div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmSubmitModalLabel"></h5>
-      </div>
-
-      <!-- Modal Body -->
+      <div class="modal-header"><h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5></div>
       <div class="modal-body text-center">
-        Are you sure you want to submit this request?<br>
-        Please double-check your details before proceeding.
+        Are you sure you want to submit this request?<br>Double-check your details before proceeding.
       </div>
-
-      <!-- Modal Footer -->
       <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Cancel
-        </button>
-        <button type="button" class="btn text-light"  style="background-color: #440207;" id="confirmSubmitBtn"> Submit
-        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" form="clearanceForm" class="btn text-light" style="background-color:#440207;" id="confirmSubmitBtn">Submit</button>
       </div>
-
     </div>
   </div>
 </div>
 
+<!-- Redirect Modal -->
+<div class="modal fade" id="redirectModal" tabindex="-1" aria-labelledby="redirectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header"><h5 class="modal-title" id="redirectModalLabel">Submitting…</h5></div>
+      <div class="modal-body">
+        Your request is being submitted. You’ll be redirected to Home in
+        <strong><span id="countModal">5</span></strong> seconds.
+        <div class="small text-muted mt-2">Please don’t close this tab.</div>
+        <div id="submitError" class="alert alert-danger d-none mt-3" role="alert">Submission failed. Please try again later.</div>
+      </div>
+      <div class="modal-footer"><a href="{% url 'client_home' %}" class="btn btn-primary" id="goNowBtn">Go Now</a></div>
+    </div>
+  </div>
+</div>
 
-<!-- Bootstrap Bundle JS -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
+  // ===== Utilities =====
+  function rtrimInput(el) { el.value = el.value.replace(/\s+$/, ''); }
+  function setClasses(el, valid) {
+    el.classList.toggle('is-valid',  valid);
+    el.classList.toggle('is-invalid', !valid);
+  }
+  function setStatusIcon(el, valid) {
+    const icon = document.getElementById(el.id + '_status');
+    if (!icon) return;
+    icon.classList.remove('d-none','bi-check-circle-fill','bi-x-circle-fill','text-success','text-danger');
+    if (valid) { icon.classList.add('bi-check-circle-fill','text-success'); }
+    else       { icon.classList.add('bi-x-circle-fill','text-danger'); }
+  }
+  function mark(el, valid) { setClasses(el, valid); setStatusIcon(el, valid); return valid; }
+  function isSelect(el){ return el && el.tagName === 'SELECT'; }
 
- // Toggle Extension Field visibility
-  document.getElementById("extYes").addEventListener("change", function() {
-    document.getElementById("extensionField").classList.remove("d-none");
-  });
+  // ===== Elements =====
+  const form       = document.getElementById("clearanceForm");
+  const openBtn    = document.getElementById("openConfirmModal");
+  const confirmBtn = document.getElementById("confirmSubmitBtn");
+  const formAlert  = document.getElementById("formAlert");
 
-  document.getElementById("extNo").addEventListener("change", function() {
-    document.getElementById("extensionField").classList.add("d-none");
-  });
+  const extYes = document.getElementById("extYes");
+  const extNo  = document.getElementById("extNo");
+  const extWrap= document.getElementById("extensionField");
+  const extInp = document.getElementById("extension");
 
+  const phone   = document.getElementById("contact_surrender");
+  const student = document.getElementById("student_number");
+  const program = document.getElementById("program");
 
+  const trimIds   = ["first_name","last_name","extension","email_surrender","student_number"];
+  const selectIds = ["program","year_level","client_type","stakeholder","purpose"];
+  const baseIds   = ["first_name","last_name","email_surrender","contact_surrender","student_number"];
 
-    // Show transfer details field when Transfer is selected
-    document.getElementById("purpose").addEventListener("change", function() {
-      let transferDetails = document.getElementById("transferDetails");
-      if (this.value === "Transfer") {
-        transferDetails.classList.remove("d-none");
-      } else {
-        transferDetails.classList.add("d-none");
+  // ===== CSV Programs (now with "Other") =====
+  (async function loadPrograms() {
+    try {
+      const resp = await fetch("{% static 'myapp/data/programs.csv' %}", {cache:'no-store'});
+      if (!resp.ok) return;
+      const text = await resp.text();
+      const lines = text.split(/\r?\n/).map(l => l.replace(/\s+$/,'')).filter(Boolean);
+      for (const line of lines) {
+        if (!line) continue;
+        if (line.toLowerCase() === 'program') continue;
+        const opt = document.createElement('option');
+        opt.value = line; opt.textContent = line;
+        program.appendChild(opt);
       }
-    });
+      const otherOpt = document.createElement('option');
+      otherOpt.value = '__OTHER__';
+      otherOpt.textContent = 'Other';
+      program.appendChild(otherOpt);
 
-    // Handle confirmation modal
-    document.getElementById("confirmSubmitBtn").addEventListener("click", function () {
-      document.getElementById("clearanceForm").submit();
-    });
+      initProgramOther();
+      validateField(program);
+      validateForm();
+    } catch(e) {
+      console.warn('Failed to load programs:', e);
+    }
+  })();
+
+  // ===== Add a typable "Other" input without changing field IDs/names =====
+  let programOtherInput = null;
+  function initProgramOther() {
+    if (!program) return;
+    const wrap = program.closest('.status-wrap') || program.parentElement;
+    programOtherInput = document.createElement('input');
+    programOtherInput.type = 'text';
+    programOtherInput.id = 'program_other';
+    programOtherInput.className = 'form-control mt-2 d-none';
+    programOtherInput.placeholder = 'Type your program';
+    programOtherInput.setAttribute('minlength', '2');
+    programOtherInput.setAttribute('maxlength', '100');
+    wrap.insertAdjacentElement('afterend', programOtherInput);
+    program.addEventListener('change', handleProgramChange);
+    programOtherInput.addEventListener('input', () => { validateProgramOther(); validateForm(); });
+    programOtherInput.addEventListener('blur',  () => { validateProgramOther(); validateForm(); });
+    handleProgramChange();
+  }
+
+  function handleProgramChange() {
+    if (!programOtherInput) return;
+    if (program.value === '__OTHER__') {
+      programOtherInput.classList.remove('d-none');
+      programOtherInput.required = true;
+      programOtherInput.focus();
+      validateProgramOther();
+      setClasses(program, validateProgramOther());
+    } else {
+      programOtherInput.required = false;
+      programOtherInput.value = '';
+      programOtherInput.classList.add('d-none');
+      setClasses(programOtherInput, true);
+      setClasses(program, !!program.value);
+    }
+  }
+
+  function validateProgramOther() {
+    if (!programOtherInput) return true;
+    if (program.value !== '__OTHER__') return true;
+    programOtherInput.value = programOtherInput.value.replace(/\s+$/, '');
+    const len = programOtherInput.value.length;
+    const ok = len >= 2 && len <= 100;
+    setClasses(programOtherInput, ok);
+    return ok;
+  }
+
+  // ===== Extension toggle =====
+  function refreshExtension() {
+    if (extYes.checked) {
+      extWrap.classList.remove("d-none");
+      extInp.required = true;
+    } else {
+      extWrap.classList.add("d-none");
+      extInp.required = false;
+      extInp.value = "";
+      extInp.setCustomValidity("");
+      setClasses(extInp, true);
+      const ic = document.getElementById('extension_status');
+      if (ic) ic.classList.add('d-none');
+    }
+    validateForm();
+  }
+  extYes.addEventListener("change", refreshExtension);
+  extNo .addEventListener("change", refreshExtension);
+
+  // ===== Field validators =====
+  function validateField(el) {
+    if (!el) return true;
+    if ((el.type === 'text' || el.type === 'email') && el !== phone) rtrimInput(el);
+
+    if (el === phone) {
+      el.value = el.value.replace(/[^\d+\s]/g, '');
+      if (!el.value.startsWith("+63")) {
+        el.value = "+63 " + el.value.replace(/^\+*/, '').replace(/^63\s*/, '');
+      }
+      el.value = el.value.replace(/^\+63\s*/, "+63 ");
+      if (el.value !== "+63 ") el.value = el.value.replace(/\s+$/,'');
+      const ok = /^\+63\s\d{10}$/.test(el.value);
+      el.setCustomValidity(ok ? "" : "Format must be exactly: +63 XXXXXXXXXX (10 digits).");
+      return mark(el, ok);
+    }
+
+    if (el === student) {
+      el.value = el.value.toUpperCase();
+      const ok = el.checkValidity();
+      return mark(el, ok);
+    }
+
+    if (el === program) {
+      const ok = (program.value === '__OTHER__') ? validateProgramOther() : !!program.value;
+      return mark(program, ok);
+    }
+
+    if (el === extInp) {
+      const ok = extYes.checked ? el.checkValidity() : true;
+      return mark(el, ok);
+    }
+
+    if (isSelect(el)) {
+      const ok = !!el.value;
+      return mark(el, ok);
+    }
+
+    const ok = el.checkValidity();
+    return mark(el, ok);
+  }
+
+  function validateForm() {
+    let ok = true;
+    for (const id of baseIds) {
+      const el = document.getElementById(id);
+      if (el) ok = validateField(el) && ok;
+    }
+    ok = validateField(program) && ok;
+    ok = validateField(extInp) && ok;
+
+    for (const id of ["year_level","client_type","stakeholder","purpose"]) {
+      const el = document.getElementById(id);
+      if (el) ok = validateField(el) && ok;
+    }
+    ok = form.checkValidity() && ok;
+    openBtn.disabled = !ok;
+    if (ok) formAlert.classList.add('d-none');
+    return ok;
+  }
+
+  // Live listeners
+  trimIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => { validateField(el); validateForm(); });
+    el.addEventListener("blur",  () => { validateField(el); validateForm(); });
+  });
+  phone.addEventListener("input", () => { validateField(phone); validateForm(); });
+  phone.addEventListener("blur",  () => { validateField(phone); validateForm(); });
+  phone.addEventListener("focus", () => {
+    if (phone.value === "" || phone.value === "+63") phone.value = "+63 ";
+    setTimeout(() => phone.setSelectionRange(phone.value.length, phone.value.length), 0);
+  });
+  student.addEventListener("input", () => { validateField(student); validateForm(); });
+  student.addEventListener("blur",  () => { validateField(student); validateForm(); });
+
+  ["year_level","client_type","stakeholder","purpose"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", () => { validateField(el); validateForm(); });
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (phone && (phone.value === "" || phone.value === "+63")) phone.value = "+63 ";
+    refreshExtension();
+    validateForm();
+  });
+
+  // If user clicks open while invalid
+  document.getElementById('openConfirmModal').addEventListener('click', () => {
+    if (openBtn.disabled) {
+      formAlert.classList.remove('d-none');
+      validateForm();
+      const firstInvalid = form.querySelector('.is-invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  });
+
+  // ===== Submit flow (countdown starts ONLY on real success) =====
+  const redirectModal = new bootstrap.Modal(document.getElementById('redirectModal'));
+  const confirmModal  = new bootstrap.Modal(document.getElementById('confirmSubmitModal'));
+  const countSpan     = document.getElementById('countModal');
+  const errorBox      = document.getElementById('submitError');
+  let   countdownTimer = null;
+
+  function startCountdown(seconds, redirectUrl) {
+    let n = seconds;
+    countSpan.textContent = n;
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      n -= 1; countSpan.textContent = n;
+      if (n <= 0) { clearInterval(countdownTimer); window.location.href = redirectUrl; }
+    }, 1000);
+  }
+  function getCsrfToken() {
+    const inp = form.querySelector('input[name=csrfmiddlewaretoken]');
+    return inp ? inp.value : '';
+  }
+  function applyServerErrors(errors) {
+    // errors: { field_name: ["msg",...], "__all__": [...] }
+    let any = false;
+    for (const [name, msgs] of Object.entries(errors || {})) {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (el) {
+        el.classList.add('is-invalid');
+        any = true;
+      }
+    }
+    if (any) {
+      formAlert.classList.remove('d-none');
+      const firstInvalid = form.querySelector('.is-invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
+  function reenableForm() {
+    Array.from(form.elements).forEach(el => el.disabled = false);
+    confirmBtn.disabled = false;
+    openBtn.disabled = false;
+  }
+
+  confirmBtn.addEventListener("click", async function () {
+    if (!validateForm()) {
+      formAlert.classList.remove('d-none');
+      const firstInvalid = form.querySelector('.is-invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+
+    // Close confirm, show "Submitting..." modal (no countdown yet)
+    confirmModal.hide();
+    redirectModal.show();
+
+    // ✅ Build FormData BEFORE disabling any inputs
+    const fd = new FormData(form);
+    if (program && program.value === '__OTHER__' && programOtherInput) {
+      fd.set('program', programOtherInput.value.replace(/\s+$/, ''));
+    }
+
+    // (Optional) log to verify:
+    // for (const [k,v] of fd.entries()) console.log(k, v);
+
+    // 🔒 Now lock UI
+    Array.from(form.elements).forEach(el => el.disabled = true);
+    confirmBtn.disabled = true;
+    openBtn.disabled = true;
+    errorBox.classList.add('d-none');
+
+    try {
+      const resp = await fetch(form.action, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCsrfToken(),
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: fd,
+        credentials: "same-origin",
+      });
+
+      // Try to parse JSON (preferred). If not JSON but 2xx, treat as success fallback.
+      const isJson = resp.headers.get("content-type") && resp.headers.get("content-type").includes("application/json");
+      let data = null;
+      if (isJson) {
+        data = await resp.json();
+      }
+
+      if (resp.ok && (!isJson || (data && data.ok))) {
+        // ✅ Server confirmed save. Start countdown now.
+        startCountdown(5, "{% url 'client_home' %}");
+        return; // keep modal open until countdown ends
+      }
+
+      // ❌ Server signaled invalid
+      if (isJson && data && data.errors) {
+        applyServerErrors(data.errors);
+      }
+      if (countdownTimer) clearInterval(countdownTimer);
+      errorBox.classList.remove('d-none');
+      reenableForm();
+
+    } catch (e) {
+      if (countdownTimer) clearInterval(countdownTimer);
+      errorBox.textContent = "Network error. Please check your connection and try again.";
+      errorBox.classList.remove('d-none');
+      reenableForm();
+    }
+  });
 </script>
+
+
 
 </body>
 </html>
