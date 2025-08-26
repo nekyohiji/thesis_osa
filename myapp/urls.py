@@ -27,6 +27,7 @@ urlpatterns = [
 
     
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
+    path("admin_dashboard/data/", views.admin_dashboard_data, name="admin_dashboard_data"),
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
     # --- name edit ---
     path('edit-account/<str:user_email>/', views.edit_account, name='edit_account'),

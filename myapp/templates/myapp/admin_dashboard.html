@@ -14,7 +14,7 @@
 <body>
   <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
-<!-- sidebar -->
+  <!-- sidebar -->
   <div class="sidebar" id="sidebar">
     <div><br>
       <div class="logo text-center">
@@ -63,20 +63,21 @@
             <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student Assistantship</a>
           </div>
         </li>
-          <li>
-              <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('studentRecordMenu')">
-                <span><i class="fas fa-folder-open"></i> Student Record</span>
-                <i class="fas fa-caret-down dropdown-icon" id="icon-studentRecordMenu"></i>
-              </a>
-              <div class="collapse submenu ps-3 border-start" id="studentRecordMenu">
-                <a class="nav-link" href="{% url 'admin_student' %}">
-                  <i class="fas fa-folder-open"></i> Record
-                </a>
-                <a class="nav-link" href="{% url 'admin_removedstud' %}">
-                  <i class="fas fa-window-maximize"></i> Removed Student
-                </a>
-              </div>
-            </li>
+
+        <li>
+          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('studentRecordMenu')">
+            <span><i class="fas fa-folder-open"></i> Student Record</span>
+            <i class="fas fa-caret-down dropdown-icon" id="icon-studentRecordMenu"></i>
+          </a>
+          <div class="collapse submenu ps-3 border-start" id="studentRecordMenu">
+            <a class="nav-link" href="{% url 'admin_student' %}">
+              <i class="fas fa-folder-open"></i> Record
+            </a>
+            <a class="nav-link" href="{% url 'admin_removedstud' %}">
+              <i class="fas fa-window-maximize"></i> Removed Student
+            </a>
+          </div>
+        </li>
 
         <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
         <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
@@ -89,250 +90,312 @@
     </div>
   </div>
 
-<!-- Logout Modal -->
+  <!-- Logout Modal -->
   <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
-              <div class="modal-header">
-                  <h5 class="modal-title text-dark"></h5>
-              </div>
-              <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
-              <div class="modal-footer justify-content-center">
-                  <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
-                  <a href="{% url 'logout' %}" class="btn btn-danger" style="background-color: #440207; border-color: #440207;"
-                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">Logout</a>
-              </div>
-          </div>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border">
+        <div class="modal-header">
+          <h5 class="modal-title text-dark"></h5>
+        </div>
+        <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
+          <a href="{% url 'logout' %}" class="btn btn-danger" style="background-color: #440207; border-color: #440207;"
+             onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+             onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">Logout</a>
+        </div>
       </div>
+    </div>
   </div>
 
+  <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
-<!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
-
-
-<style>
-
-
-body { 
-  margin: 0; 
-  font-family: 'Roboto', sans-serif;
-  background-color: #f8f9fa;
-
-  
-} 
-.main-content {
-    margin-left: 250px; /* sidebar width */
-    transition: margin-left 0.3s ease;
-    padding: 20px;
-}
-
-/* When sidebar is hidden */
-.sidebar.show ~ .main-content {
-    margin-left: 250px; /* keep same margin */
-}
-
-/* On smaller screens, remove the margin so content is always visible */
-@media (max-width: 992px) {
-    .main-content {
-        margin-left: 0;
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: #f8f9fa;
     }
-}
+    .main-content {
+      margin-left: 250px; /* sidebar width */
+      transition: margin-left 0.3s ease;
+      padding: 20px;
+    }
+    /* When sidebar is hidden */
+    .sidebar.show ~ .main-content {
+      margin-left: 250px; /* keep same margin */
+    }
+    /* On smaller screens, remove the margin so content is always visible */
+    @media (max-width: 992px) {
+      .main-content {
+        margin-left: 0;
+      }
+    }
+    .stat-card {
+      background-color: #1c0a0a;
+      border-left: 5px solid #ad0211ff;
+      border-radius: 12px;
+      color: #fff;
+      position: relative;
+      padding: 20px;
+      transition: transform 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 120px;
+    }
+    .stat-card .card-body i {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 3rem;
+      opacity: 0.25;
+    }
+    .last-updated {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+  </style>
 
-.stat-card {
-    background-color: #1c0a0a; 
-    border-left: 5px solid #ad0211ff; 
-    border-radius: 12px;
-    color: #fff;
-    position: relative;
-    padding: 20px;
-    transition: transform 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; 
-    min-height: 120px; 
-}
-
-
-.stat-card .card-body i {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 3rem;
-    opacity: 0.25;
-}
-</style>
-
-<!-- Main Content -->
-<div class="main-content" id="mainContent">
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent">
 
     <!-- Dashboard Header -->
     <div class="container-fluid py-2 px-2">
-        <div class="dashboard-header text-white mt-4"
-             style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    padding: 50px;
-                    min-height: 100px;
-                    border-radius: 20px;
-                    margin-bottom: 20px;">
-            <h2 class="fw-bold mb-0">
-                <i class="bi bi-speedometer2 me-2"></i>
-                Dashboard
-            </h2>
-            <p class="mb-0">Monitor, manage, and update student records</p>
-        </div>
+      <div class="dashboard-header text-white mt-4"
+           style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
+                  background-size: cover;
+                  background-position: center;
+                  background-repeat: no-repeat;
+                  padding: 50px;
+                  min-height: 100px;
+                  border-radius: 20px;
+                  margin-bottom: 20px;">
+        <h2 class="fw-bold mb-0">
+          <i class="bi bi-speedometer2 me-2"></i>
+          Dashboard
+        </h2>
+        <p class="mb-0">Monitor, manage, and update student records</p>
+        <small id="lastUpdated" class="last-updated d-block mt-1">Updated —</small>
+      </div>
     </div>
 
-    <!-- Stat Cards (Optional Summary) -->
+    <!-- Stat Cards -->
     <div class="row g-3 mb-4 px-4">
-        <div class="col-md-3 col-sm-6">
-            <div class="card stat-card">
-                <div class="card-body position-relative">
-                    <h6 class="card-title"><strong>Total Visitors</strong></h6>
-                    <h3>250</h3>
-                    <i class="fas fa-users"></i>
-                </div>
-            </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+          <div class="card-body position-relative">
+            <h6 class="card-title"><strong>Total Visitors</strong></h6>
+            <h3 id="cardGrand">0</h3>
+            <small class="opacity-75">Grand total of requests</small>
+            <i class="fas fa-users"></i>
+          </div>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card stat-card">
-                <div class="card-body position-relative">
-                    <h6 class="card-title">Good Moral Certificates</h6>
-                    <h3>75</h3>
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-            </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+          <div class="card-body position-relative">
+            <h6 class="card-title">Good Moral Certificates</h6>
+            <h3 id="cardGoodMoral">0</h3>
+            <i class="fas fa-shield-alt"></i>
+          </div>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card stat-card">
-                <div class="card-body position-relative">
-                    <h6 class="card-title">Clearances</h6>
-                    <h3>60</h3>
-                    <i class="fas fa-file-alt"></i>
-                </div>
-            </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+          <div class="card-body position-relative">
+            <h6 class="card-title">Clearances</h6>
+            <h3 id="cardClearance">0</h3>
+            <i class="fas fa-file-alt"></i>
+          </div>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card stat-card">
-                <div class="card-body position-relative">
-                    <h6 class="card-title">Surrender IDs</h6>
-                    <h3>25</h3>
-                    <i class="fas fa-file-alt"></i>
-                </div>
-            </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+          <div class="card-body position-relative">
+            <h6 class="card-title">Surrender IDs</h6>
+            <h3 id="cardSurrender">0</h3>
+            <i class="fas fa-file-alt"></i>
+          </div>
         </div>
+      </div>
     </div>
-
-
 
     <!-- Table -->
     <div class="container-fluid pt-2 pb-7">
-        <div class="bg-white p-4 rounded shadow-sm border">
-          
-            <h5 class="fw-bold mb-1">
-                <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
-                Monthly Statistics
-            </h5>
-            <small class="text-muted">View monthly visitors, respondents, certificates, and clearances.</small>
-            <hr class="border-dark">
+      <div class="bg-white p-4 rounded shadow-sm border">
+        <h5 class="fw-bold mb-1">
+          <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
+          Monthly Statistics
+        </h5>
+        <small class="text-muted">View monthly visitors, respondents, certificates, and clearances.</small>
+        <hr class="border-dark">
 
-            <!-- Scrollable Table -->
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="table table-hover table-bordered align-middle text-center mb-0">
-                    <thead class="table-secondary sticky-top border">
-                        <tr>
-                            <th>Month</th>
-                            <th>Total Visitors</th>
-                            <th>Respondents</th>
-                            <th>Good Moral Certificates</th>
-                            <th>Clearances</th>
-                            <th>Surrender IDs</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>January</td><td>20</td><td>15</td><td>5</td><td>4</td><td>2</td></tr>
-                        <tr><td>February</td><td>25</td><td>18</td><td>6</td><td>5</td><td>3</td></tr>
-                        <tr><td>March</td><td>30</td><td>22</td><td>7</td><td>6</td><td>2</td></tr>
-                        <tr><td>April</td><td>22</td><td>18</td><td>5</td><td>3</td><td>1</td></tr>
-                        <tr><td>May</td><td>28</td><td>20</td><td>8</td><td>5</td><td>2</td></tr>
-                        <tr><td>June</td><td>35</td><td>25</td><td>10</td><td>6</td><td>3</td></tr>
-                        <tr><td>July</td><td>40</td><td>30</td><td>12</td><td>8</td><td>4</td></tr>
-                        <tr><td>August</td><td>38</td><td>28</td><td>11</td><td>7</td><td>3</td></tr>
-                        <tr><td>September</td><td>32</td><td>24</td><td>9</td><td>6</td><td>2</td></tr>
-                        <tr><td>October</td><td>30</td><td>22</td><td>6</td><td>4</td><td>2</td></tr>
-                        <tr><td>November</td><td>25</td><td>18</td><td>7</td><td>5</td><td>1</td></tr>
-                        <tr><td>December</td><td>27</td><td>20</td><td>8</td><td>6</td><td>2</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- Scrollable Table -->
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover table-bordered align-middle text-center mb-0">
+            <thead class="table-secondary sticky-top border">
+              <tr>
+                <th>Month</th>
+                <th>Total Visitors</th>
+                <th>Good Moral Certificates</th>
+                <th>Clearances</th>
+                <th>Surrender IDs</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyBody">
+              <!-- rows injected by JS -->
+              <tr id="monthlyEmpty">
+                <td colspan="5" class="text-muted">No data yet.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
 
-</div>
-
-
-
-
-
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    /* Sidebar Functions */
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('show');
+    }
 
+    function handleDropdown(menuId) {
+      const clickedIcon = document.getElementById(`icon-${menuId}`);
+      const clickedMenu = document.getElementById(menuId);
+      const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
 
-/* Sidebar Functions*/
-          // Toggle Sidebar
-        function toggleSidebar() {
-          const sidebar = document.getElementById('sidebar');
-          sidebar.classList.toggle('show');
+      if (clickedMenu.classList.contains('show')) {
+        clickedCollapse.hide();
+        clickedIcon.classList.remove('rotate');
+      } else {
+        clickedCollapse.show();
+        clickedIcon.classList.add('rotate');
+      }
+
+      const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
+      allDropdowns.forEach(id => {
+        if (id !== menuId) {
+          const menu = document.getElementById(id);
+          const icon = document.getElementById(`icon-${id}`);
+          const collapse = bootstrap.Collapse.getInstance(menu);
+          if (collapse) collapse.hide();
+          if (icon) icon.classList.remove('rotate');
         }
+      });
+    }
 
-        // Handle Dropdowns Uniformly
-        function handleDropdown(menuId) {
-          const clickedIcon = document.getElementById(`icon-${menuId}`);
-          const clickedMenu = document.getElementById(menuId);
-          const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
-
-          // Toggle clicked menu
-          if (clickedMenu.classList.contains('show')) {
-            clickedCollapse.hide();
-            clickedIcon.classList.remove('rotate');
-          } else {
-            clickedCollapse.show();
-            clickedIcon.classList.add('rotate');
-          }
-
-          // Hide other open menus
-          const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
-          allDropdowns.forEach(id => {
-            if (id !== menuId) {
-              const menu = document.getElementById(id);
-              const icon = document.getElementById(`icon-${id}`);
-              const collapse = bootstrap.Collapse.getInstance(menu);
-              if (collapse) collapse.hide();
-              if (icon) icon.classList.remove('rotate');
-            }
-          });
+    // Highlight Active Link
+    document.addEventListener('DOMContentLoaded', function () {
+      const currentUrl = window.location.href;
+      const navLinks = document.querySelectorAll('.nav-link');
+      navLinks.forEach(link => {
+        if (link.href && currentUrl.includes(link.href)) {
+          link.classList.add('active');
         }
+      });
+    });
 
-        // Highlight Active Link
-        document.addEventListener('DOMContentLoaded', function () {
-          const currentUrl = window.location.href;
-          const navLinks = document.querySelectorAll('.nav-link');
+    ///////////////////////////// START HERE MAG ADD
 
-          navLinks.forEach(link => {
-            if (link.href && currentUrl.includes(link.href)) {
-              link.classList.add('active');
-            }
-          });
-        });
+  const DATA_URL = "{% url 'admin_dashboard_data' %}";
+  console.log("DATA_URL =", DATA_URL);
+  const elLastUpdated  = document.getElementById('lastUpdated');
+  const elCardGrand    = document.getElementById('cardGrand');
+  const elCardGM       = document.getElementById('cardGoodMoral');
+  const elCardClr      = document.getElementById('cardClearance');
+  const elCardSurr     = document.getElementById('cardSurrender');
+  const elMonthlyBody  = document.getElementById('monthlyBody');
 
-///////////////////////////// START HERE MAG ADD
+  // Small inline error
+  const errorBadge = document.createElement('div');
+  errorBadge.className = 'text-warning mt-2';
+  errorBadge.style.fontSize = '0.85rem';
+  errorBadge.style.display = 'none';
+  errorBadge.id = 'loadError';
+  elLastUpdated.parentNode.appendChild(errorBadge);
 
+  function showError(msg) {
+    const el = document.getElementById('loadError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideError() {
+    const el = document.getElementById('loadError');
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+  function fmt(n) { return (n || 0).toLocaleString(); }
 
+  function renderTotals(totals, asOf) {
+    elCardGrand.textContent = fmt(totals.grand_total);
+    elCardGM.textContent    = fmt(totals.goodmoral_approved);
+    elCardClr.textContent   = fmt(totals.clearance_all);
+    elCardSurr.textContent  = fmt(totals.surrender_approved);
+    elLastUpdated.textContent = "Updated " + new Date(asOf).toLocaleString();
+  }
 
-  </script>
+  function renderMonthly(rows) {
+    elMonthlyBody.innerHTML = "";
+    if (!rows || rows.length === 0) {
+      elMonthlyBody.innerHTML =
+        '<tr><td colspan="5" class="text-muted">No data yet.</td></tr>';
+      return;
+    }
+    rows.forEach(r => {
+      elMonthlyBody.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>${r.month_label}</td>
+          <td class="fw-semibold">${fmt(r.total)}</td>
+          <td>${fmt(r.goodmoral_approved)}</td>
+          <td>${fmt(r.clearance_all)}</td>
+          <td>${fmt(r.surrender_approved)}</td>
+        </tr>
+      `);
+    });
+  }
+
+  async function loadDashboard() {
+    hideError();
+    try {
+      const res = await fetch(DATA_URL, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+
+      // If redirected (e.g., 302 to login) fetch API usually shows 200 from the final page but it's HTML.
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('admin_dashboard_data failed:', res.status, text);
+        showError(`Failed to load data (${res.status}). See console.`);
+        return;
+      }
+      if (!ct.includes('application/json')) {
+        const text = await res.text();
+        console.error('Expected JSON, got:', ct, text.slice(0, 400));
+        showError('Data endpoint returned non-JSON (likely a redirect). Check auth/URL.');
+        return;
+      }
+
+      const data = await res.json();
+      // Optional: console.log(data);
+      renderTotals(data.totals, data.as_of);
+      renderMonthly(data.rows);
+    } catch (e) {
+      console.error("Dashboard load exception:", e);
+      showError('Error loading dashboard data. See console for details.');
+    }
+  }
+
+  loadDashboard();
+  setInterval(loadDashboard, 10_000);
+</script>
 </body>
 </html>

@@ -271,6 +271,9 @@ class GoodMoralRequest(models.Model):
     
     class Meta:
         db_table = 'goodmoral'
+        indexes = [
+            models.Index(fields=['is_approved', 'submitted_at']),
+        ]
         
 class StudentAssistantshipRequirement(models.Model):
     content = models.TextField("Requirements Text")

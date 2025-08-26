@@ -56,13 +56,22 @@ from django.core.paginator import Paginator, EmptyPage
 from django.http import JsonResponse, HttpResponseBadRequest
 import logging
 logger = logging.getLogger(__name__)
-# views.py
+from django.db.models.functions import ExtractYear, ExtractMonth, Coalesce
 from io import BytesIO
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import Q
 from PyPDF2 import PdfMerger  # pip install pypdf or PyPDF2
 from django.views.decorators.http import require_http_methods
 from django.template.loader import render_to_string
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
+from collections import defaultdict
+from django.db.models.functions import ExtractYear, ExtractMonth
+from datetime import date
+from django.db.models import Count, DateTimeField, Value
+import calendar
+from datetime import datetime
+from django.db.models import F, Q, Count
 #################################################################################################################
 
 def current_time(request):
@@ -201,13 +210,134 @@ def client_clearance_view(request):
 
 
 
-
-def admin_old_violation_view(request):      ##### DIKO ALAM SAN ILALAGAY - JOCHELLE
+def admin_old_violation_view(request):     
     return render (request, 'myapp/admin_old_violation.html')
 
 @role_required(['admin'])
 def admin_dashboard_view(request):
-    return render (request, 'myapp/admin_dashboard.html')
+    return render(request, 'myapp/admin_dashboard.html')
+
+
+@role_required(['admin'])
+def admin_dashboard_data(request):
+    """
+    Return monthly counts + totals as JSON.
+    - Card totals: direct counts.
+    - Monthly rows: grouped in Python (no DB datetime funcs -> no TZ table issues).
+    - Any NULL datetimes go into an 'Undated' row.
+    """
+
+    # ---- Card totals ----
+    total_surr = IDSurrenderRequest.objects.filter(
+        status=IDSurrenderRequest.STATUS_APPROVED
+    ).count()
+    total_gm = GoodMoralRequest.objects.filter(
+        is_approved=True, is_rejected=False
+    ).count()
+    total_clr = ClearanceRequest.objects.count()
+
+    totals = {
+        "surrender_approved": total_surr,
+        "goodmoral_approved": total_gm,
+        "clearance_all": total_clr,
+        "grand_total": total_surr + total_gm + total_clr,
+    }
+
+    # ---- Helper: aggregate by (year, month) in Python ----
+    def month_counts_py(qs, dt_field: str):
+        """
+        Returns (agg, undated_count) where:
+          - agg is list of {'y': int, 'm': int, 'count': int} sorted by (y,m)
+          - undated_count is count of rows with NULL dt_field
+        """
+        buckets = Counter()
+        undated = 0
+
+        # Pull only the datetime column from DB
+        for dt in qs.values_list(dt_field, flat=True).iterator():
+            if not dt:
+                undated += 1
+                continue
+            # If timezone-aware, make it local; else leave as-naive
+            try:
+                if timezone.is_aware(dt):
+                    dt = timezone.localtime(dt)
+            except Exception:
+                # If conversion fails for any odd value, treat as undated
+                undated += 1
+                continue
+
+            buckets[(dt.year, dt.month)] += 1
+
+        agg = [
+            {"y": y, "m": m, "count": c}
+            for (y, m), c in sorted(buckets.items())
+        ]
+        return agg, undated
+
+    surr_qs = IDSurrenderRequest.objects.filter(
+        status=IDSurrenderRequest.STATUS_APPROVED
+    )
+    gm_qs  = GoodMoralRequest.objects.filter(is_approved=True, is_rejected=False)
+    clr_qs = ClearanceRequest.objects.all()
+
+    surr_agg, surr_undated = month_counts_py(surr_qs, "submitted_at")
+    gm_agg,   gm_undated   = month_counts_py(gm_qs,   "submitted_at")
+    clr_agg,  clr_undated  = month_counts_py(clr_qs,  "created_at")
+
+    # ---- Combine into a single (year, month) map ----
+    by_month = {}  # key: (y, m) -> dict of fields
+
+    def bump(key, field, n):
+        d = by_month.setdefault(
+            key,
+            {"surrender_approved": 0, "goodmoral_approved": 0, "clearance_all": 0},
+        )
+        d[field] += int(n or 0)
+
+    for r in surr_agg:
+        bump((int(r["y"]), int(r["m"])), "surrender_approved", r["count"])
+    for r in gm_agg:
+        bump((int(r["y"]), int(r["m"])), "goodmoral_approved", r["count"])
+    for r in clr_agg:
+        bump((int(r["y"]), int(r["m"])), "clearance_all", r["count"])
+
+    # ---- Build rows (newest month first) ----
+    rows = []
+    for (y, m), vals in sorted(by_month.items(), key=lambda kv: kv[0], reverse=True):
+        month_dt = datetime(int(y), int(m), 1)
+        total = (
+            vals["surrender_approved"]
+            + vals["goodmoral_approved"]
+            + vals["clearance_all"]
+        )
+        rows.append({
+            "month_iso": month_dt.strftime("%Y-%m-01"),
+            "month_label": month_dt.strftime("%B %Y"),
+            **vals,
+            "total": total,
+        })
+
+    # Optional 'Undated'
+    undated_totals = {
+        "surrender_approved": surr_undated,
+        "goodmoral_approved": gm_undated,
+        "clearance_all": clr_undated,
+    }
+    undated_total = sum(undated_totals.values())
+    if undated_total:
+        rows.append({
+            "month_iso": "undated",
+            "month_label": "Undated",
+            **undated_totals,
+            "total": undated_total,
+        })
+
+    return JsonResponse({
+        "as_of": timezone.localtime().isoformat(),
+        "totals": totals,
+        "rows": rows,
+    })
 
 @role_required(['admin'])
 def admin_accounts_view(request):
@@ -220,7 +350,6 @@ def admin_clearance(request):
         'records': records,
         'total': records.count(),
     })
-
 
 @role_required(['admin'])
 def admin_view_clearance_view(request, pk):
