@@ -640,7 +640,8 @@ def id_surrender_request(request):
                     send_mail(
                         subject="ID Surrender Request Received",
                         message=("We have received your ID Surrender request.\n"
-                                 "You will receive another email once it is reviewed and approved or rejected."),
+                                 "You will receive another email once it is reviewed and approved or rejected.\n"
+                                 "Please prepare to present your ID for verification prior to issuance of the Acknowledgement slip."),
                         from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
                         recipient_list=[recipient],
                         fail_silently=False,
