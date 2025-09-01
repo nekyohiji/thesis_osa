@@ -14,7 +14,6 @@ urlpatterns = [
     path('guard_report/', views.guard_report_view, name='guard_report'),
     path('client_goodmoral/', views.client_goodmoral_view, name='client_goodmoral'),
     path('client_scholarships/', views.client_scholarships_view, name='client_scholarships'),
-    path('client_CS/', views.client_CS_view, name='client_CS'),
     path('client_SurrenderingID/', views.client_SurrenderingID_view, name='client_SurrenderingID'),
     path('client_studentAssistantship/', views.client_studentAssistantship_view, name='client_studentAssistantship'),
     path('client_ACSO/', views.client_ACSO_view, name='client_ACSO'),
@@ -22,12 +21,14 @@ urlpatterns = [
     path('client_view_election/', views.client_view_election_view, name='client_view_election'),
     path('client_election/', views.client_election_view, name='client_election'),
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
+    path('client_CS/', views.client_CS_view, name='client_CS'),
     path('client_clearance/', views.client_clearance_view, name='client_clearance'),
     path("clearance/", views.clearance_request_view, name="clearance_request"),
     
     
-    path("admin_add_faculty/", views.admin_add_faculty_view, name="admin_add_faculty"),  # --- di q alam san lalagay - jochelle ---
-    
+    path("admin_add_faculty/", views.admin_add_faculty_view, name="admin_add_faculty"),
+    path("facilitators/<int:pk>/delete/", views.facilitator_delete, name="facilitator_delete"),
+
 
     
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),

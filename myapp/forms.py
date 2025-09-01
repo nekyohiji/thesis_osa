@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.core.validators import MinLengthValidator
 from django.contrib.staticfiles import finders
 from .models import ClearanceRequest, YEAR_LEVEL_CHOICES, CLIENT_TYPE_CHOICES, STAKEHOLDER_CHOICES, PURPOSE_CHOICES
-
+from .models import Facilitator
 
 class ViolationForm(forms.ModelForm):
     class Meta:
@@ -249,11 +249,7 @@ class ClearanceRequestForm(forms.ModelForm):
     extension  = forms.CharField(required=False, min_length=2, max_length=15)
     email      = forms.EmailField()
     contact    = forms.CharField(min_length=14, max_length=14)
-
-    # 12–18 chars total: "TUPC-XX-" (8) + 4..10 digits
     student_number = forms.CharField(min_length=12, max_length=18)
-
-    # Accept CSV or typed "Other"
     program    = forms.CharField(min_length=2, max_length=100)
 
     year_level = forms.ChoiceField(choices=[('', '-- Select --')] + YEAR_LEVEL_CHOICES)
@@ -270,8 +266,6 @@ class ClearanceRequestForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Client-side hints (match your HTML)
         self.fields["contact"].widget.attrs.update({
             "placeholder": "+63 XXXXXXXXXX",
             "pattern": r"^\+63\s\d{10}$"
@@ -280,31 +274,20 @@ class ClearanceRequestForm(forms.ModelForm):
             "placeholder": "TUPC-XX-XXXXXXXX (4–10 digits)",
             "pattern": r"^TUPC-[A-Z0-9]{2}-\d{4,10}$"
         })
-        # Optional: you can still surface CSV for autocomplete on the UI if desired,
-        # but DO NOT reject non-CSV values server-side anymore.
-
     def clean(self):
         cleaned = super().clean()
-
-        # Trailing-space trim
         for fld in ["first_name","last_name","extension","email","student_number","program"]:
             if fld in cleaned and isinstance(cleaned[fld], str):
                 cleaned[fld] = cleaned[fld].rstrip()
-
-        # Extension logic
         has_ext = (self.data.get("hasExtension") or "no").lower()
         if has_ext == "yes":
             if not cleaned.get("extension"):
                 self.add_error("extension", "Extension is required when 'Yes' is selected.")
         else:
             cleaned["extension"] = ""
-
-        # Phone strict format
         contact = cleaned.get("contact","")
         if contact and not re.fullmatch(r"\+63\s\d{10}", contact):
             self.add_error("contact", "Contact number must be exactly: +63 XXXXXXXXXX.")
-
-        # Student number strict format, normalize to uppercase
         sn = cleaned.get("student_number","")
         if sn:
             sn = sn.upper()
@@ -312,10 +295,31 @@ class ClearanceRequestForm(forms.ModelForm):
             if not STUDENT_RE.fullmatch(sn):
                 self.add_error("student_number",
                                "Use TUPC-XX-XXXXXXXX (XX letters/digits; 4–10 digits at end).")
-
-        # Program: allow any non-empty string (CSV suggestions handled on front-end)
         prog = cleaned.get("program","")
         if not prog:
             self.add_error("program", "Program is required.")
 
         return cleaned
+    
+NNNNN = re.compile(r'^\d{2}-\d{3}$')
+
+class FacilitatorForm(forms.ModelForm):
+    class Meta:
+        model = Facilitator
+        fields = ["full_name", "faculty_id"]
+        widgets = {
+            "full_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Full name"}),
+            "faculty_id": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "12-345",
+                "inputmode": "numeric",
+                "maxlength": "6",
+                "pattern": r"\d{2}-\d{3}"
+            }),
+        }
+
+    def clean_faculty_id(self):
+        val = (self.cleaned_data.get("faculty_id") or "").strip()
+        if not NNNNN.match(val):
+            raise forms.ValidationError("ID must be NN-NNN (e.g., 12-345). Only digits and a hyphen.")
+        return val

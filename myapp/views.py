@@ -1,77 +1,114 @@
-from django.http import HttpResponse, JsonResponse
-import csv, random, json, re
-from datetime import timedelta
-from django.utils import timezone
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
-from .models import Student, UserAccount, OTPVerification, Archived_Account, Candidate, Violation, Scholarship, LostAndFound, StudentAssistantshipRequirement, ACSORequirement, GoodMoralRequest, IDSurrenderRequest, CommunityServiceCase, CommunityServiceLog, ClearanceRequest
-from django.db.models.functions import Lower
-from django.core.mail import send_mail, BadHeaderError
+# ── Standard library
+import calendar
+import csv
+import io
+import json
+import logging
+import mimetypes
+import os
+import random
+import re
+import uuid
+from collections import Counter, defaultdict
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+from io import BytesIO
+from . import models
+# ── Third-party
+from PIL import Image as PILImage
+from PyPDF2 import PdfMerger, PdfReader, PdfWriter
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from reportlab.pdfgen.canvas import Canvas
+from reportlab.platypus import (
+    BaseDocTemplate,
+    Frame,
+    FrameBreak,
+    Image as RLImage,
+    PageBreak,
+    PageTemplate,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+from reportlab.platypus import Table as PlatypusTable
+from reportlab.platypus import TableStyle as PlatypusTableStyle
+from reportlab.platypus import Image
+# ── Django
 from django.conf import settings
-from django.core.validators import validate_email
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
-from .decorators import role_required
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.mail import BadHeaderError, send_mail
+from django.core.paginator import EmptyPage, Paginator
 from django.core.serializers import serialize
-from django.utils.html import escape
+from django.core.validators import validate_email
+from django.db import transaction
+from django.db.models import Count, DateTimeField, F, Q, Value
+from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear, Lower, TruncMonth
+from django.http import (
+    FileResponse,
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    JsonResponse,
+)
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils.timezone import localtime
-import uuid, os
-from django.core.files.base import ContentFile
-from .forms import ViolationForm, GoodMoralRequestForm, IDSurrenderRequestForm, CSCreateOrAdjustForm, MajorViolationForm, ClearanceRequestForm
-from django.utils.timezone import now
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, BaseDocTemplate, Frame, PageTemplate, FrameBreak, PageBreak
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from django.utils import timezone
 from django.utils.dateparse import parse_date
-from .utils import send_violation_email, generate_gmf_pdf, send_clearance_confirmation
-from django.db.models import Q
-import os
-import io
-from collections import Counter
-from django.conf import settings
-from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.utils import ImageReader
-from PIL import Image
-from reportlab.lib.units import inch
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.platypus import Table as PlatypusTable, TableStyle as PlatypusTableStyle
-from django.views.decorators.http import require_POST, require_GET
-from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas
-from io import BytesIO
-from django.http import FileResponse, Http404
-from django.contrib.staticfiles import finders
+from django.utils.html import escape
+from django.utils.timezone import localtime, now
 from django.views.decorators.clickjacking import xframe_options_exempt
-from django.core.files.storage import default_storage
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
+from django.contrib.auth.hashers import make_password, check_password
+from django.db import IntegrityError
+# ── Local apps
+from .decorators import role_required
+from .forms import (
+    CSCreateOrAdjustForm,
+    ClearanceRequestForm,
+    GoodMoralRequestForm,
+    IDSurrenderRequestForm,
+    MajorViolationForm,
+    ViolationForm,
+    FacilitatorForm
+)
 from .libre.ack_receipt import build_ack_pdf
-import mimetypes
-from decimal import Decimal
-from django.db import transaction
-from django.core.paginator import Paginator, EmptyPage
-from django.http import JsonResponse, HttpResponseBadRequest
-import logging
+from .models import (
+    ACSORequirement,
+    Archived_Account,
+    Candidate,
+    ClearanceRequest,
+    CommunityServiceCase,
+    CommunityServiceLog,
+    GoodMoralRequest,
+    IDSurrenderRequest,
+    LostAndFound,
+    OTPVerification,
+    Scholarship,
+    Student,
+    StudentAssistantshipRequirement,
+    UserAccount,
+    Violation,
+    Facilitator,
+)
+from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email
+
 logger = logging.getLogger(__name__)
-from django.db.models.functions import ExtractYear, ExtractMonth, Coalesce
-from io import BytesIO
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.db.models import Q
-from PyPDF2 import PdfMerger  # pip install pypdf or PyPDF2
-from django.views.decorators.http import require_http_methods
-from django.template.loader import render_to_string
-from django.db.models.functions import TruncMonth
-from django.db.models import Count
-from collections import defaultdict
-from django.db.models.functions import ExtractYear, ExtractMonth
-from datetime import date
-from django.db.models import Count, DateTimeField, Value
-import calendar
-from datetime import datetime
-from django.db.models import F, Q, Count
 #################################################################################################################
 
 def current_time(request):
@@ -82,6 +119,8 @@ def index(request):
 
 def home_view(request):
     return render(request, 'myapp/client_home.html')
+
+#------------------------------------------------------------------------------------------#
 
 @role_required(['guard'])
 def guard_violation_view(request):
@@ -116,6 +155,8 @@ def guard_report_view(request):
     }
     return render(request, 'myapp/guard_report.html', context)
 
+#------------------------------------------------------------------------------------------#
+
 def client_goodmoral_view(request):
     return render (request, 'myapp/client_goodmoral.html')
 
@@ -123,18 +164,81 @@ def client_scholarships_view(request):
     scholarships = Scholarship.objects.order_by('-posted_date')
     return render (request, 'myapp/client_scholarships.html', {'scholarships': scholarships})
 
+ID_PATTERN = re.compile(r"^\d{2}-\d{3}$") 
+
 def client_CS_view(request):
-    return render (request, 'myapp/client_CS.html')
+    if request.method == "POST":
+        faculty_id = (request.POST.get("faculty_id") or "").strip()
+
+        # format check
+        if not ID_PATTERN.match(faculty_id):
+            messages.error(request, "Login credentials invalid.")
+            return render(request, "myapp/client_CS.html", {"prefill": faculty_id})
+
+        # existence + active
+        facilitator = (Facilitator.objects
+                       .filter(faculty_id=faculty_id, is_active=True)
+                       .only("id", "full_name")
+                       .first())
+        if not facilitator:
+            messages.error(request, "Login credentials invalid.")
+            return render(request, "myapp/client_CS.html", {"prefill": faculty_id})
+
+        # success → session + go to viewer
+        request.session["facilitator_pk"] = facilitator.id
+        request.session["facilitator_id"] = faculty_id
+        request.session["facilitator_name"] = facilitator.full_name
+        return redirect("client_view_CS")
+
+    # already “logged in”? (optional shortcut)
+    if request.session.get("facilitator_pk"):
+        return redirect("client_view_CS")
+
+    return render(request, "myapp/client_CS.html")
+
 
 def client_view_CS_view(request):
-    q = request.GET.get('q','').strip()
+    # gate
+    fpk = request.session.get("facilitator_pk")
+    if not fpk:
+        messages.warning(request, "Please log in with your Faculty ID.")
+        return redirect("client_CS")  # <-- correct name
+
+    # optional: still active?
+    if not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
+        for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
+            request.session.pop(k, None)
+        messages.error(request, "Session expired. Please log in again.")
+        return redirect("client_CS")  # <-- correct name
+
+    # your search
+    q = (request.GET.get("q") or "").strip()
     qs = CommunityServiceCase.objects.order_by('-updated_at')
     if q:
         qs = qs.filter(
             Q(last_name__icontains=q) | Q(first_name__icontains=q) |
             Q(program_course__icontains=q) | Q(student_id__icontains=q)
         )
-    return render(request, 'myapp/client_view_CS.html', {'cases': qs, 'q': q})
+
+    return render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
+
+    # (optional) re-verify still active; if not, clear session and bounce
+    if not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
+        for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
+            request.session.pop(k, None)
+        messages.error(request, "Session expired. Please log in again.")
+        return redirect("client_cs")
+
+    # your existing list/search
+    q = (request.GET.get("q") or "").strip()
+    qs = CommunityServiceCase.objects.order_by('-updated_at')
+    if q:
+        qs = qs.filter(
+            Q(last_name__icontains=q) | Q(first_name__icontains=q) |
+            Q(program_course__icontains=q) | Q(student_id__icontains=q)
+        )
+
+    return render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
 
 def cs_case_detail_api(request, case_id):
     case = get_object_or_404(CommunityServiceCase, id=case_id)
@@ -208,22 +312,67 @@ def client_view_election_view(request):
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
 
-
+#------------------------------------------------------------------------------------------#
 
 def admin_old_violation_view(request):     
     return render (request, 'myapp/admin_old_violation.html')
 
+@role_required(['admin'])
 def admin_add_faculty_view(request):
-    return render (request, 'myapp/admin_add_faculty.html')  # --- di q alam san lalagay - jochelle ---
+    open_add_modal = False
 
+    if request.method == "POST":
+        form = FacilitatorForm(request.POST)
+        if form.is_valid():
+            try:
+                obj = form.save(commit=False)
+                if getattr(request, "user", None) and request.user.is_authenticated:
+                    obj.created_by = request.user
+                obj.save()
+                messages.success(request, "Facilitator added.")
+                return redirect("admin_add_faculty")
+            except IntegrityError:
+                form.add_error("faculty_id", "That ID already exists.")
+                messages.error(request, "Please fix the errors below.")
+                open_add_modal = True
+        else:
+            messages.error(request, "Please fix the errors below.")
+            open_add_modal = True
+    else:
+        form = FacilitatorForm()
 
+    q = (request.GET.get("q") or "").strip()
+    facilitators = Facilitator.objects.all()
+    if q:
+        facilitators = facilitators.filter(Q(full_name__icontains=q) | Q(faculty_id__icontains=q))
 
+    ctx = {
+        "form": form,
+        "facilitators": facilitators,
+        "q": q,
+        "open_add_modal": open_add_modal,
+    }
+    return render(request, "myapp/admin_add_faculty.html", ctx)
 
+@role_required(['admin'])
+def facilitator_delete(request, pk: int):
+    """
+    Confirm modal posts here. Only accept POST, then redirect back to the page.
+    """
+    if request.method != "POST":
+        return redirect("admin_add_faculty")
+
+    obj = get_object_or_404(Facilitator, pk=pk)
+    name = obj.full_name
+    obj.delete()
+    messages.success(request, f"Removed facilitator: {name}")
+    return redirect("admin_add_faculty")
+
+#------------------------------------------------------------------------------------------#
 
 @role_required(['admin'])
 def admin_dashboard_view(request):
     return render(request, 'myapp/admin_dashboard.html')
-
 
 @role_required(['admin'])
 def admin_dashboard_data(request):
@@ -820,16 +969,6 @@ def clearance_request_view(request):
     return render(request, "myapp/client_clearance.html", {"form": ClearanceRequestForm()})
 
 
-
-
-
-
-
-
-
-
-
-
 #########################LOGIN
 
 def login_view(request):
@@ -883,7 +1022,6 @@ def login_view(request):
 def logout_view(request):
     request.session.flush()
     return redirect('login')
-
 
 
 
@@ -1328,7 +1466,6 @@ def request_otp(request):
 
     return JsonResponse({'status': 'ok'})
 
-
 @csrf_exempt
 def verify_otp(request):
     data = json.loads(request.body)
@@ -1382,7 +1519,6 @@ def get_accounts_data(request):
             
 OTP_TTL_MINUTES = 10
 
-# ----- helpers -----
 def _json_err(msg, status=400, **extra):
     payload = {"status": "error", "message": msg}
     payload.update(extra)
@@ -1400,9 +1536,6 @@ def _gen_otp():
 def _expired(dt):
     return dt < timezone.now() - timedelta(minutes=OTP_TTL_MINUTES)
 
-# =========================
-#  NAME EDIT
-# =========================
 @require_http_methods(["POST", "PATCH"])
 def edit_account(request, user_email: str):
     """
@@ -1445,9 +1578,6 @@ def edit_account(request, user_email: str):
         "account": {"full_name": account.full_name, "email": account.email, "role": account.role}
     })
 
-# =========================
-#  EMAIL CHANGE (OTP)
-# =========================
 @require_http_methods(["POST"])
 def email_change_request(request):
     """

@@ -8,6 +8,8 @@ from decimal import Decimal
 from django.db.models.functions import Now
 from django.utils import timezone
 from django.db import transaction
+from django.conf import settings
+from django.db.models import Q
 
 class Student(models.Model):
     tupc_id = models.CharField(max_length=50, unique=True)
@@ -692,3 +694,41 @@ class ClearanceRequest(models.Model):
 
     def __str__(self):
         return f"{self.last_name}, {self.first_name} - {self.student_number}"
+    
+id_validator = RegexValidator(
+    regex=r'^\d{2}-\d{3}$',
+    message="Use format NN-NNN (e.g., 12-345). Only digits with a hyphen."
+)
+
+class Facilitator(models.Model):
+    faculty_id = models.CharField(
+        max_length=6,
+        unique=True,
+        db_index=True,
+        validators=[id_validator],
+        help_text="Format: NN-NNN (e.g., 12-345)"
+    )
+    full_name = models.CharField(max_length=150)
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="facilitators_created"
+    )
+
+    class Meta:
+        ordering = ["full_name"]
+        db_table = 'Facilitator'
+        # DB check constraint (works on PostgreSQL). SQLite ignores regex in CHECK.
+        constraints = [
+            models.CheckConstraint(
+                check=Q(faculty_id__regex=r'^\d{2}-\d{3}$'),
+                name="faculty_id_nn_nnn_format"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.faculty_id})"
+
