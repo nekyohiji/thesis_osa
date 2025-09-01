@@ -188,8 +188,33 @@
 
   
   <div class="container-fluid px-4">
-    <div class="bg-white p-2 rounded shadow-sm border">
+    <a href="{% url 'admin_community_service' %}" class="btn btn-secondary" style=" text-align: center;
+          background-color: #f0f0f0;
+          color: #333;
+          font-weight: 500;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          padding: 10px 15px;
+          transition: all 0.3s ease;"
+          onmouseover="this.style.backgroundColor='#ccccccff'; this.style.borderColor='#ccc';">
+        <i class="bi bi-clipboard-check-fill me-2"></i> Community Service Requests
+    </a>
 
+    <a href="{% url 'admin_add_faculty' %}" class="btn btn-secondary" style=" text-align: center;
+          background-color: #f0f0f0;
+          color: #333;
+          font-weight: 500;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          padding: 10px 15px;
+          transition: all 0.3s ease;"
+          onmouseover="this.style.backgroundColor='#ccccccff'; this.style.borderColor='#ccc';">
+        <i class="bi bi-people-fill me-2"></i> Community Service Facilitators
+    </a>
+
+    <hr>
+
+    <div class="bg-white p-2 rounded shadow-sm border"> 
       <!-- Community Service Request Section -->
       <div class="container-fluid pt-4 pb-5">
         <div class="bg-white p-4 rounded shadow-sm border">

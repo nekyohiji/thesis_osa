@@ -24,6 +24,10 @@ urlpatterns = [
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
     path('client_clearance/', views.client_clearance_view, name='client_clearance'),
     path("clearance/", views.clearance_request_view, name="clearance_request"),
+    
+    
+    path("admin_add_faculty/", views.admin_add_faculty_view, name="admin_add_faculty"),  # --- di q alam san lalagay - jochelle ---
+    
 
     
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),

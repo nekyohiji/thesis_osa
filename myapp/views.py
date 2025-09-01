@@ -213,6 +213,13 @@ def client_clearance_view(request):
 def admin_old_violation_view(request):     
     return render (request, 'myapp/admin_old_violation.html')
 
+def admin_add_faculty_view(request):
+    return render (request, 'myapp/admin_add_faculty.html')  # --- di q alam san lalagay - jochelle ---
+
+
+
+
+
 @role_required(['admin'])
 def admin_dashboard_view(request):
     return render(request, 'myapp/admin_dashboard.html')
