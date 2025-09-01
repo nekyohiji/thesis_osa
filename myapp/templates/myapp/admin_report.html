@@ -162,56 +162,47 @@
 <body>
 <div class="mt-4 ps-4 pe-4" style="margin-left: 260px; min-height: 100vh;">  
 
-  <!-- Header -->
-  <div class="election-header text-white mt-4"
-      style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
-              padding: 50px; min-height: 100px;
-              border-radius: 20px; margin-bottom: 20px; margin-top:1px;">
-    <h2 class="fw-bold mb-0">
-      <i class="bi bi-file-earmark-text me-2"></i>
-      Reports
-    </h2>
-    <p class="mb-0">Monitor and view reports.</p>
-  </div>
-
-  <div class="card shadow-sm border-0 rounded-4 p-4">
-
-    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-
-      <!-- Dropdowns -->
-      <div class="d-flex gap-3">
-        <!-- Documents Dropdown -->
-        <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Documents
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item report-btn" data-target="goodMoralTable">Good Moral</a></li>
-            <li><a class="dropdown-item report-btn" data-target="ackReceiptTable">Acknowledgement Receipt</a></li>
-            <li><a class="dropdown-item report-btn" data-target="clearanceTable">Clearance</a></li>
-          </ul>
-        </div>
-
-        <!-- Violation Dropdown -->
-        <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Violation
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item report-btn" data-target="violationsTable">Violations</a></li>
-            <li><a class="dropdown-item report-btn" data-target="csTable">Community Service</a></li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Search -->
-      <div class="input-group input-group-sm" style="max-width: 400px;">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search">
-        <button class="btn btn-outline-secondary" type="button" disabled style="pointer-events: none; opacity: 0.6;">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
+    <!-- Header -->
+    <div class="election-header text-white mt-4"
+        style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
+                padding: 50px; min-height: 100px;
+                border-radius: 20px; margin-bottom: 20px; margin-top:1px;">
+      <h2 class="fw-bold mb-0">
+        <i class="bi bi-file-earmark-text me-2"></i>
+        Reports
+      </h2>
+      <p class="mb-0">Monitor and view reports.</p>
     </div>
+
+    <div class="card shadow-sm border-0 rounded-4 p-4">
+
+      <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+        <!-- Single Select -->
+        <div>
+          <select id="reportSelect" class="form-select text-center">
+            <option value="" disabled selected> -- Select Option --</option>
+            <option value="goodMoralTable">Good Moral</option>
+            <option value="ackReceiptTable">Acknowledgement Receipt</option>
+            <option value="clearanceTable">Clearance</option>
+            <option value="violationsTable">Violations</option>
+            <option value="csTable">Community Service</option>
+          </select>
+        </div>
+
+        <!-- Search -->
+        <div class="input-group input-group-sm" style="max-width: 400px;">
+          <input type="text" id="searchInput" class="form-control" placeholder="Search">
+          <button class="btn btn-outline-secondary" type="button" disabled style="pointer-events: none; opacity: 0.6;">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Selected Report Display -->
+      <div id="selectedReportName" class="fw-bold text-center mb-3 text-secondary">
+        No report selected.
+      </div>
 
 
 
@@ -248,15 +239,15 @@
         </div>
 
         <!-- Generate Button -->
-        <div class="text-center">
-          <button type="button" class="btn btn-dark px-4" 
-                  data-bs-toggle="modal" data-bs-target="#goodMoralModal"
+        <div class="text-center mt-3">
+          <button type="button" id="generateBtn" class="btn btn-dark px-4" disabled
                   style="background-color: #440207; padding: 10px; font-size: 20px;"
-                  onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
-            <i class="bi bi-graph-up-arrow me-2"></i> Generate Good Moral Report
+                  onmouseover="if(!this.disabled){this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';}"
+                  onmouseout="if(!this.disabled){this.style.backgroundColor='#440207'; this.style.borderColor='#440207';}">
+            -- Select an option first --
           </button>
         </div>
+
       </div>
     </div>
 
@@ -678,17 +669,23 @@
 
 //////////////////////////// START HERE MAG ADD
 
+    // ####################### Select switching
+    document.getElementById("reportSelect").addEventListener("change", function () {
+      // Hide all report tables
+      document.querySelectorAll(".report-table").forEach(tbl => tbl.style.display = "none");
 
-    // ####################### Dropdown switching
-    document.querySelectorAll(".report-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".report-table").forEach(tbl => tbl.style.display = "none");
-        const target = btn.getAttribute("data-target");
+      // Show the selected table
+      const target = this.value;
+      if (target) {
         document.getElementById(target).style.display = "block";
-      });
+
+        // Update selected report name display
+        const reportName = this.options[this.selectedIndex].text;
+        document.getElementById("selectedReportName").innerText = "Selected Report: " + reportName;
+      }
     });
 
-    // Search filter
+    // ####################### Search filter
     document.getElementById("searchInput").addEventListener("keyup", function() {
       let value = this.value.toLowerCase();
       let activeTable = document.querySelector(".report-table[style*='display: block']");
@@ -699,6 +696,47 @@
       }
     });
 
+
+
+    const reportSelect = document.getElementById("reportSelect");
+    const generateBtn = document.getElementById("generateBtn");
+
+    // Enable button when a report is selected
+    reportSelect.addEventListener("change", function () {
+      if (this.value) {
+        generateBtn.disabled = false;
+
+        // Update button text
+        const reportName = this.options[this.selectedIndex].text;
+        generateBtn.innerHTML = `<i class="bi bi-graph-up-arrow me-2"></i> Generate ${reportName} Report`;
+
+        // Attach correct modal
+        generateBtn.setAttribute("data-bs-target", getModalId(this.value));
+        generateBtn.setAttribute("data-bs-toggle", "modal");
+      } else {
+        resetButton();
+      }
+    });
+
+    // Reset button state
+    function resetButton() {
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = `<i class="bi bi-graph-up-arrow me-2"></i> Select option first`;
+      generateBtn.removeAttribute("data-bs-target");
+      generateBtn.removeAttribute("data-bs-toggle");
+    }
+
+    // Map table IDs to modal IDs
+    function getModalId(value) {
+      switch (value) {
+        case "goodMoralTable": return "#goodMoralModal";
+        case "ackReceiptTable": return "#ackReceiptModal";
+        case "clearanceTable": return "#clearanceModal";
+        case "violationsTable": return "#violationModal";
+        case "csTable": return "#csModal";
+        default: return "";
+      }
+    }
 
 
     // ####################### DATE SECTION
