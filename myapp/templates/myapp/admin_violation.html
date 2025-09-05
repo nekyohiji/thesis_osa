@@ -71,20 +71,7 @@
             <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student<br>Assistantship</a>
           </div>
         </li>
-            <li>
-              <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('studentRecordMenu')">
-                <span><i class="fas fa-folder-open"></i> Student Record</span>
-                <i class="fas fa-caret-down dropdown-icon" id="icon-studentRecordMenu"></i>
-              </a>
-              <div class="collapse submenu ps-3 border-start" id="studentRecordMenu">
-                <a class="nav-link" href="{% url 'admin_student' %}">
-                  <i class="fas fa-folder-open"></i> Record
-                </a>
-                <a class="nav-link" href="{% url 'admin_removedstud' %}">
-                  <i class="fas fa-window-maximize"></i> Removed Student
-                </a>
-              </div>
-            </li>
+        <li><a class="nav-link" href="{% url 'admin_student' %}"><i class="fas fa-folder-open"></i> Record</a>
         <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
         <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
       </ul>
@@ -162,7 +149,10 @@
  
       }
 
-
+    .btn.active-offense {
+      background-color: #440207 !important;
+      color: #fff !important;
+    }
 
 
 
@@ -199,7 +189,7 @@
         <div class="modal-content border">
           <div class="modal-header">
             <h5 class="modal-title fw-semibold" id="majorOffenseLabel">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i> Create Major Offense
+              <i class="bi bi-exclamation-triangle-fill me-2"></i> Add Violation
             </h5>
           </div>
 
@@ -253,10 +243,70 @@
                   {% if major_form and major_form.violation_time.errors %}<div class="text-danger small">{{ major_form.violation_time.errors|striptags }}</div>{% endif %}
                 </div>
 
-                <div class="col-12">
+                <hr>
+
+
+                 
+                  <!-- Toggle Buttons -->
+                  <div class="d-flex flex-column align-items-center mb-3" id="offenseAccordion">
+                    <div class="btn-group w-100 mb-2" role="group">
+                      <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#minorDropdown"
+                        aria-expanded="false" aria-controls="minorDropdown"
+                        style="color: #440207; border-color: #440207;"
+                        onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                        onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                        <strong>Minor Offense</strong>
+                      </button>
+                    </div>
+
+                    <div class="btn-group w-100" role="group">
+                      <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#majorDropdown"
+                        aria-expanded="false" aria-controls="majorDropdown"
+                        style="color: #440207; border-color: #440207;"
+                        onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                        onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                        <strong>Major Offense</strong>
+                      </button>
+                    </div>
+                  </div>
+
+
+
+
+
+                  <!-- Minor Offense Dropdown -->
+                    <div class="col-12 mb-2" id="minorWrapper">
+                      <label class="form-label fw-semibold">Minor Offense:</label>
+                      <select class="form-select" name="minor_offense" id="minorSelect">
+                        <option value="" class="form-select text-center">-- Select Minor Violation Type --</option>
+                        <option value="Disturbance">Causing Disturbance During Class Hours</option>
+                        <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
+                        <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
+                        <option value="Facial Hair">Unwanted Facial Hair</option>
+                        <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
+                        <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
+                        <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
+                        <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
+                        <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
+                        <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
+                        <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
+                        <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
+                        <option value="Gambling">Possession of Gambling Paraphernalia</option>
+                        <option value="Devices">Unauthorized Use of Devices during Class</option>
+                        <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
+                        <option value="Harrassment">Making Lewd Gestures and Lustful Words to a Student</option>
+                        <option value="Property Damage">Accidental Damage of University Property</option>
+                        <option value="PDA">Public Display of Physical Intimacy or Affection</option>
+                        <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
+                      </select>
+                    </div>
+                  
+
+              
+                <div class="col-12" id="majorWrapper" >
                   <label class="form-label fw-semibold">Major Offense:</label>
-                  <select name="violation_type" class="form-select" required>
-                    <option value="" disabled {% if not major_form or not major_form.violation_type.value %}selected{% endif %}>Select offense</option>
+                  <select name="violation_type" class="form-select"  id="majorSelect" required>
+                    <option value="" class="form-select text-center" disabled {% if not major_form or not major_form.violation_type.value %}selected{% endif %}>-- Select Major Violation Type --</option>
                     <!-- keep only MAJOR options here -->
                     <option value="Liquor/Drugs">Liquor and Prohibited Drugs</option>
                     <option value="Illegal Assembly">Unauthorized Activities/ Illegal Assemblies</option>
@@ -287,7 +337,7 @@
                   </select>
                   {% if major_form and major_form.violation_type.errors %}<div class="text-danger small">{{ major_form.violation_type.errors|striptags }}</div>{% endif %}
                 </div>
-
+              
                 <!-- no evidence fields here -->
                 <input type="hidden" name="severity" value="MAJOR">
               </div>
@@ -329,13 +379,13 @@
                 <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
                 Violation Requests
               </h5>
-              <small class="text-muted">Review submitted violations, and choose to accept or decline each case.</small>
+              <small class="text-muted">Review submitted violations, and choose to accept or lift each case.</small>
             </div>
             <button class="btn text-light d-flex align-items-center"
                     style="background-color: #440207; padding: 10px;"
                     data-bs-toggle="modal" data-bs-target="#majorOffenseModal">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              Create Major Offense
+              Add Violation
             </button>
           </div>
           <hr class="border-dark">
@@ -377,12 +427,12 @@
                         <i class="bi bi-check-circle me-1"></i>Approve
                       </a>
                       <a href="{% url 'admin_decline_violation' v.id %}" class="btn btn-sm btn-danger">
-                        <i class="bi bi-x-circle me-1"></i>Decline
+                        <i class="bi bi-x-circle me-1"></i>Lift
                       </a>
                     </div>
                   </td>
                   <td>
-                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm btn-outline-primary" style="color: #440207; border-color: #440207;"
+                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
                           onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
                           onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
                       View More
@@ -437,7 +487,7 @@
                   <td>{{ v.first_name }} {{ v.last_name }}</td>
                   <td>{{ v.violation_date }}</td>
                   <td>
-                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm btn-outline-primary" style="color: #440207; border-color: #440207;"
+                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
                           onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
                           onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
                       View More
@@ -482,7 +532,7 @@
   </div>
 </div>
 
-<!-- Decline Modal -->
+<!-- Lift Modal -->
 <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border">
@@ -490,11 +540,12 @@
         <h5 class="modal-title" id="declineModalLabel"></h5>
       </div>
       <div class="modal-body text-center">
-        Are you sure you want to <strong>Decline</strong> this violation request?
+        Are you sure you want to <strong>Lift</strong> this violation request?
       </div>
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger">Decline</button>
+        <button type="button" class="btn" style="background-color: #440207; border-color: #440207;"
+        >Lift</button>
       </div>
     </div>
   </div>
@@ -520,6 +571,9 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   
 <script>
+
+
+  
 document.addEventListener("DOMContentLoaded", () => {
     const approveBtns = document.querySelectorAll(".btn-success");
     const declineBtns = document.querySelectorAll(".btn-danger");
@@ -585,9 +639,47 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 ///////////////////////////// START HERE MAG ADD
+    document.addEventListener("DOMContentLoaded", function () {
+        const minorBtn = document.querySelector('[data-bs-target="#minorDropdown"]');
+        const majorBtn = document.querySelector('[data-bs-target="#majorDropdown"]');
+        const minorWrapper = document.getElementById("minorWrapper");
+        const majorWrapper = document.getElementById("majorWrapper");
 
+        // hide both at start
+        minorWrapper.style.display = "none";
+        majorWrapper.style.display = "none";
 
+        function resetButtons() {
+          minorBtn.classList.remove("active-offense");
+          majorBtn.classList.remove("active-offense");
+        }
 
+        minorBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+          if (minorWrapper.style.display === "none") {
+            minorWrapper.style.display = "block";
+            majorWrapper.style.display = "none";
+            resetButtons();
+            minorBtn.classList.add("active-offense");
+          } else {
+            minorWrapper.style.display = "none";
+            resetButtons();
+          }
+        });
+
+        majorBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+          if (majorWrapper.style.display === "none") {
+            majorWrapper.style.display = "block";
+            minorWrapper.style.display = "none";
+            resetButtons();
+            majorBtn.classList.add("active-offense");
+          } else {
+            majorWrapper.style.display = "none";
+            resetButtons();
+          }
+        });
+      });
   </script>
 </body>
 </html>
