@@ -2,6 +2,7 @@
 import calendar
 import csv
 import io
+import secrets
 import json
 import logging
 import mimetypes
@@ -10,7 +11,7 @@ import random
 import re
 import uuid
 from collections import Counter, defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time
 from decimal import Decimal
 from io import BytesIO
 from . import models
@@ -19,7 +20,7 @@ from PIL import Image as PILImage
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape, inch
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
@@ -44,6 +45,8 @@ from reportlab.platypus import Image
 # ── Django
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.staticfiles.finders import find as find_static
+from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
@@ -52,9 +55,10 @@ from django.core.files.storage import default_storage
 from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, Paginator
 from django.core.serializers import serialize
+from django.core.cache import cache
 from django.core.validators import validate_email
 from django.db import transaction
-from django.db.models import Count, DateTimeField, F, Q, Value
+from django.db.models import Count, DateTimeField, F, Q, Value, DateField
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear, Lower, TruncMonth
 from django.http import (
     FileResponse,
@@ -91,7 +95,6 @@ from .libre.ack_receipt import build_ack_pdf
 from .models import (
     ACSORequirement,
     Archived_Account,
-    Candidate,
     ClearanceRequest,
     CommunityServiceCase,
     CommunityServiceLog,
@@ -195,7 +198,6 @@ def client_CS_view(request):
         return redirect("client_view_CS")
 
     return render(request, "myapp/client_CS.html")
-
 
 def client_view_CS_view(request):
     # gate
@@ -496,10 +498,6 @@ def admin_dashboard_data(request):
     })
 
 @role_required(['admin'])
-def admin_accounts_view(request):
-    return render (request, 'myapp/admin_accounts.html')
-
-@role_required(['admin'])
 def admin_clearance(request):
     records = ClearanceRequest.objects.all().order_by('-created_at')  # newest first
     return render(request, 'myapp/admin_clearance.html', {
@@ -608,10 +606,6 @@ def admin_view_community_service(request, case_id):
         'open_log': open_log,
     })
 
-@role_required(['admin', 'comselec'])
-def admin_election_view(request):
-    return render (request, 'myapp/admin_election.html')
-
 @role_required(['admin'])
 def admin_goodmoral_view(request):
     pending_qs = GoodMoralRequest.objects.filter(
@@ -663,10 +657,6 @@ def admin_lostandfound_view(request):
             return redirect('admin_lostandfound')
 
     return render(request, 'myapp/admin_lostandfound.html', {'items': items})
-
-@role_required(['admin'])
-def admin_report_view(request):
-    return render (request, 'myapp/admin_report.html')
 
 @role_required(['admin', 'scholarship'])
 def admin_scholarships_view(request):
@@ -829,15 +819,6 @@ def admin_violation_view(request):
 @role_required(['admin'])
 def admin_removedstud_view(request):
     return render (request, 'myapp/admin_removedstud.html')
-
-@role_required(['admin', 'comselec'])
-def admin_election_results_view(request):
-    return render (request, 'myapp/admin_election_results.html')
-
-@role_required(['admin', 'comselec'])
-def admin_election_manage_view(request):
-    return render (request, 'myapp/admin_election_manage.html')
-
 
 
 #########################CLIENT
@@ -1396,160 +1377,116 @@ def admin_student_view(request):
     students = Student.objects.all().order_by(Lower('last_name'), Lower('first_name'))
     return render(request, 'myapp/admin_student.html', {'students': students})
 
-def request_otp(request):
-    if request.method != 'POST':
-        return JsonResponse({'status': 'fail', 'message': 'Invalid request method.'})
+#---------Admin Manage Accounts----------------------#
+OTP_TTL_MINUTES = 10  
 
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'fail', 'message': 'Invalid JSON payload.'})
-    required_fields = ['fullName', 'email', 'position', 'password']
-    missing_fields = [field for field in required_fields if not data.get(field)]
-    if missing_fields:
-        return JsonResponse({'status': 'fail', 'message': f'Missing: {", ".join(missing_fields)}'})
+def json_ok(message="ok", **extra):
+    payload = {"status": "ok", "message": message}
+    payload.update(extra)
+    return JsonResponse(payload, status=200)
 
-    full_name = data['fullName'].strip()
-    email = data['email'].strip().lower()
-    position = data['position'].strip()
-    password = data['password']
-    errors = []
-    if not (3 <= len(full_name) <= 128):
-        errors.append("Full name must be 3–128 characters.")
-    if not (5 <= len(email) <= 254):
-        errors.append("Email must be 5–254 characters.")
-    if not (3 <= len(position) <= 64):
-        errors.append("Position must be 3–64 characters.")
-    if not (8 <= len(password) <= 128):
-        errors.append("Password must be 8–128 characters.")
-
-    if errors:
-        return JsonResponse({'status': 'fail', 'message': " ".join(errors)})
-    try:
-        validate_email(email)
-    except ValidationError:
-        return JsonResponse({'status': 'fail', 'message': 'Invalid email format.'})
-    
-    if UserAccount.objects.filter(email=email).exists() or Archived_Account.objects.filter(email=email).exists():
-        return JsonResponse({'status': 'fail', 'message': 'This email is already registered.'})
-    try:
-        record = OTPVerification.objects.get(email=email)
-        elapsed = timezone.now() - record.created_at
-        if elapsed < timedelta(minutes=5):
-            remaining = 300 - int(elapsed.total_seconds())
-            return JsonResponse({
-                'status': 'wait',
-                'message': f'Please wait {remaining} seconds before requesting another OTP.'
-            })
-    except OTPVerification.DoesNotExist:
-        pass
-    otp = ''.join(random.choices('0123456789', k=6))
-    OTPVerification.objects.update_or_create(
-        email=email,
-        defaults={
-            'otp': otp,
-            'full_name': full_name,
-            'role': position,
-            'password': make_password(password),
-            'created_at': timezone.now()
-        }
-    )
-    try:
-        send_mail(
-            subject='Your TUPC OSA OTP Code',
-            message=f'Your One-Time Password is: {otp}\n\nThis OTP will expire in 5 minutes.',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-        )
-    except Exception as e:
-        return JsonResponse({'status': 'fail', 'message': f'Failed to send email: {str(e)}'})
-
-    return JsonResponse({'status': 'ok'})
-
-@csrf_exempt
-def verify_otp(request):
-    data = json.loads(request.body)
-    email = data['email']
-    otp_input = data['otp'].strip()
-
-    try:
-        record = OTPVerification.objects.get(email=email)
-        if record.otp.strip() == otp_input:
-            UserAccount.objects.create(
-                full_name=record.full_name,
-                email=record.email,
-                role=record.role,
-                password=record.password
-            )
-            record.delete()
-            return JsonResponse({'status': 'ok', 'message': 'Account successfully created!'})
-        else:
-            return JsonResponse({'status': 'error', 'message': 'Incorrect OTP.'})
-    except OTPVerification.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'No OTP record found for this email.'})
-
-def deactivate_account(request, user_email):
-    try:
-        account = get_object_or_404(UserAccount, email=user_email)
-
-        Archived_Account.objects.create(
-            full_name=account.full_name,
-            email=account.email,
-            password=account.password,
-            role=account.role,
-            is_active=False,
-        )
-
-        messages.success(request, f"{account.full_name} ({account.email}) has been deactivated.")
-        account.delete()
-        return JsonResponse({'status': 'ok'})
-    except Exception as e:
-        messages.error(request, f"An error occurred: {str(e)}")
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-def get_accounts_data(request):
-    if request.method == 'GET':
-        active_accounts = list(UserAccount.objects.filter(is_active=True).values('full_name', 'email', 'role'))
-        deactivated_accounts = list(Archived_Account.objects.all().values('full_name', 'email', 'role'))
-
-        return JsonResponse({
-            'active': active_accounts,
-            'deactivated': deactivated_accounts
-        })
-            
-OTP_TTL_MINUTES = 10
-
-def _json_err(msg, status=400, **extra):
-    payload = {"status": "error", "message": msg}
+def json_err(message, *, code="ERROR", status=400, **extra):
+    payload = {"status": "error", "code": code, "message": message}
     payload.update(extra)
     return JsonResponse(payload, status=status)
 
-def _safe_body(request):
+def safe_body(request):
     try:
         return json.loads(request.body or "{}")
     except json.JSONDecodeError:
         raise ValueError("Invalid JSON payload.")
 
-def _gen_otp():
-    return f"{random.randint(0, 999999):06d}"
+def gen_otp():
+    # 6-digit numeric, cryptographically secure
+    return "".join(secrets.choice("0123456789") for _ in range(6))
 
 def _expired(dt):
     return dt < timezone.now() - timedelta(minutes=OTP_TTL_MINUTES)
 
-@require_http_methods(["POST", "PATCH"])
-def edit_account(request, user_email: str):
+def _throttle_key(email, purpose):
+    return f"otp:throttle:{purpose}:{email}"
+
+def _db_too_soon(email: str, seconds: int = 60):
     """
-    Edit name (and optionally role if you enable it in UI).
-    Body: { "full_name": "...", "role": "admin" (optional) }
+    Fallback throttle using OTPVerification.created_at if cache is unavailable.
+    Returns (True, remaining_seconds) if inside cooldown window; else (False, 0).
     """
+    try:
+        rec = OTPVerification.objects.get(email=email)
+    except OTPVerification.DoesNotExist:
+        return False, 0
+    elapsed = (timezone.now() - rec.created_at).total_seconds()
+    remaining = max(0, seconds - int(elapsed))
+    return (elapsed < seconds), remaining
+
+def _throttle(email: str, purpose: str, seconds: int = 60):
+    """
+    Preferred throttle using atomic cache.add (works with LocMem or Redis).
+    Falls back to DB-based timing if cache backend errors out.
+    Returns (should_throttle: bool, remaining_seconds: int|None)
+    """
+    key = _throttle_key(email, purpose)
+    try:
+        created = cache.add(key, "1", timeout=seconds)  # atomic: True if newly set
+        if created:
+            return False, seconds
+        # Key already exists → within window. Many backends don't expose TTL; return None for remaining.
+        return True, None
+    except Exception:
+        # Cache misconfigured or unavailable → fallback to DB window
+        return _db_too_soon(email, seconds=seconds)
+
+@role_required(['admin'])
+def admin_accounts_view(request):
+    # Ensure your template path matches this
+    return render(request, 'myapp/admin_accounts.html')
+
+@require_http_methods(["GET"])
+@csrf_protect
+def get_accounts_data(request):
+    active = list(
+        UserAccount.objects.filter(is_active=True)
+        .values("full_name", "email", "role")
+    )
+    deactivated = list(
+        Archived_Account.objects.all()
+        .values("full_name", "email", "role")
+    )
+    return JsonResponse({"active": active, "deactivated": deactivated}, status=200)
+
+@require_http_methods(["POST"])
+@csrf_protect
+def deactivate_account(request, user_email):
     account = get_object_or_404(UserAccount, email=user_email)
     try:
-        body = _safe_body(request)
+        with transaction.atomic():
+            Archived_Account.objects.update_or_create(
+                email=account.email,
+                defaults={
+                    "full_name": account.full_name,
+                    "password": account.password,
+                    "role": account.role,
+                    "is_active": False,
+                }
+            )
+            account.delete()
+    except Exception:
+        return json_err("Failed to deactivate the account.", code="DEACTIVATE_FAIL", status=500)
+
+    messages.success(request, f"{account.full_name} ({account.email}) has been deactivated.")
+    return json_ok("Deactivated.")
+
+@require_http_methods(["PATCH", "POST"])
+@csrf_protect
+def edit_account(request, user_email: str):
+    account = get_object_or_404(UserAccount, email=user_email)
+    try:
+        body = safe_body(request)
     except ValueError as e:
-        return _json_err(str(e), 400)
+        return json_err(str(e), code="BAD_JSON")
 
     full_name = (body.get("full_name") or "").strip()
-    role      = body.get("role", None)
+    role = body.get("role", None)
 
     errors = {}
     if not full_name:
@@ -1558,189 +1495,68 @@ def edit_account(request, user_email: str):
         errors["full_name"] = "Full name must be at most 128 characters."
     if role is not None and role not in {c[0] for c in UserAccount.ROLE_CHOICES}:
         errors["role"] = "Invalid role."
-
     if errors:
-        return JsonResponse({"status": "error", "message": "Validation failed.", "errors": errors}, status=400)
+        return json_err("Validation failed.", code="VALIDATION", errors=errors)
 
     try:
         with transaction.atomic():
             account.full_name = full_name
             if role is not None:
                 account.role = role
-            fields = ["full_name"] + (["role"] if role is not None else [])
-            account.save(update_fields=fields)
-    except Exception as e:
-        return _json_err(f"Unable to update the account: {e}", 500)
+            account.save(update_fields=["full_name"] + (["role"] if role is not None else []))
+    except Exception:
+        return json_err("Unable to update the account.", code="UPDATE_FAIL", status=500)
 
-    return JsonResponse({
-        "status": "ok",
-        "message": "Account updated successfully.",
-        "account": {"full_name": account.full_name, "email": account.email, "role": account.role}
-    })
-
-@require_http_methods(["POST"])
-def email_change_request(request):
-    """
-    Body: { "current_email": "...", "new_email": "..." }
-    Send OTP to the NEW email, stored in OTPVerification keyed by new_email.
-    """
-    try:
-        body = _safe_body(request)
-    except ValueError as e:
-        return _json_err(str(e), 400)
-
-    current_email = (body.get("current_email") or "").strip()
-    new_email     = (body.get("new_email") or "").strip()
-
-    if not current_email or not new_email:
-        return _json_err("Both current_email and new_email are required.")
-    if current_email == new_email:
-        return _json_err("New email must be different from current email.")
-
-    account = get_object_or_404(UserAccount, email=current_email)
-
-    # Prevent duplicates
-    if UserAccount.objects.filter(email=new_email).exists():
-        return _json_err("That email is already in use.", 409)
-
-    otp = _gen_otp()
-
-    # Upsert OTPVerification by email=new_email
-    obj, created = OTPVerification.objects.get_or_create(
-        email=new_email,
-        defaults={
-            "otp": otp,
-            "full_name": account.full_name,
-            "role": account.role,
-            "password": account.password,
-            "is_active": False,
-        }
+    return json_ok(
+        "Account updated successfully.",
+        account={"full_name": account.full_name, "email": account.email, "role": account.role}
     )
-    if not created:
-        obj.otp = otp
-        obj.full_name = account.full_name
-        obj.role = account.role
-        obj.password = account.password
-        obj.is_active = False
-        obj.created_at = timezone.now()
-        obj.save(update_fields=["otp", "full_name", "role", "password", "is_active", "created_at"])
-
-    try:
-        send_mail(
-            subject="Email Change OTP",
-            message=f"Your verification code is: {otp}\nIt expires in {OTP_TTL_MINUTES} minutes.",
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-            recipient_list=[new_email],
-            fail_silently=False,
-        )
-    except (BadHeaderError, Exception) as e:
-        if settings.DEBUG:
-            # In development we can reveal the OTP to make testing easier
-            return JsonResponse({"status": "ok", "message": "OTP generated (DEBUG).", "dev_otp": otp})
-        return _json_err(f"Failed to send OTP: {e}", 500)
-
-    return JsonResponse({"status": "ok", "message": "OTP sent to new email."})
 
 @require_http_methods(["POST"])
-def email_change_verify(request):
-    """
-    Body: { "new_email": "...", "otp": "123456" }
-    Mark OTPVerification.is_active=True (verified) for that new email.
-    """
-    try:
-        body = _safe_body(request)
-    except ValueError as e:
-        return _json_err(str(e), 400)
-
-    new_email = (body.get("new_email") or "").strip()
-    otp       = (body.get("otp") or "").strip()
-    if not new_email or not otp:
-        return _json_err("new_email and otp are required.")
-
-    try:
-        rec = OTPVerification.objects.get(email=new_email)
-    except OTPVerification.DoesNotExist:
-        return _json_err("No OTP request found for that email.", 404)
-
-    if _expired(rec.created_at):
-        return _json_err("OTP expired. Please request a new one.", 400)
-    if rec.otp != otp:
-        return _json_err("Invalid OTP.", 400)
-
-    rec.is_active = True
-    rec.save(update_fields=["is_active"])
-    return JsonResponse({"status": "ok", "message": "OTP verified."})
-
-@require_http_methods(["POST"])
-def email_change_apply(request):
-    """
-    Body: { "current_email": "...", "new_email": "..." }
-    Requires verified + unexpired OTPVerification for new_email, then updates UserAccount.email.
-    """
-    try:
-        body = _safe_body(request)
-    except ValueError as e:
-        return _json_err(str(e), 400)
-
-    current_email = (body.get("current_email") or "").strip()
-    new_email     = (body.get("new_email") or "").strip()
-    if not current_email or not new_email:
-        return _json_err("Both current_email and new_email are required.")
-
-    account = get_object_or_404(UserAccount, email=current_email)
-
-    try:
-        rec = OTPVerification.objects.get(email=new_email)
-    except OTPVerification.DoesNotExist:
-        return _json_err("No OTP verification found for that email.", 404)
-
-    if _expired(rec.created_at):
-        return _json_err("OTP expired. Please request a new one.", 400)
-    if not rec.is_active:
-        return _json_err("OTP not verified yet.", 400)
-    if UserAccount.objects.filter(email=new_email).exclude(pk=account.pk).exists():
-        return _json_err("That email is already in use.", 409)
-
-    with transaction.atomic():
-        account.email = new_email
-        account.save(update_fields=["email"])
-        rec.delete()  # clean up
-
-    return JsonResponse({"status": "ok", "message": "Email updated successfully.", "email": new_email})
-
-@require_http_methods(["POST"])
+@csrf_protect
 def password_otp_request(request):
-    """Body: { email } — send a 6-digit OTP to the registered email for password change."""
     try:
-        body = _safe_body(request)
+        body = safe_body(request)
     except ValueError as e:
-        return _json_err(str(e), 400)
+        return json_err(str(e), code="BAD_JSON")
 
-    email = (body.get("email") or "").strip()
+    email = (body.get("email") or "").strip().lower()
     if not email:
-        return _json_err("Email is required.")
+        return json_err("Email is required.", code="MISSING_FIELDS")
 
     account = get_object_or_404(UserAccount, email=email)
 
-    otp = _gen_otp()
-    obj, created = OTPVerification.objects.get_or_create(
-        email=email,
-        defaults={
-            "otp": otp,
-            "full_name": account.full_name,
-            "role": account.role,
-            "password": account.password,
-            "is_active": False,
-        }
-    )
-    if not created:
-        obj.otp = otp
-        obj.full_name = account.full_name
-        obj.role = account.role
-        obj.password = account.password
-        obj.is_active = False
-        obj.created_at = timezone.now()
-        obj.save(update_fields=["otp", "full_name", "role", "password", "is_active", "created_at"])
+    # Throttle using cache.add with DB fallback
+    should_throttle, remaining = _throttle(email, "password", seconds=60)
+    if should_throttle:
+        msg = "Please wait before requesting another OTP."
+        if remaining:  # only shown when we know the seconds
+            msg = f"Please wait {remaining}s before requesting another OTP."
+        return json_err(msg, code="RATE_LIMIT", status=429)
+
+    otp = gen_otp()
+    try:
+        obj, created = OTPVerification.objects.get_or_create(
+            email=email,
+            defaults={
+                "otp": otp,
+                "full_name": account.full_name,
+                "role": account.role,
+                "password": account.password,
+                "is_active": False,
+                "created_at": timezone.now(),
+            }
+        )
+        if not created:
+            obj.otp = otp
+            obj.full_name = account.full_name
+            obj.role = account.role
+            obj.password = account.password
+            obj.is_active = False
+            obj.created_at = timezone.now()
+            obj.save(update_fields=["otp", "full_name", "role", "password", "is_active", "created_at"])
+    except Exception:
+        return json_err("Unable to persist OTP.", code="OTP_WRITE_FAIL", status=500)
 
     try:
         send_mail(
@@ -1750,73 +1566,655 @@ def password_otp_request(request):
             recipient_list=[email],
             fail_silently=False,
         )
-    except (BadHeaderError, Exception) as e:
-        if settings.DEBUG:
-            return JsonResponse({"status": "ok", "message": "OTP generated (DEBUG).", "dev_otp": otp})
-        return _json_err(f"Failed to send OTP: {e}", 500)
+    except (BadHeaderError, Exception):
+        if getattr(settings, "DEBUG", False):
+            return json_ok("OTP generated (DEBUG).", dev_otp=otp)
+        return json_err("Failed to send OTP.", code="EMAIL_SEND_FAIL", status=502)
 
-    return JsonResponse({"status": "ok", "message": "OTP sent to registered email."})
+    return json_ok("OTP sent to registered email.")
 
 @require_http_methods(["POST"])
+@csrf_protect
 def password_otp_verify(request):
-    """Body: { email, otp } — verify password-change OTP (marks OTPVerification.is_active=True)."""
     try:
-        body = _safe_body(request)
+        body = safe_body(request)
     except ValueError as e:
-        return _json_err(str(e), 400)
+        return json_err(str(e), code="BAD_JSON")
 
-    email = (body.get("email") or "").strip()
+    email = (body.get("email") or "").strip().lower()
     otp   = (body.get("otp") or "").strip()
     if not email or not otp:
-        return _json_err("Email and OTP are required.")
+        return json_err("Email and OTP are required.", code="MISSING_FIELDS")
 
     try:
         rec = OTPVerification.objects.get(email=email)
     except OTPVerification.DoesNotExist:
-        return _json_err("No OTP request found for that email.", 404)
+        return json_err("No OTP request found for that email.", code="OTP_NOT_FOUND", status=404)
 
     if _expired(rec.created_at):
-        return _json_err("OTP expired. Please request a new one.", 400)
+        return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
     if rec.otp != otp:
-        return _json_err("Invalid OTP.", 400)
+        return json_err("Invalid OTP.", code="OTP_INCORRECT")
 
     rec.is_active = True
     rec.save(update_fields=["is_active"])
-    return JsonResponse({"status": "ok", "message": "OTP verified."})
+    return json_ok("OTP verified.")
 
 @require_http_methods(["POST"])
+@csrf_protect
 def change_password(request, email: str):
-    """Body: { new_password } — requires a verified, unexpired OTPVerification for this email."""
     try:
-        body = _safe_body(request)
+        body = safe_body(request)
     except ValueError as e:
-        return _json_err(str(e), 400)
+        return json_err(str(e), code="BAD_JSON")
 
     new_password = (body.get("new_password") or "").strip()
     if len(new_password) < 8:
-        return _json_err("Password must be at least 8 characters.", 400)
+        return json_err("Password must be at least 8 characters.", code="VALIDATION")
 
     account = get_object_or_404(UserAccount, email=email)
 
     try:
         rec = OTPVerification.objects.get(email=email)
     except OTPVerification.DoesNotExist:
-        return _json_err("Please request and verify an OTP before changing password.", 400)
+        return json_err("Please request and verify an OTP before changing password.", code="OTP_NOT_FOUND")
 
     if _expired(rec.created_at):
-        return _json_err("OTP expired. Please request a new one.", 400)
+        return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
     if not rec.is_active:
-        return _json_err("OTP not verified yet.", 400)
+        return json_err("OTP not verified yet.", code="OTP_NOT_VERIFIED")
 
     try:
         with transaction.atomic():
             account.password = make_password(new_password)
             account.save(update_fields=["password"])
             rec.delete()  # consume OTP once used
-    except Exception as e:
-        return _json_err(f"Unable to change password right now: {e}", 500)
+    except Exception:
+        return json_err("Unable to change password right now.", code="UPDATE_FAIL", status=500)
 
-    return JsonResponse({"status": "ok", "message": "Password changed successfully."})
+    return json_ok("Password changed successfully.")
+
+@require_http_methods(["POST"])
+@csrf_protect
+def request_otp(request):
+    try:
+        data = safe_body(request)
+    except ValueError as e:
+        return json_err(str(e), code="BAD_JSON")
+
+    required = ["fullName", "email", "position", "password"]
+    missing = [f for f in required if not data.get(f)]
+    if missing:
+        return json_err(f"Missing: {', '.join(missing)}", code="MISSING_FIELDS")
+
+    full_name = data["fullName"].strip()
+    email = data["email"].strip().lower()
+    position = data["position"].strip()
+    password = data["password"]
+
+    errors = []
+    if not (3 <= len(full_name) <= 128): errors.append("Full name must be 3–128 characters.")
+    if not (5 <= len(email) <= 254): errors.append("Email must be 5–254 characters.")
+    if not (3 <= len(position) <= 64): errors.append("Position must be 3–64 characters.")
+    if not (8 <= len(password) <= 128): errors.append("Password must be 8–128 characters.")
+    try:
+        validate_email(email)
+    except Exception:
+        errors.append("Invalid email format.")
+    if errors:
+        return json_err("Validation failed.", code="VALIDATION", errors=errors)
+
+    if UserAccount.objects.filter(email=email).exists() or Archived_Account.objects.filter(email=email).exists():
+        return json_err("This email is already registered.", code="EMAIL_TAKEN", status=409)
+
+    # Throttle using cache.add with DB fallback
+    should_throttle, remaining = _throttle(email, "create_account", seconds=60)
+    if should_throttle:
+        msg = "Please wait before requesting another OTP."
+        if remaining:
+            msg = f"Please wait {remaining}s before requesting another OTP."
+        return json_err(msg, code="RATE_LIMIT", status=429)
+
+    otp = gen_otp()
+    try:
+        OTPVerification.objects.update_or_create(
+            email=email,
+            defaults={
+                "otp": otp,
+                "full_name": full_name,
+                "role": position,
+                "password": make_password(password),
+                "created_at": timezone.now(),
+                "is_active": False,
+            }
+        )
+    except Exception:
+        return json_err("Unable to persist OTP.", code="OTP_WRITE_FAIL", status=500)
+
+    try:
+        send_mail(
+            subject='Your TUPC OSA OTP Code',
+            message=f'Your One-Time Password is: {otp}\nThis OTP expires in {OTP_TTL_MINUTES} minutes.',
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except (BadHeaderError, Exception):
+        if getattr(settings, "DEBUG", False):
+            return json_ok("OTP generated (DEBUG).", dev_otp=otp)
+        return json_err("Failed to send OTP email.", code="EMAIL_SEND_FAIL", status=502)
+
+    return json_ok("OTP sent.")
+
+@require_http_methods(["POST"])
+@csrf_protect
+def verify_otp(request):
+    try:
+        data = safe_body(request)
+    except ValueError as e:
+        return json_err(str(e), code="BAD_JSON")
+
+    email = (data.get("email") or "").strip().lower()
+    otp_input = (data.get("otp") or "").strip()
+
+    if not email or not otp_input:
+        return json_err("Email and OTP are required.", code="MISSING_FIELDS")
+
+    try:
+        rec = OTPVerification.objects.get(email=email)
+    except OTPVerification.DoesNotExist:
+        return json_err("No OTP record found for this email.", code="OTP_NOT_FOUND", status=404)
+
+    if _expired(rec.created_at):
+        return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
+
+    if rec.otp.strip() != otp_input:
+        return json_err("Incorrect OTP.", code="OTP_INCORRECT")
+
+    try:
+        with transaction.atomic():
+            UserAccount.objects.create(
+                full_name=rec.full_name,
+                email=rec.email,
+                role=rec.role,
+                password=rec.password,  # already hashed
+                is_active=True,
+            )
+            rec.delete()
+    except IntegrityError:
+        return json_err("Account already exists.", code="EMAIL_TAKEN", status=409)
+    except Exception:
+        return json_err("Could not create account.", code="CREATE_FAIL", status=500)
+
+    return json_ok("Account successfully created!")
+
+@require_http_methods(["POST"])
+@csrf_protect
+def email_change_request(request):
+    try:
+        body = safe_body(request)
+    except ValueError as e:
+        return json_err(str(e), code="BAD_JSON")
+
+    current_email = (body.get("current_email") or "").strip().lower()
+    new_email     = (body.get("new_email") or "").strip().lower()
+
+    if not current_email or not new_email:
+        return json_err("Both current_email and new_email are required.", code="MISSING_FIELDS")
+    if current_email == new_email:
+        return json_err("New email must be different from current email.", code="SAME_EMAIL")
+
+    account = get_object_or_404(UserAccount, email=current_email)
+
+    if UserAccount.objects.filter(email=new_email).exists():
+        return json_err("That email is already in use.", code="EMAIL_TAKEN", status=409)
+
+    otp = gen_otp()
+    try:
+        obj, created = OTPVerification.objects.get_or_create(
+            email=new_email,
+            defaults={
+                "otp": otp,
+                "full_name": account.full_name,
+                "role": account.role,
+                "password": account.password,
+                "is_active": False,
+                "created_at": timezone.now(),
+            }
+        )
+        if not created:
+            obj.otp = otp
+            obj.full_name = account.full_name
+            obj.role = account.role
+            obj.password = account.password
+            obj.is_active = False
+            obj.created_at = timezone.now()
+            obj.save(update_fields=["otp", "full_name", "role", "password", "is_active", "created_at"])
+    except Exception:
+        return json_err("Unable to persist OTP.", code="OTP_WRITE_FAIL", status=500)
+
+    try:
+        send_mail(
+            subject="Email Change OTP",
+            message=f"Your verification code is: {otp}\nIt expires in {OTP_TTL_MINUTES} minutes.",
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=[new_email],
+            fail_silently=False,
+        )
+    except (BadHeaderError, Exception):
+        if getattr(settings, "DEBUG", False):
+            return json_ok("OTP generated (DEBUG).", dev_otp=otp)
+        return json_err("Failed to send OTP.", code="EMAIL_SEND_FAIL", status=502)
+
+    return json_ok("OTP sent to new email.")
+
+@require_http_methods(["POST"])
+@csrf_protect
+def email_change_verify(request):
+    try:
+        body = safe_body(request)
+    except ValueError as e:
+        return json_err(str(e), code="BAD_JSON")
+
+    new_email = (body.get("new_email") or "").strip().lower()
+    otp       = (body.get("otp") or "").strip()
+    if not new_email or not otp:
+        return json_err("new_email and otp are required.", code="MISSING_FIELDS")
+
+    try:
+        rec = OTPVerification.objects.get(email=new_email)
+    except OTPVerification.DoesNotExist:
+        return json_err("No OTP request found for that email.", code="OTP_NOT_FOUND", status=404)
+    if _expired(rec.created_at):
+        return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
+    if rec.otp != otp:
+        return json_err("Invalid OTP.", code="OTP_INCORRECT")
+
+    rec.is_active = True
+    rec.save(update_fields=["is_active"])
+    return json_ok("OTP verified.")
+
+@require_http_methods(["POST"])
+@csrf_protect
+def email_change_apply(request):
+    try:
+        body = safe_body(request)
+    except ValueError as e:
+        return json_err(str(e), code="BAD_JSON")
+
+    current_email = (body.get("current_email") or "").strip().lower()
+    new_email     = (body.get("new_email") or "").strip().lower()
+    if not current_email or not new_email:
+        return json_err("Both current_email and new_email are required.", code="MISSING_FIELDS")
+
+    account = get_object_or_404(UserAccount, email=current_email)
+    try:
+        rec = OTPVerification.objects.get(email=new_email)
+    except OTPVerification.DoesNotExist:
+        return json_err("No OTP verification found for that email.", code="OTP_NOT_FOUND", status=404)
+
+    if _expired(rec.created_at):
+        return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
+    if not rec.is_active:
+        return json_err("OTP not verified yet.", code="OTP_NOT_VERIFIED")
+    if UserAccount.objects.filter(email=new_email).exclude(pk=account.pk).exists():
+        return json_err("That email is already in use.", code="EMAIL_TAKEN", status=409)
+
+    try:
+        with transaction.atomic():
+            account.email = new_email
+            account.save(update_fields=["email"])
+            rec.delete()
+    except Exception:
+        return json_err("Failed to update email.", code="UPDATE_FAIL", status=500)
+
+    return json_ok("Email updated successfully.", email=new_email)
+#-------------------------------------------------#
+
+#---------------Manage Reports--------------------#
+
+@role_required(['admin'])
+def admin_report_view(request):
+    from django.utils import timezone
+    server_today = timezone.localdate()  # server-side date (no client clock)
+    return render(
+        request,
+        'myapp/admin_report.html',
+        {'SERVER_TODAY': server_today.strftime('%Y-%m-%d')}
+    )
+    
+PH_LONG_LANDSCAPE = landscape((8.5 * inch, 13 * inch))
+
+styles = getSampleStyleSheet()
+STYLE_TITLE = styles['Title']
+STYLE_HEAD  = ParagraphStyle('Head', parent=styles['Heading5'], textColor=colors.whitesmoke)
+STYLE_CELL  = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=8, leading=10)
+
+def _full_name(first, middle, last, ext):
+    parts = [(first or "").strip()]
+    if (middle or "").strip():
+        parts.append(middle.strip())
+    parts.append((last or "").strip())
+    if (ext or "").strip():
+        parts.append(ext.strip())
+    return " ".join([p for p in parts if p])
+
+def _fmt_date(d):
+    if not d:
+        return ""
+    if hasattr(d, "date"):  # datetime
+        d = timezone.localtime(d).date()
+    return d.strftime("%m/%d/%Y")
+
+def _header_footer_factory(pdf_title: str):
+    generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
+
+    def _header_footer(canvas: Canvas, doc):
+        canvas.saveState()
+        page_w, page_h = doc.pagesize
+
+        # ------- layout knobs (easy to tune) -------
+        LEFT_X      = 40          # left margin for header text
+        TOP_GAP     = 60          # distance from top of page to first header line
+        LINE_STEP   = 14          # line spacing for the 3 header lines
+        IMG_MAX     = 56          # max logo box (increase/decrease logo size)
+        IMG_PAD     = 10          # space between logos
+        RIGHT_PAD   = 40          # right edge padding
+        RULE_GAP    = 12          # gap between the lowest element and the horizontal rule
+
+        # ------- left header text -------
+        header_top_y = page_h - TOP_GAP
+        canvas.setFillColor(colors.Color(0.45, 0.45, 0.45))
+        canvas.setFont("Helvetica", 10);      canvas.drawString(LEFT_X, header_top_y, "Republic of the Philippines")
+        canvas.setFont("Helvetica-Bold", 10); canvas.drawString(LEFT_X, header_top_y - LINE_STEP, "TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS")
+        canvas.setFont("Helvetica", 10);      canvas.drawString(LEFT_X, header_top_y - 2*LINE_STEP, "Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114")
+
+        # The lowest point used by the text block:
+        text_bottom_y = header_top_y - 2*LINE_STEP  # bottom of the 3rd line
+
+        # ------- right logos (ISO rightmost) -------
+        image_names = ["tuplogo.png", "bgph.png", "ISO.png"]  # static/myapp/images/...
+        right_x = page_w - RIGHT_PAD
+
+        # align logos vertically to the text block's vertical center
+        block_mid_y  = (header_top_y + text_bottom_y) / 2.0
+        # drawImage uses bottom-left origin; compute bottom so logo centers align to block_mid_y
+        def logo_bottom(h): return block_mid_y - (h / 2.0)
+
+        for name in reversed(image_names):
+            path = find_static(f"myapp/images/{name}")
+            if not path:
+                continue
+            try:
+                ir = ImageReader(path)
+                iw, ih = ir.getSize()
+                scale = IMG_MAX / max(iw, ih)  # preserve aspect ratio
+                w, h = iw * scale, ih * scale
+                right_x -= w
+                canvas.drawImage(ir, right_x, logo_bottom(h), width=w, height=h,
+                                 preserveAspectRatio=True, mask='auto')
+                right_x -= IMG_PAD
+            except Exception:
+                pass
+
+        # ------- thin rule safely below both text and logos -------
+        # take whichever goes lower: the text bottom or the logos bottom
+        header_bottom_y = min(text_bottom_y, logo_bottom(IMG_MAX))
+        rule_y = header_bottom_y - RULE_GAP
+        canvas.setStrokeColor(colors.HexColor("#CCCCCC")); canvas.setLineWidth(0.5)
+        canvas.line(36, rule_y, page_w - 36, rule_y)
+
+        # ------- footer -------
+        canvas.setFillColor(colors.HexColor("#666666"))
+        canvas.setFont("Helvetica", 8)
+        canvas.drawString(40, 30, f"Generated on: {generated_on}")
+        canvas.drawRightString(page_w - 40, 30,
+                               "This report was generated automatically by the Student Violation System.")
+
+        # PDF metadata (fixes Chrome “(anonymous)” title)
+        canvas.setTitle(pdf_title)
+        canvas.setAuthor("Technological University of the Philippines - Cavite Campus")
+        canvas.setCreator("Student Violation System")
+        canvas.setSubject(pdf_title)
+
+        canvas.restoreState()
+
+    return _header_footer
+
+def _start_doc(response, title_text):
+    doc = BaseDocTemplate(
+        response, pagesize=PH_LONG_LANDSCAPE,
+        leftMargin=36, rightMargin=36, topMargin=105, bottomMargin=54
+    )
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
+    doc.addPageTemplates([PageTemplate(id='normal', frames=[frame],
+                                       onPage=_header_footer_factory(title_text))])
+    elements = [Paragraph(title_text, STYLE_TITLE), Spacer(1, 8)]
+    return doc, elements
+
+def _table(rows, col_widths):
+    cardinal_red = colors.HexColor("#8C1515")
+    light_gray   = colors.HexColor("#F2F2F2")
+    mid_gray     = colors.HexColor("#E6E6E6")
+
+    tbl = Table(rows, colWidths=col_widths, repeatRows=1)
+    cmds = [
+        ('BACKGROUND', (0,0), (-1,0), cardinal_red),
+        ('TEXTCOLOR',  (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN',      (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
+        ('FONTNAME',   (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE',   (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING',(0,0),(-1,0),10),
+        ('TOPPADDING', (0,0), (-1,0), 8),
+        ('GRID',       (0,0), (-1,-1), 0.5, colors.black),
+    ]
+    for i in range(1, len(rows)):
+        cmds.append(('BACKGROUND', (0,i), (-1,i), light_gray if i % 2 else mid_gray))
+    tbl.setStyle(TableStyle(cmds))
+    return tbl
+
+def _parse_date(s):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+def _date_range(qs, field_name, start_date, end_date):
+    """
+    Inclusive date range:
+      - DateField:     [start_date .. end_date]
+      - DateTimeField: [start_date 00:00:00 .. end_date 23:59:59.999999] in server TZ
+    If only one bound is provided, it becomes a single-day range.
+    """
+    start = _parse_date(start_date)
+    end   = _parse_date(end_date)
+
+    if start and not end: end = start
+    if end and not start: start = end
+    if not (start and end):
+        return qs  # nothing to filter
+
+    field = qs.model._meta.get_field(field_name)
+
+    if isinstance(field, DateTimeField):
+        tz = timezone.get_default_timezone()
+        start_dt = timezone.make_aware(datetime.combine(start, time.min), tz)
+        end_dt   = timezone.make_aware(datetime.combine(end,   time.max), tz)
+        return qs.filter(**{f"{field_name}__range": (start_dt, end_dt)})
+    elif isinstance(field, DateField):
+        return qs.filter(**{f"{field_name}__range": (start, end)})
+    else:
+        return qs
+
+@role_required(['admin'])
+def admin_violation_report_pdf(request):
+    start_date = request.GET.get('start_date', '').strip()
+    end_date   = request.GET.get('end_date', '').strip()
+    vtype      = request.GET.get('violation_type', '').strip()
+    status     = request.GET.get('status', '').strip()
+    severity   = request.GET.get('severity', '').strip()
+
+    qs = Violation.objects.all().order_by('violation_date', 'violation_time')
+    if vtype:    qs = qs.filter(violation_type=vtype)
+    if status:   qs = qs.filter(status=status)
+    if severity: qs = qs.filter(severity=severity)
+    qs = _date_range(qs, 'violation_date', start_date, end_date)
+
+    resp = HttpResponse(content_type='application/pdf')
+    resp['Content-Disposition'] = 'inline; filename="violation_report.pdf"'
+    doc, elements = _start_doc(resp, f"VIOLATION REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+
+    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'STUDENT ID', 'PROGRAM', 'SEVERITY', 'VIOLATION TYPE', 'STATUS']
+    colw = [doc.width*0.12, doc.width*0.26, doc.width*0.14, doc.width*0.18, doc.width*0.08, doc.width*0.14, doc.width*0.08]
+    rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
+
+    for v in qs:
+        name = _full_name(v.first_name, v.middle_initial, v.last_name, v.extension_name)
+        rows.append([
+            Paragraph(_fmt_date(v.violation_date), STYLE_CELL),
+            Paragraph(name, STYLE_CELL),
+            Paragraph(v.student_id, STYLE_CELL),
+            Paragraph(v.program_course, STYLE_CELL),
+            Paragraph(v.severity.title(), STYLE_CELL),
+            Paragraph(dict(Violation.VIOLATION_TYPES).get(v.violation_type, v.violation_type), STYLE_CELL),
+            Paragraph(v.status, STYLE_CELL),
+        ])
+
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
+
+    elements.append(_table(rows, colw))
+    doc.build(elements)
+    return resp
+
+@role_required(['admin'])
+def admin_good_moral_report_pdf(request):
+    start_date = request.GET.get('start_date', '').strip()
+    end_date   = request.GET.get('end_date', '').strip()
+    status     = request.GET.get('status', '').strip()
+
+    qs = GoodMoralRequest.objects.all().order_by('submitted_at')
+    if status:
+        qs = qs.filter(status=status)
+    qs = _date_range(qs, 'submitted_at', start_date, end_date)
+
+    resp = HttpResponse(content_type='application/pdf')
+    resp['Content-Disposition'] = 'inline; filename="good_moral_report.pdf"'
+    doc, elements = _start_doc(resp, f"GOOD MORAL REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+
+    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'SEX', 'STUDENT ID', 'PROGRAM', 'PURPOSE', 'STATUS']
+    colw = [doc.width*0.12, doc.width*0.28, doc.width*0.06, doc.width*0.14, doc.width*0.16, doc.width*0.14, doc.width*0.10]
+    rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
+
+    for r in qs:
+        name = _full_name(r.first_name, r.middle_name, r.surname, r.ext)
+        rows.append([
+            Paragraph(_fmt_date(r.submitted_at), STYLE_CELL),
+            Paragraph(name, STYLE_CELL),
+            Paragraph(r.sex or "", STYLE_CELL),
+            Paragraph(r.student_id, STYLE_CELL),
+            Paragraph(r.program, STYLE_CELL),
+            Paragraph(r.purpose, STYLE_CELL),
+            Paragraph(r.status, STYLE_CELL),
+        ])
+
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
+
+    elements.append(_table(rows, colw))
+    doc.build(elements)
+    return resp
+
+@role_required(['admin'])
+def admin_surrender_id_report_pdf(request):
+    start_date = request.GET.get('start_date', '').strip()
+    end_date   = request.GET.get('end_date', '').strip()
+    reason     = request.GET.get('reason', '').strip()
+
+    qs = IDSurrenderRequest.objects.all().order_by('submitted_at')
+    if reason:
+        qs = qs.filter(reason=reason)
+    qs = _date_range(qs, 'submitted_at', start_date, end_date)
+
+    resp = HttpResponse(content_type='application/pdf')
+    resp['Content-Disposition'] = 'inline; filename="surrender_id_report.pdf"'
+    doc, elements = _start_doc(resp, f"SURRENDER ID REQUEST REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+
+    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'STUDENT ID', 'PROGRAM', 'REASON']
+    colw = [doc.width*0.14, doc.width*0.34, doc.width*0.18, doc.width*0.20, doc.width*0.14]
+    rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
+
+    for r in qs:
+        name = _full_name(r.first_name, r.middle_name, r.surname, r.extension)
+        rows.append([
+            Paragraph(_fmt_date(r.submitted_at), STYLE_CELL),
+            Paragraph(name, STYLE_CELL),
+            Paragraph(r.student_number, STYLE_CELL),
+            Paragraph(r.program, STYLE_CELL),
+            Paragraph(r.reason, STYLE_CELL),
+        ])
+
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
+
+    elements.append(_table(rows, colw))
+    doc.build(elements)
+    return resp
+
+@role_required(['admin'])
+def admin_clearance_report_pdf(request):
+    start_date  = request.GET.get('start_date', '').strip()
+    end_date    = request.GET.get('end_date', '').strip()
+    stakeholder = request.GET.get('stakeholder', '').strip()
+    client_type = request.GET.get('client_type', '').strip()
+
+    qs = ClearanceRequest.objects.all().order_by('created_at')
+    if stakeholder: qs = qs.filter(stakeholder=stakeholder)
+    if client_type: qs = qs.filter(client_type=client_type)
+    qs = _date_range(qs, 'created_at', start_date, end_date)
+
+    resp = HttpResponse(content_type='application/pdf')
+    resp['Content-Disposition'] = 'inline; filename="clearance_request_report.pdf"'
+    doc, elements = _start_doc(resp, f"CLEARANCE REQUEST REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+
+    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'STUDENT ID', 'PROGRAM',
+            'CLIENT TYPE', 'STAKEHOLDER', 'REASON']
+
+    # sums to 1.00
+    colw = [
+        doc.width * 0.12,  # DATE
+        doc.width * 0.28,  # NAME
+        doc.width * 0.16,  # STUDENT ID
+        doc.width * 0.16,  # PROGRAM
+        doc.width * 0.10,  # CLIENT TYPE
+        doc.width * 0.12,  # STAKEHOLDER
+        doc.width * 0.06,  # REASON
+    ]
+    rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
+
+    for r in qs:
+        name = _full_name(r.first_name, r.middle_name, r.last_name, r.extension)
+        rows.append([
+            Paragraph(_fmt_date(r.created_at), STYLE_CELL),
+            Paragraph(name, STYLE_CELL),
+            Paragraph(r.student_number, STYLE_CELL),
+            Paragraph(r.program, STYLE_CELL),
+            Paragraph(r.client_type, STYLE_CELL),
+            Paragraph(r.stakeholder, STYLE_CELL),
+            Paragraph(r.purpose, STYLE_CELL),  # mapped to "REASON"
+        ])
+
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
+
+    elements.append(_table(rows, colw))
+    doc.build(elements)
+    return resp
+
+#-------------------------------------------------#
+
+#----------------Posting--------------------------#
 
 @role_required(['admin'])
 def ajax_delete_lostandfound(request, item_id):
@@ -1866,6 +2264,9 @@ def ajax_edit_scholarship(request, id):
         })
     return JsonResponse({'success': False}, status=400)
 
+#--------------------------------------------------#
+
+#-----------Good Moral Page------------------#
 DEFAULT_APPROVAL_MSG = (
     "Your Good Moral Certificate request has been approved.\n\n"
     "Please proceed to the Office of Student Affairs (OSA) to claim your request form.\n"
@@ -2152,6 +2553,9 @@ def batch_view_gmf(request):
     resp["Content-Length"] = str(len(out.getvalue()))
     return resp
 
+#--------------------------------------------------#
+
+#------------Acknowledgement Receipt--------------------#
 @role_required(['admin'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
@@ -2262,6 +2666,9 @@ def admin_ackreq_decline(request, pk):
     messages.success(request, "Request declined and email sent.")
     return redirect("admin_view_ackreq", pk=req.pk)
 
+#--------------------------------------------------#
+
+#---------------violation page-------------#
 @role_required(['admin'])
 @transaction.atomic
 def admin_decline_violation(request, violation_id):
@@ -2359,6 +2766,9 @@ def mark_apology_settled(request, violation_id):
     messages.success(request, "✅ Apology Letter marked as received.")
     return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
 
+#--------------------------------------------------#
+
+#---------------community service-----------------#
 @role_required(['admin'])
 @transaction.atomic
 def cs_create_or_adjust(request):
@@ -2490,85 +2900,6 @@ def cs_scan_time_out(request, case_id):
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
 
+#--------------------------------------------------#
 
-
-
-
-
-
-
-################################ELECTIONS   
-@csrf_exempt
-def add_candidate(request):
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        section = request.POST.get('section')
-        tupc_id = request.POST.get('tupc_id')
-        position = request.POST.get('position')
-        academic_year = request.POST.get('academic_year')
-        photo = request.FILES.get('photo')
-
-        if not all([name, section, tupc_id, position, academic_year, photo]):
-            return JsonResponse({'status': 'error', 'message': 'Missing fields'}, status=400)
-
-        # ✅ Check if the TUPC ID already exists for this academic year
-        existing = Candidate.objects.filter(tupc_id=tupc_id, academic_year=academic_year).exists()
-        if existing:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'TUPC ID "{tupc_id}" is already registered for academic year {academic_year}.'
-            }, status=409)
-
-        # 🆗 Safe to create
-        original_name = photo.name
-        extension = os.path.splitext(original_name)[1]
-        unique_filename = f"{uuid.uuid4()}{extension}"
-
-        candidate = Candidate.objects.create(
-            name=name,
-            section=section,
-            tupc_id=tupc_id,
-            position=position,
-            academic_year=academic_year
-        )
-        candidate.photo.save(unique_filename, photo)
-        candidate.save()
-
-        return JsonResponse({'status': 'success', 'candidate_id': candidate.id})
-
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-def get_candidates(request):
-    if request.method == 'GET':
-        candidates = Candidate.objects.all().order_by('-academic_year', 'position')
-        data = []
-        for c in candidates:
-            image_url = c.photo.url if c.photo and c.photo.name else static('myapp/images/default.png')
-            data.append({
-                'id': c.id,
-                'name': c.name,
-                'section': c.section,
-                'tupc_id': c.tupc_id,
-                'position': c.position,
-                'academic_year': str(c.academic_year),  # optional, if this is a model
-                'image': image_url
-            })
-        return JsonResponse({'status': 'success', 'candidates': data})
-    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
-
-@csrf_exempt
-def delete_candidate(request, candidate_id):
-    if request.method == 'DELETE':
-        try:
-            candidate = Candidate.objects.get(id=candidate_id)
-            candidate.delete()
-            return JsonResponse({'status': 'success'})
-        except Candidate.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Candidate not found'}, status=404)
-
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-def get_academic_years(request):
-    years = Candidate.objects.values_list('academic_year', flat=True).distinct()
-    return JsonResponse({'status': 'success', 'academic_years': list(years)})
 

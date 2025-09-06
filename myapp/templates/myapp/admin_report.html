@@ -95,516 +95,405 @@
 <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
 
-  <style>
-    /* Highlight on focus */
-    .input-group-sm .form-control:focus {
-      border: 2px solid #440207;
-      box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1);
-    }
+<style>
+  /* Highlight on focus */
+  .input-group-sm .form-control:focus {
+    border: 2px solid #440207;
+    box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1);
+  }
 
-    .input-group-sm .form-control:hover {
-      border: 1px solid #440207;
-    }
+  .input-group-sm .form-control:hover {
+    border: 1px solid #440207;
+  }
 
-    .input-group-sm:focus-within .input-group-text {
-      background-color: #f8f0f0;
-      border-color: #440207;
-      color: #440207;
-    }
+  .input-group-sm:focus-within .input-group-text {
+    background-color: #f8f0f0;
+    border-color: #440207;
+    color: #440207;
+  }
 
-    /* Hide all tables initially */
-    .report-table {
-      display: none;
-    }
+  /* Hide all tables initially */
+  .report-table {
+    display: none;
+  }
 
 
-    /* Date pickers style */
-    input[type="date"] {
-      border: 2px solid #440207; 
-      border-radius: 4px;
-      padding: 6px 10px;
-      transition: border 0.2s, box-shadow 0.2s;
-    }
+  /* Date pickers style */
+  input[type="date"] {
+    border: 2px solid #440207; 
+    border-radius: 4px;
+    padding: 6px 10px;
+    transition: border 0.2s, box-shadow 0.2s;
+  }
 
-    /* Hover effect */
-    input[type="date"]:hover {
-      border: 3px solid #440207;
-    }
+  /* Hover effect */
+  input[type="date"]:hover {
+    border: 3px solid #440207;
+  }
 
-    /* Focus effect */
-    input[type="date"]:focus {
-      border: 3px solid #440207;
-      box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
-      outline: none;
-    }
+  /* Focus effect */
+  input[type="date"]:focus {
+    border: 3px solid #440207;
+    box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
+    outline: none;
+  }
 
-    /* Optional: make label color match focus */
-    input[type="date"]:focus + label {
-      color: #440207;
-    }
+  /* Optional: make label color match focus */
+  input[type="date"]:focus + label {
+    color: #440207;
+  }
 
-  </style>
+</style>
 </head>
 <body>
 <div class="mt-4 ps-4 pe-4" style="margin-left: 260px; min-height: 100vh;">  
 
-    <!-- Header -->
-    <div class="election-header text-white mt-4"
-        style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
-                padding: 50px; min-height: 100px;
-                border-radius: 20px; margin-bottom: 20px; margin-top:1px;">
-      <h2 class="fw-bold mb-0">
-        <i class="bi bi-file-earmark-text me-2"></i>
-        Reports
-      </h2>
-      <p class="mb-0">Monitor and view reports.</p>
-    </div>
+<!-- Header -->
+<div class="election-header text-white mt-4"
+    style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
+            padding: 50px; min-height: 100px;
+            border-radius: 20px; margin-bottom: 20px; margin-top:1px;">
+  <h2 class="fw-bold mb-0">
+    <i class="bi bi-file-earmark-text me-2"></i>
+    Reports
+  </h2>
+  <p class="mb-0">Monitor and view reports.</p>
+  <div id="server-meta" data-server-today="{{ SERVER_TODAY }}"></div>
+</div>
 
-    <div class="card shadow-sm border-0 rounded-4 p-4">
+<div class="card shadow-sm border-0 rounded-4 p-4">
 
-      <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
 
-        <!-- Single Select -->
-        <div>
-          <select id="reportSelect" class="form-select text-center">
-            <option value="" disabled selected> -- Select Option --</option>
-            <option value="goodMoralTable">Good Moral</option>
-            <option value="ackReceiptTable">Acknowledgement Receipt</option>
-            <option value="clearanceTable">Clearance</option>
-            <option value="violationsTable">Violations</option>
-            <option value="csTable">Community Service</option>
-          </select>
-        </div>
-       
-      </div>
+  <!-- Single Select -->
+  <div>
+    <select id="reportSelect" class="form-select text-center">
+      <option value="" disabled selected> -- Select Option --</option>
+      <option value="goodMoralTable">Good Moral</option>
+      <option value="ackReceiptTable">Acknowledgement Receipt</option>
+      <option value="clearanceTable">Clearance</option>
+      <option value="violationsTable">Violations</option>
+    </select>
+  </div>
+  
+</div>
 
-      <!-- Selected Report Display -->
-      <div id="selectedReportName" class="fw-bold text-center mb-3 text-secondary">
-        No report selected.
-      </div>
-
-
+<!-- Selected Report Display -->
+<div id="selectedReportName" class="fw-bold text-center mb-3 text-secondary">
+  No report selected.
+</div>
 
 <!-- ##########################################################    GENERATE REPORT  SECTION    ######################################################--> 
 
 <!-- ########################## GOOD MORAL REPORT ##########################-->
      
-    <div id="goodMoralTable" class="card shadow-sm rounded border report-table" style="display: block;">
-      <div class="container-fluid p-4">
-        <h5 class="fw-bold mb-1">
-          <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>Generate Good Moral Reports
-        </h5>
-        <small class="text-muted">Select a date range to generate the report.</small>
-        <hr class="border-dark"><br>
+<div id="goodMoralTable" class="card shadow-sm rounded border report-table" style="display: block;">
+  <div class="container-fluid p-4">
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>Generate Good Moral Reports
+    </h5>
+    <small class="text-muted">Select a date range to generate the report.</small>
+    <hr class="border-dark"><br>
 
-        <!-- Date Pickers -->
-        <div class="row g-3 align-items-end mb-3 justify-content-center text-center">
-          <div class="col-md-5">
-            <label for="fromDate" class="form-label"><strong>From:</strong></label>
-            <input type="date" class="form-control" id="fromDate" required>
-          </div>
-          <div class="col-md-5">
-            <label for="toDate" class="form-label"><strong>To:</strong></label>
-            <input type="date" class="form-control" id="toDate" required>
-          </div>
-        </div>
-
-        <!-- Date Summary -->
-        <div class="mb-3">
-          <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
-          <div class="p-3 bg-light rounded border" id="goodMoralSummary">
-            No dates selected.
-          </div>
-        </div>
-
-        <!-- Generate Button -->
-        <div class="text-center mt-3">
-          <button type="button" id="generateBtn" class="btn btn-dark px-4" disabled
-                  style="background-color: #440207; padding: 10px; font-size: 20px;"
-                  onmouseover="if(!this.disabled){this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';}"
-                  onmouseout="if(!this.disabled){this.style.backgroundColor='#440207'; this.style.borderColor='#440207';}">
-            -- Select an option first --
-          </button>
-        </div>
-
+    <!-- Date Pickers -->
+    <div class="row g-3 align-items-end mb-3 justify-content-center text-center">
+      <div class="col-md-5">
+        <label for="fromDate" class="form-label"><strong>From:</strong></label>
+        <input type="date" class="form-control" id="fromDate" required>
+      </div>
+      <div class="col-md-5">
+        <label for="toDate" class="form-label"><strong>To:</strong></label>
+        <input type="date" class="form-control" id="toDate" required>
       </div>
     </div>
 
+    <!-- Date Summary -->
+    <div class="mb-3">
+      <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
+      <div class="p-3 bg-light rounded border" id="goodMoralSummary">
+        No dates selected.
+      </div>
+    </div>
 
-
-
-
-
+    <!-- Generate Button -->
+    <div class="text-center mt-3">
+      <button type="button" id="goodMoralOpenModal" class="btn btn-dark px-4" disabled
+              data-bs-toggle="modal" data-bs-target="#goodMoralModal"
+              style="background-color: #440207; padding: 10px; font-size: 20px;"
+              onmouseover="if(!this.disabled){this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';}"
+              onmouseout="if(!this.disabled){this.style.backgroundColor='#440207'; this.style.borderColor='#440207';}">
+        <i class="bi bi-graph-up-arrow me-2"></i> Generate Good Moral Report
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ########################## ACKNOWLEDGEMENT RECEIPT REPORT  ##########################-->
 
-    <div id="ackReceiptTable" class="card shadow-sm rounded border report-table">
-      <div class="container-fluid p-4">
+<div id="ackReceiptTable" class="card shadow-sm rounded border report-table">
+  <div class="container-fluid p-4">
 
-        <!-- Header -->
-        <h5 class="fw-bold mb-1">
-          <i class="bi bi-file-earmark-text-fill me-2" style="color: #440207;"></i>Generate Acknowledgement Receipt Reports
-        </h5>
-        <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
-        <hr class="border-dark"><br>
+    <!-- Header -->
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-file-earmark-text-fill me-2" style="color: #440207;"></i>Generate Acknowledgement Receipt Reports
+    </h5>
+    <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
+    <hr class="border-dark"><br>
 
-        <!-- Date Pickers -->
-        <div class="row g-3 align-items-end mb-3 justify-content-center text-center">
-          <div class="col-md-5">
-            <label for="fromDateAck" class="form-label"><strong>From:</strong></label>
-            <input type="date" class="form-control" id="fromDateAck" required>
-          </div>
-          <div class="col-md-5">
-            <label for="toDateAck" class="form-label"><strong>To:</strong></label>
-            <input type="date" class="form-control" id="toDateAck" required>
-          </div>
-        </div>
-
-        <!-- Date Summary -->
-        <div class="mb-3">
-          <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
-          <div class="p-3 bg-light rounded border" id="ackReceiptSummary">
-            No dates selected.
-          </div>
-        </div>
-
-        <!-- Generate Button -->
-        <div class="text-center">
-          <button type="button" class="btn btn-dark px-4" 
-                  data-bs-toggle="modal" data-bs-target="#ackReceiptModal"
-                  style="background-color: #440207; padding: 10px; font-size: 20px;"
-                  onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
-            <i class="bi bi-graph-up-arrow me-2"></i> Generate Acknowledgement Receipt Report
-          </button>
-        </div>
-
+    <!-- Date Pickers -->
+    <div class="row g-3 align-items-end mb-3 justify-content-center text-center">
+      <div class="col-md-5">
+        <label for="fromDateAck" class="form-label"><strong>From:</strong></label>
+        <input type="date" class="form-control" id="fromDateAck" required>
+      </div>
+      <div class="col-md-5">
+        <label for="toDateAck" class="form-label"><strong>To:</strong></label>
+        <input type="date" class="form-control" id="toDateAck" required>
       </div>
     </div>
 
-
-
-
-<!--  ########################## ClEARNACE REPORT  ########################## -->
-
-      <div id="clearanceTable" class="card shadow-sm rounded border report-table">
-        <div class="container-fluid p-4">
-
-          <!-- Header -->
-          <h5 class="fw-bold mb-1">
-            <i class="bi bi-check-circle-fill me-2" style="color: #440207;"></i>Generate Clearance Reports
-          </h5>
-          <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
-          <hr class="border-dark"><br>
-
-          <!-- Date Pickers -->
-          <div class="row g-3 align-items-end mb-3  justify-content-center text-center">
-            <div class="col-md-5">
-              <label for="fromDateClearance" class="form-label"><strong>From:</strong></label>
-              <input type="date" class="form-control" id="fromDateClearance" required>
-            </div>
-            <div class="col-md-5">
-              <label for="toDateClearance" class="form-label"><strong>To:</strong></label>
-              <input type="date" class="form-control" id="toDateClearance" required>
-            </div>
-          </div>
-
-          <!-- Date Summary -->
-          <div class="mb-3">
-            <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
-            <div class="p-3 bg-light rounded border" id="clearanceSummary">
-              No dates selected.
-            </div>
-          </div>
-
-          <!-- Generate Button -->
-          <div class="text-center">
-            <button type="button" class="btn btn-dark px-4" 
-                    data-bs-toggle="modal" data-bs-target="#clearanceModal"
-                    style="background-color: #440207; padding: 10px; font-size: 20px;"
-                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
-              <i class="bi bi-graph-up-arrow me-2"></i> Generate Clearance Report
-            </button>
-          </div>
-
-        </div>
+    <!-- Date Summary -->
+    <div class="mb-3">
+      <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
+      <div class="p-3 bg-light rounded border" id="ackReceiptSummary">
+        No dates selected.
       </div>
+    </div>
 
+    <!-- Generate Button -->
+    <div class="text-center">
+      <button type="button" id="ackReceiptOpenModal" class="btn btn-dark px-4" disabled
+              data-bs-toggle="modal" data-bs-target="#ackReceiptModal"
+              style="background-color: #440207; padding: 10px; font-size: 20px;"
+              onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+              onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
+        <i class="bi bi-graph-up-arrow me-2"></i> Generate Acknowledgement Receipt Report
+      </button>
+    </div>
 
+  </div>
+</div>
 
+<!--  ########################## CLEARANCE REPORT  ########################## -->
 
+<div id="clearanceTable" class="card shadow-sm rounded border report-table">
+  <div class="container-fluid p-4">
+
+    <!-- Header -->
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-check-circle-fill me-2" style="color: #440207;"></i>Generate Clearance Reports
+    </h5>
+    <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
+    <hr class="border-dark"><br>
+
+    <!-- Date Pickers -->
+    <div class="row g-3 align-items-end mb-3  justify-content-center text-center">
+      <div class="col-md-5">
+        <label for="fromDateClearance" class="form-label"><strong>From:</strong></label>
+        <input type="date" class="form-control" id="fromDateClearance" required>
+      </div>
+      <div class="col-md-5">
+        <label for="toDateClearance" class="form-label"><strong>To:</strong></label>
+        <input type="date" class="form-control" id="toDateClearance" required>
+      </div>
+    </div>
+
+    <!-- Date Summary -->
+    <div class="mb-3">
+      <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
+      <div class="p-3 bg-light rounded border" id="clearanceSummary">
+        No dates selected.
+      </div>
+    </div>
+
+    <!-- Generate Button -->
+    <div class="text-center">
+      <button type="button" id="clearanceOpenModal" class="btn btn-dark px-4" disabled
+              data-bs-toggle="modal" data-bs-target="#clearanceModal"
+              style="background-color: #440207; padding: 10px; font-size: 20px;"
+              onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+              onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
+        <i class="bi bi-graph-up-arrow me-2"></i> Generate Clearance Report
+      </button>
+    </div>
+
+  </div>
+</div>
 
 <!--  ########################## VIOLATION REPORT  ########################## -->
 
-      <div id="violationsTable" class="card shadow-sm rounded border report-table">
-        <div class="container-fluid p-4">
+<div id="violationsTable" class="card shadow-sm rounded border report-table">
+  <div class="container-fluid p-4">
 
-          <!-- Header -->
-          <h5 class="fw-bold mb-1">
-            <i class="bi bi-exclamation-triangle-fill me-2" style="color: #440207;"></i>Generate Violation Reports
-          </h5>
-          <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
-          <hr class="border-dark"><br>
+    <!-- Header -->
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-exclamation-triangle-fill me-2" style="color: #440207;"></i>Generate Violation Reports
+    </h5>
+    <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
+    <hr class="border-dark"><br>
 
-          <!-- Date Pickers -->
-          <div class="row g-3 align-items-end mb-3 justify-content-center text-center ">
-            <div class="col-md-5">
-              <label for="fromDateViolation" class="form-label"><strong>From:</strong></label>
-              <input type="date" class="form-control" id="fromDateViolation" required>
-            </div>
-            <div class="col-md-5">
-              <label for="toDateViolation" class="form-label"><strong>To:</strong></label>
-              <input type="date" class="form-control" id="toDateViolation" required>
-            </div>
-          </div>
-
-          <!-- Date Summary -->
-          <div class="mb-3">
-            <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
-            <div class="p-3 bg-light rounded border" id="violationSummary">
-              No dates selected.
-            </div>
-          </div>
-
-          <!-- Generate Button -->
-          <div class="text-center">
-            <button type="button" class="btn btn-dark px-4" 
-                    data-bs-toggle="modal" data-bs-target="#violationModal"
-                    style="background-color: #440207; padding: 10px; font-size: 20px;"
-                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
-              <i class="bi bi-graph-up-arrow me-2"></i> Generate Violation Report
-            </button>
-          </div>
-
-        </div>
+    <!-- Date Pickers -->
+    <div class="row g-3 align-items-end mb-3 justify-content-center text-center ">
+      <div class="col-md-5">
+        <label for="fromDateViolation" class="form-label"><strong>From:</strong></label>
+        <input type="date" class="form-control" id="fromDateViolation" required>
       </div>
-
-
-
-
-
-<!--  ########################## COMMUNITY SERVICE  ########################## -->
-
-    <div id="csTable" class="card shadow-sm rounded border report-table">
-      <div class="container-fluid p-4">
-
-        <!-- Header -->
-        <h5 class="fw-bold mb-1">
-          <i class="bi bi-people-fill me-2" style="color: #440207;"></i>Generate Community Service Reports
-        </h5>
-        <small class="text-muted d-block mb-3">Select a date range to generate the report.</small>
-        <hr class="border-dark"><br>
-
-        <!-- Date Pickers -->
-        <div class="row g-3 align-items-end mb-3 justify-content-center text-center">
-          <div class="col-md-5">
-            <label for="fromDateCS" class="form-label"><strong>From:</strong></label>
-            <input type="date" class="form-control" id="fromDateCS" required>
-          </div>
-          <div class="col-md-5">
-            <label for="toDateCS" class="form-label"><strong>To:</strong></label>
-            <input type="date" class="form-control" id="toDateCS" required>
-          </div>
-        </div>
-
-        <!-- Date Summary -->
-        <div class="mb-3">
-          <p class="fw-semibold text-muted mb-1"> Dates Selected for Report</p>
-          <div class="p-3 bg-light rounded border" id="csSummary">
-            No dates selected.
-          </div>
-        </div>
-
-        <!-- Generate Button -->
-        <div class="text-center">
-          <button type="button" class="btn btn-dark px-4" 
-                  data-bs-toggle="modal" data-bs-target="#csModal"
-                  style="background-color: #440207; padding: 10px; font-size: 20px;"
-                  onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
-            <i class="bi bi-graph-up-arrow me-2"></i> Generate Community Service Report
-          </button>
-        </div>
-
+      <div class="col-md-5">
+        <label for="toDateViolation" class="form-label"><strong>To:</strong></label>
+        <input type="date" class="form-control" id="toDateViolation" required>
       </div>
     </div>
 
+    <!-- Date Summary -->
+    <div class="mb-3">
+      <p class="fw-semibold text-muted mb-1">Dates Selected for Report:</p>
+      <div class="p-3 bg-light rounded border" id="violationSummary">
+        No dates selected.
+      </div>
+    </div>
 
+    <!-- Generate Button -->
+    <div class="text-center">
+      <button type="button" id="violationOpenModal" class="btn btn-dark px-4" disabled
+              data-bs-toggle="modal" data-bs-target="#violationModal"
+              style="background-color: #440207; padding: 10px; font-size: 20px;"
+              onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+              onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
+        <i class="bi bi-graph-up-arrow me-2"></i> Generate Violation Report
+      </button>
+    </div>
 
+  </div>
+</div>
 
-
-
-
-    <!--  ########################## MODALS  ########################## -->
-
+<!--  ########################## MODALS  ########################## -->
 
 <!-- GOOD MORAL MODAL -->
-      <div class="modal fade" id="goodMoralModal" tabindex="-1" aria-labelledby="goodMoralModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
+<div class="modal fade" id="goodMoralModal" tabindex="-1" aria-labelledby="goodMoralModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
 
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold" id="goodMoralModalLabel">
-                <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
-                Good Moral Report
-              </h5>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body text-center">
-              <p>You are about to generate the <strong>Good Moral Report</strong> for the selected date range.</p>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-dark" style="background-color: #440207; border-color: #440207;">
-                Generate Report
-              </button>
-            </div>
-
-          </div>
-        </div>
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="goodMoralModalLabel">
+          <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
+          Good Moral Report
+        </h5>
       </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body text-center">
+        <p>You are about to generate the <strong>Good Moral Report</strong> for the selected date range.</p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-dark" id="goodMoralGenerateConfirm"
+                style="background-color: #440207; border-color: #440207;">
+          Generate Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <!-- ACKNOWLEDGEMENT RECEIPT MODAL -->
-      <div class="modal fade" id="ackReceiptModal" tabindex="-1" aria-labelledby="ackReceiptModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
+<div class="modal fade" id="ackReceiptModal" tabindex="-1" aria-labelledby="ackReceiptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
 
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold" id="ackReceiptModalLabel">
-                <i class="bi bi-file-earmark-text-fill me-2" style="color: #440207;"></i>
-                Acknowledgement Receipt Report
-              </h5>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body text-center">
-              <p>You are about to generate the <strong>Acknowledgement Receipt Report</strong> for the selected date range.</p>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-dark" style="background-color: #440207; border-color: #440207;">
-                Generate Report
-              </button>
-            </div>
-
-          </div>
-        </div>
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="ackReceiptModalLabel">
+          <i class="bi bi-file-earmark-text-fill me-2" style="color: #440207;"></i>
+          Acknowledgement Receipt Report
+        </h5>
       </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body text-center">
+        <p>You are about to generate the <strong>Acknowledgement Receipt Report</strong> for the selected date range.</p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-dark" id="ackReceiptModalConfirm"
+                style="background-color:#440207; border-color:#440207;">
+          Generate Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <!-- CLEARANCE MODAL -->
-      <div class="modal fade" id="clearanceModal" tabindex="-1" aria-labelledby="clearanceModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
+<div class="modal fade" id="clearanceModal" tabindex="-1" aria-labelledby="clearanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
 
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold" id="clearanceModalLabel">
-                <i class="bi bi-check-circle-fill me-2" style="color: #440207;"></i>
-                Clearance Report
-              </h5>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body text-center">
-              <p>You are about to generate the <strong>Clearance Report</strong> for the selected date range.</p>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-dark" style="background-color: #440207; border-color: #440207;">
-                Generate Report
-              </button>
-            </div>
-
-          </div>
-        </div>
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="clearanceModalLabel">
+          <i class="bi bi-check-circle-fill me-2" style="color: #440207;"></i>
+          Clearance Report
+        </h5>
       </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body text-center">
+        <p>You are about to generate the <strong>Clearance Report</strong> for the selected date range.</p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-dark" id="clearanceModalConfirm"
+                style="background-color:#440207; border-color:#440207;">
+          Generate Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <!-- VIOLATION MODAL -->
-      <div class="modal fade" id="violationModal" tabindex="-1" aria-labelledby="violationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
+<div class="modal fade" id="violationModal" tabindex="-1" aria-labelledby="violationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
 
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold" id="violationModalLabel">
-                <i class="bi bi-exclamation-triangle-fill me-2" style="color: #440207;"></i>
-                Violation Report
-              </h5>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body text-center">
-              <p>You are about to generate the <strong>Violation Report</strong> for the selected date range.</p>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-dark" style="background-color: #440207; border-color: #440207;">
-                Generate Report
-              </button>
-            </div>
-
-          </div>
-        </div>
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="violationModalLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2" style="color: #440207;"></i>
+          Violation Report
+        </h5>
       </div>
 
-
-<!-- COMMUNITY SERVICE MODAL -->
-      <div class="modal fade" id="csModal" tabindex="-1" aria-labelledby="csModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
-
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold" id="csModalLabel">
-                <i class="bi bi-people-fill me-2" style="color: #440207;"></i>
-                Community Service Report
-              </h5>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body text-center">
-              <p>You are about to generate the <strong>Community Service Report</strong>  for the selected date range.</p>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" class="btn btn-dark" style="background-color: #440207; border-color: #440207;">
-                Generate Report
-              </button>
-            </div>
-
-          </div>
-        </div>
+      <!-- Modal Body -->
+      <div class="modal-body text-center">
+        <p>You are about to generate the <strong>Violation Report</strong> for the selected date range.</p>
       </div>
 
+      <!-- Modal Footer -->
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-dark" id="violationModalConfirm"
+                style="background-color:#440207; border-color:#440207;">
+          Generate Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-
-
-
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-
-
-/* Sidebar Functions*/
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('show');
     }
@@ -646,114 +535,185 @@
       });
     });
 
-//////////////////////////// START HERE MAG ADD
 
-    // ####################### Select switching
-    document.getElementById("reportSelect").addEventListener("change", function () {
-      // Hide all report tables
-      document.querySelectorAll(".report-table").forEach(tbl => tbl.style.display = "none");
+</script>
 
-      // Show the selected table
-      const target = this.value;
-      if (target) {
-        document.getElementById(target).style.display = "block";
+<script>
+(() => {
+  const MIN_DATE = '1982-01-01';
+  const serverMeta = document.getElementById('server-meta');
+  const SERVER_TODAY = serverMeta?.dataset?.serverToday || new Date().toISOString().slice(0,10);
 
-        // Update selected report name display
-        const reportName = this.options[this.selectedIndex].text;
-        document.getElementById("selectedReportName").innerText = "Selected Report: " + reportName;
-      }
+  // Elements per report
+  const cfg = {
+    goodMoral: {
+      tableId: 'goodMoralTable',
+      from: document.getElementById('fromDate'),
+      to: document.getElementById('toDate'),
+      summary: document.getElementById('goodMoralSummary'),
+      openBtn: document.getElementById('goodMoralOpenModal'),
+      confirmBtn: document.getElementById('goodMoralGenerateConfirm'),
+      modalEl: document.getElementById('goodMoralModal'),
+      endpoint: "{% url 'admin_good_moral_report_pdf' %}",
+    },
+    ack: {
+      tableId: 'ackReceiptTable',
+      from: document.getElementById('fromDateAck'),
+      to: document.getElementById('toDateAck'),
+      summary: document.getElementById('ackReceiptSummary'),
+      openBtn: document.getElementById('ackReceiptOpenModal'),
+      confirmBtn: document.getElementById('ackReceiptModalConfirm'),
+      modalEl: document.getElementById('ackReceiptModal'),
+      endpoint: "{% url 'admin_surrender_id_report_pdf' %}",
+    },
+    clearance: {
+      tableId: 'clearanceTable',
+      from: document.getElementById('fromDateClearance'),
+      to: document.getElementById('toDateClearance'),
+      summary: document.getElementById('clearanceSummary'),
+      openBtn: document.getElementById('clearanceOpenModal'),
+      confirmBtn: document.getElementById('clearanceModalConfirm'),
+      modalEl: document.getElementById('clearanceModal'),
+      endpoint: "{% url 'admin_clearance_report_pdf' %}",
+    },
+    violations: {
+      tableId: 'violationsTable',
+      from: document.getElementById('fromDateViolation'),
+      to: document.getElementById('toDateViolation'),
+      summary: document.getElementById('violationSummary'),
+      openBtn: document.getElementById('violationOpenModal'),
+      confirmBtn: document.getElementById('violationModalConfirm'),
+      modalEl: document.getElementById('violationModal'),
+      endpoint: "{% url 'admin_violation_report_pdf' %}",
+    },
+  };
+
+  // Utility: clamp and validate dates
+  function clampDates(fromEl, toEl) {
+    fromEl.min = MIN_DATE;
+    fromEl.max = SERVER_TODAY;
+    toEl.min   = fromEl.value || MIN_DATE;
+    toEl.max   = SERVER_TODAY;
+
+    if (fromEl.value && fromEl.value < MIN_DATE) fromEl.value = MIN_DATE;
+    if (fromEl.value && fromEl.value > SERVER_TODAY) fromEl.value = SERVER_TODAY;
+    if (toEl.value && toEl.value < (fromEl.value || MIN_DATE)) toEl.value = fromEl.value || MIN_DATE;
+    if (toEl.value && toEl.value > SERVER_TODAY) toEl.value = SERVER_TODAY;
+
+    const valid = !!fromEl.value && !!toEl.value && fromEl.value >= MIN_DATE && toEl.value >= fromEl.value && toEl.value <= SERVER_TODAY;
+    return valid;
+  }
+
+  function fmtDate(yyyy_mm_dd) {
+    if (!yyyy_mm_dd) return '—';
+    const [y,m,d] = yyyy_mm_dd.split('-');
+    return `${m}/${d}/${y}`;
+  }
+
+  function updateSummary(summaryEl, fromVal, toVal) {
+    if (!fromVal && !toVal) {
+      summaryEl.textContent = 'No dates selected.';
+    } else {
+      summaryEl.textContent = `From: ${fmtDate(fromVal)}   To: ${fmtDate(toVal || fromVal)}`;
+    }
+  }
+
+  function buildUrl(endpoint, start, end) {
+    const params = new URLSearchParams({ start_date: start, end_date: end });
+    return `${endpoint}?${params.toString()}`;
+  }
+
+  // Report selector show/hide
+  const select = document.getElementById('reportSelect');
+  const selectedName = document.getElementById('selectedReportName');
+  const sections = {
+    goodMoralTable: document.getElementById(cfg.goodMoral.tableId),
+    ackReceiptTable: document.getElementById(cfg.ack.tableId),
+    clearanceTable: document.getElementById(cfg.clearance.tableId),
+    violationsTable: document.getElementById(cfg.violations.tableId),
+  };
+
+  function showOnly(tableId) {
+    Object.entries(sections).forEach(([id, el]) => {
+      if (el) el.style.display = (id === tableId) ? 'block' : 'none';
+    });
+    const labelMap = {
+      goodMoralTable: 'Good Moral',
+      ackReceiptTable: 'Acknowledgement Receipt',
+      clearanceTable: 'Clearance',
+      violationsTable: 'Violations'
+    };
+    selectedName.textContent = labelMap[tableId] ? `${labelMap[tableId]} selected.` : 'No report selected.';
+  }
+
+  // Enable/disable the OPEN buttons based on selection + valid dates
+  function refreshButtons() {
+    const selectedId = select.value;
+    // default: disable all
+    Object.values(cfg).forEach(c => { if (c.openBtn) c.openBtn.disabled = true; });
+
+    // enable only the selected report's open button if dates valid
+    const activeCfg =
+      selectedId === 'goodMoralTable' ? cfg.goodMoral :
+      selectedId === 'ackReceiptTable' ? cfg.ack :
+      selectedId === 'clearanceTable' ? cfg.clearance :
+      selectedId === 'violationsTable' ? cfg.violations : null;
+
+    if (activeCfg && activeCfg.from && activeCfg.to) {
+      const ok = clampDates(activeCfg.from, activeCfg.to);
+      if (ok && activeCfg.openBtn) activeCfg.openBtn.disabled = false;
+    }
+  }
+
+  // Init per report
+  Object.values(cfg).forEach(c => {
+    if (!c.from || !c.to) return;
+    clampDates(c.from, c.to);
+    updateSummary(c.summary, c.from.value, c.to.value);
+
+    c.from.addEventListener('change', () => {
+      clampDates(c.from, c.to);
+      if (!c.to.value && c.from.value) c.to.value = c.from.value;
+      updateSummary(c.summary, c.from.value, c.to.value);
+      refreshButtons();
+    });
+    c.to.addEventListener('change', () => {
+      clampDates(c.from, c.to);
+      updateSummary(c.summary, c.from.value, c.to.value);
+      refreshButtons();
     });
 
-    // ####################### Search filter
-    document.getElementById("searchInput").addEventListener("keyup", function() {
-      let value = this.value.toLowerCase();
-      let activeTable = document.querySelector(".report-table[style*='display: block']");
-      if (activeTable) {
-        activeTable.querySelectorAll("tbody tr").forEach(row => {
-          row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
-        });
-      }
-    });
+    // Confirm buttons → open PDF then close modal
+    if (c.confirmBtn) {
+      c.confirmBtn.addEventListener('click', () => {
+        const start = c.from.value;
+        const end = c.to.value || c.from.value;
+        if (!start) return;
+        const url = buildUrl(c.endpoint, start, end);
+        window.open(url, '_blank');
 
-
-
-    const reportSelect = document.getElementById("reportSelect");
-    const generateBtn = document.getElementById("generateBtn");
-
-    // Enable button when a report is selected
-    reportSelect.addEventListener("change", function () {
-      if (this.value) {
-        generateBtn.disabled = false;
-
-        // Update button text
-        const reportName = this.options[this.selectedIndex].text;
-        generateBtn.innerHTML = `<i class="bi bi-graph-up-arrow me-2"></i> Generate ${reportName} Report`;
-
-        // Attach correct modal
-        generateBtn.setAttribute("data-bs-target", getModalId(this.value));
-        generateBtn.setAttribute("data-bs-toggle", "modal");
-      } else {
-        resetButton();
-      }
-    });
-
-    // Reset button state
-    function resetButton() {
-      generateBtn.disabled = true;
-      generateBtn.innerHTML = `<i class="bi bi-graph-up-arrow me-2"></i> Select option first`;
-      generateBtn.removeAttribute("data-bs-target");
-      generateBtn.removeAttribute("data-bs-toggle");
-    }
-
-    // Map table IDs to modal IDs
-    function getModalId(value) {
-      switch (value) {
-        case "goodMoralTable": return "#goodMoralModal";
-        case "ackReceiptTable": return "#ackReceiptModal";
-        case "clearanceTable": return "#clearanceModal";
-        case "violationsTable": return "#violationModal";
-        case "csTable": return "#csModal";
-        default: return "";
-      }
-    }
-
-
-    // ####################### DATE SECTION
-
-    // Helper function to format date as "MMM DD, YYYY"
-    function formatDate(date) {
-      const options = { year: 'numeric', month: 'short', day: 'numeric' };
-      return date.toLocaleDateString(undefined, options);
-    }
-
-    // Sections with correct IDs
-    const sections = [
-      { from: 'fromDate', to: 'toDate', summary: 'goodMoralSummary' },
-      { from: 'fromDateAck', to: 'toDateAck', summary: 'ackReceiptSummary' },
-      { from: 'fromDateClearance', to: 'toDateClearance', summary: 'clearanceSummary' },
-      { from: 'fromDateViolation', to: 'toDateViolation', summary: 'violationSummary' },
-      { from: 'fromDateCS', to: 'toDateCS', summary: 'csSummary' },
-    ];
-
-    // Attach change events to update the summary
-    sections.forEach(section => {
-      const fromInput = document.getElementById(section.from);
-      const toInput = document.getElementById(section.to);
-      const summaryDiv = document.getElementById(section.summary);
-
-      [fromInput, toInput].forEach(input => {
-        input.addEventListener('change', () => {
-          if (fromInput.value && toInput.value) {
-            summaryDiv.textContent = `From ${formatDate(new Date(fromInput.value))} to ${formatDate(new Date(toInput.value))}`;
-          } else {
-            summaryDiv.textContent = 'No dates selected.';
-          }
-        });
+        // close modal
+        if (c.modalEl) {
+          const modal = bootstrap.Modal.getOrCreateInstance(c.modalEl);
+          modal.hide();
+        }
       });
+    }
+  });
+
+  // Select change handler
+  if (select) {
+    select.addEventListener('change', () => {
+      showOnly(select.value);
+      refreshButtons();
     });
+  }
 
+  // defaults
+  showOnly('goodMoralTable');
+  refreshButtons();
+})();
+</script>
 
-
-  </script>
 </body>
 </html>

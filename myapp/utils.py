@@ -18,6 +18,9 @@ from .models import UserAccount
 from django.utils.timezone import localtime
 from django.utils.html import strip_tags, escape
 from textwrap import dedent
+from django.http import JsonResponse
+import json
+import secrets
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -348,3 +351,26 @@ def send_clearance_confirmation(obj) -> None:
     msg = EmailMultiAlternatives(subject, text, from_email, to, bcc=bcc, reply_to=reply_to)
     msg.attach_alternative(html, "text/html")
     msg.send(fail_silently=False)
+
+#############################
+OTP_TTL_MINUTES = 10
+
+def json_ok(message="ok", **extra):
+    payload = {"status": "ok", "message": message}
+    payload.update(extra)
+    return JsonResponse(payload, status=200)
+
+def json_err(message, *, code="ERROR", status=400, **extra):
+    payload = {"status": "error", "code": code, "message": message}
+    payload.update(extra)
+    return JsonResponse(payload, status=status)
+
+def safe_body(request):
+    try:
+        return json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        raise ValueError("Invalid JSON payload.")
+
+def gen_otp():
+    # 6-digit, cryptographically secure
+    return "".join(secrets.choice("0123456789") for _ in range(6))

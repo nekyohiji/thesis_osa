@@ -28,24 +28,31 @@ urlpatterns = [
     
     path("admin_add_faculty/", views.admin_add_faculty_view, name="admin_add_faculty"),
     path("facilitators/<int:pk>/delete/", views.facilitator_delete, name="facilitator_delete"),
-
-
-    
     path('admin_dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path("admin_dashboard/data/", views.admin_dashboard_data, name="admin_dashboard_data"),
+    
+    # --- accounts ---
     path('admin_accounts/', views.admin_accounts_view, name='admin_accounts'),
-    # --- name edit ---
+    path('get-accounts/', views.get_accounts_data, name='get_accounts'),
+    path('deactivate-account/<str:user_email>/', views.deactivate_account, name='deactivate_account'),
     path('edit-account/<str:user_email>/', views.edit_account, name='edit_account'),
-
-    # --- email change (OTP → verify → apply) ---
+    path('request-otp/', views.request_otp, name='request_otp'),
+    path('verify-otp/',  views.verify_otp,  name='verify_otp'),
     path('email-change/request/', views.email_change_request, name='email_change_request'),
     path('email-change/verify/',  views.email_change_verify,  name='email_change_verify'),
     path('email-change/apply/',   views.email_change_apply,   name='email_change_apply'),
-
-    # --- password change (OTP required) ---
     path('password-otp/request/', views.password_otp_request, name='password_otp_request'),
     path('password-otp/verify/',  views.password_otp_verify,  name='password_otp_verify'),
     path('change-password/<str:email>/', views.change_password, name='change_password'),
+    # ---------------
+    
+    # --- report ---
+    path('admin_report/', views.admin_report_view, name='admin_report'),
+    path('reports/violations.pdf',   views.admin_violation_report_pdf,    name='admin_violation_report_pdf'),
+    path('reports/good-moral.pdf',   views.admin_good_moral_report_pdf,   name='admin_good_moral_report_pdf'),
+    path('reports/surrender-id.pdf', views.admin_surrender_id_report_pdf, name='admin_surrender_id_report_pdf'),
+    path('reports/clearance.pdf',    views.admin_clearance_report_pdf,    name='admin_clearance_report_pdf'),
+    # ---------------
     
     
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
@@ -62,7 +69,6 @@ urlpatterns = [
     path('admin_community_service/create-or-adjust/', views.cs_create_or_adjust, name='cs_create_or_adjust'),
     path('api/cs/case/<int:case_id>/', views.cs_case_detail_api, name='cs_case_detail_api'),
     
-    path('admin_election/', views.admin_election_view, name='admin_election'),
     
     path('admin_lostandfound/', views.admin_lostandfound_view, name='admin_lostandfound'),
     path('admin_report/', views.admin_report_view, name='admin_report'),
@@ -82,9 +88,6 @@ urlpatterns = [
     
     
     path('admin_student/', views.admin_student_view, name='admin_student'),
-    path('admin_removedstud/', views.admin_removedstud_view, name='admin_removedstud'),
-    path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
-    path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
     
 
 
@@ -132,15 +135,6 @@ urlpatterns = [
     path("admin_ackreq/<int:pk>/decline/", views.admin_ackreq_decline, name="admin_ackreq_decline"),
     
 
-
-
-
-    #########################################elections
-    path('add-candidate/', views.add_candidate, name='add_candidate'),
-    path('get-candidates/', views.get_candidates, name='get_candidates'),
-    path('delete-candidate/<int:candidate_id>/', views.delete_candidate, name='delete_candidate'),
-    path('get-academic-years/', views.get_academic_years, name='get_academic_years'),
-    
     
     ########################################guard
     path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),

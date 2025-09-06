@@ -29,14 +29,15 @@ class Student(models.Model):
 class UserAccount(models.Model):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
-        ('comselec', 'COMSELEC'),
         ('guard', 'Security Guard'),
         ('scholarship', 'Scholarship Coordinator'),
+        ('staff', 'Office Staff'),
+        ('sa', 'Student Assistant'),
     ]
 
     full_name = models.CharField(max_length=128)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=128)  # You can hash this
+    password = models.CharField(max_length=128) 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -73,27 +74,6 @@ class Archived_Account(models.Model):
     def __str__(self):
         return f"{self.email} ({'Active' if self.is_active else 'Deactivated'})"
 
-POSITIONS = [
-    ('President', 'President'),
-    ('Vice President', 'Vice President'),
-    ('Senator', 'Senator'),
-    ('Governor', 'Governor'),
-]
-
-class Candidate(models.Model):
-    academic_year = models.CharField(max_length=20)
-    name = models.CharField(max_length=100)
-    section = models.CharField(max_length=50)
-    tupc_id = models.CharField(max_length=40)
-    position = models.CharField(max_length=20, choices=POSITIONS)
-    photo = models.ImageField(upload_to='candidate_photos/')
-
-    def __str__(self):
-        return f"{self.name} - {self.position}"
-    
-    class Meta:
-        db_table = 'candidate'
-        
 class Violation(models.Model):
     # --- constants/choices
     VIOLATION_TYPES = [
@@ -709,7 +689,9 @@ class Facilitator(models.Model):
         help_text="Format: NN-NNN (e.g., 12-345)"
     )
     full_name = models.CharField(max_length=150)
+    email = models.EmailField(unique=True, default=None)
     is_active = models.BooleanField(default=True)
+    
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

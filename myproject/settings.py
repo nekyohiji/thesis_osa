@@ -218,3 +218,31 @@ LOGGING = {
 # Default PK
 # --------------------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+
+if REDIS_URL:
+    # pip install django-redis
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # Good defaults; tweak if needed:
+                "CONNECTION_POOL_KWARGS": {"max_connections": 50, "retry_on_timeout": True},
+                "HEALTH_CHECK_INTERVAL": 30,
+            },
+            "KEY_PREFIX": "tupcosa",
+            "TIMEOUT": 300,  # default TTL for cache entries; per-call TTLs still respected
+        }
+    }
+else:
+    # Works out of the box for dev/single-worker
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "tupcosa-locmem",
+            "TIMEOUT": 300,
+        }
+    }
