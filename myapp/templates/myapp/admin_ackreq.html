@@ -164,7 +164,7 @@
             <div class="d-flex gap-2">
               <!-- Button for Certificates -->
               <button class="btn text-light" style="background-color: #440207; padding: 10px; font-size: 17px;"
-                      data-bs-toggle="modal" data-bs-target="#printGoodMoralModal"
+                      data-bs-toggle="modal" data-bs-target="#printAckReceiptModal"
                       onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
                       onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
                 <i class="bi bi-printer-fill me-2"></i>
@@ -226,6 +226,7 @@
         </div>
       </div>
 
+      
       
       <!-- History Section -->
       <div class="container-fluid pb-4">
@@ -299,6 +300,52 @@
     </div> 
   </div> 
 </div> 
+
+
+
+
+
+
+<!-- //////////////////////// MODAL -->
+<div class="modal fade" id="printAckReceiptModal" tabindex="-1" aria-labelledby="printAckReceiptLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
+      
+      <!-- Header -->
+      <div class="modal-header">
+        <h5 class="modal-title text-dark" id="printAckReceiptLabel">
+          <i class="bi bi-printer-fill me-2"></i> Batch Print Acknowledgment Receipts
+        </h5>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <p class="mb-3 text-muted">Select the range of receipts you want to print:</p>
+        <div class="row g-3 align-items-center">
+          <div class="col-5">
+            <label class="form-label fw-semibold">From</label>
+            <input id="ack-batch-from" type="number" class="form-control" min="1" value="1">
+          </div>
+          <div class="col-2 text-center fw-bold">—</div>
+          <div class="col-5">
+            <label class="form-label fw-semibold">To</label>
+            <input id="ack-batch-to" type="number" class="form-control" min="1" value="10">
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="ack-batch-print-btn" type="button" class="btn text-light" style="background-color:#440207;">
+          <i class="bi bi-printer-fill me-2"></i> Print
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
