@@ -60,7 +60,7 @@ urlpatterns = [
     
     
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
-    path("ackreq/batch-preview", views.batch_view_ackreq_receipts, name="batch_view_ackreq_receipts"),
+    path("ackreq/batch-preview", views.batch_view_ackreq_receipts, name="ackreq_batch_preview"),
     
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),

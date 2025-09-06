@@ -426,11 +426,35 @@
   // Hook up both tables
   attachLiveFilter('pendingSearch', 'pendingTable');
   attachLiveFilter('historySearch', 'historyTable');
+    (function () {
+    const btn = document.getElementById("ack-batch-print-btn");
+    if (!btn) return;
 
+    btn.addEventListener("click", () => {
+      const fromEl = document.getElementById("ack-batch-from");
+      const toEl   = document.getElementById("ack-batch-to");
 
+      const frm = parseInt(fromEl?.value, 10);
+      const to  = parseInt(toEl?.value, 10);
 
+      // basic client-side validation
+      if (!Number.isInteger(frm) || frm < 1) {
+        alert("Please enter a valid 'From' number (≥ 1).");
+        fromEl?.focus();
+        return;
+      }
+      if (!Number.isInteger(to) || to < frm) {
+        alert("Please enter a valid 'To' number (≥ From).");
+        toEl?.focus();
+        return;
+      }
 
-
+      // open server-rendered merged PDF (inline)
+      const url = `{% url 'ackreq_batch_preview' %}?frm=${encodeURIComponent(frm)}&to=${encodeURIComponent(to)}`;
+      window.open(url, "_blank"); // use location.href = url; to stay in the same tab
+    });
+  })();
+  
   </script>
 </body>
 </html>
