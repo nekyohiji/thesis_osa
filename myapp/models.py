@@ -32,7 +32,7 @@ class UserAccount(models.Model):
         ('guard', 'Security Guard'),
         ('scholarship', 'Scholarship Coordinator'),
         ('staff', 'Office Staff'),
-        ('sa', 'Student Assistant'),
+        ('studasst', 'Student Assistant'),
     ]
 
     full_name = models.CharField(max_length=128)
@@ -92,7 +92,7 @@ class Violation(models.Model):
         ("Gambling", "Possession of Gambling Paraphernalia"),
         ("Devices", "Unauthorized Use of Devices during Class"),
         ("Resources", "Irresponsible Use of Water and Electricity within University"),
-        ("Harrassment", "Making Lewd Gestures and Lustful Words to a Student"),
+        ("Harassment", "Making Lewd Gestures and Lustful Words to a Student"),
         ("Property Damage", "Accidental Damage of University Property"),
         ("PDA", "Public Display of Physical Intimacy or Affection"),
         ("Cigarette", "Possession of Any type of Cigarette or Tobacco inside University"),

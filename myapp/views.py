@@ -87,7 +87,7 @@ from .forms import (
     ClearanceRequestForm,
     GoodMoralRequestForm,
     IDSurrenderRequestForm,
-    MajorViolationForm,
+    AddViolationForm,
     ViolationForm,
     FacilitatorForm
 )
@@ -109,7 +109,7 @@ from .models import (
     Violation,
     Facilitator,
 )
-from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email
+from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email, build_student_email, send_violation_notice
 
 logger = logging.getLogger(__name__)
 #################################################################################################################
@@ -715,112 +715,6 @@ def admin_view_ackreq_view(request, pk):
 def admin_view_goodmoral_view(request):
     return render (request, 'myapp/admin_view_goodmoral.html')
 
-@role_required(['admin'])
-def admin_view_violation(request):
-    violation_id = request.GET.get('violation_id')
-    if not violation_id:
-        messages.error(request, "No violation ID specified.")
-        return redirect('myapp/admin_violation.html')
-
-    violation = get_object_or_404(Violation, id=violation_id)
-    student   = get_object_or_404(Student, tupc_id=violation.student_id)
-
-    # “Profile” tables in the template = Approved + Pending for that student
-    approved_violations = (
-        Violation.objects
-        .filter(student_id=student.tupc_id, status='Approved')
-        .order_by('-violation_date','-created_at')
-        .defer('evidence_1','evidence_2')  # table shows links; you can remove defer if you need urls immediately
-    )
-    pending_violations = (
-        Violation.objects
-        .filter(student_id=student.tupc_id, status='Pending')
-        .order_by('-violation_date','-created_at')
-        .defer('evidence_1','evidence_2')
-    )
-
-    total_violations = approved_violations.count()  # matches how your template displays “Total Violations”
-
-    return render(request, 'myapp/admin_view_violation.html', {
-        'violation': violation,
-        'student': student,
-        'total_violations': total_violations,
-        'approved_violations': approved_violations,
-        'pending_violations': pending_violations,
-    })
-
-@role_required(['admin'])
-def admin_violation_view(request):
-    # ----- POST: create MAJOR violation -----
-    open_major_modal = False
-    if request.method == "POST" and request.POST.get("is_major") == "1":
-        major_form = MajorViolationForm(request.POST)  # no files for major
-        if major_form.is_valid():
-            approver = getattr(request.user, "get_full_name", lambda: "")() or request.user.username
-            major_form.save(approved_by_user=approver)
-            messages.success(request, "Major violation has been recorded.")
-            return redirect("admin_violation")  # stay on the same page (PRG)
-        else:
-            open_major_modal = True  # re-open the modal to show errors
-    else:
-        major_form = MajorViolationForm()
-
-    # ----- GET + (re-render after invalid POST) -----
-    q_pending  = (request.GET.get('q') or '').strip()
-    q_history  = (request.GET.get('q_history') or '').strip()
-    default_violation_date = timezone.localdate().strftime("%Y-%m-%d")
-    default_violation_time = timezone.localtime().strftime("%H:%M")
-
-    base = (Violation.objects
-            .defer('evidence_1','evidence_2')
-            .order_by('-created_at'))
-
-    pending = base.filter(status='Pending')
-    if q_pending:
-        pending = pending.filter(
-            Q(student_id__icontains=q_pending) |
-            Q(first_name__icontains=q_pending) |
-            Q(last_name__icontains=q_pending)
-        )
-
-    history = base.exclude(status='Pending')
-    if q_history:
-        history = history.filter(
-            Q(student_id__icontains=q_history) |
-            Q(first_name__icontains=q_history) |
-            Q(last_name__icontains=q_history)
-        )
-
-    # robust ints
-    def _toi(v, d):
-        try: return int(v)
-        except (TypeError, ValueError): return d
-
-    p_page = max(1, _toi(request.GET.get('p', 1), 1))
-    h_page = max(1, _toi(request.GET.get('h', 1), 1))
-    per    = min(max(_toi(request.GET.get('per', 15), 15), 1), 100)
-
-    p_pager = Paginator(pending, per)
-    h_pager = Paginator(history, per)
-    try: pending_page = p_pager.page(p_page)
-    except EmptyPage: pending_page = p_pager.page(max(p_pager.num_pages, 1))
-    try: history_page = h_pager.page(h_page)
-    except EmptyPage: history_page = h_pager.page(max(h_pager.num_pages, 1))
-
-    return render(request, 'myapp/admin_violation.html', {
-        'pending_violations': pending_page,
-        'history_violations': history_page,
-        "major_form": major_form,
-        "open_major_modal": open_major_modal,
-        "default_violation_date": default_violation_date,
-        "default_violation_time": default_violation_time,
-    })
-
-@role_required(['admin'])
-def admin_removedstud_view(request):
-    return render (request, 'myapp/admin_removedstud.html')
-
-
 #########################CLIENT
 
 def scholarship_feed_api(request):
@@ -1027,7 +921,6 @@ def get_student_by_id(request, tupc_id):
 
 def submit_violation(request):
     guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
-
     if request.method == 'POST':
         form = ViolationForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1060,8 +953,6 @@ def submit_violation(request):
     return render(request, 'myapp/guard_violation.html', {
         'form': form,
         'guards': guards,
-        # optional: surface this on GET only if you capture a student id on the page
-        # 'unsettled_warning': False,
     })
 
 @role_required(['guard'])
@@ -1869,6 +1760,7 @@ def email_change_apply(request):
         return json_err("Failed to update email.", code="UPDATE_FAIL", status=500)
 
     return json_ok("Email updated successfully.", email=new_email)
+
 #-------------------------------------------------#
 
 #---------------Manage Reports--------------------#
@@ -2267,6 +2159,7 @@ def ajax_edit_scholarship(request, id):
 #--------------------------------------------------#
 
 #-----------Good Moral Page------------------#
+
 DEFAULT_APPROVAL_MSG = (
     "Your Good Moral Certificate request has been approved.\n\n"
     "Please proceed to the Office of Student Affairs (OSA) to claim your request form.\n"
@@ -2556,6 +2449,7 @@ def batch_view_gmf(request):
 #--------------------------------------------------#
 
 #------------Acknowledgement Receipt--------------------#
+
 @role_required(['admin'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
@@ -2668,7 +2562,151 @@ def admin_ackreq_decline(request, pk):
 
 #--------------------------------------------------#
 
-#---------------violation page-------------#
+#---------------violation-------------#
+
+@role_required(['admin'])
+def admin_view_violation(request):
+    violation_id = request.GET.get('violation_id')
+    if not violation_id:
+        messages.error(request, "No violation ID specified.")
+        return redirect('myapp/admin_violation.html')
+
+    violation = get_object_or_404(Violation, id=violation_id)
+    student   = get_object_or_404(Student, tupc_id=violation.student_id)
+
+    # “Profile” tables in the template = Approved + Pending for that student
+    approved_violations = (
+        Violation.objects
+        .filter(student_id=student.tupc_id, status='Approved')
+        .order_by('-violation_date','-created_at')
+        .defer('evidence_1','evidence_2')  # table shows links; you can remove defer if you need urls immediately
+    )
+    pending_violations = (
+        Violation.objects
+        .filter(student_id=student.tupc_id, status='Pending')
+        .order_by('-violation_date','-created_at')
+        .defer('evidence_1','evidence_2')
+    )
+
+    total_violations = approved_violations.count()  # matches how your template displays “Total Violations”
+
+    return render(request, 'myapp/admin_view_violation.html', {
+        'violation': violation,
+        'student': student,
+        'total_violations': total_violations,
+        'approved_violations': approved_violations,
+        'pending_violations': pending_violations,
+    })
+
+@role_required(['admin'])
+def admin_violation_view(request):
+    """
+    Admin page that:
+      - lists pending/history
+      - allows adding a MINOR or MAJOR violation from one modal (optional evidence)
+      - emails the student after successful save
+    """
+    open_major_modal = False
+    form_debug = None
+    # ----- CREATE (POST) -----
+    if request.method == "POST":
+        add_form = AddViolationForm(request.POST, request.FILES)  # include files
+        try:
+            if add_form.is_valid():
+                approver = getattr(request.user, "get_full_name", lambda: "")() or request.user.username
+                with transaction.atomic():
+                    violation = add_form.save(approved_by_user=approver)
+
+                # --- EMAIL NOTIFICATION ---
+                student_email = build_student_email(
+                    violation.first_name,
+                    violation.last_name,
+                    violation.extension_name,
+                )
+                if student_email:
+                    ok, info = send_violation_notice(violation, student_email, max_history=10)
+                    if ok:
+                        messages.success(request, f"Violation has been recorded. {info}.")
+                    else:
+                        messages.warning(request, f"Violation recorded, but email not sent: {info}")
+                else:
+                    messages.warning(request, "Violation recorded, but student email could not be constructed.")
+
+                return redirect("admin_violation")  # PRG
+            else:
+                open_major_modal = True
+                messages.error(request, "Please correct the errors in the form.")
+                if settings.DEBUG:
+                    form_debug = {
+                        "posted": {k: request.POST.get(k) for k in request.POST.keys()},
+                        "files": {k: getattr(request.FILES.get(k), "content_type", None) for k in request.FILES.keys()},
+                        "errors": json.loads(add_form.errors.as_json()),
+                        "non_field_errors": add_form.non_field_errors(),
+                    }
+                    # Console log too (runserver output)
+                    print("ADD_VIOLATION_DEBUG:", json.dumps(form_debug, indent=2, default=str))
+                    
+        except IntegrityError:
+            open_major_modal = True
+            messages.error(request, "Database error while saving the violation. Please try again.")
+        except Exception as e:
+            open_major_modal = True
+            messages.error(request, f"Unexpected error: {str(e)}")
+    else:
+        add_form = AddViolationForm()
+    # ----- LISTS (GET + re-render invalid POST) -----
+    q_pending  = (request.GET.get('q') or '').strip()
+    q_history  = (request.GET.get('q_history') or '').strip()
+    default_violation_date = timezone.localdate().strftime("%Y-%m-%d")
+    default_violation_time = timezone.localtime().strftime("%H:%M")
+
+    base = (Violation.objects
+            .defer('evidence_1', 'evidence_2')
+            .order_by('-created_at'))
+
+    pending = base.filter(status='Pending')
+    if q_pending:
+        pending = pending.filter(
+            Q(student_id__icontains=q_pending) |
+            Q(first_name__icontains=q_pending) |
+            Q(last_name__icontains=q_pending)
+        )
+
+    history = base.exclude(status='Pending')
+    if q_history:
+        history = history.filter(
+            Q(student_id__icontains=q_history) |
+            Q(first_name__icontains=q_history) |
+            Q(last_name__icontains=q_history)
+        )
+
+    # robust ints
+    def _toi(v, d):
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return d
+
+    p_page = max(1, _toi(request.GET.get('p', 1), 1))
+    h_page = max(1, _toi(request.GET.get('h', 1), 1))
+    per    = min(max(_toi(request.GET.get('per', 15), 15), 1), 100)
+
+    p_pager = Paginator(pending, per)
+    h_pager = Paginator(history, per)
+
+    # get_page() never raises; returns a valid (possibly empty) Page
+    pending_page = p_pager.get_page(p_page)
+    history_page = h_pager.get_page(h_page)
+
+    return render(request, 'myapp/admin_violation.html', {
+        'pending_violations': pending_page,
+        'history_violations': history_page,
+        "major_form": add_form,                   # keep existing template var name
+        "open_major_modal": open_major_modal,     # controls modal re-open on errors
+        "default_violation_date": default_violation_date,
+        "default_violation_time": default_violation_time,
+    })
+    
 @role_required(['admin'])
 @transaction.atomic
 def admin_decline_violation(request, violation_id):

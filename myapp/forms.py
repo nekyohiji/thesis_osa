@@ -32,32 +32,103 @@ class ViolationForm(forms.ModelForm):
             raise forms.ValidationError("At least one evidence photo is required.")
         return cleaned_data
 
-class MajorViolationForm(forms.ModelForm):
+class AddViolationForm(forms.ModelForm):
+    MINOR_KEYS = [
+        "Disturbance","Proper Uniform","Cross Dressing","Facial Hair","Earrings","Caps",
+        "Entering Classroom","Leaving Classroom","Attempt Fraternity","Posting Materials",
+        "Use of University Facilities","Official Notices","Gambling","Devices","Resources",
+        "Harassment",  "Property Damage","PDA","Cigarette",
+    ]
+
+    # Minor is optional; if chosen we map it to violation_type
+    minor_offense = forms.ChoiceField(
+        choices=[("", "-- Select Minor Violation Type --")] +
+                [(k, dict(Violation.VIOLATION_TYPES)[k]) for k in MINOR_KEYS],
+        required=False
+    )
+
+    # ↓↓↓ add this line so field-level validation doesn't fail before clean()
+    violation_type = forms.ChoiceField(
+        choices=Violation.VIOLATION_TYPES,
+        required=False
+    )
+
+    MAX_EVIDENCE_MB = 5
+    ALLOWED_IMAGE_CT = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
     class Meta:
         model = Violation
-        # no evidence fields here
         fields = [
             "first_name","middle_initial","extension_name","last_name",
             "student_id","program_course","violation_date","violation_time",
-            "violation_type"
+            "violation_type",     
+            "evidence_1","evidence_2",
         ]
         widgets = {
             "violation_date": forms.DateInput(attrs={"type":"date"}),
             "violation_time": forms.TimeInput(attrs={"type":"time"}),
+            "evidence_1": forms.ClearableFileInput(attrs={"accept":"image/*"}),
+            "evidence_2": forms.ClearableFileInput(attrs={"accept":"image/*"}),
         }
+
+    def _validate_image(self, f, label):
+        if not f:
+            return
+        max_bytes = self.MAX_EVIDENCE_MB * 1024 * 1024
+        if getattr(f, "size", 0) > max_bytes:
+            self.add_error(label, f"File too large. Max {self.MAX_EVIDENCE_MB} MB.")
+        ct = (getattr(f, "content_type", "") or "").lower()
+        if ct and ct not in self.ALLOWED_IMAGE_CT:
+            self.add_error(label, "Unsupported image type. Use JPG, PNG, WEBP, or GIF.")
+
+    def clean(self):
+        cleaned = super().clean()
+        minor = (cleaned.get("minor_offense") or "").strip()
+        major = (cleaned.get("violation_type") or "").strip()
+        if not minor and not major:
+            self.add_error("minor_offense", "Pick either a Minor OR a Major offense.")
+            self.add_error("violation_type", "Pick either a Major OR a Minor offense.")
+        if minor and major:
+            self.add_error("minor_offense", "Pick only one: Minor OR Major.")
+            self.add_error("violation_type", "Pick only one: Minor OR Major.")
+        if minor and not major:
+            if minor not in self.MINOR_KEYS:
+                self.add_error("minor_offense", f"Invalid minor violation key: {minor}")
+            else:
+                cleaned["violation_type"] = minor  
+
+        self._validate_image(cleaned.get("evidence_1"), "evidence_1")
+        self._validate_image(cleaned.get("evidence_2"), "evidence_2")
+
+        if self.errors:
+            raise ValidationError("Please correct the errors below.")
+        return cleaned
 
     def save(self, approved_by_user=None, *args, **kwargs):
         obj = super().save(commit=False)
-        obj.severity = "MAJOR"
-        obj.status = "Approved"             # recorded, not reviewed
+        used_minor = bool(self.cleaned_data.get("minor_offense"))
+        obj.severity = "MINOR" if used_minor else "MAJOR"
+        prior_minor_approved = (
+            Violation.objects
+            .filter(student_id=obj.student_id, status="Approved", severity="MINOR")
+            .count()
+        )
+
+        if obj.severity == "MINOR":
+            new_settlement = "Apology Letter" if prior_minor_approved == 0 else "Community Service"
+        else:
+            new_settlement = "None"
+
+        obj.settlement_type = new_settlement
+        obj.is_settled = False
+        obj.settled_at = None
         now = timezone.now()
+        obj.status = "Approved"
         obj.reviewed_at = now
         obj.approved_at = now
         obj.approved_by = approved_by_user or ""
-        obj.guard_name = approved_by_user or "Admin"
-        # hard-force no evidence on MAJOR, even if someone posts files manually
-        obj.evidence_1 = None
-        obj.evidence_2 = None
+        obj.guard_name  = approved_by_user or "Admin"
+
         obj.save()
         return obj
       

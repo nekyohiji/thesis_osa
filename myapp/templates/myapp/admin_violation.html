@@ -10,16 +10,36 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'myapp/css/admin_violation.css' %}">
 </head>
-{% if messages %}
-  {% for message in messages %}
-    <div class="alert alert-success alert-dismissible fade show mt-3 mx-3" role="alert">
-      {{ message }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  {% endfor %}
-{% endif %}
+
 <body>
-  <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+
+{% if messages %}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000">
+  {% for message in messages %}
+  <div class="toast align-items-center border-0 mb-2"
+       role="status" aria-live="polite" aria-atomic="true"
+       data-bs-delay="4000">
+    <div class="d-flex">
+      <div class="toast-body text-white
+                  {% if 'success' in message.tags %} bg-success
+                  {% elif 'warning' in message.tags %} bg-warning
+                  {% elif 'error' in message.tags or 'danger' in message.tags %} bg-danger
+                  {% else %} bg-info{% endif %}">
+        {{ message }}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto"
+              data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.toast').forEach(el => new bootstrap.Toast(el).show());
+  });
+</script>
+{% endif %}
+<button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
 <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
@@ -54,7 +74,7 @@
           <div class="collapse submenu ps-3 border-start" id="documentsMenu">
             <a class="nav-link" href="{% url 'admin_goodmoral' %}"><i class="fas fa-shield-alt"></i> Good Moral</a>
             <a class="nav-link" href="{% url 'admin_ackreq' %}"><i class="fas fa-file-download"></i> Acknowledgement Receipt</a>
-            <a class="nav-link" href="{% url 'admin_clearance' %}"><i class="fas fa-certificate"></i></i> Clearance</a>
+            <a class="nav-link" href="{% url 'admin_clearance' %}"><i class="fas fa-certificate"></i> Clearance</a>
 
           </div>
         </li>
@@ -71,7 +91,7 @@
             <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student<br>Assistantship</a>
           </div>
         </li>
-        <li><a class="nav-link" href="{% url 'admin_student' %}"><i class="fas fa-folder-open"></i> Record</a>
+        <li><a class="nav-link" href="{% url 'admin_student' %}"><i class="fas fa-folder-open"></i> Record</a></li>
         <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
         <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
       </ul>
@@ -158,7 +178,7 @@
 
 </style>
 
-  <!-- Main Content Area -->
+<!-- Main Content Area -->
 <div class="main-content" style="margin-left: 250px; min-height: 100vh; background-color: #f8f9fa;">
 
   <!--  Dashboard Header  -->
@@ -177,194 +197,245 @@
          <i class="bi bi-file-earmark-text me-2"></i>
         Violation Dashboard
       </h2>
-      <p class="mb-0">Manage student violaions, update statuses, and maintain records.</p>
+      <p class="mb-0">Manage student violations, update statuses, and maintain records.</p>
     </div>
   </div>
 
 
 
-    <!-- Major Offense Modal -->
-    <div class="modal fade" id="majorOffenseModal" tabindex="-1" aria-labelledby="majorOffenseLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border">
-          <div class="modal-header">
-            <h5 class="modal-title fw-semibold" id="majorOffenseLabel">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i> Add Violation
-            </h5>
-          </div>
+<!-- Major Offense Modal -->
+<div class="modal fade" id="majorOffenseModal" tabindex="-1" aria-labelledby="majorOffenseLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
+      <div class="modal-header">
+        <h5 class="modal-title fw-semibold" id="majorOffenseLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> Add Violation
+        </h5>
+      </div>
+      {% if form_debug %}
+        <div class="alert alert-warning p-2">
+          <details>
+            <summary><strong>Debug details</strong> (click to expand)</summary>
+            <pre class="mt-2 mb-0" style="max-height:220px;overflow:auto;">{{ form_debug|safe }}</pre>
+          </details>
+        </div>
+      {% endif %}
 
-          <form id="majorForm" method="post" action="{% url 'admin_violation' %}" novalidate>
-            {% csrf_token %}
-            <div class="modal-body">
-              {% if major_form and major_form.errors %}
-                <div class="alert alert-danger">Please correct the errors below.</div>
+      <form id="majorForm" method="post" action="{% url 'admin_violation' %}" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+          {% if major_form and major_form.errors %}
+            <div class="alert alert-danger">Please correct the errors below.</div>
+          {% endif %}
+
+          {% if major_form.non_field_errors %}
+            <div class="alert alert-danger">{{ major_form.non_field_errors|striptags }}</div>
+          {% endif %}
+
+          <div class="row g-2">
+            <!-- identity -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Last Name:</label>
+              <input name="last_name" type="text" class="form-control" required
+                     value="{{ major_form.last_name.value|default_if_none:'' }}">
+              {% if major_form and major_form.last_name.errors %}
+                <div class="text-danger small">{{ major_form.last_name.errors|striptags }}</div>
               {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">First Name:</label>
+              <input name="first_name" type="text" class="form-control" required
+                     value="{{ major_form.first_name.value|default_if_none:'' }}">
+              {% if major_form and major_form.first_name.errors %}
+                <div class="text-danger small">{{ major_form.first_name.errors|striptags }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Middle Initial (optional):</label>
+              <input name="middle_initial" type="text" class="form-control"
+                     value="{{ major_form.middle_initial.value|default_if_none:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ext (optional):</label>
+              <input name="extension_name" type="text" class="form-control"
+                     value="{{ major_form.extension_name.value|default_if_none:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Student ID:</label>
+              <input
+                name="student_id"
+                id="student_id"
+                type="text"
+                class="form-control"
+                required
+                placeholder="TUPC-22-0374"
+                pattern="^TUPC-\d{2}-\d{4,8}$"
+                inputmode="text"
+                maxlength="15"
+                value="{{ major_form.student_id.value|default_if_none:'' }}"
+              >
+              <div class="form-text">Format: TUPC-##-#### to TUPC-##-########</div>
+              {% if major_form and major_form.student_id.errors %}
+                <div class="text-danger small">{{ major_form.student_id.errors|striptags }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Program:</label>
+              <input name="program_course" type="text" class="form-control" required
+                     value="{{ major_form.program_course.value|default_if_none:'' }}">
+              {% if major_form and major_form.program_course.errors %}
+                <div class="text-danger small">{{ major_form.program_course.errors|striptags }}</div>
+              {% endif %}
+            </div>
 
-              <div class="row g-2">
-                <!-- identity -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Last Name:</label>
-                  <input name="last_name" type="text" class="form-control" required value="{{ major_form.last_name.value|default_if_none:'' }}">
-                  {% if major_form and major_form.last_name.errors %}<div class="text-danger small">{{ major_form.last_name.errors|striptags }}</div>{% endif %}
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">First Name:</label>
-                  <input name="first_name" type="text" class="form-control" required value="{{ major_form.first_name.value|default_if_none:'' }}">
-                  {% if major_form and major_form.first_name.errors %}<div class="text-danger small">{{ major_form.first_name.errors|striptags }}</div>{% endif %}
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Middle Initial (optional):</label>
-                  <input name="middle_initial" type="text" class="form-control" value="{{ major_form.middle_initial.value|default_if_none:'' }}">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Ext (optional):</label>
-                  <input name="extension_name" type="text" class="form-control" value="{{ major_form.extension_name.value|default_if_none:'' }}">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Student ID:</label>
-                  <input name="student_id" type="text" class="form-control" required value="{{ major_form.student_id.value|default_if_none:'' }}">
-                  {% if major_form and major_form.student_id.errors %}<div class="text-danger small">{{ major_form.student_id.errors|striptags }}</div>{% endif %}
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Program:</label>
-                  <input name="program_course" type="text" class="form-control" required value="{{ major_form.program_course.value|default_if_none:'' }}">
-                  {% if major_form and major_form.program_course.errors %}<div class="text-danger small">{{ major_form.program_course.errors|striptags }}</div>{% endif %}
-                </div>
+            <!-- Date/Time Fields - NOT INTERACTABLE -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date:</label>
+              <input name="violation_date" type="date" class="form-control" readonly 
+                    style="background-color: #f8f9fa; cursor: not-allowed;"
+                    value="{{ major_form.violation_date.value|default:default_violation_date }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Time:</label>
+              <input name="violation_time" type="time" class="form-control" readonly
+                    style="background-color: #f8f9fa; cursor: not-allowed;"
+                    value="{{ major_form.violation_time.value|default:default_violation_time }}">
+            </div>
 
-                <!-- when/what -->
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Date:</label>
-                  <input name="violation_date" type="date" class="form-control" required value="{{ major_form.violation_date.value|default:default_violation_date }}">
-                  {% if major_form and major_form.violation_date.errors %}<div class="text-danger small">{{ major_form.violation_date.errors|striptags }}</div>{% endif %}
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Time:</label>
-                  <input name="violation_time" type="time" class="form-control" required value="{{ major_form.violation_time.value|default:default_violation_time }}">
-                  {% if major_form and major_form.violation_time.errors %}<div class="text-danger small">{{ major_form.violation_time.errors|striptags }}</div>{% endif %}
-                </div>
+            <hr>
 
-                <hr>
-
-
-                 
-                  <!-- Toggle Buttons -->
-                  <div class="d-flex flex-column align-items-center mb-3" id="offenseAccordion">
-                    <div class="btn-group w-100 mb-2" role="group">
-                      <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#minorDropdown"
-                        aria-expanded="false" aria-controls="minorDropdown"
+            <!-- Toggle Buttons -->
+            <div class="d-flex flex-column align-items-center mb-3" id="offenseAccordion">
+              <div class="btn-group w-100 mb-2" role="group">
+                <button id="btnMinor" class="btn" type="button"
                         style="color: #440207; border-color: #440207;"
                         onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
                         onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
-                        <strong>Minor Offense</strong>
-                      </button>
-                    </div>
+                  <strong>Minor Offense</strong>
+                </button>
+              </div>
 
-                    <div class="btn-group w-100" role="group">
-                      <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#majorDropdown"
-                        aria-expanded="false" aria-controls="majorDropdown"
+              <div class="btn-group w-100" role="group">
+                <button id="btnMajor" class="btn" type="button"
                         style="color: #440207; border-color: #440207;"
                         onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
                         onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
-                        <strong>Major Offense</strong>
-                      </button>
-                    </div>
-                  </div>
-
-
-
-
-
-                  <!-- Minor Offense Dropdown -->
-                    <div class="col-12 mb-2" id="minorWrapper">
-                      <label class="form-label fw-semibold">Minor Offense:</label>
-                      <select class="form-select" name="minor_offense" id="minorSelect">
-                        <option value="" class="form-select text-center">-- Select Minor Violation Type --</option>
-                        <option value="Disturbance">Causing Disturbance During Class Hours</option>
-                        <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
-                        <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
-                        <option value="Facial Hair">Unwanted Facial Hair</option>
-                        <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
-                        <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
-                        <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
-                        <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
-                        <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
-                        <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
-                        <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
-                        <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
-                        <option value="Gambling">Possession of Gambling Paraphernalia</option>
-                        <option value="Devices">Unauthorized Use of Devices during Class</option>
-                        <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
-                        <option value="Harrassment">Making Lewd Gestures and Lustful Words to a Student</option>
-                        <option value="Property Damage">Accidental Damage of University Property</option>
-                        <option value="PDA">Public Display of Physical Intimacy or Affection</option>
-                        <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
-                      </select>
-                    </div>
-                  
-
-              
-                <div class="col-12" id="majorWrapper" >
-                  <label class="form-label fw-semibold">Major Offense:</label>
-                  <select name="violation_type" class="form-select"  id="majorSelect" required>
-                    <option value="" class="form-select text-center" disabled {% if not major_form or not major_form.violation_type.value %}selected{% endif %}>-- Select Major Violation Type --</option>
-                    <!-- keep only MAJOR options here -->
-                    <option value="Liquor/Drugs">Liquor and Prohibited Drugs</option>
-                    <option value="Illegal Assembly">Unauthorized Activities/ Illegal Assemblies</option>
-                    <option value="Weapons">Deadly and Dangerous Weapons</option>
-                    <option value="Threats/Coercion">Threats/Coercion</option>
-                    <option value="Swindling">Swindling</option>
-                    <option value="Funds Misuse">Misuse of/ Failure to Account Funds</option>
-                    <option value="Assault/Injury">Violence and Physical Assault/Injury</option>
-                    <option value="Robbery/Theft">Robbery/ Theft</option>
-                    <option value="Damage to Property (Major)">Damage to Property</option>
-                    <option value="Forced Entry">Forcible or Unauthorized entry into the TUP premises</option>
-                    <option value="Cybercrime">Commission of Cyber crimes as defined under R.A. No. 10175</option>
-                    <option value="Slander/Libel">Slander/Libel/Gossip</option>
-                    <option value="Falsification">Falsification of documents, records and credentials</option>
-                    <option value="Academic Dishonesty">Academic Dishonesty</option>
-                    <option value="Immoral Acts">Immoral Acts</option>
-                    <option value="Gambling (Major)">Gambling</option>
-                    <option value="Misrepresentation">False representation or Misrepresentation</option>
-                    <option value="Disrespect">Acts of Disrespect</option>
-                    <option value="Bribery">Offering or Giving Bribes</option>
-                    <option value="Smoking (Major)">Smoking within the University premises of any type of cigarette or tabacco product</option>
-                    <option value="Littering">Littering within the University premises</option>
-                    <option value="Borrowed ID">Entering the University premises with a borrowed ID or registration form</option>
-                    <option value="Lending ID">Leading of ID/ registration form to facilitate the entry of another student into the University premises</option>
-                    <option value="4th Minor">Commission of the same or any minor offense for the 4th time</option>
-                    <option value="Probation Major">Commission of major offense while under academic probation</option>
-                    <option value="Final Conviction">Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances</option>
-                  </select>
-                  {% if major_form and major_form.violation_type.errors %}<div class="text-danger small">{{ major_form.violation_type.errors|striptags }}</div>{% endif %}
-                </div>
-              
-                <!-- no evidence fields here -->
-                <input type="hidden" name="severity" value="MAJOR">
+                  <strong>Major Offense</strong>
+                </button>
               </div>
             </div>
 
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn text-light" style="background-color: #440207;">Save</button>
+            <!-- Minor Offense Dropdown -->
+            <div class="col-12 mb-2" id="minorWrapper">
+              <label class="form-label fw-semibold">Minor Offense:</label>
+              <select class="form-select" name="minor_offense" id="minorSelect">
+                <option value="" class="form-select text-center">-- Select Minor Violation Type --</option>
+                <option value="Disturbance">Causing Disturbance During Class Hours</option>
+                <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
+                <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
+                <option value="Facial Hair">Unwanted Facial Hair</option>
+                <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
+                <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
+                <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
+                <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
+                <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
+                <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
+                <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
+                <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
+                <option value="Gambling">Possession of Gambling Paraphernalia</option>
+                <option value="Devices">Unauthorized Use of Devices during Class</option>
+                <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
+                <option value="Harassment">Making Lewd Gestures and Lustful Words to a Student</option>
+                <option value="Property Damage">Accidental Damage of University Property</option>
+                <option value="PDA">Public Display of Physical Intimacy or Affection</option>
+                <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
+              </select>
+              {% if major_form.errors.minor_offense %}
+                <div class="text-danger small">{{ major_form.errors.minor_offense|striptags }}</div>
+              {% endif %}
+              <div id="violationChoiceError" class="text-danger small d-none"></div>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
 
-    {% if open_major_modal %}
-    <script>
-    document.addEventListener("DOMContentLoaded", function(){
-      new bootstrap.Modal(document.getElementById('majorOffenseModal')).show();
-    });
-    </script>
-    {% endif %}
-    <script>
-    document.getElementById("majorForm")?.addEventListener("submit", function(){
-      const overlay = document.getElementById("loadingOverlay");
-      if (overlay) overlay.style.display = "flex";
-    });
-    </script>
+            <!-- Major Offense Dropdown -->
+            <div class="col-12" id="majorWrapper">
+              <label class="form-label fw-semibold">Major Offense:</label>
+              <select name="violation_type" class="form-select" id="majorSelect">
+                <option value="" class="form-select text-center" disabled
+                        {% if not major_form or not major_form.violation_type.value %}selected{% endif %}>
+                  -- Select Major Violation Type --
+                </option>
+                <option value="Liquor/Drugs">Liquor and Prohibited Drugs</option>
+                <option value="Illegal Assembly">Unauthorized Activities/ Illegal Assemblies</option>
+                <option value="Weapons">Deadly and Dangerous Weapons</option>
+                <option value="Threats/Coercion">Threats/Coercion</option>
+                <option value="Swindling">Swindling</option>
+                <option value="Funds Misuse">Misuse of/ Failure to Account Funds</option>
+                <option value="Assault/Injury">Violence and Physical Assault/Injury</option>
+                <option value="Robbery/Theft">Robbery/ Theft</option>
+                <option value="Damage to Property (Major)">Damage to Property</option>
+                <option value="Forced Entry">Forcible or Unauthorized entry into the TUP premises</option>
+                <option value="Cybercrime">Commission of Cyber crimes as defined under R.A. No. 10175</option>
+                <option value="Slander/Libel">Slander/Libel/Gossip</option>
+                <option value="Falsification">Falsification of documents, records and credentials</option>
+                <option value="Academic Dishonesty">Academic Dishonesty</option>
+                <option value="Immoral Acts">Immoral Acts</option>
+                <option value="Gambling (Major)">Gambling</option>
+                <option value="Misrepresentation">False representation or Misrepresentation</option>
+                <option value="Disrespect">Acts of Disrespect</option>
+                <option value="Bribery">Offering or Giving Bribes</option>
+                <option value="Smoking (Major)">Smoking within the University premises of any type of cigarette or tabacco product</option>
+                <option value="Littering">Littering within the University premises</option>
+                <option value="Borrowed ID">Entering the University premises with a borrowed ID or registration form</option>
+                <option value="Lending ID">Leading of ID/ registration form to facilitate the entry of another student into the University premises</option>
+                <option value="4th Minor">Commission of the same or any minor offense for the 4th time</option>
+                <option value="Probation Major">Commission of major offense while under academic probation</option>
+                <option value="Final Conviction">Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances</option>
+              </select>
+              {% if major_form and major_form.violation_type.errors %}
+                <div class="text-danger small">{{ major_form.violation_type.errors|striptags }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Optional Evidence Uploads -->
+            <hr class="my-3">
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label for="id_evidence_1" class="form-label fw-semibold">Evidence 1 (optional)</label>
+                <input type="file" name="evidence_1" id="id_evidence_1" accept="image/*" class="form-control">
+                {% if major_form.errors.evidence_1 %}
+                  <div class="text-danger small">{{ major_form.errors.evidence_1|striptags }}</div>
+                {% endif %}
+                <div id="evidence1ClientError" class="text-danger small d-none"></div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="id_evidence_2" class="form-label fw-semibold">Evidence 2 (optional)</label>
+                <input type="file" name="evidence_2" id="id_evidence_2" accept="image/*" class="form-control">
+                {% if major_form.errors.evidence_2 %}
+                  <div class="text-danger small">{{ major_form.errors.evidence_2|striptags }}</div>
+                {% endif %}
+                <div id="evidence2ClientError" class="text-danger small d-none"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="saveBtn" type="submit" class="btn text-light" style="background-color: #440207;" disabled>Save</button>
+          </div>
+        </div> <!-- /.modal-body -->
+      </form>
+    </div> <!-- /.modal-content -->
+  </div>   <!-- /.modal-dialog -->
+</div>     <!-- /.modal -->
+
+
+  <script>
+  document.getElementById("majorForm")?.addEventListener("submit", function(){
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.style.display = "flex";
+  });
+  </script>
 
   <div class="container-fluid px-4">
     <div class="bg-white p-2 rounded shadow-sm border">
@@ -567,119 +638,325 @@
 
 
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   
 <script>
+(() => {
+  const overlay   = document.getElementById('loadingOverlay');
+  const majorForm = document.getElementById('majorForm');
 
+  // ===== Helpers =====
+  const $  = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const nonEmpty = el => el && String(el.value || '').trim() !== '';
 
-  
-document.addEventListener("DOMContentLoaded", () => {
-    const approveBtns = document.querySelectorAll(".btn-success");
-    const declineBtns = document.querySelectorAll(".btn-danger");
-    const loadingOverlay = document.getElementById("loadingOverlay");
-
-    approveBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            loadingOverlay.style.display = "flex";
-        });
-    });
-
-    declineBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            loadingOverlay.style.display = "flex";
-        });
-    });
-});
-/* Sidebar Functions*/
-  // Toggle Sidebar
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('show');
-  }
-
-  // Handle Dropdowns Uniformly
-  function handleDropdown(menuId) {
-    const clickedIcon = document.getElementById(`icon-${menuId}`);
-    const clickedMenu = document.getElementById(menuId);
+  // ===== Sidebar & nav =====
+  window.toggleSidebar = function () {
+    document.getElementById('sidebar')?.classList.toggle('show');
+  };
+  window.handleDropdown = function (menuId) {
+    const clickedIcon    = document.getElementById(`icon-${menuId}`);
+    const clickedMenu    = document.getElementById(menuId);
     const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
 
-    // Toggle clicked menu
     if (clickedMenu.classList.contains('show')) {
       clickedCollapse.hide();
-      clickedIcon.classList.remove('rotate');
+      clickedIcon?.classList.remove('rotate');
     } else {
       clickedCollapse.show();
-      clickedIcon.classList.add('rotate');
+      clickedIcon?.classList.add('rotate');
     }
 
-    // Hide other open menus
-    const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
-    allDropdowns.forEach(id => {
+    ['violationMenu','documentsMenu','postingsMenu','studentRecordMenu'].forEach(id => {
       if (id !== menuId) {
         const menu = document.getElementById(id);
         const icon = document.getElementById(`icon-${id}`);
-        const collapse = bootstrap.Collapse.getInstance(menu);
+        const collapse = menu && bootstrap.Collapse.getInstance(menu);
         if (collapse) collapse.hide();
         if (icon) icon.classList.remove('rotate');
       }
     });
-  }
+  };
+  const currentUrl = window.location.href;
+  $$('.nav-link').forEach(link => {
+    if (link.href && currentUrl.includes(link.href)) link.classList.add('active');
+  });
 
-  // Highlight Active Link
-  document.addEventListener('DOMContentLoaded', function () {
-    const currentUrl = window.location.href;
-    const navLinks = document.querySelectorAll('.nav-link');
+  // ===== Overlay for real actions =====
+  if (majorForm) {
+    majorForm.addEventListener('submit', (e) => {
+      // Snapshot payload for debugging
+      const fd = new FormData(majorForm);
+      const entries = {};
+      fd.forEach((v, k) => {
+        entries[k] = v instanceof File ? {name: v.name, size: v.size, type: v.type} : v;
+      });
 
-    navLinks.forEach(link => {
-      if (link.href && currentUrl.includes(link.href)) {
-        link.classList.add('active');
+      const sid   = entries['student_id'] || '';
+      const minor = entries['minor_offense'] || '';
+      const major = entries['violation_type'] || '';
+
+      console.group('ADMIN VIOLATION SUBMIT PAYLOAD');
+      console.log('student_id:', sid, '(len=', (sid || '').length, ')');
+      console.log('minor_offense:', minor);
+      console.log('violation_type:', major);
+      console.log('date:', entries['violation_date'], 'time:', entries['violation_time']);
+      console.log('files:', { evidence_1: entries['evidence_1'] || null, evidence_2: entries['evidence_2'] || null });
+      console.log('FormData (all):', entries);
+      console.groupEnd();
+
+      updateSaveState();
+      if (saveBtn && saveBtn.disabled) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.warn('Blocked submit because Save is disabled.');
+        return;
       }
+      if (overlay) overlay.style.display = 'flex';
+    });
+  }
+  $$('.btn-success, .btn-danger').forEach(btn => {
+    btn.addEventListener('click', () => { if (overlay) overlay.style.display = 'flex'; }, { once: true });
+  });
+
+  // ===== Modal safety cleanup =====
+  const majorModalEl = document.getElementById('majorOffenseModal');
+  if (majorModalEl) {
+    majorModalEl.addEventListener('hidden.bs.modal', () => {
+      if (overlay) overlay.style.display = 'none';
+      document.body.classList.remove('modal-open');
+      $$('.modal-backdrop').forEach(b => b.remove());
+    });
+  }
+  $$('[data-bs-dismiss="modal"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (overlay) overlay.style.display = 'none';
+      setTimeout(() => {
+        document.body.classList.remove('modal-open');
+        $$('.modal-backdrop').forEach(b => b.remove());
+      }, 300);
     });
   });
 
-///////////////////////////// START HERE MAG ADD
-    document.addEventListener("DOMContentLoaded", function () {
-        const minorBtn = document.querySelector('[data-bs-target="#minorDropdown"]');
-        const majorBtn = document.querySelector('[data-bs-target="#majorDropdown"]');
-        const minorWrapper = document.getElementById("minorWrapper");
-        const majorWrapper = document.getElementById("majorWrapper");
+  // ===== Form validation & behavior =====
+  if (!majorForm) return;
 
-        // hide both at start
-        minorWrapper.style.display = "none";
-        majorWrapper.style.display = "none";
+  const minorWrapper = document.getElementById('minorWrapper');
+  const majorWrapper = document.getElementById('majorWrapper');
+  const btnMinor     = document.getElementById('btnMinor');
+  const btnMajor     = document.getElementById('btnMajor');
+  const saveBtn      = document.getElementById('saveBtn');
 
-        function resetButtons() {
-          minorBtn.classList.remove("active-offense");
-          majorBtn.classList.remove("active-offense");
-        }
+  const reqNames  = ['last_name','first_name','student_id','program_course','violation_date','violation_time'];
+  const reqFields = reqNames.map(n => majorForm.querySelector(`[name="${n}"]`)).filter(Boolean);
 
-        minorBtn.addEventListener("click", function (e) {
-          e.preventDefault();
-          if (minorWrapper.style.display === "none") {
-            minorWrapper.style.display = "block";
-            majorWrapper.style.display = "none";
-            resetButtons();
-            minorBtn.classList.add("active-offense");
-          } else {
-            minorWrapper.style.display = "none";
-            resetButtons();
-          }
-        });
+  const minorSel   = majorForm.querySelector('[name="minor_offense"]');
+  const majorSel   = majorForm.querySelector('[name="violation_type"]');
+  const choiceError = document.getElementById('violationChoiceError');
 
-        majorBtn.addEventListener("click", function (e) {
-          e.preventDefault();
-          if (majorWrapper.style.display === "none") {
-            majorWrapper.style.display = "block";
-            minorWrapper.style.display = "none";
-            resetButtons();
-            majorBtn.classList.add("active-offense");
-          } else {
-            majorWrapper.style.display = "none";
-            resetButtons();
-          }
-        });
-      });
-  </script>
+  const ev1 = majorForm.querySelector('[name="evidence_1"]');
+  const ev2 = majorForm.querySelector('[name="evidence_2"]');
+  const ev1Err = document.getElementById('evidence1ClientError');
+  const ev2Err = document.getElementById('evidence2ClientError');
+
+  const MAX_MB  = 5;
+  const ALLOWED = new Set(['image/jpeg','image/png','image/webp','image/gif']);
+
+  function showMinor() {
+    minorWrapper?.classList.remove('d-none');
+    majorWrapper?.classList.add('d-none');
+    btnMinor?.classList.add('active-offense');
+    btnMajor?.classList.remove('active-offense');
+  }
+  function showMajor() {
+    majorWrapper?.classList.remove('d-none');
+    minorWrapper?.classList.add('d-none');
+    btnMajor?.classList.add('active-offense');
+    btnMinor?.classList.remove('active-offense');
+  }
+  function hideBoth() {
+    minorWrapper?.classList.add('d-none');
+    majorWrapper?.classList.add('d-none');
+    btnMajor?.classList.remove('active-offense');
+    btnMinor?.classList.remove('active-offense');
+  }
+
+  function validateEvidence(input, errBox) {
+    if (!input || !input.files || input.files.length === 0) {
+      errBox?.classList.add('d-none');
+      if (errBox) errBox.textContent = '';
+      return true;
+    }
+    const file   = input.files[0];
+    const okSize = file.size <= MAX_MB * 1024 * 1024;
+    const okType = !file.type || ALLOWED.has(file.type.toLowerCase());
+
+    let msg = '';
+    if (!okSize) msg = `File too large. Max ${MAX_MB} MB.`;
+    else if (!okType) msg = 'Unsupported image type. Use JPG, PNG, WEBP, or GIF.';
+
+    if (errBox) {
+      if (msg) {
+        errBox.textContent = msg;
+        errBox.classList.remove('d-none');
+      } else {
+        errBox.textContent = '';
+        errBox.classList.add('d-none');
+      }
+    }
+    return okSize && okType;
+  }
+
+  // XOR: exactly one of minor or major selected
+  function validateOffenseChoice() {
+    const minorPicked = !!(minorSel && nonEmpty(minorSel));
+    const majorPicked = !!(majorSel && nonEmpty(majorSel));
+    const ok = (minorPicked ^ majorPicked);
+    if (choiceError) {
+      choiceError.classList.toggle('d-none', ok);
+      if (!ok) {
+        choiceError.textContent = minorPicked && majorPicked
+          ? 'Please select only one: Minor OR Major (not both).'
+          : 'Please select either a Minor offense OR a Major offense.';
+      }
+    }
+    return ok;
+  }
+
+  function validateRequiredFields() {
+    let allValid = true;
+    reqFields.forEach((el, idx) => {
+      if (!el) return;
+      const hasValue = nonEmpty(el);
+      let isValid = true;
+
+      if (el.name === 'student_id') {
+        isValid = /^TUPC-\d{2}-\d{4,8}$/.test(el.value);
+      } else if (el.type === 'date' || el.type === 'time') {
+        isValid = hasValue;
+      } else {
+        try { isValid = el.checkValidity(); }
+        catch { isValid = hasValue; }
+      }
+
+      const ok = hasValue && isValid;
+      // Visual cue
+      el.style.borderColor = ok ? '#28a745' : '#dc3545';
+      if (!ok) allValid = false;
+    });
+    return allValid;
+  }
+
+  function updateSaveState() {
+    const reqOK = validateRequiredFields();
+    const offOK = validateOffenseChoice();
+    const ev1OK = validateEvidence(ev1, ev1Err);
+    const ev2OK = validateEvidence(ev2, ev2Err);
+
+    const allOK = reqOK && offOK && ev1OK && ev2OK;
+
+    console.log('=== VALIDATION STATUS ===');
+    console.log('Required Fields:', reqOK);
+    console.log('Offense Choice:', offOK);
+    console.log('Evidence:', { ev1: ev1OK, ev2: ev2OK });
+    console.log('SAVE BUTTON ENABLED:', allOK);
+    console.log('========================');
+
+    if (saveBtn) {
+      saveBtn.disabled = !allOK;
+      saveBtn.setAttribute('aria-disabled', String(!allOK));
+      saveBtn.style.opacity = allOK ? '1' : '0.65';
+      saveBtn.style.cursor  = allOK ? 'pointer' : 'not-allowed';
+    }
+  }
+
+  // Student ID formatter — allow 16 total chars: TUPC-##-########
+  function formatStudentId(raw) {
+    let s = (raw || '').toUpperCase().replace(/\s+/g, '');
+    if (!s.startsWith('TUPC')) s = 'TUPC' + s.replace(/^TUPC/i, '');
+    const digits = s.replace(/^TUPC/i, '').replace(/[^0-9]/g, '');
+    const first2 = digits.slice(0, 2);
+    const next   = digits.slice(2, 10); // up to 8 more digits
+    let out = 'TUPC';
+    if (first2.length) out += '-' + first2;
+    if (next.length)   out += '-' + next;
+    return out.slice(0, 16); // NOT 15
+  }
+  function syncAndValidateSID() {
+    const sid = document.getElementById('student_id');
+    if (!sid) return;
+    const next = formatStudentId(sid.value);
+    sid.value = next;
+    if (document.activeElement === sid) sid.setSelectionRange(next.length, next.length);
+    const isValid = /^TUPC-\d{2}-\d{4,8}$/.test(next);
+    sid.setCustomValidity(isValid ? '' : 'Student ID must be TUPC-##-#### to TUPC-##-########');
+    updateSaveState();
+  }
+
+  // Initial visibility & bindings
+  hideBoth();
+  if (nonEmpty(minorSel)) showMinor();
+  if (nonEmpty(majorSel)) showMajor();
+
+  btnMinor?.addEventListener('click', () => {
+    if (!minorWrapper?.classList.contains('d-none')) {
+      hideBoth(); if (minorSel) minorSel.value = '';
+    } else {
+      showMinor(); if (majorSel) majorSel.value = '';
+    }
+    updateSaveState();
+  });
+  btnMajor?.addEventListener('click', () => {
+    if (!majorWrapper?.classList.contains('d-none')) {
+      hideBoth(); if (majorSel) majorSel.value = '';
+    } else {
+      showMajor(); if (minorSel) minorSel.value = '';
+    }
+    updateSaveState();
+  });
+
+  minorSel?.addEventListener('change', () => {
+    if (nonEmpty(minorSel)) { if (majorSel) majorSel.value = ''; showMinor(); }
+    updateSaveState();
+  });
+  majorSel?.addEventListener('change', () => {
+    if (nonEmpty(majorSel)) { if (minorSel) minorSel.value = ''; showMajor(); }
+    updateSaveState();
+  });
+
+  const sid = document.getElementById('student_id');
+  if (sid) {
+    sid.addEventListener('input', syncAndValidateSID);
+    sid.addEventListener('blur',  syncAndValidateSID);
+    syncAndValidateSID();
+  }
+
+  [...reqFields, minorSel, majorSel, ev1, ev2].filter(Boolean).forEach(el => {
+    el.addEventListener('input',  updateSaveState);
+    el.addEventListener('change', updateSaveState);
+    el.addEventListener('blur',   updateSaveState);
+  });
+
+  // Defaults for readonly date/time
+  const dateField = majorForm.querySelector('[name="violation_date"]');
+  const timeField = majorForm.querySelector('[name="violation_time"]');
+  if (dateField && !dateField.value) dateField.value = new Date().toISOString().split('T')[0];
+  if (timeField && !timeField.value) timeField.value = new Date().toLocaleTimeString('en-US', {hour12:false}).slice(0,5);
+
+  // Reopen modal on server-side errors
+  {% if open_major_modal %}
+  if (majorModalEl) {
+    const instance = bootstrap.Modal.getOrCreateInstance(majorModalEl);
+    instance.show();
+    if ('{{ major_form.minor_offense.value|default_if_none:"" }}') showMinor();
+    else if ('{{ major_form.violation_type.value|default_if_none:"" }}') showMajor();
+  }
+  {% endif %}
+
+  // Initial validation
+  updateSaveState();
+})();
+</script>
 </body>
 </html>

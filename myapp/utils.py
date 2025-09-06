@@ -21,6 +21,10 @@ from textwrap import dedent
 from django.http import JsonResponse
 import json
 import secrets
+from django.core.mail import EmailMultiAlternatives, BadHeaderError
+from django.utils import timezone
+import unicodedata
+import re
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -123,6 +127,134 @@ def send_violation_email(request, violation, student, violation_count=None, sett
                 pass
 
     msg.send(fail_silently=False)
+
+def _norm(s: str) -> str:
+    """Lowercase, strip accents, keep letters/digits only."""
+    if not s:
+        return ""
+    s = s.strip().lower()
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]", "", s)
+
+def build_student_email(first_name: str, last_name: str, extension_name: str = "", domain: str = None) -> str:
+    """firstname.lastname{ext}@gsfe.tupcavite.edu.ph (domain overridable via settings)."""
+    domain = domain or getattr(settings, "STUDENT_EMAIL_DOMAIN", "gsfe.tupcavite.edu.ph")
+    first = _norm(first_name)
+    last  = _norm(last_name)
+    ext   = _norm(extension_name)
+    if not first or not last:
+        return ""
+    local = f"{first}.{last}{ext}"
+    return f"{local}@{domain}"
+
+def send_violation_notice(violation, to_email: str, *, max_history: int = 10) -> tuple[bool, str]:
+    """
+    Email the student about the recorded violation, including:
+      - total number of violations for this student_id
+      - recent history (what & when), up to `max_history`
+    Returns (ok, message_or_error).
+    """
+    if not to_email:
+        return False, "Missing student email."
+    if not getattr(settings, "SEND_VIOLATION_EMAILS", True):
+        return False, "Email sending disabled by settings."
+
+    # --- Build history for context (keyed by student_id) ---
+    from .models import Violation  # local import to avoid circulars
+    history_qs = (Violation.objects
+                  .filter(student_id=violation.student_id)
+                  .order_by("-violation_date", "-violation_time", "-created_at"))
+    total_count = history_qs.count()
+    recent = list(history_qs[:max_history])
+
+    def _fmt_dt(v):
+        d = v.violation_date.strftime("%Y-%m-%d")
+        t = v.violation_time.strftime("%H:%M")
+        return f"{d} {t}"
+
+    history_lines_text = "\n".join(
+        f"• {_fmt_dt(v)} — {v.violation_type} [{v.severity}] (Status: {v.status})"
+        for v in recent
+    ) or "• No prior records found."
+
+    history_rows_html = "".join(
+        f"<tr><td>{_fmt_dt(v)}</td><td>{v.violation_type}</td><td>{v.severity}</td><td>{v.status}</td></tr>"
+        for v in recent
+    ) or "<tr><td colspan='4'>No prior records found.</td></tr>"
+
+    # --- Current record summary ---
+    subject = "TUPC OSA: Violation Recorded"
+    recorded_at_local = timezone.localtime(violation.created_at).strftime("%Y-%m-%d %H:%M")
+    vdate = violation.violation_date.strftime("%Y-%m-%d")
+    vtime = violation.violation_time.strftime("%H:%M")
+
+    text_body = (
+        f"Good day, {violation.first_name} {violation.last_name},\n\n"
+        f"A violation record has been created in the OSA system.\n\n"
+        f"Student ID: {violation.student_id}\n"
+        f"Program: {violation.program_course}\n"
+        f"Violation: {violation.violation_type} (Severity: {violation.severity})\n"
+        f"Date/Time of Violation: {vdate} {vtime}\n"
+        f"Recorded By: {violation.guard_name or 'OSA Admin'}\n"
+        f"Status: {violation.status}\n"
+        f"Recorded At: {recorded_at_local}\n\n"
+        f"—\n"
+        f"Total Violations on Record: {total_count}\n"
+        f"Recent History (up to {max_history}):\n"
+        f"{history_lines_text}\n\n"
+        "If you believe this is incorrect, please contact the Office of Student Affairs.\n"
+        "This is an automated message. Please do not reply to this email."
+    )
+
+    html_body = f"""
+    <p>Good day, <strong>{violation.first_name} {violation.last_name}</strong>,</p>
+    <p>A violation record has been created in the OSA system.</p>
+    <table style="border-collapse:collapse">
+      <tr><td><strong>Student ID</strong></td><td>{violation.student_id}</td></tr>
+      <tr><td><strong>Program</strong></td><td>{violation.program_course}</td></tr>
+      <tr><td><strong>Violation</strong></td><td>{violation.violation_type} (Severity: {violation.severity})</td></tr>
+      <tr><td><strong>Date/Time of Violation</strong></td><td>{vdate} {vtime}</td></tr>
+      <tr><td><strong>Recorded By</strong></td><td>{violation.guard_name or 'OSA Admin'}</td></tr>
+      <tr><td><strong>Status</strong></td><td>{violation.status}</td></tr>
+      <tr><td><strong>Recorded At</strong></td><td>{recorded_at_local}</td></tr>
+    </table>
+
+    <hr style="margin:16px 0;border:none;border-top:1px solid #ddd" />
+
+    <p><strong>Total Violations on Record:</strong> {total_count}</p>
+    <p><strong>Recent History (up to {max_history}):</strong></p>
+    <table style="border-collapse:collapse;width:100%">
+      <thead>
+        <tr>
+          <th style="text-align:left">Date/Time</th>
+          <th style="text-align:left">Violation</th>
+          <th style="text-align:left">Severity</th>
+          <th style="text-align:left">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {history_rows_html}
+      </tbody>
+    </table>
+
+    <p>If you believe this is incorrect, please contact the Office of Student Affairs.</p>
+    <p style="color:#666">This is an automated message. Please do not reply to this email.</p>
+    """
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@tupcavite.edu.ph")
+    try:
+        msg = EmailMultiAlternatives(subject, text_body, from_email, [to_email])
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=False)
+        return True, f"Email sent to {to_email}"
+    except BadHeaderError:
+        return False, "Invalid header found."
+    except Exception as e:
+        return False, f"Email failed: {e}"
+
+
+
+#######################################
 
 def send_status_email(to_email, approved=True, reason=None):
     subject = "Good Moral Certificate Request Status"
