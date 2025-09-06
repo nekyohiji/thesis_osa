@@ -56,6 +56,8 @@ urlpatterns = [
     
     
     path('admin_ackreq/', views.admin_ackreq_view, name='admin_ackreq'),
+    path("ackreq/batch-preview", views.batch_view_ackreq_receipts, name="batch_view_ackreq_receipts"),
+    
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
     path("gmf/batch-preview", views.batch_view_gmf, name="gmf_batch_preview"),
@@ -80,6 +82,7 @@ urlpatterns = [
     
     path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_goodmoral'),
+    path("gmrf/batch-preview", views.batch_view_gmrf, name="batch_view_gmrf"),
     
     path('admin_view_violation/', views.admin_view_violation, name='admin_view_violation'),
     path('admin_violation/', views.admin_violation_view, name='admin_violation'),

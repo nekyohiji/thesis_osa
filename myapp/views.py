@@ -2388,6 +2388,205 @@ def goodmoral_request_form_pdf(request, pk):
 
 @role_required(['admin'])
 @xframe_options_exempt
+def batch_view_gmrf(request):
+    """
+    Batch preview for *REQUEST FORMS* (not certificates).
+
+    Usage (index-like range, 1-based):
+      /gmrf/batch-preview?frm=1&to=50
+        -> Includes Accepted + Pending (excludes Rejected)
+
+    Optional:
+      &status=accepted|pending|all    (default: all=accepted+pending; rejected always excluded)
+      &guide=1                        (draws position guides for debugging)
+
+    Sorting matches your certs batch for predictable pagination.
+    """
+    def _num(x, default):
+        try:
+            v = int(x)
+            return v if v >= 1 else default
+        except Exception:
+            return default
+
+    frm = _num(request.GET.get('frm'), 1)
+    to  = _num(request.GET.get('to'),  frm)
+    if to < frm:
+        return HttpResponseBadRequest("Invalid range.")
+
+    status = (request.GET.get("status") or "all").strip().lower()
+    guide  = (request.GET.get("guide") == "1")
+
+    # Base filter: exclude rejected -> accepted + pending
+    q = Q(is_rejected=False)
+    if status == "accepted":
+        q &= Q(is_approved=True)
+    elif status == "pending":
+        q &= Q(is_approved=False)
+    # else: 'all' keeps accepted+pending
+
+    qs = (GoodMoralRequest.objects
+          .filter(q)
+          .order_by('submitted_at', 'pk'))
+
+    start = frm - 1
+    end   = to
+    rows = list(qs[start:end])
+    if not rows:
+        return HttpResponseBadRequest("No requests in that range (after filtering).")
+
+    # ---- inline form renderer (copied from your single-form logic, returns bytes) ----
+    def _render_form_pdf_bytes(r):
+        from django.utils import timezone
+
+        template_path = finders.find('myapp/form/GMC-request-template.pdf')
+        if not template_path:
+            raise FileNotFoundError("Template PDF not found.")
+
+        with open(template_path, 'rb') as f:
+            base_pdf_bytes = f.read()
+        base_reader = PdfReader(BytesIO(base_pdf_bytes))
+        base_page = base_reader.pages[0]
+        llx, lly, urx, ury = map(float, base_page.mediabox)
+        width, height = urx - llx, ury - lly
+
+        overlay_buf = BytesIO()
+        c = canvas.Canvas(overlay_buf, pagesize=(width, height))
+
+        # helpers
+        def check(x, y):
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(x, y, "✓")
+
+        def text(x, y, s, bold=False, size=11, right=False):
+            font = "Helvetica-Bold" if bold else "Helvetica"
+            c.setFont(font, size)
+            if right:
+                c.drawRightString(x, y, s or "")
+            else:
+                c.drawString(x, y, s or "")
+
+        def draw_guides(step=25):
+            c.setFont("Helvetica", 6)
+            c.setFillGray(0.6)
+            for x in range(0, int(width), step):
+                c.line(x, 0, x, height); c.drawString(x+1, 2, str(x))
+            for y in range(0, int(height), step):
+                c.line(0, y, width, y); c.drawString(2, y+2, str(y))
+            c.setFillGray(0)
+
+        if guide:
+            draw_guides()
+
+        # TOP ROW: NO. and DATE
+        req_no = f"{r.pk:06d}"
+        text(70, height - 135, req_no, bold=True, size=12)
+        date_requested = timezone.localdate(r.submitted_at).strftime('%m/%d/%Y')
+        text(width - 180, height - 135, date_requested, bold=True, size=12, right=True)
+
+        # PLACE FIELDS
+        surname = (r.surname or "").upper()
+        first = (r.first_name or "").upper()
+        ext = (r.ext or "").upper()
+        mi = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
+        text(45, 660, surname)
+        text(120, 660, first)
+        text(210, 660, ext)
+        text(240, 660, mi)
+
+        # Sex checkboxes
+        sex = (r.sex or "").lower()
+        if sex.startswith("m"):
+            check(320, 660)
+        elif sex.startswith("f"):
+            check(375, 660)
+
+        # Program (wrapped)
+        styles = getSampleStyleSheet()
+        styleN = styles["Normal"]; styleN.fontSize = 8; styleN.leading = 8
+        prog_para = Paragraph(r.program or "", styleN)
+        prog_para.wrapOn(c, 280, 100)
+        prog_para.drawOn(c, 45, 610)
+
+        # Status
+        status_val = (r.status or "").lower()
+        if "alum" in status_val or "gradu" in status_val:
+            check(60, 580)
+            if r.date_graduated:
+                text(160, 565, r.date_graduated.strftime('%Y'))
+        elif "former" in status_val:
+            check(60, 550)
+            text(190, 535, r.inclusive_years)
+        else:
+            check(60, 520)
+            text(170, 505, r.date_admission)
+
+        # Purpose of Request
+        purpose_raw = r.purpose or ""
+        purpose = purpose_raw.strip().lower()
+        other = (r.other_purpose or "").strip()
+
+        if "transfer" in purpose:
+            check(330, 610);  (other and text(360, 595, other, size=8))
+        elif "continu" in purpose or "continuing education" in purpose:
+            check(330, 583)
+        elif "employment" in purpose:
+            check(330, 555)
+        elif "scholar" in purpose:
+            check(330, 530);  (other and text(360, 515, other))
+        elif any(k in purpose for k in ("sit","supervised industrial training","ipt",
+                                        "in-campus practice teaching","opt","off-campus practice teaching")):
+            check(330, 500)
+        elif any(k in purpose for k in ("student development","comselec","usg","award")):
+            check(330, 460)
+        else:
+            check(330, 420); text(420, 420, other or purpose_raw)
+
+        # Requester info
+        text(85, 345, r.requester_name)
+        text(415, 345, r.requester_contact)
+        text(205, 330, r.relationship)
+
+        c.showPage()
+        c.save()
+        overlay_buf.seek(0)
+
+        overlay_reader = PdfReader(overlay_buf)
+        writer = PdfWriter()
+        page = base_reader.pages[0]
+        page.merge_page(overlay_reader.pages[0])
+        writer.add_page(page)
+
+        out = BytesIO()
+        writer.write(out)
+        out.seek(0)
+        return out.getvalue()
+    # ---- end inline renderer ----
+
+    merger = PdfMerger(strict=False)
+    added = 0
+    for req in rows:
+        try:
+            pdf_bytes = _render_form_pdf_bytes(req)
+            merger.append(BytesIO(pdf_bytes))
+            added += 1
+        except Exception:
+            # Skip bad rows silently; log if desired
+            continue
+
+    if added == 0:
+        return HttpResponseBadRequest("All rows failed to render.")
+
+    out = BytesIO()
+    merger.write(out); merger.close(); out.seek(0)
+
+    resp = HttpResponse(out.getvalue(), content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="GMRF_batch_{frm}-{to}_{status}.pdf"'
+    resp["Content-Length"] = str(len(out.getvalue()))
+    return resp
+
+@role_required(['admin'])
+@xframe_options_exempt
 def view_gmf(request, pk):
     req = get_object_or_404(GoodMoralRequest, pk=pk)
     pdf_bytes = generate_gmf_pdf(req)  # now returns bytes
@@ -2446,6 +2645,7 @@ def batch_view_gmf(request):
     resp["Content-Length"] = str(len(out.getvalue()))
     return resp
 
+
 #--------------------------------------------------#
 
 #------------Acknowledgement Receipt--------------------#
@@ -2468,6 +2668,76 @@ def admin_ackreq_receipt_pdf(request, pk):
     filename = os.path.basename(pdf_path)
     resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
+
+@role_required(['admin'])
+@xframe_options_exempt
+def batch_view_ackreq_receipts(request):
+    """
+    Batch preview for Acknowledgement Receipt PDFs (ID Surrender).
+    Uses your existing build_ack_pdf(req, admin_name_upper).
+
+    Usage:
+      /ackreq/batch-preview?frm=1&to=50
+    Notes:
+      - Range is 1-based index over the filtered/sorted queryset.
+      - Streams a single merged PDF inline.
+    """
+
+    def _num(x, default):
+        try:
+            v = int(x)
+            return v if v >= 1 else default
+        except Exception:
+            return default
+
+    frm = _num(request.GET.get('frm'), 1)
+    to  = _num(request.GET.get('to'),  frm)
+    if to < frm:
+        return HttpResponseBadRequest("Invalid range.")
+
+    # One lookup for the active admin (same as your single view)
+    admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
+    admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
+
+    # Base queryset — keep ordering simple & stable
+    qs = IDSurrenderRequest.objects.order_by('pk')
+
+    start = frm - 1
+    end   = to
+    rows = list(qs[start:end])
+    if not rows:
+        return HttpResponseBadRequest("No requests in that range.")
+
+    # Optional safety cap to prevent mega-merges
+    MAX_ROWS = 300
+    if len(rows) > MAX_ROWS:
+        return HttpResponseBadRequest(f"Too many rows ({len(rows)}). Limit is {MAX_ROWS} per batch.")
+
+    merger = PdfMerger(strict=False)
+    added = 0
+    for req in rows:
+        try:
+            # Reuse your existing generator which returns a file path
+            pdf_path = build_ack_pdf(req, admin_name_upper)
+            # Append by file path (PyPDF2 will open/close internally)
+            merger.append(pdf_path)
+            added += 1
+        except Exception:
+            # Skip row on any error; optionally log
+            continue
+
+    if added == 0:
+        return HttpResponseBadRequest("All rows failed to render.")
+
+    out = BytesIO()
+    merger.write(out)
+    merger.close()
+    out.seek(0)
+
+    resp = HttpResponse(out.getvalue(), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
+    resp["Content-Disposition"] = f'inline; filename="ACKREQ_batch_{frm}-{to}.pdf"'
+    resp["Content-Length"] = str(len(out.getvalue()))
     return resp
 
 def _is_ajax(request):

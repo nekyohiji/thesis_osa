@@ -391,7 +391,11 @@
       <!-- Footer -->
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button id="forms-batch-print-btn" type="button" class="btn text-light" style="background-color:#440207;">
+        <button id="forms-batch-print-btn"
+                type="button"
+                class="btn text-light"
+                style="background-color:#440207;"
+                data-url="{% url 'batch_view_gmrf' %}">
           <i class="bi bi-file-earmark-text-fill me-2"></i> Print
         </button>
       </div>
@@ -532,6 +536,31 @@
   document.addEventListener('DOMContentLoaded', () => {
     setupSearchByColumns('goodmoral_search',        '.pending-table', [1,2]);
     setupSearchByColumns('goodmoral_record_search', '.history-table', [1,2]);
+  });
+    document.addEventListener('DOMContentLoaded', () => {
+    const btn      = document.getElementById('forms-batch-print-btn');
+    const inpFrom  = document.getElementById('forms-batch-from');
+    const inpTo    = document.getElementById('forms-batch-to');
+    const selStat  = document.getElementById('forms-batch-status');
+    const chkGuide = document.getElementById('forms-batch-guide');
+
+    if (!btn || !inpFrom || !inpTo) return;
+
+    btn.addEventListener('click', () => {
+      const frm = parseInt(inpFrom.value || '1', 10);
+      const to  = parseInt(inpTo.value   || String(frm), 10);
+      if (Number.isNaN(frm) || Number.isNaN(to) || to < frm) {
+        alert('Please enter a valid range.');
+        return;
+      }
+
+      const base   = btn.dataset.url || '/gmrf/batch-preview';
+      const status = (selStat?.value || 'all').toLowerCase();
+      const guide  = chkGuide?.checked ? '&guide=1' : '';
+
+      const qs = `?frm=${encodeURIComponent(frm)}&to=${encodeURIComponent(to)}&status=${encodeURIComponent(status)}${guide}`;
+      window.open(base + qs, '_blank');
+    });
   });
 </script>
 
