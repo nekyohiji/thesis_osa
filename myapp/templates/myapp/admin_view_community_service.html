@@ -207,6 +207,28 @@
                     {% endif %}
                   </div>
                 </div>
+                <!-- Facilitator row (disabled/read-only) -->
+                <div class="row mt-2">
+                  <div class="col-8">
+                    <small class="text-muted d-block mb-1">Facilitator:</small>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      value="{{ log.facilitator_name|default:'—' }}"
+                      disabled
+                    />
+                  </div>
+                  <div class="col-4 text-end">
+                    {% if log.facilitator_source %}
+                      <span class="badge bg-dark">{{ log.facilitator_source|title }}</span>
+                    {% endif %}
+                    {% if log.is_official %}
+                      <span class="badge bg-primary">Official</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Unofficial</span>
+                    {% endif %}
+                  </div>
+                </div>
               </div>
             {% empty %}
               <div class="text-muted small">No logs yet.</div>

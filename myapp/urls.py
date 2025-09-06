@@ -19,9 +19,13 @@ urlpatterns = [
     path('client_ACSO/', views.client_ACSO_view, name='client_ACSO'),
     path('client_lostandfound/', views.client_lostandfound_view, name='client_lostandfound'),
     path('client_view_election/', views.client_view_election_view, name='client_view_election'),
-    path('client_election/', views.client_election_view, name='client_election'),
+
+    
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
     path('client_CS/', views.client_CS_view, name='client_CS'),
+    path("client_cs/otp/", views.otp_api, name="otp_api"), 
+    path("client/logout/", views.facilitator_logout_view, name="facilitator_logout"),
+     
     path('client_clearance/', views.client_clearance_view, name='client_clearance'),
     path("clearance/", views.clearance_request_view, name="clearance_request"),
     

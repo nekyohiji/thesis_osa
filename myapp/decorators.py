@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from urllib.parse import quote
+from django.contrib import messages
+from myapp.models import Facilitator
 
 def role_required(allowed_roles):
     allowed = {r.lower() for r in allowed_roles}
@@ -35,3 +37,15 @@ def role_required(allowed_roles):
 
         return wrapped
     return decorator
+
+def facilitator_required(viewfunc):
+    @wraps(viewfunc)
+    def _wrapped(request, *args, **kwargs):
+        fpk = request.session.get("facilitator_pk")
+        if not fpk or not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
+            for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
+                request.session.pop(k, None)
+            messages.error(request, "Please log in with your Faculty ID.")
+            return redirect("client_CS")
+        return viewfunc(request, *args, **kwargs)
+    return _wrapped

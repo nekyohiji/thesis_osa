@@ -10,8 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
 
-  <!-- QR Code Scanner -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- (Removed) QR Code Scanner script -->
 
   <style>
     body { background: #f4f6f9; }
@@ -22,7 +21,6 @@
     .badge { border-radius:8px; }
     .section-box { background:#fff; border-radius:12px; border:1px solid #7b0000; padding:1rem 1.25rem; }
     .section-title { font-weight:600; color:#7b0000; display:flex; gap:.5rem; align-items:center; }
-    #qr-reader { border-radius:12px; overflow:hidden; }
   </style>
 </head>
 
@@ -35,7 +33,7 @@
       <!-- Left side: title -->
       <div class="p-2">
         <h2 class="fw-bold mb-2"><i class="bi bi-people-fill me-2"></i>Community Service Monitoring</h2>
-        <p class="mb-0">Track rendered and remaining hours. Scan QR codes to log in/out.</p>
+        <p class="mb-0">Track rendered and remaining hours. Enter the student's TUPC ID to log in/out.</p>
       </div>
 
       <!-- Right side: Welcome message -->
@@ -104,7 +102,7 @@
 
     <hr>
     <div class="d-flex justify-content-end">
-      <a class="btn btn-outline-secondary" href="{% url 'client_CS' %}">
+      <a class="btn btn-outline-secondary" href="{% url 'facilitator_logout' %}">
         <i class="bi bi-box-arrow-right me-1"></i> Logout
       </a>
     </div>
@@ -182,18 +180,23 @@
     </div>
   </div>
 
-  <!-- QR Scanner Modal -->
-  <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+  <!-- Manual TUPC Entry Modal (replaces QR scanner) -->
+  <div class="modal fade" id="manualIdModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:500px;">
       <div class="modal-content">
         <div class="modal-header" style="background:linear-gradient(to bottom,#000,#440207); color:#fff;">
-          <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>QR Code Scanner</h5>
+          <h5 class="modal-title"><i class="bi bi-keyboard me-2"></i>Enter TUPC ID</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body text-center">
-          <div id="qr-reader" style="width:100%;"></div>
-          <p class="mt-3 fw-bold" id="qr-result">Scan a student's QR code...</p>
-          <div class="text-muted small">We’ll extract the <code>TUPC-XX-XXXX…</code> code before the surname.</div>
+        <div class="modal-body">
+          <label class="form-label">TUPC ID (e.g., <code>TUPC-12-3456</code>)</label>
+          <input type="text" class="form-control" id="manual-id-input" placeholder="Type or paste TUPC-XX-XXXX…">
+          <div class="form-text">It must match the selected student's ID exactly.</div>
+          <div class="mt-2 small text-muted" id="manual-id-hint">Waiting for input…</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" id="manual-submit"><i class="bi bi-check2-circle me-1"></i> Submit</button>
         </div>
       </div>
     </div>
@@ -228,10 +231,10 @@
   function normalizeId(s) {
     return (s || "").toUpperCase().trim();
   }
-  // Extracts "TUPC-XX-XXXX..." even if followed by whitespace/surname
+  // Extract "TUPC-XX-XXXX..." even if user types extra words
   function tupcFrom(raw) {
     const m = (raw || "").match(/(?:^|\s)(TUPC-\d{2}-\d+)(?=\s|$)/i);
-    return m ? normalizeId(m[1]) : null;
+    return m ? normalizeId(m[1]) : normalizeId(raw);
   }
   function setDisabled(btn, on) {
     if (!btn) return;
@@ -254,9 +257,17 @@
   const m_btn_in     = document.getElementById('m_btn_in');
   const m_btn_out    = document.getElementById('m_btn_out');
 
+  // Manual ID modal
+  const manualIdModalEl = document.getElementById('manualIdModal');
+  const manualIdModal   = new bootstrap.Modal(manualIdModalEl);
+  const manualInput     = document.getElementById('manual-id-input');
+  const manualHint      = document.getElementById('manual-id-hint');
+  const manualSubmit    = document.getElementById('manual-submit');
+
   let currentCaseId = null;
   let currentStudentId = null;
   let hasOpen = false;
+  let actionNext = null; // 'in' | 'out'
 
   function renderViolations(items) {
     if (!items || !items.length) return '<div class="text-muted small">No violations found.</div>';
@@ -279,18 +290,78 @@
 
   function renderLogs(items) {
     if (!items || !items.length) return '<div class="text-muted small">No logs yet.</div>';
-    return items.map(l => `
-      <div class="bg-light border rounded px-4 py-2 mb-2" style="border:2px solid #440207;">
-        <div class="row align-items-center">
-          <div class="col-3"><small class="text-muted d-block mb-1">Date:</small><span class="fw-semibold small">${l.date}</span></div>
-          <div class="col-3"><small class="text-muted d-block mb-1">Time In:</small><span class="fw-semibold small">${l.in}</span></div>
-          <div class="col-3"><small class="text-muted d-block mb-1">Time Out:</small><span class="fw-semibold small">${l.out || '—'}</span></div>
-          <div class="col-3 text-end">
-            ${l.out ? `<span class="badge bg-success">${l.hours}h</span>` : `<span class="badge bg-warning text-dark">On Going</span>`}
+
+    // one-time peek so we can see the exact payload shape in the console
+    if (!window.__cs_log_payload_dumped) {
+      try { console.table(items); } catch { console.log(items); }
+      window.__cs_log_payload_dumped = true;
+    }
+
+    const val = v => (v === undefined || v === null) ? "" : String(v);
+    const pick = (...candidates) => {
+      for (const c of candidates) {
+        const s = val(typeof c === "function" ? c() : c).trim();
+        if (s) return s;
+      }
+      return "";
+    };
+
+    const facilitatorFrom = l => {
+      // flat keys
+      const flat = pick(l.facilitator_name, l.facilitatorName, l.facilitator_display, l.facilitatorDisplay, l.facilitator);
+      if (flat) return flat;
+
+      // nested object e.g. { facilitator: { full_name: "...", name: "...", username: "..." } }
+      const f = l && l.facilitator ? l.facilitator : null;
+      if (f && typeof f === "object") {
+        return pick(f.full_name, f.fullName, f.name, f.display_name, f.displayName, f.username);
+      }
+      return "";
+    };
+
+    const sourceFrom = l => {
+      const flat = pick(l.facilitator_source, l.source, l.role);
+      if (flat) return flat;
+      const f = l && l.facilitator ? l.facilitator : null;
+      if (f && typeof f === "object") {
+        return pick(f.source, f.role, f.type);
+      }
+      return "";
+    };
+
+    return items.map(l => {
+      const fac = facilitatorFrom(l) || "—";
+      const srcKey = sourceFrom(l);
+      const src = srcKey ? `<span class="badge bg-dark ms-1">${srcKey.toUpperCase()}</span>` : "";
+
+      const official = l.is_official
+        ? '<span class="badge bg-primary">Official</span>'
+        : '<span class="badge bg-secondary">Unofficial</span>';
+
+      return `
+        <div class="bg-light border rounded px-4 py-2 mb-2" style="border:2px solid #440207;">
+          <div class="row align-items-center">
+            <div class="col-3"><small class="text-muted d-block mb-1">Date:</small><span class="fw-semibold small">${l.date}</span></div>
+            <div class="col-3"><small class="text-muted d-block mb-1">Time In:</small><span class="fw-semibold small">${l.in}</span></div>
+            <div class="col-3"><small class="text-muted d-block mb-1">Time Out:</small><span class="fw-semibold small">${l.out || '—'}</span></div>
+            <div class="col-3 text-end">
+              ${l.out ? `<span class="badge bg-success">${l.hours}h</span>` : `<span class="badge bg-warning text-dark">On Going</span>`}
+            </div>
+          </div>
+
+          <!-- Facilitator (disabled/read-only) -->
+          <div class="row mt-2">
+            <div class="col-8">
+              <small class="text-muted d-block mb-1">Facilitator:</small>
+              <input type="text" class="form-control form-control-sm" value="${fac.replace(/"/g, '&quot;')}" disabled>
+            </div>
+            <div class="col-4 text-end">
+              ${official} ${src}
+            </div>
           </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   async function loadCase(caseId) {
@@ -331,141 +402,84 @@
     });
   });
 
-  // ---------- Scanner Modal ----------
-  const qrModal   = document.getElementById("qrScannerModal");
-  const qrResult  = document.getElementById("qr-result");
-  const btnScanList = document.querySelectorAll('.btn-scan'); // safe if none exist
-
-  let html5QrCode = null;
-  let scanAction  = null; // 'in' | 'out'
-  let scanBusy    = false; // avoid duplicate posts
-
-  // If you have scan buttons on the cards (optional)
-  if (btnScanList && btnScanList.length) {
-    btnScanList.forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const caseId = e.currentTarget.dataset.caseId;
-        try {
-          const data = await loadCase(caseId);
-          currentCaseId = data.case.id;
-          currentStudentId = data.case.student_id;
-          hasOpen = !!data.open_session;
-          scanAction = hasOpen ? 'out' : 'in';
-          qrResult.textContent = hasOpen ? 'Scan to TIME OUT...' : 'Scan to TIME IN...';
-          new bootstrap.Modal(qrModal).show();
-        } catch {
-          alert('Failed to load case details.');
-        }
-      });
-    });
+  // ----- Manual ID flow -----
+  async function postScan(action, caseId, scannedRaw) {
+    const form = new FormData();
+    form.append('scanned', scannedRaw);
+    const url = (action === 'in')
+      ? "{% url 'cs_scan_time_in' 0 %}".replace('/0/', `/${caseId}/`)
+      : "{% url 'cs_scan_time_out' 0 %}".replace('/0/', `/${caseId}/`);
+    const r = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: form });
+    return r;
   }
 
-  // Trigger scanner from logs modal buttons
+  function openManualModal(nextAction) {
+    actionNext = nextAction;           // 'in' or 'out'
+    manualInput.value = '';
+    manualHint.textContent = (nextAction === 'in') ? 'Enter the student ID to TIME IN.' : 'Enter the student ID to TIME OUT.';
+    manualIdModal.show();
+    setTimeout(() => manualInput.focus(), 150);
+  }
+
   if (m_btn_in) {
     m_btn_in.addEventListener('click', () => {
       if (m_btn_in.disabled) return;
-      scanAction = 'in';
-      qrResult.textContent = 'Scan to TIME IN...';
-      new bootstrap.Modal(qrModal).show();
+      openManualModal('in');
     });
   }
   if (m_btn_out) {
     m_btn_out.addEventListener('click', () => {
       if (m_btn_out.disabled) return;
-      scanAction = 'out';
-      qrResult.textContent = 'Scan to TIME OUT...';
-      new bootstrap.Modal(qrModal).show();
+      openManualModal('out');
     });
   }
 
-  qrModal.addEventListener("shown.bs.modal", async () => {
-    if (html5QrCode) return;
-    html5QrCode = new Html5Qrcode("qr-reader");
+  manualSubmit.addEventListener('click', async () => {
+    const typed = tupcFrom(manualInput.value);
+    const expected = normalizeId(currentStudentId);
+    if (!typed) {
+      manualHint.textContent = 'Please enter a valid TUPC ID.';
+      return;
+    }
+    if (typed !== expected) {
+      manualHint.textContent = `ID mismatch: typed ${typed}, expected ${expected}.`;
+      return;
+    }
 
-    const box = Math.min(window.innerWidth * 0.8, 360);
-    const config = { fps: 12, qrbox: { width: box, height: box } };
-
-    const onScanSuccess = async (decodedText) => {
-      if (scanBusy) return;
-      const parsed   = tupcFrom(decodedText);
-      const expected = normalizeId(currentStudentId);
-
-      if (!parsed) {
-        qrResult.textContent = "ID unreadable. Try again.";
-        return;
-      }
-      if (parsed !== expected) {
-        qrResult.textContent = `ID mismatch: scanned ${parsed}, expected ${expected}.`;
-        return;
-      }
-
-      scanBusy = true;
-      try {
-        const form = new FormData();
-        form.append('scanned', decodedText);
-
-        const url = (scanAction === 'in')
-          ? "{% url 'cs_scan_time_in' 0 %}".replace('/0/', `/${currentCaseId}/`)
-          : "{% url 'cs_scan_time_out' 0 %}".replace('/0/', `/${currentCaseId}/`);
-
-        const r = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: form });
-        if (!r.ok) {
-          const err = await r.json().catch(() => ({ error: 'Scan failed.' }));
-          qrResult.textContent = err.error || 'Scan failed.';
-          scanBusy = false;
-          return;
-        }
-
-        // Close scanner
-        const modal = bootstrap.Modal.getInstance(qrModal);
-        modal && modal.hide();
-
-        // Refresh logs modal if open
-        if (bootstrap.Modal.getInstance(logModal)) {
-          const data = await loadCase(currentCaseId);
-          m_remaining.value  = data.case.remaining_hours + 'h';
-          m_total.textContent = data.case.total_required_hours + 'h';
-          m_done.textContent  = data.case.hours_completed + 'h';
-          m_left.textContent  = data.case.remaining_hours + 'h';
-          m_logs.innerHTML    = renderLogs(data.logs || []);
-          setDisabled(m_btn_in, data.open_session || data.case.is_closed);
-          setDisabled(m_btn_out, !data.open_session);
-        } else {
-          location.reload();
-        }
-      } catch (e) {
-        qrResult.textContent = 'Network error. Please try again.';
-        scanBusy = false;
-      }
-    };
-
+    manualHint.textContent = 'Submitting…';
     try {
-      // Prefer back camera
-      await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-    } catch (e1) {
-      try {
-        const devices = await Html5Qrcode.getCameras();
-        if (!devices || !devices.length) throw new Error("No camera available.");
-        // Try last camera (often back camera)
-        await html5QrCode.start(devices[devices.length - 1].id, config, onScanSuccess);
-      } catch (e2) {
-        let msg = String(e2 && e2.message || e2 || '');
-        if (/Permission|NotAllowed/i.test(msg)) msg = "Camera permission denied. Allow it in browser settings.";
-        else if (/No camera/i.test(msg)) msg = "No camera found on this device.";
-        else if (location.protocol !== 'https:' && !/localhost|127\.0\.0\.1/.test(location.hostname)) msg = "Camera requires HTTPS on mobile. Use your tunnel URL.";
-        qrResult.textContent = msg;
+      const r = await postScan(actionNext, currentCaseId, typed);
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({ error: 'Request failed.' }));
+        manualHint.textContent = err.error || 'Request failed.';
+        return;
       }
+      manualIdModal.hide();
+
+      // Refresh logs modal if open
+      if (bootstrap.Modal.getInstance(logModal)) {
+        const data = await loadCase(currentCaseId);
+        m_remaining.value  = data.case.remaining_hours + 'h';
+        m_total.textContent = data.case.total_required_hours + 'h';
+        m_done.textContent  = data.case.hours_completed + 'h';
+        m_left.textContent  = data.case.remaining_hours + 'h';
+        m_logs.innerHTML    = renderLogs(data.logs || []);
+        setDisabled(m_btn_in, data.open_session || data.case.is_closed);
+        setDisabled(m_btn_out, !data.open_session);
+      } else {
+        location.reload();
+      }
+    } catch (e) {
+      manualHint.textContent = 'Network error. Please try again.';
     }
   });
 
-  qrModal.addEventListener("hidden.bs.modal", async () => {
-    if (html5QrCode) {
-      try { await html5QrCode.stop(); } catch {}
-      try { html5QrCode.clear(); } catch {}
-      html5QrCode = null;
+  // Allow Enter key to submit
+  manualInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      manualSubmit.click();
     }
-    scanBusy = false;
-    qrResult.textContent = "Scan a student's QR code...";
   });
 })();
 </script>

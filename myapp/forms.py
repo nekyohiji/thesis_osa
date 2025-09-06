@@ -377,20 +377,8 @@ NNNNN = re.compile(r'^\d{2}-\d{3}$')
 class FacilitatorForm(forms.ModelForm):
     class Meta:
         model = Facilitator
-        fields = ["full_name", "faculty_id"]
-        widgets = {
-            "full_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Full name"}),
-            "faculty_id": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "12-345",
-                "inputmode": "numeric",
-                "maxlength": "6",
-                "pattern": r"\d{2}-\d{3}"
-            }),
-        }
+        fields = ["full_name", "faculty_id", "email"]
 
-    def clean_faculty_id(self):
-        val = (self.cleaned_data.get("faculty_id") or "").strip()
-        if not NNNNN.match(val):
-            raise forms.ValidationError("ID must be NN-NNN (e.g., 12-345). Only digits and a hyphen.")
-        return val
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        return email

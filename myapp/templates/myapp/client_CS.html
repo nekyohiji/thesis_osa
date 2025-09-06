@@ -283,7 +283,7 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-
+      <div id="otpMsg" class="mt-2" aria-live="polite"></div>
       <!-- Modal Body -->
       <div class="modal-body">
 
@@ -335,10 +335,151 @@
       }
     });
   })();
-
-
-
 </script>
+<script>
+(function () {
+  const facultyInput = document.getElementById('faculty_id');
+  const sendBtn      = document.getElementById('sendOtpBtn');
+  const otpInput     = document.getElementById('otpInput');
+  const submitBtn    = document.getElementById('submitOtpBtn');
+  const form         = document.getElementById('facLogin');
+  const msgBox       = document.getElementById('otpMsg');
 
+  if (!facultyInput || !sendBtn || !otpInput || !submitBtn || !form || !msgBox) return;
+
+  // helper: write a Bootstrap alert inside the modal
+  function showMsg(type, text, autoHideMs = 4000) {
+    msgBox.innerHTML = `
+      <div class="alert alert-${type} py-2 mb-3" role="alert">
+        ${text}
+      </div>`;
+    if (autoHideMs) {
+      setTimeout(() => { msgBox.innerHTML = ''; }, autoHideMs);
+    }
+  }
+
+  // helper: POST with CSRF
+  async function post(url, data) {
+    const csrftoken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrftoken},
+      body: new URLSearchParams(data),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.msg || 'Request failed');
+    return json;
+  }
+
+  function validFaculty(v) { return /^\d{2}-\d{3}$/.test(v || ''); }
+
+  // SEND OTP
+  sendBtn.addEventListener('click', async () => {
+    const fac = (facultyInput.value || '').trim();
+    if (!validFaculty(fac)) {
+      facultyInput.classList.add('is-invalid');
+      facultyInput.focus();
+      showMsg('danger', 'Please enter a valid Faculty ID (NN-NNN).');
+      return;
+    }
+    facultyInput.classList.remove('is-invalid');
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+    showMsg('info', 'Sending OTP…');
+
+    try {
+      const r = await post("{% url 'otp_api' %}", { action: 'send', faculty_id: fac });
+      showMsg('success', r.msg || 'OTP sent to your email.');
+      otpInput.disabled = false;
+      submitBtn.disabled = false;
+      otpInput.focus();
+
+      // cooldown
+      let sec = 30;
+      const baseLabel = 'Resend OTP';
+      const ix = setInterval(() => {
+        sendBtn.textContent = `${baseLabel} (${sec})`;
+        if (--sec < 0) {
+          clearInterval(ix);
+          sendBtn.textContent = baseLabel;
+          sendBtn.disabled = false;
+        }
+      }, 1000);
+    } catch (e) {
+      showMsg('danger', e.message || 'Failed to send OTP.');
+      sendBtn.textContent = 'Send OTP';
+      sendBtn.disabled = false;
+    }
+  });
+
+  // VERIFY OTP
+  submitBtn.addEventListener('click', async () => {
+    const fac = (facultyInput.value || '').trim();
+    const otp = (otpInput.value || '').trim();
+
+    if (!validFaculty(fac)) {
+      facultyInput.classList.add('is-invalid');
+      facultyInput.focus();
+      showMsg('danger', 'Please enter a valid Faculty ID (NN-NNN).');
+      return;
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      otpInput.classList.add('is-invalid');
+      otpInput.focus();
+      showMsg('danger', 'Please enter the 6-digit OTP.');
+      return;
+    }
+    facultyInput.classList.remove('is-invalid');
+    otpInput.classList.remove('is-invalid');
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verifying…';
+    showMsg('info', 'Verifying OTP…');
+
+    try {
+      const r = await post("{% url 'otp_api' %}", { action: 'verify', faculty_id: fac, otp: otp });
+      showMsg('success', r.msg || 'Logged in.', 1500);
+      // small delay so the success message is visible
+      setTimeout(() => { window.location.href = "{% url 'client_view_CS' %}"; }, 700);
+    } catch (e) {
+      showMsg('danger', e.message || 'Incorrect or expired OTP.');
+      submitBtn.textContent = 'Submit OTP';
+      submitBtn.disabled = false;
+      otpInput.focus();
+    }
+  });
+
+  otpInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !submitBtn.disabled) submitBtn.click();
+  });
+})();
+</script>
+<script>
+  // clear invalid styles on typing
+  document.getElementById('faculty_id')?.addEventListener('input', e => e.target.classList.remove('is-invalid'));
+  document.getElementById('otpInput')?.addEventListener('input', e => e.target.classList.remove('is-invalid'));
+
+  // make OTP field numeric-only and 6 chars (in case not already)
+  const otpField = document.getElementById('otpInput');
+  if (otpField) {
+    otpField.setAttribute('maxlength', '6');
+    otpField.setAttribute('inputmode', 'numeric');
+    otpField.addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g, '').slice(0, 6);
+    });
+  }
+
+  // optional: reset modal state when closed
+  const otpModal = document.getElementById('otpModal');
+  otpModal?.addEventListener('hidden.bs.modal', () => {
+    const sendBtn = document.getElementById('sendOtpBtn');
+    const submitBtn = document.getElementById('submitOtpBtn');
+    const otpInput = document.getElementById('otpInput');
+    sendBtn.disabled = false; sendBtn.textContent = 'Send OTP';
+    submitBtn.disabled = true; submitBtn.textContent = 'Submit OTP';
+    otpInput.value = ''; otpInput.disabled = true;
+  });
+</script>
 </body>
 </html>

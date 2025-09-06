@@ -48,7 +48,7 @@ class UserAccount(models.Model):
     
 class OTPVerification(models.Model):
     email = models.EmailField(unique=True)
-    otp = models.CharField(max_length=6)
+    otp = models.CharField(max_length=128)
     full_name = models.CharField(max_length=128)
     role = models.CharField(max_length=20)
     password = models.CharField(max_length=128)  # store temporarily
@@ -485,12 +485,10 @@ class CommunityServiceCase(models.Model):
         self.adjust_total_required(self.total_required_hours + add_hours)
 
     @transaction.atomic
-    def add_manual_hours(self, hours: Decimal, *, is_official: bool = False) -> "CommunityServiceLog":
-        """
-        Manually credit hours without a live timer (creates a closed log entry).
-        Rounds to nearest 0.5h, updates case completion, and auto-closes if done.
-        Safe for concurrent admin actions.
-        """
+    def add_manual_hours(
+        self, hours: Decimal, *, is_official: bool = False,
+        facilitator_name: str | None = None, facilitator_source: str | None = None
+    ) -> "CommunityServiceLog":
         q = _q_half(Decimal(hours))
         now = timezone.now()
         log = CommunityServiceLog.objects.create(
@@ -499,49 +497,51 @@ class CommunityServiceCase(models.Model):
             check_out_at=now,
             hours=q,
             is_official=is_official,
+            facilitator_name=facilitator_name or "",
+            facilitator_source=facilitator_source or "",
         )
-
-        # UPDATED: lock the case row before updating totals (multi-admin safe)
         locked = CommunityServiceCase.objects.select_for_update().get(pk=self.pk)
         locked.hours_completed = (locked.hours_completed or Decimal('0.0')) + q
         locked.is_closed = (locked.remaining_hours == 0)
         locked.save(update_fields=["hours_completed", "is_closed", "updated_at"])
-
-        # keep 'self' in sync for caller
         self.hours_completed = locked.hours_completed
         self.is_closed = locked.is_closed
         return log
+
 
     @transaction.atomic
     def has_open_session(self) -> bool:
         # UPDATED: lock when checking to avoid races
         return self.logs.select_for_update().filter(check_out_at__isnull=True).exists()
-
+    
     @transaction.atomic
-    def open_session(self) -> "CommunityServiceLog":
-        """
-        Start a live timer session (Time-In). Enforce at most one open session
-        even under concurrent clicks (via row lock).
-        """
-        existing = (self.logs
-                    .select_for_update()
-                    .filter(check_out_at__isnull=True)
-                    .first())
+    def open_session(
+        self, *, facilitator_name: str | None = None, facilitator_source: str | None = None
+    ) -> "CommunityServiceLog":
+        existing = (self.logs.select_for_update().filter(check_out_at__isnull=True).first())
         if existing:
+            # Optional: backfill if empty
+            if not existing.facilitator_name and facilitator_name:
+                existing.facilitator_name = facilitator_name
+                existing.facilitator_source = (facilitator_source or "")
+                existing.save(update_fields=["facilitator_name", "facilitator_source"])
             return existing
-        return CommunityServiceLog.objects.create(case=self)
+        return CommunityServiceLog.objects.create(
+            case=self,
+            facilitator_name=facilitator_name or "",
+            facilitator_source=facilitator_source or "",
+        )
 
     @transaction.atomic
-    def close_open_session(self) -> "CommunityServiceLog | None":
-        """
-        Close the currently open session (Time-Out) if any, with a lock so
-        concurrent requests don't double-close.
-        """
-        log = (self.logs
-               .select_for_update()
-               .filter(check_out_at__isnull=True)
-               .first())
+    def close_open_session(
+        self, *, facilitator_name: str | None = None, facilitator_source: str | None = None
+    ) -> "CommunityServiceLog | None":
+        log = (self.logs.select_for_update().filter(check_out_at__isnull=True).first())
         if log:
+            if not log.facilitator_name and facilitator_name:
+                log.facilitator_name = facilitator_name
+                log.facilitator_source = (facilitator_source or "")
+                log.save(update_fields=["facilitator_name", "facilitator_source"])
             log.close()
         return log
 
@@ -553,6 +553,12 @@ class CommunityServiceLog(models.Model):
       - hours computed on the server and added to the case
     """
     case = models.ForeignKey("CommunityServiceCase", on_delete=models.CASCADE, related_name="logs")
+    facilitator_name = models.CharField(max_length=150, blank=True, default="")
+    facilitator_source = models.CharField(
+        max_length=12,
+        choices=[("admin", "AdminUser"), ("faculty", "Faculty")],
+        blank=True, default=""
+    )
     check_in_at = models.DateTimeField(auto_now_add=True, db_default=Now())
     check_out_at = models.DateTimeField(null=True, blank=True)
 
@@ -601,12 +607,14 @@ class CommunityServiceLog(models.Model):
         case.is_closed = (case.remaining_hours == 0)
         case.save(update_fields=["hours_completed", "is_closed", "updated_at"])
 
+
+
+
 PH_PHONE_RE = RegexValidator(
     regex=r'^\+63\s\d{10}$',
     message="Contact number must be exactly in the format: +63 XXXXXXXXXX (10 digits after a space)."
 )
 
-# TUPC-XX-<4–10 digits>, where XX can be letters or digits
 STUDENT_NO_RE = RegexValidator(
     regex=r'^TUPC-[A-Z0-9]{2}-\d{4,10}$',
     message="Student number must match TUPC-XX-XXXXXXXX (4–10 digits at the end)."
@@ -689,7 +697,7 @@ class Facilitator(models.Model):
         help_text="Format: NN-NNN (e.g., 12-345)"
     )
     full_name = models.CharField(max_length=150)
-    email = models.EmailField(unique=True, default=None)
+    email = models.EmailField(unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     
 

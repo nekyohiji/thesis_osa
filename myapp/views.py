@@ -46,7 +46,7 @@ from reportlab.platypus import Image
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.finders import find as find_static
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.contrib import messages
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
@@ -81,7 +81,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from django.contrib.auth.hashers import make_password, check_password
 from django.db import IntegrityError
 # ── Local apps
-from .decorators import role_required
+from .decorators import role_required, facilitator_required
 from .forms import (
     CSCreateOrAdjustForm,
     ClearanceRequestForm,
@@ -167,123 +167,6 @@ def client_scholarships_view(request):
     scholarships = Scholarship.objects.order_by('-posted_date')
     return render (request, 'myapp/client_scholarships.html', {'scholarships': scholarships})
 
-ID_PATTERN = re.compile(r"^\d{2}-\d{3}$") 
-
-def client_CS_view(request):
-    if request.method == "POST":
-        faculty_id = (request.POST.get("faculty_id") or "").strip()
-
-        # format check
-        if not ID_PATTERN.match(faculty_id):
-            messages.error(request, "Login credentials invalid.")
-            return render(request, "myapp/client_CS.html", {"prefill": faculty_id})
-
-        # existence + active
-        facilitator = (Facilitator.objects
-                       .filter(faculty_id=faculty_id, is_active=True)
-                       .only("id", "full_name")
-                       .first())
-        if not facilitator:
-            messages.error(request, "Login credentials invalid.")
-            return render(request, "myapp/client_CS.html", {"prefill": faculty_id})
-
-        # success → session + go to viewer
-        request.session["facilitator_pk"] = facilitator.id
-        request.session["facilitator_id"] = faculty_id
-        request.session["facilitator_name"] = facilitator.full_name
-        return redirect("client_view_CS")
-
-    # already “logged in”? (optional shortcut)
-    if request.session.get("facilitator_pk"):
-        return redirect("client_view_CS")
-
-    return render(request, "myapp/client_CS.html")
-
-def client_view_CS_view(request):
-    # gate
-    fpk = request.session.get("facilitator_pk")
-    if not fpk:
-        messages.warning(request, "Please log in with your Faculty ID.")
-        return redirect("client_CS")  # <-- correct name
-
-    # optional: still active?
-    if not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
-        for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
-            request.session.pop(k, None)
-        messages.error(request, "Session expired. Please log in again.")
-        return redirect("client_CS")  # <-- correct name
-
-    # your search
-    q = (request.GET.get("q") or "").strip()
-    qs = CommunityServiceCase.objects.order_by('-updated_at')
-    if q:
-        qs = qs.filter(
-            Q(last_name__icontains=q) | Q(first_name__icontains=q) |
-            Q(program_course__icontains=q) | Q(student_id__icontains=q)
-        )
-
-    return render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
-
-    # (optional) re-verify still active; if not, clear session and bounce
-    if not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
-        for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
-            request.session.pop(k, None)
-        messages.error(request, "Session expired. Please log in again.")
-        return redirect("client_cs")
-
-    # your existing list/search
-    q = (request.GET.get("q") or "").strip()
-    qs = CommunityServiceCase.objects.order_by('-updated_at')
-    if q:
-        qs = qs.filter(
-            Q(last_name__icontains=q) | Q(first_name__icontains=q) |
-            Q(program_course__icontains=q) | Q(student_id__icontains=q)
-        )
-
-    return render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
-
-def cs_case_detail_api(request, case_id):
-    case = get_object_or_404(CommunityServiceCase, id=case_id)
-    vio = (Violation.objects
-           .filter(student_id=case.student_id)
-           .order_by('-violation_date', '-created_at')
-           .values('violation_type','violation_date','status','id'))
-    # map violations to simple JSON
-    violations = [{
-        "type": Violation.VIOLATION_TYPES_DICT.get(v['violation_type'], v['violation_type']) if hasattr(Violation,'VIOLATION_TYPES_DICT') else v['violation_type'],
-        "date": v['violation_date'].strftime('%b %d, %Y') if v['violation_date'] else '',
-        "severity": getattr(Violation, 'severity', 'Minor') and 'Minor'  # fallback label
-    } for v in vio]
-
-    logs_qs = case.logs.order_by('-check_in_at')
-    logs = []
-    for l in logs_qs:
-        logs.append({
-            "date": timezone.localtime(l.check_in_at).strftime('%b %d, %Y'),
-            "in":   timezone.localtime(l.check_in_at).strftime('%I:%M %p'),
-            "out":  timezone.localtime(l.check_out_at).strftime('%I:%M %p') if l.check_out_at else None,
-            "hours": str(l.hours)
-        })
-
-    open_session = logs_qs.filter(check_out_at__isnull=True).exists()
-
-    return JsonResponse({
-        "case": {
-            "id": case.id,
-            "student_id": case.student_id,
-            "first_name": case.first_name,
-            "last_name": case.last_name,
-            "program_course": case.program_course,
-            "total_required_hours": str(case.total_required_hours),
-            "hours_completed": str(case.hours_completed),
-            "remaining_hours": str(case.remaining_hours),
-            "is_closed": case.is_closed,
-        },
-        "violations": violations,
-        "logs": logs,
-        "open_session": open_session,
-    })
-
 def client_SurrenderingID_view(request):
     return render (request, 'myapp/client_SurrenderingID.html')
 
@@ -333,8 +216,15 @@ def admin_add_faculty_view(request):
                 obj.save()
                 messages.success(request, "Facilitator added.")
                 return redirect("admin_add_faculty")
-            except IntegrityError:
-                form.add_error("faculty_id", "That ID already exists.")
+            except IntegrityError as e:
+                # fall back in case race condition or non-form path
+                msg = str(e).lower()
+                if "email" in msg:
+                    form.add_error("email", "That email already exists.")
+                elif "faculty_id" in msg:
+                    form.add_error("faculty_id", "That ID already exists.")
+                else:
+                    form.add_error(None, "Duplicate record.")
                 messages.error(request, "Please fix the errors below.")
                 open_add_modal = True
         else:
@@ -346,7 +236,9 @@ def admin_add_faculty_view(request):
     q = (request.GET.get("q") or "").strip()
     facilitators = Facilitator.objects.all()
     if q:
-        facilitators = facilitators.filter(Q(full_name__icontains=q) | Q(faculty_id__icontains=q))
+        facilitators = facilitators.filter(
+            Q(full_name__icontains=q) | Q(faculty_id__icontains=q) | Q(email__icontains=q)
+        )
 
     ctx = {
         "form": form,
@@ -854,18 +746,18 @@ def login_view(request):
         # Validate email
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
-            messages.error(request, "Please enter a valid email address.")
+            messages.error(request, "Please enter a valid email address.", extra_tags="login")
             return render(request, 'myapp/login.html')
         if len(email) > 164:
-            messages.error(request, "Please enter a valid email.")
+            messages.error(request, "Please enter a valid email.", extra_tags="login")
             return render(request, 'myapp/login.html')
 
         # Validate password length
         if len(password) < 8:
-            messages.error(request, "Password must be at least 8 characters.")
+            messages.error(request, "Password must be at least 8 characters.", extra_tags="login")
             return render(request, 'myapp/login.html')
         if len(password) > 128:
-            messages.error(request, "Password is too long.")
+            messages.error(request, "Password is too long.", extra_tags="login")
             return render(request, 'myapp/login.html')
 
         try:
@@ -886,11 +778,11 @@ def login_view(request):
                 elif user.role == 'comselec':
                     return redirect('admin_election')
                 else:
-                    messages.error(request, "Account role not recognized.")
+                    messages.error(request, "Account role not recognized.", extra_tags="login")
             else:
-                messages.error(request, "Incorrect password.")
+                messages.error(request, "Incorrect password.", extra_tags="login")
         except UserAccount.DoesNotExist:
-            messages.error(request, "Account not found or inactive.")
+            messages.error(request, "Account not found or inactive.", extra_tags="login")
 
     return render(request, 'myapp/login.html')
 
@@ -3075,8 +2967,17 @@ def mark_apology_settled(request, violation_id):
     return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
 
 #--------------------------------------------------#
-
-#---------------community service-----------------#
+def _current_facilitator_snapshot(request) -> tuple[str, str]:
+    """
+    Returns (name, source) where source in {"admin","faculty"} or ("","") if none.
+    """
+    s = request.session
+    if s.get("facilitator_pk"):  # OTP flow
+        return (s.get("facilitator_name", "") or "", "faculty")
+    if s.get("user_id"):         # Admin/Staff login
+        return (s.get("full_name", "") or "", "admin")
+    return ("", "")
+#---------------admin community service-----------------#
 
 @role_required(['admin'])
 @transaction.atomic
@@ -3191,10 +3092,10 @@ def cs_scan_time_in(request, case_id):
         return JsonResponse({"ok": False, "error": "ID mismatch or unreadable scan."}, status=400)
     if case.is_closed:
         return JsonResponse({"ok": False, "error": "Case is closed. Add hours first."}, status=400)
-    log = case.open_session()
-    return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
 
-# AJAX: scanner -> TIME OUT
+    fname, fsrc = _current_facilitator_snapshot(request)
+    log = case.open_session(facilitator_name=fname, facilitator_source=fsrc)
+    return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
 
 @require_POST
 @transaction.atomic
@@ -3204,11 +3105,234 @@ def cs_scan_time_out(request, case_id):
     scanned_id = _extract_tupc_id(scanned_raw)
     if not scanned_id or scanned_id != case.student_id:
         return JsonResponse({"ok": False, "error": "ID mismatch or unreadable scan."}, status=400)
-    log = case.close_open_session()
+
+    fname, fsrc = _current_facilitator_snapshot(request)
+    log = case.close_open_session(facilitator_name=fname, facilitator_source=fsrc)
     if not log:
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
 
 #--------------------------------------------------#
 
+#---------Facilitator Accounts---------------------#
 
+ID_PATTERN = re.compile(r'^\d{2}-\d{3}$')   # NN-NNN
+OTP_LENGTH = 6
+OTP_TTL = timedelta(minutes=5)
+
+
+RL_WINDOW = 600
+SEND_LIMIT = 5
+VERIFY_LIMIT = 8
+
+def _generate_otp(length: int = OTP_LENGTH) -> str:
+    return f"{secrets.randbelow(10**length):0{length}d}"
+
+def _send_otp_email(to_email: str, code: str, full_name: str = "") -> None:
+    subject = "Your One-Time Code"
+    greeting = f"Hello {full_name}," if full_name else "Hello,"
+    body = (
+        f"{greeting}\n\n"
+        f"Your OTP is: {code}\n"
+        f"This code expires in {int(OTP_TTL.total_seconds()//60)} minutes. "
+        "If you didn’t request this, you can ignore this email.\n\n"
+        "— Office of Student Affairs"
+    )
+    # Configure EMAIL_BACKEND etc. in settings; console backend is great for dev
+    send_mail(subject, body, None, [to_email], fail_silently=False)
+
+def _rl_hit(key: str, limit: int) -> bool:
+    """
+    Simple sliding-window-ish counter: returns True if under limit, else False.
+    """
+    now = int(timezone.now().timestamp())
+    bucket = cache.get(key, [])
+    bucket = [t for t in bucket if now - t < RL_WINDOW]
+    if len(bucket) >= limit:
+        return False
+    bucket.append(now)
+    cache.set(key, bucket, RL_WINDOW)
+    return True
+
+@ensure_csrf_cookie
+def client_CS_view(request):
+    """
+    Login page (no auto-login). If session exists, go to viewer.
+    """
+    if request.session.get("facilitator_pk"):
+        return redirect("client_view_CS")
+    return render(request, "myapp/client_CS.html")
+
+@facilitator_required
+def client_view_CS_view(request):
+    """
+    Protected viewer (requires facilitator session and active account).
+    """
+    fpk = request.session.get("facilitator_pk")
+    if not fpk:
+        messages.warning(request, "Please log in with your Faculty ID.")
+        return redirect("client_CS")
+
+    if not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
+        for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
+            request.session.pop(k, None)
+        messages.error(request, "Session expired. Please log in again.")
+        return redirect("client_CS")
+
+    q = (request.GET.get("q") or "").strip()
+    qs = CommunityServiceCase.objects.order_by("-updated_at")
+    if q:
+        qs = qs.filter(
+            Q(last_name__icontains=q) | Q(first_name__icontains=q) |
+            Q(program_course__icontains=q) | Q(student_id__icontains=q)
+        )
+    return render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
+
+@require_POST
+def otp_api(request):
+    """
+    POST actions:
+      - action=send   + faculty_id
+      - action=verify + faculty_id + otp
+    Returns JSON.
+    """
+    action = (request.POST.get("action") or "").strip().lower()
+    faculty_id = (request.POST.get("faculty_id") or "").strip()
+    ip = request.META.get("REMOTE_ADDR", "0.0.0.0")
+
+    # Basic faculty_id validation for both actions
+    if not ID_PATTERN.match(faculty_id):
+        return JsonResponse({"ok": False, "msg": "Invalid Faculty ID format."}, status=400)
+
+    fac = (Facilitator.objects
+           .filter(faculty_id=faculty_id, is_active=True)
+           .only("id", "full_name", "email")
+           .first())
+    if not fac or not fac.email:
+        return JsonResponse({"ok": False, "msg": "Account not found or no email on file."}, status=404)
+
+    if action == "send":
+        # rate limit
+        if not _rl_hit(f"otp_send:{faculty_id}", SEND_LIMIT) or not _rl_hit(f"otp_send_ip:{ip}", SEND_LIMIT):
+            return JsonResponse({"ok": False, "msg": "Too many requests. Try again later."}, status=429)
+
+        # generate and store (hash only)
+        code = _generate_otp()
+        otp_hash = make_password(code)
+        OTPVerification.objects.filter(email=fac.email).delete()
+        OTPVerification.objects.create(
+            email=fac.email,
+            otp=otp_hash,         # store HASH (safer)
+            full_name=fac.full_name,
+            role="facilitator",
+            password="",          # unused in this flow
+            is_active=False,
+        )
+
+        try:
+            _send_otp_email(fac.email, code, fac.full_name)
+        except Exception:
+            return JsonResponse({"ok": False, "msg": "Failed to send OTP."}, status=500)
+
+        return JsonResponse({"ok": True, "msg": "OTP sent to your email."})
+
+    elif action == "verify":
+        # rate limit
+        if not _rl_hit(f"otp_verify:{faculty_id}", VERIFY_LIMIT) or not _rl_hit(f"otp_verify_ip:{ip}", VERIFY_LIMIT):
+            return JsonResponse({"ok": False, "msg": "Too many attempts. Try again later."}, status=429)
+
+        otp_plain = (request.POST.get("otp") or "").strip()
+        if not (otp_plain.isdigit() and len(otp_plain) == OTP_LENGTH):
+            return JsonResponse({"ok": False, "msg": "Invalid OTP."}, status=400)
+
+        row = OTPVerification.objects.filter(email=fac.email).only("id", "otp", "created_at", "is_active").first()
+        if not row:
+            return JsonResponse({"ok": False, "msg": "No OTP request found."}, status=404)
+
+        # TTL via created_at
+        if timezone.now() - row.created_at > OTP_TTL:
+            # Expired -> delete to clean up
+            row.delete()
+            return JsonResponse({"ok": False, "msg": "OTP expired. Request a new one."}, status=400)
+
+        # Validate hash
+        if not check_password(otp_plain, row.otp):
+            return JsonResponse({"ok": False, "msg": "Incorrect OTP."}, status=400)
+
+        # Success: mark active (optional), then delete to prevent reuse
+        row.is_active = True
+        row.save(update_fields=["is_active"])
+        row.delete()
+
+        # Start session
+        request.session["facilitator_pk"] = fac.id
+        request.session["facilitator_id"] = faculty_id
+        request.session["facilitator_name"] = fac.full_name
+
+        return JsonResponse({"ok": True, "msg": "Logged in."})
+
+    else:
+        return JsonResponse({"ok": False, "msg": "Unknown action."}, status=400)
+    
+@require_http_methods(["GET"])
+def facilitator_logout_view(request):
+    # Clear ONLY facilitator session keys
+    for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
+        request.session.pop(k, None)
+    messages.success(request, "Logged out (facilitator).")
+    return redirect("client_CS")  # change if you prefer a different landing page 
+
+def cs_case_detail_api(request, case_id):
+    case = get_object_or_404(CommunityServiceCase, id=case_id)
+
+    vio = (Violation.objects
+           .filter(student_id=case.student_id)
+           .order_by('-violation_date', '-created_at')
+           .values('violation_type', 'violation_date', 'status', 'id'))
+
+    # map violations to simple JSON
+    violations = [{
+        "type": Violation.VIOLATION_TYPES_DICT.get(v['violation_type'], v['violation_type'])
+                if hasattr(Violation, 'VIOLATION_TYPES_DICT') else v['violation_type'],
+        "date": v['violation_date'].strftime('%b %d, %Y') if v['violation_date'] else '',
+        "severity": getattr(Violation, 'severity', 'Minor') and 'Minor',  # fallback label
+    } for v in vio]
+
+    # pull facilitator snapshot + is_official too
+    logs_qs = (case.logs
+                   .order_by('-check_in_at')
+                   .only('check_in_at', 'check_out_at', 'hours', 'is_official',
+                         'facilitator_name', 'facilitator_source'))
+
+    logs = []
+    for l in logs_qs:
+        cin = timezone.localtime(l.check_in_at)
+        cout = timezone.localtime(l.check_out_at) if l.check_out_at else None
+        logs.append({
+            "date": cin.strftime('%b %d, %Y'),
+            "in":   cin.strftime('%I:%M %p'),
+            "out":  cout.strftime('%I:%M %p') if cout else None,
+            "hours": str(l.hours),
+            "is_official": l.is_official,
+            "facilitator_name": l.facilitator_name or "",
+            "facilitator_source": l.facilitator_source or "",
+        })
+
+    open_session = logs_qs.filter(check_out_at__isnull=True).exists()
+
+    return JsonResponse({
+        "case": {
+            "id": case.id,
+            "student_id": case.student_id,
+            "first_name": case.first_name,
+            "last_name": case.last_name,
+            "program_course": case.program_course,
+            "total_required_hours": str(case.total_required_hours),
+            "hours_completed": str(case.hours_completed),
+            "remaining_hours": str(case.remaining_hours),
+            "is_closed": case.is_closed,
+        },
+        "violations": violations,
+        "logs": logs,
+        "open_session": open_session,
+    })

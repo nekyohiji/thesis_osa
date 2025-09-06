@@ -217,17 +217,27 @@
               <table class="table table-hover table-bordered align-middle text-center mb-0" id="facilitatorTable">
                 <thead class="table-secondary sticky-top border">
                   <tr>
-                    <th style="width: 160px;">ID Number</th>
+                    <th style="width:160px;">ID Number</th>
                     <th>Name</th>
-                    <th style="width: 140px;">Actions</th>
+                    <th style="width:240px;">Email</th>
+                    <th style="width:140px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="facilitatorTbody">
                   {% if facilitators %}
                     {% for f in facilitators %}
-                      <tr data-name="{{ f.full_name|escape }}" data-id="{{ f.faculty_id|escape }}">
-                        <td class="text-monospace">{{ f.faculty_id }}</td>
-                        <td>{{ f.full_name }}</td>
+                      <tr data-name="{{ f.full_name|escape }}"
+                          data-id="{{ f.faculty_id|escape }}"
+                          data-email="{{ f.email|default_if_none:''|escape }}">
+                        <td class="font-monospace">{{ f.faculty_id }}</td>
+                        <td class="text-start">{{ f.full_name }}</td>
+                        <td class="text-center">
+                          {% if f.email %}
+                            <a href="mailto:{{ f.email|escape }}">{{ f.email }}</a>
+                          {% else %}
+                            <span class="text-muted">—</span>
+                          {% endif %}
+                        </td>
                         <td>
                           <button type="button"
                                   class="btn btn-sm border"
@@ -237,6 +247,7 @@
                                   data-action="{% url 'facilitator_delete' f.pk %}"
                                   data-name="{{ f.full_name|escape }}"
                                   data-id="{{ f.faculty_id|escape }}"
+                                  data-email="{{ f.email|default_if_none:''|escape }}"
                                   onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
                                   onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
                             <i class="bi bi-trash-fill me-1"></i> Remove
@@ -245,17 +256,15 @@
                       </tr>
                     {% endfor %}
                   {% else %}
-                    <tr><td colspan="3" class="text-muted py-4">No facilitators found.</td></tr>
+                    <tr><td colspan="4" class="text-muted py-4">No facilitators found.</td></tr>
                   {% endif %}
                 </tbody>
               </table>
             </div>
           </div>
-
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -316,14 +325,29 @@
             {% endif %}
             <div class="form-text">Two digits, a hyphen, then three digits.</div>
           </div>
-
-        </div>
+          <div class="mb-3">
+            <label for="facilitatorEmail" class="form-label fw-semibold">Email:</label>
+            <input type="email"
+                  class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                  id="facilitatorEmail"
+                  name="email"
+                  placeholder="name@example.com"
+                  inputmode="email"
+                  maxlength="254"
+                  required
+                  value="{{ form.email.value|default:'' }}">
+            {% if form.email.errors %}
+              <div class="invalid-feedback">{{ form.email.errors|striptags }}</div>
+            {% else %}
+              <div class="invalid-feedback">Please provide a valid email address.</div>
+            {% endif %}
+            <div class="form-text">We’ll use this to send OTP for secure login.</div>
+          </div>
         <div class="modal-footer justify-content-center">
           <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn text-light px-4" style="background-color:#440207;">Add</button>
         </div>
       </form>
-
     </div>
   </div>
 </div>
@@ -411,69 +435,122 @@
 {% endif %}
 
 <script>
-  // Instant client-side filter
-  (function () {
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    /* ========== Instant client-side filter (name, ID, email) ========== */
     const searchInput = document.getElementById('faculty_search');
     const tbody = document.getElementById('facilitatorTbody');
-    if (!searchInput || !tbody) return;
-    searchInput.addEventListener('input', function () {
-      const q = this.value.trim().toLowerCase();
-      tbody.querySelectorAll('tr').forEach(row => {
-        const name = (row.dataset.name || '').toLowerCase();
-        const id = (row.dataset.id || '').toLowerCase();
-        row.style.display = (!q || name.includes(q) || id.includes(q)) ? '' : 'none';
+    if (searchInput && tbody) {
+      searchInput.addEventListener('input', () => {
+        try {
+          const q = (searchInput.value || '').trim().toLowerCase();
+          tbody.querySelectorAll('tr').forEach(row => {
+            const name  = (row.dataset.name  || '').toLowerCase();
+            const id    = (row.dataset.id    || '').toLowerCase();
+            const email = (row.dataset.email || '').toLowerCase();
+            row.style.display = (!q || name.includes(q) || id.includes(q) || email.includes(q)) ? '' : 'none';
+          });
+        } catch (err) {
+          console.error('Filter error:', err);
+        }
       });
-    });
-  })();
+    } else {
+      console.warn('Search elements not found for facilitator filter.');
+    }
 
-  // Auto-format NN-NNN + client validation
-  (function () {
-    const form = document.getElementById('addFacilitatorForm');
-    const idInput = document.getElementById('facultyId');
-    const nameInput = document.getElementById('facilitatorName');
+    /* ========== Add Facilitator form: auto-format + validation ========== */
+    const form       = document.getElementById('addFacilitatorForm');
+    const idInput    = document.getElementById('facultyId');
+    const nameInput  = document.getElementById('facilitatorName');
+    const emailInput = document.getElementById('facilitatorEmail');
 
+    // Auto-format NN-NNN
     if (idInput) {
-      idInput.addEventListener('input', function () {
-        let v = this.value.replace(/[^\d]/g, '');
-        if (v.length > 2) v = v.slice(0, 2) + '-' + v.slice(2, 5);
-        this.value = v.slice(0, 6);
+      idInput.addEventListener('input', () => {
+        try {
+          let v = idInput.value.replace(/[^\d]/g, '');
+          if (v.length > 2) v = v.slice(0, 2) + '-' + v.slice(2, 5);
+          idInput.value = v.slice(0, 6);
+        } catch (err) {
+          console.error('ID format error:', err);
+        }
       });
     }
 
+    // Validate on submit
     if (form) {
-      form.addEventListener('submit', function (e) {
-        const pattern = /^\d{2}-\d{3}$/;
-        let ok = true;
+      form.addEventListener('submit', (e) => {
+        try {
+          const idPattern = /^\d{2}-\d{3}$/;
+          let ok = true;
 
-        if (!nameInput.value.trim()) { nameInput.classList.add('is-invalid'); ok = false; }
-        else { nameInput.classList.remove('is-invalid'); }
+          // Name required
+          if (!nameInput || !nameInput.value.trim()) { nameInput?.classList.add('is-invalid'); ok = false; }
+          else { nameInput.classList.remove('is-invalid'); }
 
-        if (!pattern.test(idInput.value.trim())) { idInput.classList.add('is-invalid'); ok = false; }
-        else { idInput.classList.remove('is-invalid'); }
+          // Faculty ID pattern
+          if (!idInput || !idPattern.test(idInput.value.trim())) { idInput?.classList.add('is-invalid'); ok = false; }
+          else { idInput.classList.remove('is-invalid'); }
 
-        if (!ok) { e.preventDefault(); e.stopPropagation(); }
+          // Email required + basic format
+          if (emailInput) {
+            const emailVal = (emailInput.value || '').trim();
+            const emailOk = !!emailVal && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+            if (!emailOk) { emailInput.classList.add('is-invalid'); ok = false; }
+            else { emailInput.classList.remove('is-invalid'); }
+          }
+
+          if (!ok) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+
+          // Optional: prevent double-submit
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn && (submitBtn.disabled = true);
+
+        } catch (err) {
+          console.error('Form submit validation error:', err);
+          e.preventDefault();
+          e.stopPropagation();
+          alert('Something went wrong validating the form. Please try again.');
+        }
+      });
+    } else {
+      console.warn('addFacilitatorForm not found.');
+    }
+
+    /* ========== Delete confirm modal wiring ========== */
+    const confirmModal = document.getElementById('confirmRemoveModal');
+    if (confirmModal) {
+      const deleteName = document.getElementById('deleteName');
+      const deleteId   = document.getElementById('deleteId');
+      const deleteForm = document.getElementById('deleteForm');
+      const deleteEmail = document.getElementById('deleteEmail'); // optional span
+
+      confirmModal.addEventListener('show.bs.modal', (event) => {
+        try {
+          const button = event.relatedTarget;
+          const name   = button?.getAttribute('data-name')   || '—';
+          const id     = button?.getAttribute('data-id')     || '—';
+          const email  = button?.getAttribute('data-email')  || '—';
+          const action = button?.getAttribute('data-action') || '#';
+
+          if (deleteName)  deleteName.textContent = name;
+          if (deleteId)    deleteId.textContent = id;
+          if (deleteEmail) deleteEmail.textContent = email;
+          if (deleteForm)  deleteForm.setAttribute('action', action);
+        } catch (err) {
+          console.error('Modal populate error:', err);
+        }
       });
     }
-  })();
-    (function () {
-    const confirmModal = document.getElementById('confirmRemoveModal');
-    if (!confirmModal) return;
 
-    const deleteName = document.getElementById('deleteName');
-    const deleteId = document.getElementById('deleteId');
-    const deleteForm = document.getElementById('deleteForm');
-
-    confirmModal.addEventListener('show.bs.modal', function (event) {
-      const button = event.relatedTarget;
-      const name = button?.getAttribute('data-name') || '—';
-      const id = button?.getAttribute('data-id') || '—';
-      const action = button?.getAttribute('data-action') || '#';
-      deleteName.textContent = name;
-      deleteId.textContent = id;
-      deleteForm.setAttribute('action', action);
-    });
-  })();
-  
+  } catch (outerErr) {
+    console.error('Init error:', outerErr);
+  }
+});
 </script>
 
 
