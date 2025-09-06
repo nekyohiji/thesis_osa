@@ -9,58 +9,69 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
-
-   <link rel="stylesheet" href="{% static 'myapp/css/guard_report.css' %}">
 </head>
 <body style="background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/guard_bg.png" %}'); 
             background-size: cover; background-position: center;">
 
 
 
-<!-- NAVIGATION BAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
-    <div class="container-fluid">
-        <a id="TUPC" class="navbar-brand" >
-            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
-            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
-            <span class="d-inline d-sm-none"><b>TUPC</b></span>
-        </a>
+    <!-- NAVIGATION BAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
+        <div class="container-fluid">
+            <!-- Brand / Logo -->
+            <a id="TUPC" class="navbar-brand">
+                <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+                <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
+                <span class="d-inline d-sm-none"><b>TUPC</b></span>
+            </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <!-- Toggler -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active" href="{% url 'guard_violation' %}">Violation</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'guard_report' %}">Violation Report</a></li>
-               <li class="nav-item">
-                  <a href="#" class="nav-link logout-btn" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
-                    <i class="bi bi-box-arrow-right"></i> Log Out
-                  </a>
-               </li>
-
-            </ul>
+            <!-- Nav Links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'guard_violation' %}active{% endif %}" 
+                          href="{% url 'guard_violation' %}">Violation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'guard_report' %}active{% endif %}" 
+                          href="{% url 'guard_report' %}">Violation Report</a>
+                    </li>
+                    <li class="nav-item ms-5">
+                        <a href="#" class="nav-link logout-btn rounded"
+                          data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"
+                          style="background-color: #440207; padding: 10px; font-size: 17px;"
+                          onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+                          onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
+                            <i class="bi bi-box-arrow-right"></i> Log Out
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-  <div class="container">
-    <h1 class="mb-4">
+
+  <div class="container ">
+    <h1 class="mb-4 fw-bold fs-2">
       <i class="bi bi-file-earmark-text-fill"></i> Violations Report
     </h1>
 
         <!-- CURRENT DATE AND TIME -->
     <div class="d-flex justify-content-start mb-3" style="font-weight: 500; color: #fff;">
         <div style="margin-right: 15px;">
-            <span><strong>Date:</strong> </span><span id="currentDate"></span>
+            <span><strong>Date:</strong> </span><span class="fw-normal" id="currentDate"></span>
         </div>
         <div>
-            <span><strong>Time:</strong> </span><span id="currentTime"></span>
+            <span><strong>Time:</strong> </span><span class="fw-normal" id="currentTime"></span>
         </div>
     </div>
 
-
+<div class="container mb-5 p-3" style="max-width: 1200px; background-color: rgba(168, 168, 168, 0.2); border-radius: 10px; padding: 20px;">
     <section class="filter-section">
       <h6 class="mb-3"><i class="bi bi-funnel-fill"></i> Filter Violations</h6>
       <hr>
@@ -91,16 +102,15 @@
                 {% endfor %}
             </select>
         </div>
-
-        <div class="col-12 text-end">
-            <button type="submit" class="btn btn-primary mt-2">Filter</button>
-        </div>
+           
     </form>
-        <div class="text-end mt-3">
+        <div class="d-flex justify-content-between mt-2">
+           
           <a href="{% url 'generate_guard_report_pdf' %}?{{ request.GET.urlencode }}" 
-            class="btn btn-success">
+            class="btn bg-dark text-light">
             <i class="bi bi-file-earmark-spreadsheet"></i> Download PDF Report
           </a>
+          <button type="submit" class="btn bg-dark text-light mt-2">Filter</button>
         </div>
 </section>
 
@@ -149,7 +159,7 @@
     </section>
   </div>
 
-
+</div>
 
   <!-- ///////////MODALS -->
 
@@ -202,6 +212,208 @@
           </div>
         </div>
       </div>
+
+
+
+
+<style>
+    
+    
+    
+    .filter-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .table-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .form-label {
+      font-weight: 600;
+    }
+    .form-label .bi {
+      margin-right: 6px;
+      color:#360107;
+    }
+    button .bi {
+      margin-right: 6px;
+    }
+
+    .container h1 {
+      color:white;
+    }
+
+
+
+#currentDate,
+#currentTime {
+    color: #ffffffb7; /* Change to your preferred color */
+
+}
+
+
+
+        input.form-control,
+        select.form-select,
+        textarea.form-control {
+            border: 1.5px solid #ccc;   /* default border */
+            font-size: 15px;            /* font size */
+            transition: border 0.2s ease-in-out, font-size 0.2s ease-in-out;
+        }
+
+        /* Force solid border on focus */
+        input.form-control:focus,
+        select.form-select:focus,
+        textarea.form-control:focus {
+            border-width: 2px !important;        /* Make border thicker */
+            border-style: solid !important;      /* Force solid style */
+            border-color:#440207 !important;    /* Primary blue color */
+            box-shadow: none !important;         /* Remove Bootstrap shadow */
+            outline: none !important;            /* Remove browser outline */
+        }
+
+        /* Optional: make transition smooth */
+        input.form-control,
+        select.form-select,
+        textarea.form-control {
+            transition: border 0.2s ease-in-out;
+        }
+
+
+  .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Header styles */
+    thead {
+      background-color: #004080;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    thead th {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 2px solid #007bff;
+    }
+
+    /* Body rows styles */
+    tbody tr:nth-child(odd) {
+      background-color: #e6f2ff;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #ffffff;
+    }
+
+    tbody tr:hover {
+      background-color: #cce6ff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    tbody td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #007bff;
+      color: #333;
+    }
+
+    /* Responsive container */
+    .table-responsive {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    /* Align middle cells vertically */
+    .align-middle td, .align-middle th {
+      vertical-align: middle;
+    }
+
+
+
+
+
+
+    #TUPC {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            font-size: 18px;
+            }
+
+        #TUPC img {
+            height: 30px;
+            width: auto;
+            flex-shrink: 0;
+            }
+
+        @media (max-width: 576px) {
+        #TUPC {
+            font-size: 0.9rem;}
+        }
+        
+
+
+        /* Nav links default */
+        .navbar-dark .navbar-nav .nav-link {
+            color: #ffffff !important; /* Force full white */
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 18px;
+        }
+
+        /* Hover effect */
+        .navbar-dark .navbar-nav .nav-link:hover {
+            font-weight: bold;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            color: #ffffff !important;
+        }
+
+        /* Active link */
+        .navbar-dark .navbar-nav .nav-link.active {
+            font-weight: bold;
+            text-decoration: underline;
+            text-underline-offset: 6px;
+            color: #ffcc00 !important; /* Highlight in gold */
+        }
+
+        /* Toggler border */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Toggler 3 lines (white) */
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        }
+
+
+
+</style>
+
+
+
+
+
+
+
+
+
+
+
 
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
