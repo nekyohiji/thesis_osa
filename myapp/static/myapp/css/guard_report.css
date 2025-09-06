@@ -25,51 +25,9 @@
       margin-right: 6px;
     }
 
-.container h1 {
-  color:white;
-}
-
-
-
-    
-
-/* Style the Log Out button */
-.logout-btn {
-    color: #fff; /* white text */
-    background-color: #dc3545; /* Bootstrap's danger red */
-    padding: 8px 16px;
-    border-radius: 5px;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
-    display: inline-block;
-    margin-left: 350px; /* Increase this for more space */
-}
-
-.logout-btn:hover {
-    background-color: #c82333; /* Darker red on hover */
-    text-decoration: none;
-}
-
-
-
-
-    .navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.5); /* Light border */
+    .container h1 {
+      color:white;
     }
-
-    /* 3 LINES */
-    .navbar-toggler-icon {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-        }
-
-
-
-
-
-/* Solid border on focus for text inputs, selects, textareas */
-
-
-
 
 
 
@@ -143,64 +101,53 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
+              
   /* NAVIGATION BAR */
 
-   #TUPC {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  font-size: 18px;
-}
-
-    #TUPC img {
-    height: 30px;
-    width: auto;
-    flex-shrink: 0;
-    }
-
-    @media (max-width: 576px) {
     #TUPC {
-        font-size: 0.9rem;
-    }
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            font-size: 18px;
+            }
 
-  }
+        #TUPC img {
+            height: 30px;
+            width: auto;
+            flex-shrink: 0;
+            }
 
-/* Stronger hover effect for nav links */
-.navbar-dark .navbar-nav .nav-link {
-    color: #ffffff !important; /* Force full white text */
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
+        @media (max-width: 576px) {
+        #TUPC {
+            font-size: 0.9rem;}
+        }
+        
+
+        /* Stronger hover effect for nav links */
+        .navbar-dark .navbar-nav .nav-link {
+            color: #ffffff !important; /* Force full white text */
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 18px;
+        }
+
+        .navbar-dark .navbar-nav .nav-link:hover {
+        font-weight: bold;
+            font-size: 1.1rem;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            color: white;
+
+        }
 
 
-/* Stronger hover effect for nav links */
-.navbar-dark .navbar-nav .nav-link {
-    color: #ffffff !important; /* Force full white text */
-    transition: background-color 0.3s ease, color 0.3s ease;
-    font-size: 20px;
-}
+        .navbar-toggler {
+        border-color: rgba(255, 255, 255, 0.5); /* Light border */
+        }
 
-.navbar-dark .navbar-nav .nav-link:hover {
-font-weight: bold;
-    font-size: 1.1rem;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    color: white;
+        /* 3 LINES */
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+            }
 
-}
+

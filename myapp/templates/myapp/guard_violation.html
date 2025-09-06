@@ -9,51 +9,65 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{% static 'myapp/css/guard_violation.css' %}">
 </head>
 <body style="background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/guard_bg.png" %}'); 
             background-size: cover; background-position: center;">
 
-<!-- NAVIGATION BAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
-    <div class="container-fluid">
-        <a id="TUPC" class="navbar-brand" href="#home">
-            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
-            <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
-            <span class="d-inline d-sm-none"><b>TUPC</b></span>
-        </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active" href="{% url 'guard_violation' %}">Violation</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'guard_report' %}">Violation Report</a></li>
-               <li class="nav-item">
-                  <a href="#" class="nav-link logout-btn" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
-                    <i class="bi bi-box-arrow-right"></i> Log Out
-                  </a>
-               </li>
+        <!-- NAVIGATION BAR -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
+            <div class="container-fluid">
+                <!-- Brand / Logo -->
+                <a id="TUPC" class="navbar-brand">
+                    <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
+                    <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
+                    <span class="d-inline d-sm-none"><b>TUPC</b></span>
+                </a>
 
-            </ul>
-        </div>
-    </div>
-</nav>
-<p style="color:white;">submitted: {{ submitted }} | message: {{ success_message }}</p>
-<div class="container mb-5" style="max-width: 1200px;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0"><i class="bi bi-pencil-square"></i><b> Violation Collection Form</b></h2>
+                <!-- Toggler -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Nav Links -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'guard_violation' %}active{% endif %}" 
+                            href="{% url 'guard_violation' %}">Violation</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'guard_report' %}active{% endif %}" 
+                            href="{% url 'guard_report' %}">Violation Report</a>
+                        </li>
+                        <li class="nav-item ms-5">
+                            <a href="#" class="nav-link logout-btn rounded"
+                            data-bs-toggle="modal" data-bs-target="#logoutConfirmModal"
+                            style="background-color: #440207; padding: 10px; font-size: 17px;"
+                            onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
+                            onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">
+                                <i class="bi bi-box-arrow-right"></i> Log Out
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+
+<div class="container mb-5" style="max-width: 1200px; ">
+    <div class="d-flex justify-content-between align-items-center mb-3 text-light ">
+        <h2 class="mb-0 "><i class="bi bi-pencil-square"></i><b> Violation Collection Form</b></h2>
     </div>
 
               <!-- CURRENT DATE AND TIME -->
-            <div class="d-flex flex-wrap align-items-center mb-3" style="font-weight: 500; color: #fffa;">
+            <div class="d-flex flex-wrap align-items-center mb-3" style="font-weight: 500; color: rgba(255, 255, 255, 0.86);">
             <div class="me-4">
-                <strong>Date:</strong> <span id="currentDate">Loading...</span>
+                <strong>Date:</strong> <span class="fw-normal" id="currentDate">Loading...</span>
             </div>
             <div>
-                <strong>Time:</strong> <span id="currentTime">Loading...</span>
+                <strong>Time:</strong> <span  class="fw-normal" id="currentTime">Loading...</span>
             </div>
             </div>
 
@@ -95,137 +109,139 @@
 </div>
 {% endif %}
 
-<div class="row">
 
-    <!-- LEFT PANEL -->
-    <div class="col-md-8">
-        <div class="section-title"><i class="bi bi-person-fill"></i> Personal Information</div>
-        <div class="form-section">
-            <div class="row">
-                <input type="text" id="hiddenScanInput" style="opacity:0; position:absolute; z-index:-1;">
-                
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">First Name:</label>
-                    <input type="text" class="form-control" id="fn_gv" name="first_name" readonly>
+<div class="container mb-5 p-3" style="max-width: 1200px; background-color: rgba(168, 168, 168, 0.2); border-radius: 10px; padding: 20px;">
+    <div class="row">
+
+        <!-- LEFT PANEL -->
+        <div class="col-md-8">
+            
+            <div class="form-section">
+                <div class="section-title text-dark"><i class="bi bi-person-fill"></i> Personal Information</div><hr>
+                <div class="row">
+                    <input type="text" id="hiddenScanInput" style="opacity:0; position:absolute; z-index:-1;">
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">First Name:</label>
+                        <input type="text" class="form-control" id="fn_gv" name="first_name" readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Middle Initial:</label>
+                        <input type="text" class="form-control" id="mn_gv" name="middle_initial" readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Extension Name:</label>
+                        <input type="text" class="form-control" id="ext_gv" name="extension_name" readonly>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Last Name:</label>
+                        <input type="text" class="form-control" id="ln_gv" name="last_name" readonly>
+                    </div>
                 </div>
 
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Middle Initial:</label>
-                    <input type="text" class="form-control" id="mn_gv" name="middle_initial" readonly>
-                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Student ID Number:</label>
+                        <input type="text" id="studentId_gv" name="student_id" class="form-control" readonly>
+                    </div>
 
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Extension Name:</label>
-                    <input type="text" class="form-control" id="ext_gv" name="extension_name" readonly>
-                </div>
-
-                <div class="col-md-12 mb-3">
-                    <label class="form-label">Last Name:</label>
-                    <input type="text" class="form-control" id="ln_gv" name="last_name" readonly>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Program/Course:</label>
+                        <input type="text" class="form-control" id="studentProgram_gv" name="program_course" readonly>
+                    </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Student ID Number:</label>
-                    <input type="text" id="studentId_gv" name="student_id" class="form-control" readonly>
-                </div>
+            <div class="form-section">
+                <div class="section-title text-dark"><i class="bi bi-exclamation-triangle-fill"></i> Violation Details</div><hr>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Date of Violation:</label>
+                        <input type="date" class="form-control" id="violation_date_gv" name="violation_date" readonly>
+                    </div>
 
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Program/Course:</label>
-                    <input type="text" class="form-control" id="studentProgram_gv" name="program_course" readonly>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Time of Violation:</label>
+                        <input type="time" class="form-control" id="violation_time_gv" name="violation_time" readonly>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Type of Violation:</label>
+                        <select class="form-select" id="violation_type_gv" name="violation_type">
+                            <option value="">-- Select Violation Type --</option>
+                            <option value="Disturbance">Causing Disturbance During Class Hours</option>
+                            <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
+                            <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
+                            <option value="Facial Hair">Unwanted Facial Hair</option>
+                            <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
+                            <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
+                            <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
+                            <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
+                            <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
+                            <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
+                            <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
+                            <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
+                            <option value="Gambling">Possession of Gambling Paraphernalia</option>
+                            <option value="Devices">Unauthorized Use of Devices during Class</option>
+                            <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
+                            <option value="Harrassment">Making Lewd Gestures and Lustful Words to a Student</option>
+                            <option value="Property Damage">Accidental Damage of University Property</option>
+                            <option value="PDA">Public Display of Physical Intimacy or Affection</option>
+                            <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="section-title"><i class="bi bi-exclamation-triangle-fill"></i> Violation Details</div>
-        <div class="form-section">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Date of Violation:</label>
-                    <input type="date" class="form-control" id="violation_date_gv" name="violation_date" readonly>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Time of Violation:</label>
-                    <input type="time" class="form-control" id="violation_time_gv" name="violation_time" readonly>
-                </div>
-
-                <div class="col-md-12 mb-3">
-                    <label class="form-label">Type of Violation:</label>
-                    <select class="form-select" id="violation_type_gv" name="violation_type">
-                        <option value="">-- Select Violation Type --</option>
-                        <option value="Disturbance">Causing Disturbance During Class Hours</option>
-                        <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
-                        <option value="Cross Dressing">Cross Dressing in Uniform and Wash Days</option>
-                        <option value="Facial Hair">Unwanted Facial Hair</option>
-                        <option value="Earrings">Wearing of Earrings or Multiple Earrings</option>
-                        <option value="Caps">Wearing of Caps or Hats inside Covered Facilities</option>
-                        <option value="Entering Classroom">Entering Classrooms without Permission from Instructor</option>
-                        <option value="Leaving Classroom">Leaving Classrooms without Permission from Instructor</option>
-                        <option value="Attempt Fraternity">Attempting to Join a Fraternity</option>
-                        <option value="Posting Materials">Unauthorized Posting Printed Materials</option>
-                        <option value="Use of University Facilities">Unauthorized Use of University Facilities</option>
-                        <option value="Official Notices">Unauthorized Removal of Official Notices and Posters</option>
-                        <option value="Gambling">Possession of Gambling Paraphernalia</option>
-                        <option value="Devices">Unauthorized Use of Devices during Class</option>
-                        <option value="Resources">Irresponsible Use of Water and Electricity within University</option>
-                        <option value="Harrassment">Making Lewd Gestures and Lustful Words to a Student</option>
-                        <option value="Property Damage">Accidental Damage of University Property</option>
-                        <option value="PDA">Public Display of Physical Intimacy or Affection</option>
-                        <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
+        <!-- RIGHT PANEL -->
+        <div class="col-md-4 d-flex flex-column gap-1">
+            <div>
+                <div class="form-section">
+                    <div class="section-title text-dark"><i class="bi bi-shield-lock-fill"></i> Guard on Duty</div><hr>
+                    <label class="form-label">Select Guard:</label>
+                    <select class="form-select" id="Guardname_gv" name="guard_name">
+                        <option value="">-- Select Guard --</option>
+                        {% for guard in guards %}
+                            <option value="{{ guard.full_name }}">{{ guard.full_name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- RIGHT PANEL -->
-    <div class="col-md-4 d-flex flex-column gap-4">
-        <div>
-            <div class="section-title"><i class="bi bi-shield-lock-fill"></i> Guard on Duty</div>
-            <div class="form-section">
-                <label class="form-label">Select Guard:</label>
-                <select class="form-select" id="Guardname_gv" name="guard_name">
-                    <option value="">-- Select Guard --</option>
-                    {% for guard in guards %}
-                        <option value="{{ guard.full_name }}">{{ guard.full_name }}</option>
-                    {% endfor %}
-                </select>
+            <div class="upload-evidence-card position-relative">
+                <div class="form-section h-100 d-flex flex-column">
+                    <div class="section-title text-dark"><i class="bi bi-paperclip"></i> Upload Evidence</div><hr>
+                    <div id="capturedPreview" class="mt-2" style="overflow-y:auto; max-height: 300px;">
+                        <p class="text-muted text-center" style="font-size:14px;">No evidence captured yet.</p>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button id="camera_btn_gv" type="button" class="btn w-100 bg-dark text-light" title="Open Camera">
+                        <i class="bi bi-camera-fill"></i> Capture Evidence 
+                        </button>
+                    </div>
+
+                    <input type="file" id="evidence_1" name="evidence_1" style="display: none;">
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <button type="button"
+                        class="btn btn-success btn-lg w-100 fs-6"
+                        data-bs-toggle="modal"
+                        data-bs-target="#submitModal"
+                        id="submit_btn_gv">
+                    <i class="bi bi-send-fill"></i>
+                    </i> Submit
+                </button>
             </div>
         </div>
-
-        <div class="upload-evidence-card position-relative">
-            <div class="section-title"><i class="bi bi-paperclip"></i> Upload Evidence</div>
-            <div class="form-section h-100 d-flex flex-column">
-                <label class="form-label">Captured Evidence:</label>
-                <div id="capturedPreview" class="mt-2" style="overflow-y:auto; max-height: 300px;">
-                    <p class="text-muted">No evidence captured yet.</p>
-                </div>
-
-                <div class="text-center mt-3">
-                    <button id="camera_btn_gv" type="button" class="btn btn-info w-100" title="Open Camera">
-                        📸 Capture Evidence <i class="bi bi-camera-fill"></i>
-                    </button>
-                </div>
-
-                <input type="file" id="evidence_1" name="evidence_1" style="display: none;">
-            </div>
-        </div>
-
-        <div class="text-center mt-3">
-            <button type="button"
-                    class="btn btn-success btn-lg w-100"
-                    data-bs-toggle="modal"
-                    data-bs-target="#submitModal"
-                    id="submit_btn_gv">
-                <i class="bi bi-check-circle-fill"></i> Submit
-            </button>
-        </div>
     </div>
+    </form>
 </div>
-</form>
-
 
 
 <!-- ////////////////// MODALS ////////////////// -->
@@ -243,7 +259,7 @@
                 <canvas id="cameraCanvas" style="display:none;"></canvas>
             </div>
             <div class="modal-footer justify-content-center">
-                <button id="takeSnapshotBtn" type="button" class="btn btn-success">📷 Take Snapshot</button>
+                <button id="takeSnapshotBtn" type="button" class="btn bg-dark text-light">Take Snapshot</button>
             </div>
         </div>
     </div>
@@ -254,16 +270,14 @@
 <div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="submitModalLabel">Confirm Submission</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
             </div>
             <div class="modal-body text-dark text-center">
                 Are you sure you want to <strong>Submit</strong> this form?
             </div>
             <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-success" form="violationForm">
+                <button type="submit" class="btn bg-dark text-light" form="violationForm">
                     Submit
                 </button>
             </div>
@@ -275,9 +289,7 @@
 <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="logoutModalLabel">Log Out</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
             </div>
             <div class="modal-body text-center text-dark">
                 Are you sure you want to <strong>Log Out?</strong>
@@ -295,6 +307,148 @@
 
 
 
+<style>
+        body, html {
+            overflow-x: hidden !important;
+            }
+
+        .container, .row, .col {
+            max-width: 1300px !important;
+            }
+
+        video, canvas, img {
+            max-width: 100% !important;
+            }
+
+        #hiddenScanInput {
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden;
+            }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color:#ffffff;
+            text-align:center;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #444;
+        }
+
+        .form-section {
+            background-color: #fff;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 17px;
+        }
+
+
+        
+        #currentDate,
+        #currentTime {
+            color: #ffffffb7; /* Change to your preferred color */
+
+        }
+
+        
+        input.form-control,
+        select.form-select,
+        textarea.form-control {
+            border: 1.5px solid #ccc;   /* default border */
+            font-size: 15px;            /* font size */
+            transition: border 0.2s ease-in-out, font-size 0.2s ease-in-out;
+        }
+
+        /* Force solid border on focus */
+        input.form-control:focus,
+        select.form-select:focus,
+        textarea.form-control:focus {
+            border-width: 2px !important;        /* Make border thicker */
+            border-style: solid !important;      /* Force solid style */
+            border-color:#440207 !important;    /* Primary blue color */
+            box-shadow: none !important;         /* Remove Bootstrap shadow */
+            outline: none !important;            /* Remove browser outline */
+        }
+
+        /* Optional: make transition smooth */
+        input.form-control,
+        select.form-select,
+        textarea.form-control {
+            transition: border 0.2s ease-in-out;
+        }
+
+        #fileInputsContainer {
+            margin-bottom: 0 !important;
+        }
+
+        
+
+  /* NAVIGATION BAR */
+
+    #TUPC {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            font-size: 18px;
+            }
+
+        #TUPC img {
+            height: 30px;
+            width: auto;
+            flex-shrink: 0;
+            }
+
+        @media (max-width: 576px) {
+        #TUPC {
+            font-size: 0.9rem;}
+        }
+        
+
+
+        /* Nav links default */
+        .navbar-dark .navbar-nav .nav-link {
+            color: #ffffff !important; /* Force full white */
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 18px;
+        }
+
+        /* Hover effect */
+        .navbar-dark .navbar-nav .nav-link:hover {
+            font-weight: bold;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            color: #ffffff !important;
+        }
+
+        /* Active link */
+        .navbar-dark .navbar-nav .nav-link.active {
+            font-weight: bold;
+            text-decoration: underline;
+            text-underline-offset: 6px;
+            color: #ffcc00 !important; /* Highlight in gold */
+        }
+
+        /* Toggler border */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Toggler 3 lines (white) */
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+        }
+
+
+
+
+</style>
 
 
 
