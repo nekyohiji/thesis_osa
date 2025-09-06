@@ -2807,6 +2807,7 @@ def mark_apology_settled(request, violation_id):
 #--------------------------------------------------#
 
 #---------------community service-----------------#
+
 @role_required(['admin'])
 @transaction.atomic
 def cs_create_or_adjust(request):

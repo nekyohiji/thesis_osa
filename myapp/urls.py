@@ -8,7 +8,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('current_time/', views.current_time, name='current_time'),
     path('', views.home_view, name='client_home'),
-    path('login', views.login_view, name='login'),
+    path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('guard_violation/', views.guard_violation_view, name='guard_violation'),
     path('guard_report/', views.guard_report_view, name='guard_report'),
