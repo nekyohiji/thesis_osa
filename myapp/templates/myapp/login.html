@@ -234,9 +234,11 @@
     </div>
 </div>
 
+
+
 <!-- Forgot Password Modal (stays on this page) -->
 <div class="modal fade" id="LOGIN_fpModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <form id="LOGIN_fp_form" class="modal-content" novalidate> {% csrf_token %}
       <div class="modal-header">
         <h5 class="modal-title">Reset your password</h5>
@@ -251,7 +253,7 @@
         </div>
 
         <div class="d-flex gap-2">
-          <button id="LOGIN_btn_send_otp" class="btn btn-primary" type="button">Send OTP</button>
+          <button id="LOGIN_btn_send_otp" class="btn btn-secondary" type="button">Send OTP</button>
         </div>
 
         <div id="LOGIN_otp_section" class="mt-3 d-none">
@@ -262,6 +264,10 @@
             <button id="LOGIN_btn_cancel_otp" class="btn btn-link" type="button">Cancel</button>
           </div>
         </div>
+        
+
+
+        
         <div id="LOGIN_reset_section" class="mt-3 d-none">
           <label class="form-label">New Password</label>
           <div class="position-relative">
@@ -273,13 +279,9 @@
                   placeholder="At least 8 characters"
                   autocomplete="new-password"
                   autocapitalize="off" autocorrect="off" spellcheck="false">
-            <button type="button"
-                    id="LOGIN_toggle_new_pass"
-                    class="btn btn-link p-0 position-absolute"
-                    style="right:10px; top:50%; transform:translateY(-50%);"
-                    aria-label="Show password">
-              <i class="bi bi-eye-fill"></i>
-            </button>
+              <i id="toggleNewPassEye"
+                    class="bi bi-eye-fill position-absolute text-secondary"
+                    style="top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer; display: none"></i>
           </div>
 
           <label class="form-label mt-2">Confirm Password</label>
@@ -292,14 +294,9 @@
                   placeholder="Re-enter password"
                   autocomplete="new-password"
                   autocapitalize="off" autocorrect="off" spellcheck="false">
-            <button type="button"
-                    id="LOGIN_toggle_confirm_pass"
-                    class="btn btn-link p-0 position-absolute"
-                    style="right:10px; top:50%; transform:translateY(-50%);"
-                    aria-label="Show password">
-              <i class="bi bi-eye-fill"></i>
-            </button>
-          </div>
+                <i id="toggleConfirmPassEye"
+                    class="bi bi-eye-fill position-absolute text-secondary"
+                    style="bottom: 55%; right: 10px; transform: translateY(-50%); cursor: pointer; display: none;"></i>       
           <button id="LOGIN_btn_save_pass" class="btn btn-primary mt-3" type="button">Save</button>
         </div>
       </div>
@@ -311,6 +308,34 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+
+  function setupPasswordToggle(inputId, eyeId) {
+    const input = document.getElementById(inputId);
+    const eye = document.getElementById(eyeId);
+
+    // Show eye only when user types
+    input.addEventListener("input", () => {
+      eye.style.display = input.value.length > 0 ? "block" : "none";
+    });
+
+    // Toggle password visibility
+    eye.addEventListener("click", () => {
+      if (input.type === "password") {
+        input.type = "text";
+        eye.classList.replace("bi-eye-fill", "bi-eye-slash-fill");
+      } else {
+        input.type = "password";
+        eye.classList.replace("bi-eye-slash-fill", "bi-eye-fill");
+      }
+    });
+  }
+
+  // Apply to both fields
+  setupPasswordToggle("LOGIN_new_pass", "toggleNewPassEye");
+  setupPasswordToggle("LOGIN_confirm_pass", "toggleConfirmPassEye");
+
+
+
   // password eye (unchanged)
   (function () {
     const passwordInput = document.getElementById('password_login');
