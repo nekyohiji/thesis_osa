@@ -272,28 +272,54 @@ def admin_dashboard_view(request):
 def admin_dashboard_data(request):
     """
     Return monthly counts + totals as JSON.
-    - Card totals: direct counts.
-    - Monthly rows: grouped in Python (no DB datetime funcs -> no TZ table issues).
-    - Any NULL datetimes go into an 'Undated' row.
+
+    - Card totals:
+        * Good Moral: approved + rejected
+        * ID Surrender: approved + declined (as "rejected")
+        * Clearance: all only (no 'rejected' concept)
+
+    - Monthly rows:
+        * Per-month approved & rejected for GM and Surrender
+        * Clearance has only "all" (rejected = 0)
+        * Any NULL datetimes go into an 'Undated' row
+
+    This preserves existing keys your UI already uses, and *adds*
+    rejected keys so you can light up those new counters.
     """
 
-    # ---- Card totals ----
-    total_surr = IDSurrenderRequest.objects.filter(
+    # ---------- Card totals ----------
+    # Good Moral
+    gm_approved = GoodMoralRequest.objects.filter(is_approved=True, is_rejected=False).count()
+    gm_rejected = GoodMoralRequest.objects.filter(is_rejected=True).count()
+
+    # ID Surrender
+    surr_approved = IDSurrenderRequest.objects.filter(
         status=IDSurrenderRequest.STATUS_APPROVED
     ).count()
-    total_gm = GoodMoralRequest.objects.filter(
-        is_approved=True, is_rejected=False
+    surr_rejected = IDSurrenderRequest.objects.filter(
+        status=IDSurrenderRequest.STATUS_DECLINED
     ).count()
-    total_clr = ClearanceRequest.objects.count()
+
+    # Clearance (no reject)
+    clr_all = ClearanceRequest.objects.count()
 
     totals = {
-        "surrender_approved": total_surr,
-        "goodmoral_approved": total_gm,
-        "clearance_all": total_clr,
-        "grand_total": total_surr + total_gm + total_clr,
+        # Existing keys (kept):
+        "surrender_approved": surr_approved,
+        "goodmoral_approved": gm_approved,
+        "clearance_all": clr_all,
+        "grand_total": surr_approved + gm_approved + clr_all,  # headline number you already show
+
+        # NEW keys (for your Accepted/Rejected breakdowns):
+        "goodmoral_rejected": gm_rejected,
+        "surrender_rejected": surr_rejected,
+
+        # Optional: convenient grand splits (clearance has no rejected)
+        "grand_accepted": surr_approved + gm_approved + clr_all,
+        "grand_rejected": surr_rejected + gm_rejected,
     }
 
-    # ---- Helper: aggregate by (year, month) in Python ----
+    # ---------- Helper: aggregate by (year, month) in Python ----------
     def month_counts_py(qs, dt_field: str):
         """
         Returns (agg, undated_count) where:
@@ -303,63 +329,79 @@ def admin_dashboard_data(request):
         buckets = Counter()
         undated = 0
 
-        # Pull only the datetime column from DB
         for dt in qs.values_list(dt_field, flat=True).iterator():
             if not dt:
                 undated += 1
                 continue
-            # If timezone-aware, make it local; else leave as-naive
             try:
                 if timezone.is_aware(dt):
                     dt = timezone.localtime(dt)
             except Exception:
-                # If conversion fails for any odd value, treat as undated
                 undated += 1
                 continue
-
             buckets[(dt.year, dt.month)] += 1
 
-        agg = [
-            {"y": y, "m": m, "count": c}
-            for (y, m), c in sorted(buckets.items())
-        ]
+        agg = [{"y": y, "m": m, "count": c} for (y, m), c in sorted(buckets.items())]
         return agg, undated
 
-    surr_qs = IDSurrenderRequest.objects.filter(
-        status=IDSurrenderRequest.STATUS_APPROVED
-    )
-    gm_qs  = GoodMoralRequest.objects.filter(is_approved=True, is_rejected=False)
+    # ---------- Querysets for monthly aggregation ----------
+    # GM: approved & rejected
+    gm_qs_approved  = GoodMoralRequest.objects.filter(is_approved=True, is_rejected=False)
+    gm_qs_rejected  = GoodMoralRequest.objects.filter(is_rejected=True)
+
+    # Surrender: approved & declined (treated as rejected)
+    surr_qs_approved = IDSurrenderRequest.objects.filter(status=IDSurrenderRequest.STATUS_APPROVED)
+    surr_qs_rejected = IDSurrenderRequest.objects.filter(status=IDSurrenderRequest.STATUS_DECLINED)
+
+    # Clearance: all (no rejected path)
     clr_qs = ClearanceRequest.objects.all()
 
-    surr_agg, surr_undated = month_counts_py(surr_qs, "submitted_at")
-    gm_agg,   gm_undated   = month_counts_py(gm_qs,   "submitted_at")
-    clr_agg,  clr_undated  = month_counts_py(clr_qs,  "created_at")
+    # ---------- Monthly aggregation ----------
+    gm_agg_appr,   gm_undated_appr   = month_counts_py(gm_qs_approved,  "submitted_at")
+    gm_agg_rej,    gm_undated_rej    = month_counts_py(gm_qs_rejected,  "submitted_at")
+    surr_agg_appr, surr_undated_appr = month_counts_py(surr_qs_approved, "submitted_at")
+    surr_agg_rej,  surr_undated_rej  = month_counts_py(surr_qs_rejected, "submitted_at")
+    clr_agg_all,   clr_undated_all   = month_counts_py(clr_qs,           "created_at")
 
-    # ---- Combine into a single (year, month) map ----
+    # ---------- Combine into a single (year, month) map ----------
+    # We keep existing fields you already render AND add rejected fields (zero for clearance).
     by_month = {}  # key: (y, m) -> dict of fields
 
     def bump(key, field, n):
         d = by_month.setdefault(
             key,
-            {"surrender_approved": 0, "goodmoral_approved": 0, "clearance_all": 0},
+            {
+                "surrender_approved": 0, "surrender_rejected": 0,
+                "goodmoral_approved": 0, "goodmoral_rejected": 0,
+                "clearance_all": 0,
+            },
         )
         d[field] += int(n or 0)
 
-    for r in surr_agg:
+    # Fill buckets
+    for r in surr_agg_appr:
         bump((int(r["y"]), int(r["m"])), "surrender_approved", r["count"])
-    for r in gm_agg:
+    for r in surr_agg_rej:
+        bump((int(r["y"]), int(r["m"])), "surrender_rejected", r["count"])
+
+    for r in gm_agg_appr:
         bump((int(r["y"]), int(r["m"])), "goodmoral_approved", r["count"])
-    for r in clr_agg:
+    for r in gm_agg_rej:
+        bump((int(r["y"]), int(r["m"])), "goodmoral_rejected", r["count"])
+
+    for r in clr_agg_all:
         bump((int(r["y"]), int(r["m"])), "clearance_all", r["count"])
 
-    # ---- Build rows (newest month first) ----
+    # ---------- Build rows (newest month first) ----------
     rows = []
     for (y, m), vals in sorted(by_month.items(), key=lambda kv: kv[0], reverse=True):
         month_dt = datetime(int(y), int(m), 1)
         total = (
-            vals["surrender_approved"]
-            + vals["goodmoral_approved"]
-            + vals["clearance_all"]
+            vals["surrender_approved"] +
+            vals["surrender_rejected"] +    # included in monthly total
+            vals["goodmoral_approved"] +
+            vals["goodmoral_rejected"] +    # included in monthly total
+            vals["clearance_all"]
         )
         rows.append({
             "month_iso": month_dt.strftime("%Y-%m-01"),
@@ -368,11 +410,13 @@ def admin_dashboard_data(request):
             "total": total,
         })
 
-    # Optional 'Undated'
+    # ---------- Optional 'Undated' ----------
     undated_totals = {
-        "surrender_approved": surr_undated,
-        "goodmoral_approved": gm_undated,
-        "clearance_all": clr_undated,
+        "surrender_approved": surr_undated_appr,
+        "surrender_rejected": surr_undated_rej,
+        "goodmoral_approved": gm_undated_appr,
+        "goodmoral_rejected": gm_undated_rej,
+        "clearance_all":      clr_undated_all,
     }
     undated_total = sum(undated_totals.values())
     if undated_total:
@@ -3011,7 +3055,7 @@ def admin_decline_violation(request, violation_id):
         declined=True,
     ))
 
-    messages.error(request, f"❌ Violation for {student.first_name} {student.last_name} was declined.")
+    messages.error(request, f"❌ Violation for {student.first_name} {student.last_name} was lifted.")
     return redirect('admin_violation')
 
 @role_required(['admin'])

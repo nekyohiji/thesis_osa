@@ -48,7 +48,7 @@ def send_violation_email(request, violation, student, violation_count=None, sett
         text_body = (
             f"Dear {student.first_name} {student.last_name},\n\n"
             f"The violation report filed under your name dated {violation.violation_date} "
-            f"for '{violation.get_violation_type_display()}' has been reviewed and declined by the Office of Student Affairs.\n\n"
+            f"for '{violation.get_violation_type_display()}' has been reviewed and lifted by the Office of Student Affairs.\n\n"
             f"No further action is required on your part.\n\n"
             f"Thank you."
         )

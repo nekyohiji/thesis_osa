@@ -175,8 +175,7 @@
             <h3 id="cardGrand">0</h3>
             <small class="d-block opacity-75">Grand total of requests</small>
             <div class="d-flex justify-content-between">
-              <small class="text-success">Accepted: 0</small>
-              <small class="text-danger">Rejected: 0</small>
+              <small class="text-danger">Rejected: <span id="cardGrandRejected">0</span></small>
             </div>
             <i class="fas fa-users"></i>
           </div>
@@ -189,8 +188,7 @@
             <h6 class="card-title">Good Moral Certificates</h6>
             <h3 id="cardGoodMoral">0</h3>
              <div class="d-flex justify-content-between">
-              <small class="text-success">Accepted: 0</small>
-              <small class="text-danger">Rejected: 0</small>
+              <small class="text-danger">Rejected: <span id="cardGMRejected">0</span></small>
             </div>
             <i class="fas fa-shield-alt"></i>
           </div>
@@ -203,8 +201,6 @@
             <h6 class="card-title">Clearances</h6>
             <h3 id="cardClearance">0</h3>
              <div class="d-flex justify-content-between">
-              <small class="text-success">Accepted: 0</small>
-              <small class="text-danger">Rejected: 0</small>
             </div>
             <i class="fas fa-file-alt"></i>
           </div>
@@ -217,8 +213,7 @@
             <h6 class="card-title">Surrender IDs</h6>
             <h3 id="cardSurrender">0</h3>
              <div class="d-flex justify-content-between">
-              <small class="text-success">Accepted: 0</small>
-              <small class="text-danger">Rejected: 0</small>
+              <small class="text-danger">Rejected: <span id="cardSurrRejected">0</span></small>
             </div>
             <i class="fas fa-file-alt"></i>
           </div>
@@ -311,12 +306,18 @@
 
   const DATA_URL = "{% url 'admin_dashboard_data' %}";
   console.log("DATA_URL =", DATA_URL);
+
   const elLastUpdated  = document.getElementById('lastUpdated');
   const elCardGrand    = document.getElementById('cardGrand');
   const elCardGM       = document.getElementById('cardGoodMoral');
   const elCardClr      = document.getElementById('cardClearance');
   const elCardSurr     = document.getElementById('cardSurrender');
   const elMonthlyBody  = document.getElementById('monthlyBody');
+
+  // NEW: rejected spans
+  const elCardGrandRejected = document.getElementById('cardGrandRejected');
+  const elCardGMRejected    = document.getElementById('cardGMRejected');
+  const elCardSurrRejected  = document.getElementById('cardSurrRejected');
 
   // Small inline error
   const errorBadge = document.createElement('div');
@@ -343,6 +344,12 @@
     elCardGM.textContent    = fmt(totals.goodmoral_approved);
     elCardClr.textContent   = fmt(totals.clearance_all);
     elCardSurr.textContent  = fmt(totals.surrender_approved);
+
+    // NEW: wire rejected counts
+    if (elCardGrandRejected) elCardGrandRejected.textContent = fmt(totals.grand_rejected || 0);
+    if (elCardGMRejected)    elCardGMRejected.textContent    = fmt(totals.goodmoral_rejected || 0);
+    if (elCardSurrRejected)  elCardSurrRejected.textContent  = fmt(totals.surrender_rejected || 0);
+
     elLastUpdated.textContent = "Updated " + new Date(asOf).toLocaleString();
   }
 
@@ -375,7 +382,6 @@
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
 
-      // If redirected (e.g., 302 to login) fetch API usually shows 200 from the final page but it's HTML.
       const ct = res.headers.get('content-type') || '';
       if (!res.ok) {
         const text = await res.text();
@@ -391,7 +397,6 @@
       }
 
       const data = await res.json();
-      // Optional: console.log(data);
       renderTotals(data.totals, data.as_of);
       renderMonthly(data.rows);
     } catch (e) {

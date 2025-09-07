@@ -234,8 +234,7 @@
                         data-bs-toggle="modal"
                         data-bs-target="#submitModal"
                         id="submit_btn_gv">
-                    <i class="bi bi-send-fill"></i>
-                    </i> Submit
+                    <i class="bi bi-send-fill"></i> Submit
                 </button>
             </div>
         </div>
@@ -459,187 +458,284 @@
 let isProcessingScan = false;
 
 function clearFields() {
-    document.getElementById("fn_gv").value = '';
-    document.getElementById("ln_gv").value = '';
-    document.getElementById("mn_gv").value = '';
-    document.getElementById("ext_gv").value = '';
-    document.getElementById("studentProgram_gv").value = '';
-    document.getElementById("studentId_gv").value = '';
+  document.getElementById("fn_gv").value = '';
+  document.getElementById("ln_gv").value = '';
+  document.getElementById("mn_gv").value = '';
+  document.getElementById("ext_gv").value = '';
+  document.getElementById("studentProgram_gv").value = '';
+  document.getElementById("studentId_gv").value = '';
 }
 
 function updateDateTime() {
-    function pad(num) {
-        return String(num).padStart(2, '0');
+  const pad = (n) => String(n).padStart(2, '0');
+
+  function renderFrom(date) {
+    // visual clock
+    document.getElementById("currentDate").textContent =
+      date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById("currentTime").textContent =
+      date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // form fields
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+
+    document.getElementById("violation_date_gv").value = `${yyyy}-${mm}-${dd}`;
+    document.getElementById("violation_time_gv").value = `${hours}:${minutes}`;
+
+    if (!window.__dtInitFired) {
+      window.__dtInitFired = true;
+      window.updateSubmitState && window.updateSubmitState();
     }
+  }
 
-    fetch('/current_time/')
-        .then(response => response.json())
-        .then(data => {
-            let serverTime = new Date(data.now);
-
-            function renderTime() {
-                const date = new Date(serverTime.getTime());
-
-                document.getElementById("currentDate").textContent =
-                    date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
-                document.getElementById("currentTime").textContent =
-                    date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-                const yyyy = date.getFullYear();
-                const mm = pad(date.getMonth() + 1);
-                const dd = pad(date.getDate());
-                const hours = pad(date.getHours());
-                const minutes = pad(date.getMinutes());
-
-                document.getElementById("violation_date_gv").value = `${yyyy}-${mm}-${dd}`;
-                document.getElementById("violation_time_gv").value = `${hours}:${minutes}`;
-
-                serverTime.setSeconds(serverTime.getSeconds() + 1);
-            }
-
-            renderTime();
-            setInterval(renderTime, 1000);
-        })
-        .catch(() => {
-            document.getElementById("currentDate").textContent = "Unavailable";
-            document.getElementById("currentTime").textContent = "Unavailable";
-        });
+  // try server time; if it fails, fall back to client time so the validator can pass
+  fetch('/current_time/')
+    .then(r => r.json())
+    .then(data => {
+      let serverTime = new Date(data.now);
+      renderFrom(serverTime);
+      setInterval(() => { serverTime.setSeconds(serverTime.getSeconds() + 1); renderFrom(serverTime); }, 1000);
+    })
+    .catch(() => {
+      let local = new Date();
+      renderFrom(local);
+      setInterval(() => { local = new Date(local.getTime() + 1000); renderFrom(local); }, 1000);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    const hiddenScanInput = document.getElementById("hiddenScanInput");
-    const visibleStudentId = document.getElementById("studentId_gv");
+  const hiddenScanInput = document.getElementById("hiddenScanInput");
+  const visibleStudentId = document.getElementById("studentId_gv");
 
-    {% if messages %}
-        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-        successModal.show();
-    {% endif %}
+  {% if messages %}
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    successModal.show();
+  {% endif %}
 
-    hiddenScanInput.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") e.preventDefault();
-    });
+  // keep scanner focused
+  hiddenScanInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") e.preventDefault();
+  });
+  document.addEventListener("click", (e) => {
+    const tag = e.target.tagName;
+    if (!["INPUT", "SELECT", "TEXTAREA"].includes(tag)) hiddenScanInput.focus();
+  });
+  document.addEventListener("keydown", () => hiddenScanInput.focus());
+  hiddenScanInput.focus();
 
-    document.addEventListener("click", (e) => {
-        const target = e.target;
-        if (!["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) {
-            hiddenScanInput.focus();
-        }
-    });
+  // buffer for scanner
+  let scanBuffer = "";
+  let scanTimeout = null;
 
-    document.addEventListener("keydown", () => hiddenScanInput.focus());
-    hiddenScanInput.focus();
+  hiddenScanInput.addEventListener("input", () => {
+    const char = hiddenScanInput.value;
+    scanBuffer += char;
+    hiddenScanInput.value = "";
 
-    let scanBuffer = "";
-    let scanTimeout = null;
+    if (scanTimeout) clearTimeout(scanTimeout);
 
-    hiddenScanInput.addEventListener("input", () => {
-        const char = hiddenScanInput.value;
-        scanBuffer += char;
-        hiddenScanInput.value = "";
+    scanTimeout = setTimeout(() => {
+      const rawText = scanBuffer.trim();
+      console.log("FULL SCAN:", JSON.stringify(rawText));
+      scanBuffer = "";
 
-        if (scanTimeout) clearTimeout(scanTimeout);
+      const match = rawText.match(/TUPC-\d{2}-\d{4}/i);
+      if (!match) {
+        alert("⚠️ Invalid ID format scanned!");
+        visibleStudentId.value = '';
+        window.updateSubmitState && window.updateSubmitState();
+        return;
+      }
 
-        scanTimeout = setTimeout(() => {
-            const rawText = scanBuffer.trim();
-            console.log("FULL SCAN:", JSON.stringify(rawText));
+      const tupcId = match[0].toUpperCase();
+      visibleStudentId.value = tupcId;
+      window.history.replaceState({}, document.title, "/guard_violation/");
 
-            scanBuffer = "";
+      fetch(`/get_student_by_id/${tupcId}/`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            alert("❌ Student not found.");
+            clearFields();
+            return;
+          }
+          document.getElementById("fn_gv").value = data.first_name;
+          document.getElementById("ln_gv").value = data.last_name;
+          document.getElementById("mn_gv").value = data.middle_initial || '';
+          document.getElementById("ext_gv").value = data.extension || '';
+          document.getElementById("studentProgram_gv").value = data.program;
+        })
+        .catch(() => {
+          alert("❌ Error retrieving student data.");
+          clearFields();
+        })
+        .finally(() => {
+          window.updateSubmitState && window.updateSubmitState();
+          hiddenScanInput.focus();
+        });
+    }, 200);
+  });
 
-            const match = rawText.match(/TUPC-\d{2}-\d{4}/i);
-            if (!match) {
-                alert("⚠️ Invalid ID format scanned!");
-                visibleStudentId.value = '';
-                return;
-            }
+  // ✅ Camera functionality
+  const cameraBtn       = document.getElementById('camera_btn_gv');
+  const capturedPreview = document.getElementById('capturedPreview');
+  const cameraModalEl   = document.getElementById('cameraModal');
+  const cameraModal     = new bootstrap.Modal(cameraModalEl);
+  const video           = document.getElementById('cameraStream');
+  const canvas          = document.getElementById('cameraCanvas');
+  const takeSnapshotBtn = document.getElementById('takeSnapshotBtn');
 
-            const tupcId = match[0].toUpperCase();
-            visibleStudentId.value = tupcId;
-            window.history.replaceState({}, document.title, "/guard_violation/");
+  let stream;
 
-            fetch(`/get_student_by_id/${tupcId}/`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) {
-                        alert("❌ Student not found.");
-                        clearFields();
-                        return;
-                    }
-
-                    document.getElementById("fn_gv").value = data.first_name;
-                    document.getElementById("ln_gv").value = data.last_name;
-                    document.getElementById("mn_gv").value = data.middle_initial || '';
-                    document.getElementById("ext_gv").value = data.extension || '';
-                    document.getElementById("studentProgram_gv").value = data.program;
-                })
-                .catch(() => {
-                    alert("❌ Error retrieving student data.");
-                    clearFields();
-                })
-                .finally(() => {
-                    hiddenScanInput.focus();
-                });
-        }, 200);
-    });
-
-    // ✅ Camera functionality
-    const cameraBtn = document.getElementById('camera_btn_gv');
-    const capturedPreview = document.getElementById('capturedPreview');
-    const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
-    const video = document.getElementById('cameraStream');
-    const canvas = document.getElementById('cameraCanvas');
-    const takeSnapshotBtn = document.getElementById('takeSnapshotBtn');
-
-    let stream;
-
-    cameraBtn.addEventListener('click', () => {
-        cameraModal.show();
-
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(s => {
-                stream = s;
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                alert("🚫 Unable to access camera: " + err);
-            });
-    });
-
-    takeSnapshotBtn.addEventListener('click', () => {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob((blob) => {
-            const file = new File([blob], "evidence_1.png", { type: "image/png" });
-
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-
-            const hiddenFileInput = document.getElementById('evidence_1');
-            hiddenFileInput.files = dataTransfer.files;
-
-            const imageDataURL = URL.createObjectURL(blob);
-            capturedPreview.innerHTML = `
-                <img src="${imageDataURL}" class="img-fluid rounded mb-3" />
-            `;
-        }, 'image/png');
-
-        cameraModal.hide();
-        stopCamera();
-    });
-
-    function stopCamera() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
     }
+    if (video) video.srcObject = null;
+  }
+  cameraModalEl.addEventListener('hidden.bs.modal', stopCamera);
 
-    updateDateTime();
+  cameraBtn.addEventListener('click', () => {
+    cameraModal.show();
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(s => {
+        stream = s;
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("🚫 Unable to access camera: " + err);
+      });
+  });
+
+  takeSnapshotBtn.addEventListener('click', () => {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      const file = new File([blob], "evidence_1.png", { type: "image/png" });
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+
+      const hiddenFileInput = document.getElementById('evidence_1');
+      hiddenFileInput.files = dataTransfer.files;
+
+      // fire a real change so the validator picks it up
+      hiddenFileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      window.updateSubmitState && window.updateSubmitState();
+
+      const imageDataURL = URL.createObjectURL(blob);
+      capturedPreview.innerHTML = `<img src="${imageDataURL}" class="img-fluid rounded mb-3" />`;
+    }, 'image/png');
+
+    cameraModal.hide();
+    stopCamera();
+  });
+
+  updateDateTime();
 });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // --- Elements we validate
+  const btnOpenModal   = document.getElementById('submit_btn_gv');                 // green button
+  const btnModalSubmit = document.querySelector('#submitModal [type="submit"]');   // modal footer submit
+  const form           = document.getElementById('violationForm');
 
+  // readonly-but-required fields (filled by scan/time)
+  const firstName   = document.getElementById('fn_gv');
+  const lastName    = document.getElementById('ln_gv');
+  const studentID   = document.getElementById('studentId_gv');
+  const program     = document.getElementById('studentProgram_gv');
+  const vioDate     = document.getElementById('violation_date_gv');
+  const vioTime     = document.getElementById('violation_time_gv');
+
+  // dropdowns that must change from default
+  const vioType     = document.getElementById('violation_type_gv');
+  const guardName   = document.getElementById('Guardname_gv');
+
+  // remember guard selection (do NOT clear it anywhere)
+  const GUARD_KEY = 'gv.selectedGuard';
+  const savedGuard = localStorage.getItem(GUARD_KEY);
+  const optionExists = (sel, val) => !!sel && Array.from(sel.options).some(o => o.value === val);
+  if (savedGuard && optionExists(guardName, savedGuard)) {
+    guardName.value = savedGuard;
+  }
+  guardName?.addEventListener('change', () => {
+    localStorage.setItem(GUARD_KEY, guardName.value || '');
+    updateSubmitState();
+  });
+
+  // evidence (camera populates this)
+  const evidence    = document.getElementById('evidence_1');
+
+  // helpers
+  const hasText = (el) => el && String(el.value || '').trim().length > 0;
+  const hasFile = (inp) => inp && inp.files && inp.files.length > 0;
+  const notDefaultSelect = (sel) => sel && sel.value !== '';
+
+  function formIsComplete() {
+    const personalOK  = hasText(firstName) && hasText(lastName) && hasText(studentID) && hasText(program);
+    const datetimeOK  = hasText(vioDate) && hasText(vioTime);
+    const selectsOK   = notDefaultSelect(vioType) && notDefaultSelect(guardName);
+    const evidenceOK  = hasFile(evidence);
+    return personalOK && datetimeOK && selectsOK && evidenceOK;
+  }
+
+  function updateSubmitState() {
+    const ok = formIsComplete();
+
+    if (btnOpenModal) {
+      btnOpenModal.disabled = !ok;
+      btnOpenModal.setAttribute('aria-disabled', String(!ok));
+      btnOpenModal.classList.toggle('disabled', !ok);
+    }
+    if (btnModalSubmit) {
+      btnModalSubmit.disabled = !ok;
+      btnModalSubmit.setAttribute('aria-disabled', String(!ok));
+    }
+  }
+  // expose so the first script can call it
+  window.updateSubmitState = updateSubmitState;
+
+  // Block opening the modal if invalid
+  btnOpenModal?.addEventListener('click', (e) => {
+    if (!formIsComplete()) {
+      e.preventDefault();
+      e.stopPropagation();
+      alert("Please complete all fields and selections, and attach evidence before submitting.");
+    }
+  });
+
+  // Re-check when the confirm modal is shown (keeps footer submit in sync)
+  document.getElementById('submitModal')?.addEventListener('show.bs.modal', updateSubmitState);
+
+  // Watch all relevant fields
+  [firstName, lastName, studentID, program, vioDate, vioTime].forEach(el => {
+    el?.addEventListener('input', updateSubmitState);
+  });
+  vioType?.addEventListener('change', updateSubmitState);
+  guardName?.addEventListener('change', updateSubmitState);
+  evidence?.addEventListener('change', updateSubmitState);
+
+  // Hook your clearFields so it also re-validates
+  const originalClearFields = window.clearFields;
+  window.clearFields = function() {
+    originalClearFields && originalClearFields();
+    updateSubmitState();
+  };
+
+  // Initial state on load
+  updateSubmitState();
+});
+</script>
 
 
 </body>
