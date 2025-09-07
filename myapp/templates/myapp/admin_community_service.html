@@ -325,7 +325,8 @@
               <input name="{{ cs_form.last_name.name }}" type="text"
                      value="{{ cs_form.last_name.value|default_if_none:'' }}"
                      minlength="1" maxlength="50" placeholder="Enter last name"
-                     class="form-control {% if cs_form.last_name.errors %}is-invalid{% endif %}" required>
+                     class="form-control {% if cs_form.last_name.errors %}is-invalid{% endif %}" required
+                     inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
               {% for err in cs_form.last_name.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
@@ -334,7 +335,8 @@
               <input name="{{ cs_form.first_name.name }}" type="text"
                      value="{{ cs_form.first_name.value|default_if_none:'' }}"
                      minlength="1" maxlength="50" placeholder="Enter first name"
-                     class="form-control {% if cs_form.first_name.errors %}is-invalid{% endif %}" required>
+                     class="form-control {% if cs_form.first_name.errors %}is-invalid{% endif %}" required
+                     inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
               {% for err in cs_form.first_name.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 
@@ -342,7 +344,7 @@
               <label class="form-label fw-semibold">Middle Initial (optional):</label>
               <input name="{{ cs_form.middle_initial.name }}" type="text"
                      value="{{ cs_form.middle_initial.value|default_if_none:'' }}"
-                     maxlength="10" placeholder="M."
+                     maxlength="5" placeholder="M."
                      class="form-control {% if cs_form.middle_initial.errors %}is-invalid{% endif %}">
               {% for err in cs_form.middle_initial.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
@@ -370,7 +372,8 @@
               <input name="{{ cs_form.program_course.name }}" type="text"
                      value="{{ cs_form.program_course.value|default_if_none:'' }}"
                      minlength="1" maxlength="100" placeholder="Enter program/course"
-                     class="form-control {% if cs_form.program_course.errors %}is-invalid{% endif %}" required>
+                     class="form-control {% if cs_form.program_course.errors %}is-invalid{% endif %}" required
+                     inputmode="text" pattern="^[A-Za-z]+(?:-[A-Za-z]+)*$" title="Letters and hyphens only. No spaces; hyphens must be between letters." oninput="this.value=this.value.replace(/[^A-Za-z-]/g,'').replace(/-{2,}/g,'-').replace(/^-+|-+$/g,'')">
               {% for err in cs_form.program_course.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
 

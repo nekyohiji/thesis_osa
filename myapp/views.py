@@ -790,18 +790,18 @@ def login_view(request):
         # Validate email
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email):
-            messages.error(request, "Please enter a valid email address.", extra_tags="login")
+            messages.error(request, "Please enter a valid email address.", extra_tags="LOGIN")
             return render(request, 'myapp/login.html')
         if len(email) > 164:
-            messages.error(request, "Please enter a valid email.", extra_tags="login")
+            messages.error(request, "Please enter a valid email.", extra_tags="LOGIN")
             return render(request, 'myapp/login.html')
 
         # Validate password length
         if len(password) < 8:
-            messages.error(request, "Password must be at least 8 characters.", extra_tags="login")
+            messages.error(request, "Password must be at least 8 characters.", extra_tags="LOGIN")
             return render(request, 'myapp/login.html')
         if len(password) > 128:
-            messages.error(request, "Password is too long.", extra_tags="login")
+            messages.error(request, "Password is too long.", extra_tags="LOGIN")
             return render(request, 'myapp/login.html')
 
         try:
@@ -822,11 +822,11 @@ def login_view(request):
                 elif user.role == 'comselec':
                     return redirect('admin_election')
                 else:
-                    messages.error(request, "Account role not recognized.", extra_tags="login")
+                    messages.error(request, "Account role not recognized.", extra_tags="LOGIN")
             else:
-                messages.error(request, "Incorrect password.", extra_tags="login")
+                messages.error(request, "Incorrect password.", extra_tags="LOGIN")
         except UserAccount.DoesNotExist:
-            messages.error(request, "Account not found or inactive.", extra_tags="login")
+            messages.error(request, "Account not found or inactive.", extra_tags="LOGIN")
 
     return render(request, 'myapp/login.html')
 

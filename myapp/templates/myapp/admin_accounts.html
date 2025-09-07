@@ -580,14 +580,15 @@
               <!-- Full Name -->
               <label for="fullName" class="form-label small"><b>Full Name:</b></label>
               <div class="input-group input-group-sm mb-3">
-                <input type="text" class="form-control" id="fullName" name="fullName" maxlength="128" placeholder="Enter Full Name" required>
+                <input type="text" class="form-control" id="fullName" name="fullName" maxlength="128" placeholder="Enter Full Name" required
+                  inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
               </div>
 
               <!-- Email -->
               <label for="email" class="form-label small"><b>Email:</b></label>
               <div class="input-group input-group-sm mb-3">
                 <input type="email" class="form-control" id="email" name="email"
-                      pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
+                      pattern="^[A-Za-z0-9._%+-]+@(gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$" title="Use a Gmail address or your TUP address (@gsfe.tupcavite.edu.ph or @tup.edu.ph) only."
                       title="Gmail only" maxlength="254" placeholder="Enter Email" required>
               </div>
 

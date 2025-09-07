@@ -60,17 +60,20 @@ surrendering id
                     <!-- First Name -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">First Name:</label>
-                        <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" minlength="1" maxlength="50" required>
+                        <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" minlength="1" maxlength="50" required
+                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
                     </div>
                     <!-- Middle Name -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Middle Name:</label>
-                        <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name" maxlength="50">
+                        <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name" maxlength="50"
+                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
                     </div>
                     <!-- Surname -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Surname:</label>
-                        <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" minlength="1" maxlength="50" required>
+                        <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" minlength="1" maxlength="50" required
+                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
                     </div>
                 </div>
 
@@ -101,7 +104,8 @@ surrendering id
                     <!-- Program -->
                     <div class="col-md-6 mb-3" id="programCol">
                         <label class="form-label fw-semibold">Program (Acronym Only):</label>
-                        <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" minlength ="2" maxlength="10" required>
+                        <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" minlength ="2" maxlength="10" required
+                          inputmode="text" pattern="^[A-Za-z]+(?:-[A-Za-z]+)*$" title="Letters and hyphens only. No spaces; hyphens must be between letters." oninput="this.value=this.value.replace(/[^A-Za-z-]/g,'').replace(/-{2,}/g,'-').replace(/^-+|-+$/g,'')">
                     </div>
                 
 

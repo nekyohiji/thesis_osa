@@ -93,7 +93,8 @@
             <label class="form-label fw-semibold" for="first_name">First Name:</label>
             <div class="status-wrap">
               <input type="text" class="form-control" id="first_name" name="first_name"
-                     placeholder="Enter First Name" minlength="2" maxlength="50" required>
+                     placeholder="Enter First Name" minlength="2" maxlength="50" required
+                       inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
               <i id="first_name_status" class="status-icon bi d-none"></i>
             </div>
             <div class="valid-feedback">Looks good.</div>
@@ -104,7 +105,8 @@
             <label class="form-label fw-semibold" for="last_name">Last Name:</label>
             <div class="status-wrap">
               <input type="text" class="form-control" id="last_name" name="last_name"
-                     placeholder="Enter Last Name" minlength="2" maxlength="50" required>
+                     placeholder="Enter Last Name" minlength="2" maxlength="50" required
+                      inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
               <i id="last_name_status" class="status-icon bi d-none"></i>
             </div>
             <div class="valid-feedback">Looks good.</div>
