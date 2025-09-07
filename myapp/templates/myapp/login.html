@@ -155,9 +155,7 @@
             input.with-icon {
             border-radius: 1px; 
 }
-
-
-  </style>
+</style>
 
 
 <body style="background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('{% static "myapp/images/2.png" %}'); 
@@ -178,111 +176,56 @@
            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2 logo-img">
            <h3 class="text-center" ><b>Welcome Admin!</b></h3>
             <p class="text-center">Sign in to access your dashboard</p>
-              {% if messages %}
-                {% for message in messages %}
-                  {% if "login" in message.tags %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                      {{ message }}
-                      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
+            {% if messages %}
+              {% for message in messages %}
+                {% if "LOGIN" in message.tags %}
+                  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
                 <form method="post" action="{% url 'login' %}">
                     {% csrf_token %}
                     
-
                     <!-- USERNAME -->
                     <div class="form-group position-relative mb-3">
-                    <i class="bi bi-person-fill position-absolute" style="top: 50%; left: 10px; transform: translateY(-50%); color: #666;"></i>
-
-                    <input type="text"
-                            id="email_login"
-                            name="email"
-                            placeholder="Enter your email"
-                            class="form-control ps-5 pe-5"
-                            minlength="6"
-                            maxlength="200"
-                            required>
+                      <i class="bi bi-person-fill position-absolute" style="top: 50%; left: 10px; transform: translateY(-50%); color: #666;"></i>
+                      <input type="text"
+                             id="email_login"
+                             name="email"
+                             placeholder="Enter your email"
+                             class="form-control ps-5 pe-5"
+                             minlength="6"
+                             maxlength="200"
+                             required>
                     </div>
 
-
                     <!-- PASSWORD -->
-                        <div class="form-group position-relative">
-                        <i class="bi bi-lock-fill position-absolute" style="top: 50%; left: 10px; transform: translateY(-50%); color: #666;"></i>
-
-                        <input type="password"
-                                id="password_login"
-                                name="password"
-                                placeholder="Enter your password"
-                                class="form-control ps-5 pe-5"
-                                minlength="6"
-                                maxlength="128"
-                                required>
-
-                        <!-- Eye icon: solid style, positioned on the right -->
-                        <i id="togglePasswordEye"
-                            class="bi bi-eye-fill position-absolute"
-                            style="top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer; display: none;"></i>
-                        </div>
-
-
+                    <div class="form-group position-relative">
+                      <i class="bi bi-lock-fill position-absolute" style="top: 50%; left: 10px; transform: translateY(-50%); color: #666;"></i>
+                      <input type="password"
+                             id="password_login"
+                             name="password"
+                             placeholder="Enter your password"
+                             class="form-control ps-5 pe-5"
+                             minlength="6"
+                             maxlength="128"
+                             required>
+                      <!-- Eye icon -->
+                      <i id="togglePasswordEye"
+                         class="bi bi-eye-fill position-absolute"
+                         style="top: 50%; right: 10px; transform: translateY(-50%); cursor: pointer; display: none;"></i>
+                    </div>
 
                     <!-- FORGOT PASSWORD -->
                     <div class="form-options">
-                    <a href="#" id="forgotpass_login" class="forgot-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                      <a href="#" id="forgotpass_login" class="forgot-link" data-bs-toggle="modal" data-bs-target="#LOGIN_fpModal">
                         Forgot password?
-                    </a>
+                      </a>
                     </div><br>
 
-                    <!-- Forgot Password Modal -->
-                    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" id="forgotPasswordModalContent">
-
-                        <!-- Modal Header -->
-                        <div class="modal-header">
-                            <h5 class="modal-title d-flex align-items-center" id="forgotPasswordModalLabel">
-                            <img src="{% static 'myapp/images/logo.png' %}" alt="Icon" style="width: 24px; height: 24px;" class="me-2" />
-                            Forgot Password
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-
-                        <!-- Modal Body -->
-                        <div class="modal-body">
-
-                            <!-- Email Input -->
-                            <div class="mb-3">
-                            <label for="emailInput" class="form-label">Enter your email:</label>
-                            <div class="position-relative">
-                                <i class="fas fa-envelope icon-inside-input"></i>
-                                <input type="email" class="form-control with-icon " id="emailInput" placeholder="  @email.com">
-                            </div>
-                            </div>
-
-                            <!-- OTP Input -->
-                            <div class="mb-3" id="otpSection" style="display: none;">
-                            <label for="otpInput" class="form-label">Enter OTP:</label>
-                            <div class="position-relative">
-                                <i class="fas fa-shield-alt icon-inside-input"></i>
-                                <input type="text" class="form-control with-icon " id="otpInput" placeholder="  Enter OTP">
-                            </div>
-                            </div>
-
-                          
-                            <div id="actionButtons">
-                            <button type="button" class="btn btn-primary w-100" id="sendOtpBtn">Send OTP</button>
-                            </div>
-
-                        </div>
-
-                        </div>
-                    </div>
-                    </div>
-
-
-                    <!-- LOGN IN BTN -->
+                    <!-- LOGIN BTN -->
                     <button type="submit" id="login_btn" class="btn">Sign In</button><br><hr><br>
                     <a href="{% url 'client_home' %}" class="back-link">&larr; Return to Home</a>
                 </form>
@@ -291,72 +234,277 @@
     </div>
 </div>
 
+<!-- Forgot Password Modal (stays on this page) -->
+<div class="modal fade" id="LOGIN_fpModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="LOGIN_fp_form" class="modal-content" novalidate> {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Reset your password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="LOGIN_fp_alert" class="mb-2"></div>
 
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input id="LOGIN_fp_email" type="email" class="form-control" placeholder="you@example.com" required>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button id="LOGIN_btn_send_otp" class="btn btn-primary" type="button">Send OTP</button>
+        </div>
+
+        <div id="LOGIN_otp_section" class="mt-3 d-none">
+          <label class="form-label">Enter OTP</label>
+          <input id="LOGIN_fp_otp" type="text" class="form-control" inputmode="numeric" minlength="6" maxlength="6" placeholder="6-digit code">
+          <div class="d-flex gap-2 mt-2">
+            <button id="LOGIN_btn_verify_otp" class="btn btn-success" type="button">Verify</button>
+            <button id="LOGIN_btn_cancel_otp" class="btn btn-link" type="button">Cancel</button>
+          </div>
+        </div>
+        <div id="LOGIN_reset_section" class="mt-3 d-none">
+          <label class="form-label">New Password</label>
+          <div class="position-relative">
+            <input id="LOGIN_new_pass"
+                  type="password"
+                  class="form-control pe-5"
+                  minlength="8"
+                  maxlength="128"
+                  placeholder="At least 8 characters"
+                  autocomplete="new-password"
+                  autocapitalize="off" autocorrect="off" spellcheck="false">
+            <button type="button"
+                    id="LOGIN_toggle_new_pass"
+                    class="btn btn-link p-0 position-absolute"
+                    style="right:10px; top:50%; transform:translateY(-50%);"
+                    aria-label="Show password">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+
+          <label class="form-label mt-2">Confirm Password</label>
+          <div class="position-relative">
+            <input id="LOGIN_confirm_pass"
+                  type="password"
+                  class="form-control pe-5"
+                  minlength="8"
+                  maxlength="128"
+                  placeholder="Re-enter password"
+                  autocomplete="new-password"
+                  autocapitalize="off" autocorrect="off" spellcheck="false">
+            <button type="button"
+                    id="LOGIN_toggle_confirm_pass"
+                    class="btn btn-link p-0 position-absolute"
+                    style="right:10px; top:50%; transform:translateY(-50%);"
+                    aria-label="Show password">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+          <button id="LOGIN_btn_save_pass" class="btn btn-primary mt-3" type="button">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-
-
 <script>
-  const passwordInput = document.getElementById('password_login');
-  const toggleIcon = document.getElementById('togglePasswordEye');
-
-  passwordInput.addEventListener('input', () => {
+  // password eye (unchanged)
+  (function () {
+    const passwordInput = document.getElementById('password_login');
+    const toggleIcon = document.getElementById('togglePasswordEye');
+    if (!passwordInput || !toggleIcon) return;
     toggleIcon.style.display = passwordInput.value ? 'block' : 'none';
-  });
+    passwordInput.addEventListener('input', () => {
+      toggleIcon.style.display = passwordInput.value ? 'block' : 'none';
+    });
+    toggleIcon.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      toggleIcon.classList.toggle('bi-eye-fill');
+      toggleIcon.classList.toggle('bi-eye-slash-fill');
+    });
+  })();
 
-  toggleIcon.addEventListener('click', () => {
-    const isPassword = passwordInput.type === 'password';
-    passwordInput.type = isPassword ? 'text' : 'password';
-    toggleIcon.classList.toggle('bi-eye-fill');
-    toggleIcon.classList.toggle('bi-eye-slash-fill');
-  });
+  // === LOGIN_ OTP flow (AJAX; no redirects) with 60s cooldown & auto-show OTP ===
+  (function(){
+    const $ = (s) => document.querySelector(s);
+    const ALERT = $("#LOGIN_fp_alert");
 
+    const COOLDOWN_SECONDS = 60;
+    const LS_KEY_LAST_SEND = "LOGIN_otp_last_send_ms"; // Date.now()
 
+    // Keep flow inside modal (block implicit submit)
+    $("#LOGIN_fp_form")?.addEventListener("submit", (e)=>{ e.preventDefault(); return false; });
 
-  // forgot password
-  document.addEventListener("DOMContentLoaded", function () {
-    const sendOtpBtn = document.getElementById("sendOtpBtn");
-    const emailInput = document.getElementById("emailInput");
-    const otpSection = document.getElementById("otpSection");
-    const actionButtons = document.getElementById("actionButtons");
+    function show(msg, type="danger"){
+      if (!ALERT) return;
+      ALERT.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>`;
+    }
+    function getCookie(name){
+      const v = (`; ${document.cookie}`).split(`; ${name}=`);
+      if (v.length === 2) return v.pop().split(';').shift();
+    }
+    const CSRF = getCookie('csrftoken') || '';
 
-    sendOtpBtn.addEventListener("click", function () {
+    const emailInput   = $("#LOGIN_fp_email");
+    const btnSend      = $("#LOGIN_btn_send_otp");
+    const otpSection   = $("#LOGIN_otp_section");
+    const otpInput     = $("#LOGIN_fp_otp");
+    const btnVerify    = $("#LOGIN_btn_verify_otp");
+    const btnCancel    = $("#LOGIN_btn_cancel_otp");
+    const resetSection = $("#LOGIN_reset_section");
+    const newPass      = $("#LOGIN_new_pass");
+    const confirmPass  = $("#LOGIN_confirm_pass");
+    const btnSave      = $("#LOGIN_btn_save_pass");
+
+    // --- Cooldown helpers ---
+    let cooldownTimer = null;
+    function getRemainingCooldown() {
+      const lastMs = parseInt(localStorage.getItem(LS_KEY_LAST_SEND) || "0", 10);
+      if (!lastMs) return 0;
+      const elapsed = Math.floor((Date.now() - lastMs) / 1000);
+      return Math.max(0, COOLDOWN_SECONDS - elapsed);
+    }
+    function updateSendButtonLabel(remaining) {
+      if (!btnSend) return;
+      btnSend.textContent = remaining > 0 ? `Send OTP (${remaining}s)` : "Send OTP";
+    }
+    function startCooldown(fromSeconds = COOLDOWN_SECONDS) {
+      if (!btnSend) return;
+      localStorage.setItem(LS_KEY_LAST_SEND, Date.now().toString());
+      btnSend.disabled = true;
+      let remaining = fromSeconds;
+      updateSendButtonLabel(remaining);
+      clearInterval(cooldownTimer);
+      cooldownTimer = setInterval(() => {
+        remaining = getRemainingCooldown();
+        if (remaining <= 0) {
+          clearInterval(cooldownTimer);
+          btnSend.disabled = false;
+          updateSendButtonLabel(0);
+        } else {
+          updateSendButtonLabel(remaining);
+        }
+      }, 500);
+    }
+    // Apply cooldown on load
+    (function initCooldown(){
+      if (!btnSend) return;
+      const remaining = getRemainingCooldown();
+      if (remaining > 0) {
+        btnSend.disabled = true;
+        startCooldown(remaining);
+      } else {
+        btnSend.disabled = false;
+        updateSendButtonLabel(0);
+      }
+    })();
+
+    // --- Handlers ---
+    btnSend && btnSend.addEventListener("click", async ()=>{
+      if (!emailInput) return;
+      ALERT && (ALERT.innerHTML = "");
       const email = emailInput.value.trim();
+      if (!email){ show("Email is required."); return; }
 
-      if (!email) {
-        alert("Please enter your email first.");
+      // Block if on cooldown
+      const remaining = getRemainingCooldown();
+      if (remaining > 0) {
+        show(`Please wait ${remaining}s before requesting another code.`, "warning");
+        btnSend.disabled = true;
+        startCooldown(remaining);
         return;
       }
 
-      // Simulate sending email and showing OTP input
-      emailInput.disabled = true;
-      otpSection.style.display = "block";
+      btnSend.disabled = true;
+      try{
+        const res = await fetch("{% url 'login_send_otp' %}", {
+          method: "POST",
+          headers: {"X-CSRFToken": CSRF},
+          body: new URLSearchParams({ email })
+        });
+        const data = await res.json();
 
-      // Replace "Send OTP" button with "Verify OTP" button
-      actionButtons.innerHTML = `
-        <button type="button" class="btn btn-success w-100" id="verifyOtpBtn">Verify OTP</button>
-      `;
-
-      // Add event listener for the new button
-      document.getElementById("verifyOtpBtn").addEventListener("click", function () {
-        const otp = document.getElementById("otpInput").value.trim();
-        if (!otp) {
-          alert("Please enter the OTP sent to your email.");
+        if (!res.ok) {
+          // If rate-limited, start cooldown anyway
+          if (res.status === 429) {
+            show(data.msg || "Please wait before requesting another code.", "warning");
+            startCooldown(getRemainingCooldown() || COOLDOWN_SECONDS);
+          } else {
+            throw new Error(data.msg || "Failed to send code.");
+          }
           return;
         }
 
-        // Handle OTP verification logic here
-        alert("OTP Verified! Proceed to reset password.");
-        // Redirect or show next modal for new password
-      });
+        // success: notify, auto-open OTP section, focus input, start cooldown
+        show(data.msg || "OTP sent. Check your email.", "success");
+        otpSection && otpSection.classList.remove("d-none");
+        resetSection && resetSection.classList.add("d-none");
+        if (otpInput) { otpInput.value = ""; otpInput.focus(); }
+        startCooldown(COOLDOWN_SECONDS);
+
+      } catch (e) {
+        show(e.message || "Error sending OTP.");
+        btnSend.disabled = false; // allow retry if not rate-limited
+        updateSendButtonLabel(0);
+      }
     });
-  });
 
+    btnCancel && btnCancel.addEventListener("click", ()=>{
+      otpSection && otpSection.classList.add("d-none");
+    });
 
+    btnVerify && btnVerify.addEventListener("click", async ()=>{
+      if (!emailInput || !otpInput) return;
+      ALERT && (ALERT.innerHTML = "");
+      const email = emailInput.value.trim();
+      const otp = otpInput.value.trim();
+      if (otp.length !== 6){ show("Please enter the 6-digit code."); return; }
+      btnVerify.disabled = true;
+      try{
+        const res = await fetch("{% url 'login_verify_otp' %}", {
+          method: "POST",
+          headers: {"X-CSRFToken": CSRF},
+          body: new URLSearchParams({ email, otp })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.msg || "Verification failed.");
+        show(data.msg, "success");
+        otpSection && otpSection.classList.add("d-none");
+        resetSection && resetSection.classList.remove("d-none");
+        newPass && newPass.focus();
+      }catch(e){ show(e.message || "Error verifying code."); }
+      finally{ btnVerify.disabled = false; }
+    });
 
+    btnSave && btnSave.addEventListener("click", async ()=>{
+      if (!emailInput || !newPass || !confirmPass) return;
+      ALERT && (ALERT.innerHTML = "");
+      const email = emailInput.value.trim();
+      const p1 = newPass.value, p2 = confirmPass.value;
+      if (p1.length < 8){ show("Password must be at least 8 characters."); return; }
+      if (p1 !== p2){ show("Passwords do not match."); return; }
 
+      btnSave.disabled = true;
+      try{
+        const res = await fetch("{% url 'login_reset_password' %}", {
+          method: "POST",
+          headers: {"X-CSRFToken": CSRF},
+          body: new URLSearchParams({ email, new_password: p1, confirm_password: p2 })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.msg || "Could not reset password.");
+        show(data.msg, "success");
+        // setTimeout(()=>bootstrap.Modal.getInstance(document.getElementById('LOGIN_fpModal'))?.hide(), 1200);
+      }catch(e){ show(e.message || "Error saving password."); }
+      finally{ btnSave.disabled = false; }
+    });
+  })();
 </script>
 
 

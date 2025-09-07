@@ -790,7 +790,111 @@ def logout_view(request):
     request.session.flush()
     return redirect('login')
 
+LOGIN_OTP_TTL_MINUTES = 5
+LOGIN_OTP_LENGTH = 6
+LOGIN_MAX_VERIFY_ATTEMPTS = 3
+LOGIN_SEND_RATE_WINDOW_SEC = 60
+LOGIN_SESSION_RESET_OK_FOR = 'LOGIN_otp_reset_ok_for'
 
+def LOGIN_cache_key_attempts(email): return f"LOGIN_otp_attempts:{email.lower()}"
+def LOGIN_cache_key_send(email):     return f"LOGIN_otp_send_ts:{email.lower()}"
+def LOGIN_now():                     return timezone.now()
+
+@require_POST
+def login_send_otp(request):
+    email = request.POST.get('email', '').strip().lower()
+    if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email) or len(email) > 164:
+        return JsonResponse({"ok": False, "msg": "Please enter a valid email."}, status=400)
+    try:
+        user = UserAccount.objects.get(email=email, is_active=True)
+    except UserAccount.DoesNotExist:
+        return JsonResponse({"ok": False, "msg": "No active account found for this email."}, status=404)
+
+    last_send = cache.get(LOGIN_cache_key_send(email))
+    if last_send and (LOGIN_now() - last_send).total_seconds() < LOGIN_SEND_RATE_WINDOW_SEC:
+        return JsonResponse({"ok": False, "msg": "Please wait before requesting another code."}, status=429)
+
+    code = f"{random.randint(0, 10**LOGIN_OTP_LENGTH - 1):0{LOGIN_OTP_LENGTH}d}"
+
+    with transaction.atomic():
+        # Ensure created_at is refreshed on *every* send
+        rec, _created = OTPVerification.objects.select_for_update().update_or_create(
+            email=email,
+            defaults={
+                "otp": make_password(code),
+                "full_name": user.full_name,
+                "role": user.role,
+                "password": "",
+                "is_active": True,
+                "created_at": timezone.now(),   # <-- critical line
+            }
+        )
+        cache.set(LOGIN_cache_key_attempts(email),
+                  LOGIN_MAX_VERIFY_ATTEMPTS,
+                  LOGIN_OTP_TTL_MINUTES * 60)
+
+    subject = "Your OTP Code (valid 5 minutes)"
+    body = f"Hello {user.full_name or ''},\n\nYour password reset code is: {code}\nIt expires in {LOGIN_OTP_TTL_MINUTES} minutes."
+    send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [email], fail_silently=False)
+
+    cache.set(LOGIN_cache_key_send(email), LOGIN_now(), LOGIN_SEND_RATE_WINDOW_SEC)
+    return JsonResponse({"ok": True, "msg": "OTP sent. Check your email."})
+
+@require_POST
+def login_verify_otp(request):
+    email = request.POST.get('email', '').strip().lower()
+    code  = request.POST.get('otp', '').strip()
+    if not email or not code:
+        return JsonResponse({"ok": False, "msg": "Email and code are required."}, status=400)
+
+    try:
+        rec = OTPVerification.objects.get(email=email, is_active=True)
+    except OTPVerification.DoesNotExist:
+        return JsonResponse({"ok": False, "msg": "No pending reset request for this email."}, status=404)
+
+    if LOGIN_now() - rec.created_at > timedelta(minutes=LOGIN_OTP_TTL_MINUTES):
+        return JsonResponse({"ok": False, "msg": "Code expired. Please request a new one."}, status=410)
+
+    attempts = cache.get(LOGIN_cache_key_attempts(email), LOGIN_MAX_VERIFY_ATTEMPTS)
+    if attempts <= 0:
+        return JsonResponse({"ok": False, "msg": "Too many attempts. Request a new code."}, status=429)
+
+    if not check_password(code, rec.otp):
+        cache.set(LOGIN_cache_key_attempts(email), attempts - 1, LOGIN_OTP_TTL_MINUTES * 60)
+        return JsonResponse({"ok": False, "msg": f"Incorrect code. Attempts left: {attempts - 1}"}, status=401)
+
+    request.session[LOGIN_SESSION_RESET_OK_FOR] = email
+    cache.delete(LOGIN_cache_key_attempts(email))
+    return JsonResponse({"ok": True, "msg": "Code verified. You can now set a new password."})
+
+@require_POST
+def login_reset_password(request):
+    email = request.POST.get('email', '').strip().lower()
+    new_password = request.POST.get('new_password', '').strip()
+    confirm = request.POST.get('confirm_password', '').strip()
+
+    if request.session.get(LOGIN_SESSION_RESET_OK_FOR) != email:
+        return JsonResponse({"ok": False, "msg": "Verification required or session expired."}, status=403)
+    if len(new_password) < 8:
+        return JsonResponse({"ok": False, "msg": "Password must be at least 8 characters."}, status=400)
+    if len(new_password) > 128:
+        return JsonResponse({"ok": False, "msg": "Password is too long."}, status=400)
+    if new_password != confirm:
+        return JsonResponse({"ok": False, "msg": "Passwords do not match."}, status=400)
+
+    try:
+        user = UserAccount.objects.get(email=email, is_active=True)
+    except UserAccount.DoesNotExist:
+        return JsonResponse({"ok": False, "msg": "Account not found or inactive."}, status=404)
+
+    user.password = make_password(new_password)
+    user.save(update_fields=['password'])
+
+    OTPVerification.objects.filter(email=email).delete()
+    cache.delete_many([LOGIN_cache_key_attempts(email), LOGIN_cache_key_send(email)])
+    request.session.pop(LOGIN_SESSION_RESET_OK_FOR, None)
+
+    return JsonResponse({"ok": True, "msg": "Password updated. You can now log in."})
 
 
 
@@ -2967,6 +3071,7 @@ def mark_apology_settled(request, violation_id):
     return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
 
 #--------------------------------------------------#
+
 def _current_facilitator_snapshot(request) -> tuple[str, str]:
     """
     Returns (name, source) where source in {"admin","faculty"} or ("","") if none.
@@ -2977,6 +3082,7 @@ def _current_facilitator_snapshot(request) -> tuple[str, str]:
     if s.get("user_id"):         # Admin/Staff login
         return (s.get("full_name", "") or "", "admin")
     return ("", "")
+
 #---------------admin community service-----------------#
 
 @role_required(['admin'])
@@ -3336,3 +3442,4 @@ def cs_case_detail_api(request, case_id):
         "logs": logs,
         "open_session": open_session,
     })
+
