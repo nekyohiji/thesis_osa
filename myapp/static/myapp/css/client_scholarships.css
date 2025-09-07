@@ -192,12 +192,12 @@ p.text-center {
 }
 
 .scholarship-card .btn-outline-info { 
-  color: #17a2b8;
-  border-color: #17a2b8;
+  color:#440207;
+  border-color:#440207;
 }
 
 .scholarship-card .btn-outline-info:hover {
-  background-color: #17a2b8;
+  background-color:#5e0000;
   color: white;
 }
 

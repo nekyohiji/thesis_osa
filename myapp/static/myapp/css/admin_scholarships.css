@@ -278,12 +278,12 @@ hr {
 
 
 .btn-info {
-  background-color: #17a2b8;
-  border-color: #17a2b8;
+  background-color:#440207;
+  border-color: #440207;
 }
 .btn-info:hover {
-  background-color: #138496;
-  border-color: #117a8b;
+  background-color: #5e0000;
+  border-color:#5e0000;
 }
 
 .btn-danger {
