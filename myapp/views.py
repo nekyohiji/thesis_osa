@@ -125,41 +125,6 @@ def home_view(request):
 
 #------------------------------------------------------------------------------------------#
 
-@role_required(['guard'])
-def guard_violation_view(request):
-    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
-    return render (request, 'myapp/guard_violation.html', {'guards': guards})
-
-@role_required(['guard'])
-def guard_report_view(request):
-    violations = Violation.objects.all().order_by('-violation_date')
-    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
-
-    # Get filters
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    violation_type = request.GET.get('violation_type')
-    guard_name = request.GET.get('guard_name')
-
-    # Apply filters
-    if start_date:
-        violations = violations.filter(violation_date__gte=start_date)
-    if end_date:
-        violations = violations.filter(violation_date__lte=end_date)
-    if violation_type:
-        violations = violations.filter(violation_type=violation_type)
-    if guard_name:
-        violations = violations.filter(guard_name=guard_name)
-
-    context = {
-        'violations': violations,
-        'guards': guards,
-        'violation_types': Violation.VIOLATION_TYPES,
-    }
-    return render(request, 'myapp/guard_report.html', context)
-
-#------------------------------------------------------------------------------------------#
-
 def client_goodmoral_view(request):
     return render (request, 'myapp/client_goodmoral.html')
 
@@ -945,6 +910,64 @@ def login_reset_password(request):
 
 ########################GUARD
 
+@role_required(['guard'])
+def guard_violation_view(request):
+    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+    return render (request, 'myapp/guard_violation.html', {'guards': guards})
+
+@role_required(['guard'])
+def guard_report_view(request):
+    violations = Violation.objects.all().order_by('-violation_date')
+    guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+
+    # Raw query params
+    start_date_raw = (request.GET.get('start_date') or '').strip()
+    end_date_raw   = (request.GET.get('end_date')   or '').strip()
+    violation_type = (request.GET.get('violation_type') or '').strip()
+    guard_name     = (request.GET.get('guard_name') or '').strip()
+
+    # Hard server-side bounds
+    FLOOR = date(2020, 1, 1)
+    CEIL  = timezone.localdate()  # today (server time)
+
+    def parse_ymd(s):
+        try:
+            return datetime.strptime(s, "%Y-%m-%d").date()
+        except Exception:
+            return None
+
+    start_date = parse_ymd(start_date_raw)
+    end_date   = parse_ymd(end_date_raw)
+
+    # Clamp only if provided
+    if start_date:
+        if start_date < FLOOR: start_date = FLOOR
+    if end_date:
+        if end_date > CEIL: end_date = CEIL
+
+    # If both provided and reversed, swap
+    if start_date and end_date and start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    # Apply filters
+    if start_date:
+        violations = violations.filter(violation_date__gte=start_date)
+    if end_date:
+        violations = violations.filter(violation_date__lte=end_date)
+    if violation_type:
+        violations = violations.filter(violation_type=violation_type)
+    if guard_name:
+        violations = violations.filter(guard_name=guard_name)
+
+    context = {
+        'violations': violations,
+        'guards': guards,
+        'violation_types': Violation.VIOLATION_TYPES,
+        'today': CEIL,  # for template max=...
+    }
+    return render(request, 'myapp/guard_report.html', context)
+
+
 def get_student_by_id(request, tupc_id):
     try:
         student = Student.objects.get(tupc_id=tupc_id)
@@ -997,86 +1020,87 @@ def submit_violation(request):
 
 @role_required(['guard'])
 def generate_guard_report_pdf(request):
+    # ---- Inputs (generate-only) ----
+    start_date_raw = (request.GET.get('start_date') or '').strip()
+    end_date_raw   = (request.GET.get('end_date')   or '').strip()
+    guard_name     = (request.GET.get('guard_name') or '').strip()
+    violation_type = (request.GET.get('violation_type') or '').strip()
 
-    # --- Filters ---
-    start_date = request.GET.get('start_date', '').strip()
-    end_date = request.GET.get('end_date', '').strip()
-    violation_type = request.GET.get('violation_type', '').strip()
-    guard_name = request.GET.get('guard_name', '').strip()
+    # Require a guard for this report
+    if not guard_name:
+        return HttpResponseBadRequest("guard_name is required")
 
-    # --- Filters ---
-    start_date = request.GET.get('start_date', '').strip()
-    end_date = request.GET.get('end_date', '').strip()
-    violation_type = request.GET.get('violation_type', '').strip()
-    guard_name = request.GET.get('guard_name', '').strip()
+    # ---- Server-side hard bounds ----
+    FLOOR = date(2020, 1, 1)
+    CEIL  = timezone.localdate()  # today (server time)
 
-    # Query
-    violations = Violation.objects.all()
-    # Query
-    violations = Violation.objects.all()
-    if start_date:
-        violations = violations.filter(violation_date__gte=start_date)
-    if end_date:
-        violations = violations.filter(violation_date__lte=end_date)
+    def parse_ymd(d):
+        try:
+            return datetime.strptime(d, "%Y-%m-%d").date()
+        except Exception:
+            return None
+
+    start_date = parse_ymd(start_date_raw) or FLOOR
+    end_date   = parse_ymd(end_date_raw)   or CEIL
+    if start_date < FLOOR: start_date = FLOOR
+    if end_date > CEIL:    end_date   = CEIL
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    # ---- Query: guard + dates (+ optional type) ----
+    qs = (Violation.objects
+          .filter(guard_name=guard_name,
+                  violation_date__gte=start_date,
+                  violation_date__lte=end_date))
     if violation_type:
-        violations = violations.filter(violation_type=violation_type)
-    if guard_name:
-        violations = violations.filter(guard_name=guard_name)
+        qs = qs.filter(violation_type=violation_type)
 
+    # ---- Build PDF (inline viewer) ----
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="violations_report.pdf"'
+    response['Content-Disposition'] = 'inline; filename="violations_report.pdf"'
 
-    generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
-
-    generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
+    generated_on = timezone.localtime().strftime('%Y-%m-%d %H:%M')
 
     styles = getSampleStyleSheet()
-    subtitle_style = ParagraphStyle(name='Subtitle', parent=styles['Normal'], fontSize=8, textColor=colors.grey)
+    subtitle_style   = ParagraphStyle(name='Subtitle', parent=styles['Normal'], fontSize=8, textColor=colors.grey)
     table_cell_style = ParagraphStyle(name='table_cell', parent=styles['Normal'], fontSize=7, leading=9)
 
-    # ===== HEADER/FOOTER =====
     def header_footer(canvas, doc):
         canvas.saveState()
-        gray_tone = colors.Color(0.45, 0.45, 0.45)
-        canvas.setFillColor(gray_tone)
+        if getattr(doc, "page", 0) in (0, 1):  # set once on first page
+            canvas.setTitle(f"Violations Report - {guard_name} ({timezone.localdate()})")
+            canvas.setAuthor("TUP-Cavite Student Violation System")
+            canvas.setSubject("Guard violations report")
+            canvas.setCreator("ReportLab")
+            gray = colors.Color(0.45, 0.45, 0.45)
+            canvas.setFillColor(gray)
 
-        # Left-aligned header text
-        x_pos = 40
-        y_pos = A4[1] - 50
+        # Left header text
+        x, y = 40, A4[1] - 50
         canvas.setFont("Helvetica", 10)
-        canvas.drawString(x_pos, y_pos, "Republic of the Philippines")
-        y_pos -= 13
+        canvas.drawString(x, y, "Republic of the Philippines")
+        y -= 13
         canvas.setFont("Helvetica-Bold", 10)
-        canvas.drawString(x_pos, y_pos, "TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS")
-        y_pos -= 13
+        canvas.drawString(x, y, "TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS")
+        y -= 13
         canvas.setFont("Helvetica", 10)
-        canvas.drawString(x_pos, y_pos, "Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114")
+        canvas.drawString(x, y, "Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114")
 
-        # Right-aligned images
+        # Right logos (optional)
         image_names = ["tuplogo.png", "bgph.png", "ISO.png"]
-        img_size = 40
-        padding = 8
+        img_size, pad = 40, 8
         right_x = A4[0] - 40
-
         for name in reversed(image_names):
             img_path = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'images', name)
             if os.path.exists(img_path):
                 try:
                     img = Image.open(img_path)
                     img.thumbnail((img_size, img_size), Image.LANCZOS)
-                    img_io = io.BytesIO()
-                    img.save(img_io, format='PNG')
-                    img_io.seek(0)
+                    buff = io.BytesIO(); img.save(buff, format='PNG'); buff.seek(0)
                     right_x -= img.size[0]
-                    canvas.drawImage(
-                        ImageReader(img_io),
-                        right_x,
-                        A4[1] - 60,
-                        width=img.size[0],
-                        height=img.size[1],
-                        mask='auto'
-                    )
-                    right_x -= padding
+                    canvas.drawImage(ImageReader(buff), right_x, A4[1] - 60,
+                                     width=img.size[0], height=img.size[1], mask='auto')
+                    right_x -= pad
                 except Exception:
                     pass
 
@@ -1086,88 +1110,63 @@ def generate_guard_report_pdf(request):
         canvas.drawString(40, 30, f"Generated on: {generated_on}")
         canvas.drawRightString(A4[0] - 40, 30,
                                "This report was generated automatically by the Student Violation System.")
-
         canvas.restoreState()
 
-    # ===== DOC SETUP =====
     doc = BaseDocTemplate(
-        response,
-        pagesize=A4,
-        leftMargin=40,
-        rightMargin=40,
-        topMargin=110,
-        bottomMargin=60
+        response, pagesize=A4,
+        leftMargin=40, rightMargin=40, topMargin=110, bottomMargin=60
     )
-
-    frame_main = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
-    template = PageTemplate(id='normal', frames=[frame_main], onPage=header_footer)
-    doc.addPageTemplates([template])
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
+    doc.addPageTemplates([PageTemplate(id='normal', frames=[frame], onPage=header_footer)])
 
     elements = []
-
-    # Title & filters
     elements.append(Paragraph("Violations Report", styles['Title']))
     elements.append(Spacer(1, 8))
 
-    filters = []
-    if start_date:
-        filters.append(f"From: {start_date}")
-    if end_date:
-        filters.append(f"To: {end_date}")
+    filt_bits = [
+        f"From: {start_date.isoformat()}",
+        f"To: {end_date.isoformat()}",
+        f"Guard on Duty: {guard_name}",
+    ]
     if violation_type:
-        filters.append(f"Violation Type: {violation_type}")
-    if guard_name:
-        filters.append(f"Guard on Duty: {guard_name}")
+        filt_bits.append(f"Violation Type: {violation_type}")
+    elements.append(Paragraph(", ".join(filt_bits), subtitle_style))
+    elements.append(Spacer(1, 10))
 
-    if filters:
-        elements.append(Paragraph(", ".join(filters), subtitle_style))
-        elements.append(Spacer(1, 10))
-
-    # ===== Table with Status =====
     headers = ['Student Name', 'Student ID', 'Program/Course', 'Date', 'Time',
                'Type of Violation', 'Reported By', 'Status']
     col_widths = [
-        doc.width * 0.15,
-        doc.width * 0.11,
-        doc.width * 0.18,
-        doc.width * 0.10,
-        doc.width * 0.08,
-        doc.width * 0.16,
-        doc.width * 0.12,
-        doc.width * 0.10,
+        doc.width * 0.15, doc.width * 0.11, doc.width * 0.18, doc.width * 0.10,
+        doc.width * 0.08, doc.width * 0.16, doc.width * 0.12, doc.width * 0.10,
     ]
 
-    # Build table rows
     rows = [[Paragraph(h, styles['Heading5']) for h in headers]]
-    for v in violations.order_by('violation_date', 'violation_time'):
+    for v in qs.order_by('violation_date', 'violation_time'):
         rows.append([
             Paragraph(f"{v.first_name} {v.last_name}", table_cell_style),
-            Paragraph(v.student_id, table_cell_style),
-            Paragraph(v.program_course, table_cell_style),
+            Paragraph(str(getattr(v, 'student_id', '') or ''), table_cell_style),
+            Paragraph(str(getattr(v, 'program_course', '') or ''), table_cell_style),
             Paragraph(v.violation_date.strftime("%Y-%m-%d"), table_cell_style),
-            Paragraph(v.violation_time.strftime("%H:%M"), table_cell_style),
-            Paragraph(v.violation_type, table_cell_style),
-            Paragraph(v.guard_name, table_cell_style),
-            Paragraph(getattr(v, 'status', ''), table_cell_style),
+            Paragraph((v.violation_time.strftime("%H:%M") if getattr(v, 'violation_time', None) else ""), table_cell_style),
+            Paragraph(str(getattr(v, 'violation_type', '') or ''), table_cell_style),
+            Paragraph(str(getattr(v, 'guard_name', '') or ''), table_cell_style),
+            Paragraph(str(getattr(v, 'status', '') or ''), table_cell_style),
         ])
 
-    if len(rows) == 1:
+    total = max(0, len(rows) - 1)
+    if total == 0:
         rows.append([Paragraph('No data', table_cell_style)] * len(headers))
-        total_violations = 0
-    else:
-        total_violations = len(rows) - 1
 
-    cardinal_red = colors.HexColor("#8C1515")
-    light_gray = colors.HexColor("#F2F2F2")
-    mid_gray = colors.HexColor("#E6E6E6")
+    cardinal = colors.HexColor("#8C1515")
+    light    = colors.HexColor("#F2F2F2")
+    mid      = colors.HexColor("#E6E6E6")
 
-    # Split table into pages of 25 rows of data (plus header)
-    max_rows_per_page = 26  # header + 25 data rows
+    max_rows_per_page = 26  # header + 25
     for start in range(0, len(rows), max_rows_per_page - 1):
         chunk = rows[start:start + max_rows_per_page]
         table = Table(chunk, colWidths=col_widths, repeatRows=1)
-        table_style_cmds = [
-            ('BACKGROUND', (0, 0), (-1, 0), cardinal_red),
+        style = [
+            ('BACKGROUND', (0, 0), (-1, 0), cardinal),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -1178,53 +1177,46 @@ def generate_guard_report_pdf(request):
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
         ]
         for i in range(1, len(chunk)):
-            bg_color = light_gray if (i + start) % 2 == 0 else mid_gray
-            table_style_cmds.append(('BACKGROUND', (0, i), (-1, i), bg_color))
-        table.setStyle(TableStyle(table_style_cmds))
+            style.append(('BACKGROUND', (0, i), (-1, i),
+                          light if (i + start) % 2 == 0 else mid))
+        table.setStyle(TableStyle(style))
         elements.append(table)
-
-        # Add page break if more chunks remain
         if start + max_rows_per_page - 1 < len(rows):
             elements.append(PageBreak())
 
-    # Totals
     elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"Total Violations: {total_violations}", styles['Normal']))
+    elements.append(Paragraph(f"Total Violations: {total}", styles['Normal']))
 
-    type_counts = Counter(v.violation_type for v in violations)
-    if type_counts:
+    counts = Counter(v.violation_type for v in qs)
+    if counts:
         elements.append(Spacer(1, 6))
-        for vtype, count in type_counts.items():
-            elements.append(Paragraph(f"{vtype}: {count}", styles['Normal']))
+        for vtype, c in counts.items():
+            elements.append(Paragraph(f"{vtype}: {c}", styles['Normal']))
 
-    # Signatures on last page only
+    # Signatures
     elements.append(Spacer(1, 60))
-    block_width = 150
-    sig_label_style = ParagraphStyle('sig_label_style', parent=styles['Normal'], alignment=TA_LEFT, fontSize=11)
-    sig_name_style = ParagraphStyle('sig_name_style', parent=styles['Normal'], alignment=TA_LEFT, fontSize=10)
-    sig_printed_style = ParagraphStyle('sig_printed_style', parent=styles['Normal'], alignment=TA_LEFT, fontSize=10)
+    block_w = 150
+    sig_lbl = ParagraphStyle('sig_lbl', parent=styles['Normal'], alignment=TA_LEFT, fontSize=11)
+    sig_nm  = ParagraphStyle('sig_nm',  parent=styles['Normal'], alignment=TA_LEFT, fontSize=10)
+    sig_pr  = ParagraphStyle('sig_pr',  parent=styles['Normal'], alignment=TA_LEFT, fontSize=10)
 
-    def signature_block(label, name):
+    def sig_block(label, name):
         return [
-            Paragraph(label, sig_label_style),
+            Paragraph(label, sig_lbl),
             Spacer(1, 18),
-            Table(
-                [[Paragraph(name, sig_name_style)]],
-                colWidths=[block_width],
-                style=[
-                    ('LINEBELOW', (0, 0), (-1, -1), 1.25, colors.black),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                ],
-                hAlign='LEFT'
-            ),
+            Table([[Paragraph(name or "", sig_nm)]],
+                  colWidths=[block_w],
+                  style=[('LINEBELOW', (0, 0), (-1, -1), 1.25, colors.black),
+                         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                         ('BOTTOMPADDING', (0, 0), (-1, -1), 6)],
+                  hAlign='LEFT'),
             Spacer(1, 6),
-            Paragraph("Printed Name with Signature", sig_printed_style)
+            Paragraph("Printed Name with Signature", sig_pr)
         ]
 
-    elements.extend(signature_block("Prepared by:", guard_name if guard_name else ""))
+    elements.extend(sig_block("Prepared by:", guard_name))
     elements.append(Spacer(1, 40))
-    elements.extend(signature_block("Noted by:", ""))
+    elements.extend(sig_block("Noted by:", ""))
 
     doc.build(elements)
     return response

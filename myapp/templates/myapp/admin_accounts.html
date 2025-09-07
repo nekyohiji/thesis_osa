@@ -589,7 +589,7 @@
               <div class="input-group input-group-sm mb-3">
                 <input type="email" class="form-control" id="email" name="email"
                       pattern="^[A-Za-z0-9._%+-]+@(gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$" title="Use a Gmail address or your TUP address (@gsfe.tupcavite.edu.ph or @tup.edu.ph) only."
-                      title="Gmail only" maxlength="254" placeholder="Enter Email" required>
+                      title="Gmail and TUPC email only" maxlength="254" placeholder="Enter Email" required>
               </div>
 
               <!-- Position -->
@@ -608,7 +608,8 @@
               <label for="createPassword" class="form-label small"><b>Password:</b></label>
               <div class="form-group position-relative mb-3">
                 <input type="password" class="form-control form-control-sm pe-5" id="createPassword"
-                      name="password" minlength="8" maxlength="128" placeholder="Enter Password" required>
+                      name="password" minlength="8" maxlength="128" placeholder="Enter Password" required
+                      pattern="\S+" title="Password cannot contain spaces" onkeydown="if (/\s/.test(event.key)) event.preventDefault()" oninput="this.value=this.value.replace(/\s/g,'')" onpaste="setTimeout(()=>this.value=this.value.replace(/\s/g,''))" ondrop="setTimeout(()=>this.value=this.value.replace(/\s/g,''))">
                 <span class="eye-icon" onclick="togglePasswordVisibility('createPassword')">
                   <i class="fas fa-eye"></i>
                 </span>
@@ -618,7 +619,8 @@
               <label for="confirmPassword" class="form-label small"><b>Confirm Password:</b></label>
               <div class="form-group position-relative mb-3">
                 <input type="password" class="form-control form-control-sm pe-5" id="confirmPassword"
-                      name="confirmPassword" minlength="8" maxlength="128" placeholder="Confirm Password" required>
+                      name="confirmPassword" minlength="8" maxlength="128" placeholder="Confirm Password" required
+                      pattern="\S+" title="Password cannot contain spaces" onkeydown="if (/\s/.test(event.key)) event.preventDefault()" oninput="this.value=this.value.replace(/\s/g,'')" onpaste="setTimeout(()=>this.value=this.value.replace(/\s/g,''))" ondrop="setTimeout(()=>this.value=this.value.replace(/\s/g,''))">
                 <span class="eye-icon" onclick="togglePasswordVisibility('confirmPassword')">
                   <i class="fas fa-eye"></i>
                 </span>
@@ -1076,7 +1078,7 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
   const applyBtn     = document.getElementById('applyNewEmailBtn');
 
   let pendingNewEmail = null;
-  const gmailOnly = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // align with your create form; remove if not needed
+  const gmailOnly = /^[A-Za-z0-9._%+-]+@(gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$/;
 
   function resetModalState() {
     pendingNewEmail = null;
@@ -1098,7 +1100,7 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
     if (!currentEmail) return showMessage('No account selected.', 'danger');
     if (!proposed) return showMessage('Please enter the new email.', 'warning');
     if (proposed === currentEmail) return showMessage('New email must be different from current email.', 'warning');
-    if (!gmailOnly.test(proposed)) return showMessage('Email must be a Gmail address.', 'warning'); // remove if not needed
+    if (!gmailOnly.test(proposed)) return showMessage('Email must be a Gmail address or TUPC .', 'warning'); // remove if not needed
 
     sendOtpBtn.disabled = true;
     try {
@@ -1190,7 +1192,7 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
 
   function ensureChangePasswordModal() {
     if (document.getElementById('changePasswordModal')) return;
-
+    
     const html = `
       <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -1204,7 +1206,12 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
               <form id="changePasswordForm" novalidate>
                 <label class="form-label" for="newPassword">New Password</label>
                 <div class="input-group mb-2">
-                  <input id="newPassword" type="password" class="form-control" placeholder="Enter new password" minlength="8" required>
+                  <input id="newPassword" type="password" class="form-control" placeholder="Enter new password" minlength="8" required
+                        pattern="\\S+" title="Password cannot contain spaces"
+                        onkeydown="if (/\\s/.test(event.key)) event.preventDefault()"
+                        oninput="this.value=this.value.replace(/\\s/g,'')"
+                        onpaste="setTimeout(()=>this.value=this.value.replace(/\\s/g,''))"
+                        ondrop="setTimeout(()=>this.value=this.value.replace(/\\s/g,''))">
                   <button type="button" class="btn btn-outline-secondary toggle-visibility" data-target="newPassword" aria-label="Show password">
                     <i class="fas fa-eye"></i>
                   </button>
@@ -1213,7 +1220,12 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
 
                 <label class="form-label" for="confirmPassword">Confirm Password</label>
                 <div class="input-group mb-1">
-                  <input id="confirmPassword" type="password" class="form-control" placeholder="Confirm new password" minlength="8" required>
+                  <input id="confirmPassword" type="password" class="form-control" placeholder="Confirm new password" minlength="8" required
+                        pattern="\\S+" title="Password cannot contain spaces"
+                        onkeydown="if (/\\s/.test(event.key)) event.preventDefault()"
+                        oninput="this.value=this.value.replace(/\\s/g,'')"
+                        onpaste="setTimeout(()=>this.value=this.value.replace(/\\s/g,''))"
+                        ondrop="setTimeout(()=>this.value=this.value.replace(/\\s/g,''))">
                   <button type="button" class="btn btn-outline-secondary toggle-visibility" data-target="confirmPassword" aria-label="Show password">
                     <i class="fas fa-eye"></i>
                   </button>
@@ -1249,19 +1261,20 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
     // Eye toggles (works for both fields)
     document.querySelectorAll('#changePasswordModal .toggle-visibility').forEach(btn => {
       btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target');
-        const input = document.getElementById(targetId);
-        const icon = btn.querySelector('i');
-        if (!input) return;
-        if (input.type === 'password') {
-          input.type = 'text';
-          icon.classList.replace('fa-eye', 'fa-eye-slash');
-          btn.setAttribute('aria-label', 'Hide password');
-        } else {
-          input.type = 'password';
-          icon.classList.replace('fa-eye-slash', 'fa-eye');
-          btn.setAttribute('aria-label', 'Show password');
-        }
+        const modal = document.getElementById('changePasswordModal');
+        const input = modal.querySelector('#' + btn.getAttribute('data-target')); // <- scoped
+        const icon  = btn.querySelector('i');
+        if (!input || !icon) return;
+
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+
+        // set full class (don’t rely on .replace when initial class might not match)
+        icon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+
+        // keep focus
+        input.focus();
       });
     });
 

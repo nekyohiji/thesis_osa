@@ -211,7 +211,14 @@
                              class="form-control ps-5 pe-5"
                              minlength="6"
                              maxlength="128"
-                             required>
+                             required
+                             pattern="\S+"
+                             title="Password cannot contain spaces"
+                             onkeydown="if (/\s/.test(event.key)) event.preventDefault()"
+                             oninput="this.value=this.value.replace(/\s/g,'')"
+                             onpaste="setTimeout(()=>this.value=this.value.replace(/\s/g,''))"
+                             ondrop="setTimeout(()=>this.value=this.value.replace(/\s/g,''))"
+                             autocomplete="current-password">
                       <!-- Eye icon -->
                       <i id="togglePasswordEye"
                          class="bi bi-eye-fill position-absolute"
