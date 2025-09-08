@@ -31,7 +31,7 @@ class UserAccount(models.Model):
         ('admin', 'Admin'),
         ('guard', 'Security Guard'),
         ('scholarship', 'Scholarship Coordinator'),
-        ('staff', 'Office Staff'),
+        ('staff', 'Staff'),
         ('studasst', 'Student Assistant'),
     ]
 

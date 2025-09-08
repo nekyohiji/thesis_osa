@@ -41,84 +41,8 @@
 {% endif %}
 <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
-<!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div><br>
-      <div class="logo text-center">
-        <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid mb-2 logo-img">
-        <div><span><h5><b>TUPC OSA</b></h5></span></div>
-        <h6>Welcome Admin!</h6>
-        <hr>
-      </div>
-
-      <ul class="nav flex-column">
-        <li><a href="{% url 'admin_dashboard' %}" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('violationMenu')">
-            <span><i class="fas fa-exclamation-triangle"></i> Violation</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-violationMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="violationMenu">
-            <a class="nav-link" href="{% url 'admin_violation' %}"><i class="fas fa-window-maximize"></i> Violation</a>
-            <a class="nav-link" href="{% url 'admin_old_violation' %}"><i class="fas fa-archive"></i> Old Violation Record</a>
-            <a class="nav-link" href="{% url 'admin_community_service' %}"><i class="fas fa-people-group"></i> Community Service</a>
-          </div>
-        </li>
-
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('documentsMenu')">
-            <span><i class="fas fa-file-alt"></i> Documents</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-documentsMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="documentsMenu">
-            <a class="nav-link" href="{% url 'admin_goodmoral' %}"><i class="fas fa-shield-alt"></i> Good Moral</a>
-            <a class="nav-link" href="{% url 'admin_ackreq' %}"><i class="fas fa-file-download"></i> Acknowledgement Receipt</a>
-            <a class="nav-link" href="{% url 'admin_clearance' %}"><i class="fas fa-certificate"></i> Clearance</a>
-
-          </div>
-        </li>
-
-        <li>
-          <a class="nav-link d-flex justify-content-between align-items-center" href="javascript:void(0)" onclick="handleDropdown('postingsMenu')">
-            <span><i class="fas fa-bullhorn"></i> Postings</span>
-            <i class="fas fa-caret-down dropdown-icon" id="icon-postingsMenu"></i>
-          </a>
-          <div class="collapse submenu ps-3 border-start" id="postingsMenu">
-            <a class="nav-link" href="{% url 'admin_scholarships' %}"><i class="fas fa-award"></i> Scholarships</a>
-            <a class="nav-link" href="{% url 'admin_lostandfound' %}"><i class="fas fa-search"></i> Lost and Found</a>
-            <a class="nav-link" href="{% url 'admin_ACSO' %}"><i class="fas fa-building"></i> ACSO<br>Accreditation</a>
-            <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student<br>Assistantship</a>
-          </div>
-        </li>
-        <li><a class="nav-link" href="{% url 'admin_student' %}"><i class="fas fa-folder-open"></i> Record</a></li>
-        <li><a href="{% url 'admin_report' %}" class="nav-link"><i class="fas fa-chart-line"></i> Report</a></li>
-        <li><a href="{% url 'admin_accounts' %}" class="nav-link"><i class="fas fa-user-cog"></i> Manage Accounts</a></li>
-      </ul>
-    </div>
-
-    <div class="logout">
-      <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
-  </div>
-
-<!-- Logout Modal -->
-  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content border">
-              <div class="modal-header">
-                  <h5 class="modal-title text-dark"></h5>
-              </div>
-              <div class="modal-body text-center">Are you sure you want to <strong>Logout?</strong></div>
-              <div class="modal-footer justify-content-center">
-                  <button type="button" class="btn btn-secondary " data-bs-dismiss="modal">Cancel</button>
-                  <a href="{% url 'logout' %}" class="btn btn-danger" style="background-color: #440207; border-color: #440207;"
-                    onmouseover="this.style.backgroundColor='#5e0000'; this.style.borderColor='#5e0000';"
-                    onmouseout="this.style.backgroundColor='#440207'; this.style.borderColor='#440207';">Logout</a>
-              </div>
-          </div>
-      </div>
-  </div>
+  {% include "partials/sidebar.html" %}
+  {% include "partials/logout_modal.html" %}
 
 <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
@@ -463,9 +387,9 @@
 
           <!-- Search Bar -->
           <div class="d-flex justify-content-end mb-3">
-            <form method="get" action="{% url 'admin_violation' %}" class="input-group input-group-sm" style="max-width: 400px;">
-              <input name="q" type="text" class="form-control" placeholder="Search pending student" value="{{ request.GET.q }}">
-              <button class="input-group-text bg-white border"><i class="bi bi-search"></i></button>
+            <form method="get" action="{% url 'admin_violation' %}" class="input-group input-group-sm" style="max-width: 400px;" onsubmit="return false">
+              <input id="pendingSearch" name="q" type="text" class="form-control" placeholder="Search pending student" value="{{ request.GET.q }}" autocomplete="off">
+              <button class="input-group-text bg-white border" type="button"><i class="bi bi-search"></i></button>
             </form>
           </div>
  
@@ -476,7 +400,7 @@
               <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i> Pending Violation Report</h6>
             </div>
             <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
-              <table class="table table-hover table-bordered align-middle text-center mb-0">
+              <table id="violations_pending_table" class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
                     <th>Name</th>
@@ -486,33 +410,51 @@
                     <th>Details</th>
                   </tr>
                 </thead>
-                <tbody>
-                {% for v in pending_violations %}
-                <tr>
-                  <td>{{ v.first_name }} {{ v.last_name }}</td>
-                  <td>{{ v.program_course }}</td>
-                  <td>{{ v.get_violation_type_display }}</td>
-                  <td>
-                    <div class="d-flex justify-content-center gap-2">
-                      <a href="{% url 'admin_approve_violation' v.id %}" class="btn btn-sm btn-success">
-                        <i class="bi bi-check-circle me-1"></i>Approve
+                <tbody id="pending_tbody"
+                  hx-get="{% url 'admin_violation' %}"
+                  hx-select="#pending_tbody"
+                  hx-target="#pending_tbody"
+                  hx-swap="outerHTML"
+                  hx-vals='js:{"q": document.getElementById("pendingSearch")?.value?.trim() || ""}'
+                  hx-trigger="
+                    load,
+                    keyup changed delay:300ms from:#pendingSearch,
+                    every 4s [!document.body.classList.contains('modal-open')
+                              && (document.activeElement?.id !== 'pendingSearch')
+                              && !document.getElementById('violations_pending_table')?.classList.contains('interacting')]
+                  "
+                  hx-on="htmx:beforeSwap:
+                    if (window.__navClicking || document.getElementById('violations_pending_table')?.classList.contains('interacting')) {
+                      event.detail.shouldSwap = false;
+                    }">
+                  {% for v in pending_violations %}
+                  <tr>
+                    <td>{{ v.first_name }} {{ v.last_name }}</td>
+                    <td>{{ v.program_course }}</td>
+                    <td>{{ v.get_violation_type_display }}</td>
+                    <td>
+                      <div class="d-flex justify-content-center gap-2">
+                        <a href="{% url 'admin_approve_violation' v.id %}" class="btn btn-sm btn-success" data-safe-nav>
+                          <i class="bi bi-check-circle me-1"></i>Approve
+                        </a>
+                        <a href="{% url 'admin_decline_violation' v.id %}" class="btn btn-sm btn-danger" data-safe-nav>
+                          <i class="bi bi-x-circle me-1"></i>Lift
+                        </a>
+                      </div>
+                    </td>
+                    <td>
+                      <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm"
+                        data-safe-nav
+                        style="color: #440207; border-color: #440207;"
+                        onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                        onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                        View More
                       </a>
-                      <a href="{% url 'admin_decline_violation' v.id %}" class="btn btn-sm btn-danger">
-                        <i class="bi bi-x-circle me-1"></i>Lift
-                      </a>
-                    </div>
-                  </td>
-                  <td>
-                    <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
-                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
-                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
-                      View More
-                    </a>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5">No pending violations</td></tr>
-                {% endfor %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="5">No pending violations</td></tr>
+                  {% endfor %}
                 </tbody>
               </table>
             </div>
@@ -639,6 +581,7 @@
 
 
 <!-- Scripts -->
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   
 <script>
@@ -696,15 +639,6 @@
       const sid   = entries['student_id'] || '';
       const minor = entries['minor_offense'] || '';
       const major = entries['violation_type'] || '';
-
-      console.group('ADMIN VIOLATION SUBMIT PAYLOAD');
-      console.log('student_id:', sid, '(len=', (sid || '').length, ')');
-      console.log('minor_offense:', minor);
-      console.log('violation_type:', major);
-      console.log('date:', entries['violation_date'], 'time:', entries['violation_time']);
-      console.log('files:', { evidence_1: entries['evidence_1'] || null, evidence_2: entries['evidence_2'] || null });
-      console.log('FormData (all):', entries);
-      console.groupEnd();
 
       updateSaveState();
       if (saveBtn && saveBtn.disabled) {
@@ -856,13 +790,6 @@
 
     const allOK = reqOK && offOK && ev1OK && ev2OK;
 
-    console.log('=== VALIDATION STATUS ===');
-    console.log('Required Fields:', reqOK);
-    console.log('Offense Choice:', offOK);
-    console.log('Evidence:', { ev1: ev1OK, ev2: ev2OK });
-    console.log('SAVE BUTTON ENABLED:', allOK);
-    console.log('========================');
-
     if (saveBtn) {
       saveBtn.disabled = !allOK;
       saveBtn.setAttribute('aria-disabled', String(!allOK));
@@ -957,6 +884,34 @@
   // Initial validation
   updateSaveState();
 })();
+  (function () {
+    const tbl = document.getElementById('violations_pending_table');
+    if (!tbl) return;
+
+    const add = () => tbl.classList.add('interacting');
+    const removeSoon = () => setTimeout(() => tbl.classList.remove('interacting'), 800);
+
+    ['mousedown','touchstart','focusin','mouseenter'].forEach(ev => {
+      tbl.addEventListener(ev, add, { passive: true });
+    });
+    ['mouseup','touchend','mouseleave','focusout','click'].forEach(ev => {
+      tbl.addEventListener(ev, removeSoon, { passive: true });
+    });
+  })();
+
+  // Make all critical links navigate immediately & skip in-flight swaps
+  (function () {
+    document.addEventListener('click', function (e) {
+      const a = e.target.closest('a[data-safe-nav]');
+      if (!a) return;
+
+      window.__navClicking = true;
+      setTimeout(() => { window.__navClicking = false; }, 1500);
+
+      e.preventDefault();
+      window.location.href = a.href;
+    }, { capture: true });
+  })();
 </script>
 </body>
 </html>

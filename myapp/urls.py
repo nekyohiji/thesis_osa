@@ -88,6 +88,7 @@ urlpatterns = [
     
     path('admin_clearance/', views.admin_clearance, name='admin_clearance'),
     path('admin_clearance/<int:pk>/', views.admin_view_clearance_view, name='admin_view_clearance'),
+
     
     path('admin_goodmoral/', views.admin_goodmoral_view, name='admin_goodmoral'),
     path('admin_view_goodmoral/', views.admin_view_goodmoral_view, name='admin_view_goodmoral'),
