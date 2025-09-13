@@ -282,12 +282,12 @@
         <p class="mb-3 text-muted">Select the range of forms you want to print:</p>
         <div class="row g-3 align-items-center">
           <div class="col-5">
-            <label class="form-label fw-semibold">From</label>
+            <label class="form-label fw-semibold">From:</label>
             <input id="gmf-batch-from" type="number" class="form-control" min="1" value="1">
           </div>
           <div class="col-2 text-center fw-bold">—</div>
           <div class="col-5">
-            <label class="form-label fw-semibold">To</label>
+            <label class="form-label fw-semibold">To:</label>
             <input id="gmf-batch-to"   type="number" class="form-control" min="1" value="10">
           </div>
         </div>
@@ -322,12 +322,12 @@
         <p class="mb-3 text-muted">Select the range of forms you want to print:</p>
         <div class="row g-3 align-items-center">
           <div class="col-5">
-            <label class="form-label fw-semibold">From</label>
+            <label class="form-label fw-semibold">From:</label>
             <input id="forms-batch-from" type="number" class="form-control" min="1" value="1">
           </div>
           <div class="col-2 text-center fw-bold">—</div>
           <div class="col-5">
-            <label class="form-label fw-semibold">To</label>
+            <label class="form-label fw-semibold">To:</label>
             <input id="forms-batch-to" type="number" class="form-control" min="1" value="10">
           </div>
         </div>
@@ -393,22 +393,55 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-    const btn  = document.getElementById('gmf-batch-print-btn');
-    const inpF = document.getElementById('gmf-batch-from');
-    const inpT = document.getElementById('gmf-batch-to');
-    if (!btn || !inpF || !inpT) return;
 
-    btn.addEventListener('click', () => {
-      const frm = parseInt(inpF.value || '1', 10);
-      const to  = parseInt(inpT.value || String(frm), 10);
-      if (Number.isNaN(frm) || Number.isNaN(to) || to < frm) {
-        alert('Please enter a valid range.');
-        return;
-      }
-      window.open(`/gmf/batch-preview?frm=${encodeURIComponent(frm)}&to=${encodeURIComponent(to)}`, '_blank');
+    // Prevent typing 0, negatives, and decimals
+    document.addEventListener("DOMContentLoaded", () => {
+      const inputs = document.querySelectorAll(
+        "#gmf-batch-from, #gmf-batch-to, #forms-batch-from, #forms-batch-to"
+      );
+
+      inputs.forEach(input => {
+        // Handle typing
+        input.addEventListener("input", () => {
+          // Remove decimals and non-numeric characters
+          input.value = input.value.replace(/[^0-9]/g, '');
+
+          // Prevent 0 or negative
+          if (input.value !== "" && parseInt(input.value) < 1) {
+            input.value = 1;
+          }
+        });
+
+        // Handle pasting
+        input.addEventListener("paste", (e) => {
+          let pasteData = e.clipboardData.getData("text");
+          // Reject if contains non-digits or less than 1
+          if (!/^\d+$/.test(pasteData) || parseInt(pasteData) < 1) {
+            e.preventDefault();
+            input.value = 1;
+          }
+        });
+      });
     });
-  });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn  = document.getElementById('gmf-batch-print-btn');
+      const inpF = document.getElementById('gmf-batch-from');
+      const inpT = document.getElementById('gmf-batch-to');
+      if (!btn || !inpF || !inpT) return;
+
+      btn.addEventListener('click', () => {
+        const frm = parseInt(inpF.value || '1', 10);
+        const to  = parseInt(inpT.value || String(frm), 10);
+        if (Number.isNaN(frm) || Number.isNaN(to) || to < frm) {
+          alert('Please enter a valid range.');
+          return;
+        }
+        window.open(`/gmf/batch-preview?frm=${encodeURIComponent(frm)}&to=${encodeURIComponent(to)}`, '_blank');
+      });
+    });
+
+
 
   /* ===== Sidebar & Menus ===== */
   function toggleSidebar() {

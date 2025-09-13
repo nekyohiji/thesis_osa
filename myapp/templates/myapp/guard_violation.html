@@ -56,6 +56,19 @@
         </nav>
 
 
+<style>
+    input[readonly] {
+        background-color: transparent;
+        border: none;
+        outline: none;
+        cursor: default;
+        box-shadow: none;
+        padding-left: 0;  
+        }
+</style>
+
+
+
 <div class="container mb-5" style="max-width: 1200px; ">
     <div class="d-flex justify-content-between align-items-center mb-3 text-light ">
         <h2 class="mb-0 "><i class="bi bi-pencil-square"></i><b> Violation Collection Form</b></h2>
@@ -123,34 +136,34 @@
                     
                     <div class="col-md-4 mb-3">
                         <label class="form-label">First Name:</label>
-                        <input type="text" class="form-control" id="fn_gv" name="first_name" readonly>
+                        <input type="text" class="form-control text-center" id="fn_gv" name="first_name" readonly>
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Middle Initial:</label>
-                        <input type="text" class="form-control" id="mn_gv" name="middle_initial" readonly>
+                        <input type="text" class="form-control text-center" id="mn_gv" name="middle_initial" readonly>
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Extension Name:</label>
-                        <input type="text" class="form-control" id="ext_gv" name="extension_name" readonly>
+                        <input type="text" class="form-control text-center" id="ext_gv" name="extension_name" readonly>
                     </div>
 
                     <div class="col-md-12 mb-3">
                         <label class="form-label">Last Name:</label>
-                        <input type="text" class="form-control" id="ln_gv" name="last_name" readonly>
+                        <input type="text" class="form-control text-center" id="ln_gv" name="last_name" readonly>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Student ID Number:</label>
-                        <input type="text" id="studentId_gv" name="student_id" class="form-control" readonly>
+                        <input type="text" id="studentId_gv" name="student_id" class="form-control text-center" readonly>
                     </div>
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Program/Course:</label>
-                        <input type="text" class="form-control" id="studentProgram_gv" name="program_course" readonly>
+                        <input type="text" class="form-control text-center" id="studentProgram_gv" name="program_course" readonly>
                     </div>
                 </div>
             </div>
@@ -160,17 +173,17 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Date of Violation:</label>
-                        <input type="date" class="form-control" id="violation_date_gv" name="violation_date" readonly>
+                        <input type="date" class="form-control text-center" id="violation_date_gv" name="violation_date" readonly>
                     </div>
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Time of Violation:</label>
-                        <input type="time" class="form-control" id="violation_time_gv" name="violation_time" readonly>
+                        <input type="time" class="form-control text-center" id="violation_time_gv" name="violation_time" readonly>
                     </div>
 
                     <div class="col-md-12 mb-3">
                         <label class="form-label">Type of Violation:</label>
-                        <select class="form-select" id="violation_type_gv" name="violation_type">
+                        <select class="form-select  text-center" id="violation_type_gv" name="violation_type" style="cursor:pointer;">
                             <option value="">-- Select Violation Type --</option>
                             <option value="Disturbance">Causing Disturbance During Class Hours</option>
                             <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
@@ -203,7 +216,7 @@
                 <div class="form-section">
                     <div class="section-title text-dark"><i class="bi bi-shield-lock-fill"></i> Guard on Duty</div><hr>
                     <label class="form-label">Select Guard:</label>
-                    <select class="form-select" id="Guardname_gv" name="guard_name">
+                    <select class="form-select text-center" id="Guardname_gv" name="guard_name">
                         <option value="">-- Select Guard --</option>
                         {% for guard in guards %}
                             <option value="{{ guard.full_name }}">{{ guard.full_name }}</option>

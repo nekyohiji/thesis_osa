@@ -273,12 +273,12 @@
         <p class="mb-3 text-muted">Select the range of receipts you want to print:</p>
         <div class="row g-3 align-items-center">
           <div class="col-5">
-            <label class="form-label fw-semibold">From</label>
+            <label class="form-label fw-semibold">From:</label>
             <input id="ack-batch-from" type="number" class="form-control" min="1" value="1">
           </div>
           <div class="col-2 text-center fw-bold">—</div>
           <div class="col-5">
-            <label class="form-label fw-semibold">To</label>
+            <label class="form-label fw-semibold">To:</label>
             <input id="ack-batch-to" type="number" class="form-control" min="1" value="10">
           </div>
         </div>
@@ -301,6 +301,45 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script>
+
+
+    // Prevent typing 0, negatives, decimals, or non-numeric
+    document.addEventListener("DOMContentLoaded", () => {
+      const inputs = document.querySelectorAll("#ack-batch-from, #ack-batch-to");
+
+      inputs.forEach(input => {
+        // Handle typing
+        input.addEventListener("input", () => {
+          // Remove decimals and non-numeric characters
+          input.value = input.value.replace(/[^0-9]/g, '');
+
+          // Prevent 0 or negatives
+          if (input.value !== "" && parseInt(input.value) < 1) {
+            input.value = 1;
+          }
+        });
+
+        // Handle pasting
+        input.addEventListener("paste", (e) => {
+          let pasteData = e.clipboardData.getData("text");
+
+          // Reject if contains non-digits or less than 1
+          if (!/^\d+$/.test(pasteData) || parseInt(pasteData) < 1) {
+            e.preventDefault();
+            input.value = 1;
+          }
+        });
+
+        // Ensure empty fields reset to 1 on blur
+        input.addEventListener("blur", () => {
+          if (input.value === "" || parseInt(input.value) < 1) {
+            input.value = 1;
+          }
+        });
+      });
+    });
+
+
 
 /* Sidebar Functions*/
       // Toggle Sidebar

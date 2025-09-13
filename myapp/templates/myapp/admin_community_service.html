@@ -145,7 +145,7 @@
             </div>
             <button class="btn text-light" style="background-color: #440207; padding: 10px; font-size: 17px;"
               data-bs-toggle="modal" data-bs-target="#csCreateAdjustModal"><i class="bi bi-plus-circle-fill me-2"></i>
-              Create / Adjust Community Service
+              Create Community Service
             </button>
           </div>
           <hr class="border-dark">
@@ -228,12 +228,12 @@
 
 
 
-<!-- Create / Adjust Community Service Modal -->
+<!-- Create  Community Service Modal -->
 <div class="modal fade" id="csCreateAdjustModal" tabindex="-1" aria-labelledby="csModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border">
       <div class="modal-header">
-        <h5 class="modal-title fw-semibold" id="csModalLabel"> <i class="bi bi-plus-circle-fill me-2"></i>Create / Adjust Community Service</h5>
+        <h5 class="modal-title fw-semibold" id="csModalLabel"> <i class="bi bi-plus-circle-fill me-2"></i>Create Community Service</h5>
       </div>
 
       <form method="post" action="{% url 'cs_create_or_adjust' %}{% if q %}?q={{ q|urlencode }}{% endif %}">

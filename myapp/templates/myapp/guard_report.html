@@ -78,22 +78,22 @@
       <hr>
 
       <!-- GENERATE-ONLY FORM -->
-      <form id="reportForm" method="get" action="{% url 'generate_guard_report_pdf' %}" class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label">Start Date</label>
-          <input type="date" name="start_date" class="form-control"
+      <form id="reportForm" method="get" action="{% url 'generate_guard_report_pdf' %}" class="row g-3 text-center">
+        <div class="col">
+          <label class="form-label">Start Date:</label>
+          <input type="date" name="start_date" class="form-control text-center"
                   value="{{ request.GET.start_date }}"
                   min="2025-08-11" max="{{ today|date:'Y-m-d' }}">
         </div>
-        <div class="col-md-3">
-          <label class="form-label">End Date</label>
-          <input type="date" name="end_date" class="form-control"
+        <div class="col">
+          <label class="form-label">End Date:</label>
+          <input type="date" name="end_date" class="form-control text-center"
                   value="{{ request.GET.end_date }}"
                   min="2020-01-01" max="{{ today|date:'Y-m-d' }}">
         </div>
-        <div class="col-md-4">
-          <label class="form-label">Guard on Duty</label>
-          <select name="guard_name" class="form-select" required>
+        <div class="col">
+          <label class="form-label">Guard on Duty:</label>
+          <select name="guard_name" class="form-select text-center" required>
             <option value="" disabled {% if not request.GET.guard_name %}selected{% endif %}>Select Guard</option>
             {% for guard in guards %}
               <option value="{{ guard.full_name }}" {% if request.GET.guard_name == guard.full_name %}selected{% endif %}>
@@ -108,7 +108,7 @@
           <input type="hidden" name="violation_type" value="{{ request.GET.violation_type }}">
         {% endif %}
 
-        <div class="col-12 d-flex justify-content-start gap-2 mt-2">
+        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
           <!-- Direct submit (opens inline PDF viewer because the view returns Content-Disposition:inline) -->
           <button type="submit" class="btn bg-dark text-light">
             <i class="bi bi-filetype-pdf"></i> Preview PDF Report
