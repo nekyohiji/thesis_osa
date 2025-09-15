@@ -49,10 +49,9 @@
     </div>
   </div>
   <hr>
+
+
   <div class="row g-4">
-
-
-
       <!-- Personal -->
       <div class="card mb-6 p-3 border-dark">
         <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div>
@@ -120,15 +119,22 @@
 
 
       <!-- Request details -->
-
       <div class="card mb-6 p-3 border-dark">
         <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-journal-text"></i> Request Details</div>
         <div class="card-body row g-3">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">Purpose of Request:</label>
             <input class="form-control" value="{{ r.purpose }}{% if r.other_purpose %} - {{ r.other_purpose }}{% endif %}" disabled>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
+            <label class="form-label">Date & Time Requested:</label>
+            <input class="form-control" value="" disabled></input>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Action Taken at:</label>
+            <input class="form-control" value="" disabled></input>
+          </div>
+          <div class="col-md-4">
             <label class="form-label">Name of Requester:</label>
             <input class="form-control" value="{{ r.requester_name }}" disabled>
           </div>
@@ -150,7 +156,6 @@
 
 
       <!-- Uploaded Document -->
-
       <div class="card mb-6 p-3 border-dark">
         <div class="card-header bg-white text-dark fw-bold">
           <i class="bi bi-upload"></i> Uploaded Documents
@@ -172,6 +177,7 @@
           {% endif %}
         </div>
       </div>
+
 
       <!-- ACTION BUTTONS -->
       <div class="d-flex justify-content-between mt-4 flex-wrap gap-3">

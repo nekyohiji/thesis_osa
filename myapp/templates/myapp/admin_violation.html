@@ -100,6 +100,20 @@
 
 
 
+
+
+ /* Hide the date and time modal */
+    #majorOffenseModal input[name="violation_date"],
+    #majorOffenseModal input[name="violation_time"] {
+      display: none !important;
+    }
+    #majorOffenseModal label[for="violation_date"],
+    #majorOffenseModal label[for="violation_time"] {
+      display: none !important;
+    }
+
+
+
 </style>
 
 <!-- Main Content Area -->
@@ -214,19 +228,17 @@
 
             <!-- Date/Time Fields - NOT INTERACTABLE -->
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Date:</label>
               <input name="violation_date" type="date" class="form-control" readonly 
                     style="background-color: #f8f9fa; cursor: not-allowed;"
                     value="{{ major_form.violation_date.value|default:default_violation_date }}">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Time:</label>
               <input name="violation_time" type="time" class="form-control" readonly
                     style="background-color: #f8f9fa; cursor: not-allowed;"
                     value="{{ major_form.violation_time.value|default:default_violation_time }}">
             </div>
 
-            <hr>
+            <hr class="bg-dark">
 
             <!-- Toggle Buttons -->
             <div class="d-flex flex-column align-items-center mb-3" id="offenseAccordion">
@@ -321,7 +333,6 @@
             </div>
 
             <!-- Optional Evidence Uploads -->
-            <hr class="my-3">
 
             <div class="row g-2">
               <div class="col-md-6">
