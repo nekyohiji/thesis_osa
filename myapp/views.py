@@ -153,11 +153,6 @@ def client_lostandfound_view(request):
     items = LostAndFound.objects.order_by('-posted_date')
     return render(request, 'myapp/client_lostandfound.html', {'items': items})
 
-def client_election_view(request):
-    return render (request, 'myapp/client_election.html')
-
-def client_view_election_view(request):
-    return render (request, 'myapp/client_view_election.html')
 
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
@@ -3526,3 +3521,29 @@ def cs_case_detail_api(request, case_id):
         "open_session": open_session,
     })
 
+
+
+
+
+
+
+    # ------------------------ ELECTION - ADMIN
+
+def admin_election_view(request):
+    return render (request, 'myapp/admin_election.html')
+
+def admin_election_results_view(request):
+    return render (request, 'myapp/admin_election_results.html')
+
+def admin_election_manage_view(request):
+    return render (request, 'myapp/admin_election_manage.html')
+
+
+
+    # ------------------------ ELECTION - CLIENT
+
+def client_election_view(request):
+    return render (request, 'myapp/client_election.html')
+
+def client_view_election_view(request):
+    return render (request, 'myapp/client_view_election.html')

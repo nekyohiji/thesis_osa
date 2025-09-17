@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OSA - Election Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'myapp/css/admin_election.css' %}">
+</head>
+<body>
+
+<!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
+
+
+
+  <style>
+
+        /* Highlight on focus */
+    .input-group-sm .form-control:focus {
+    border: 2px solid #440207;
+    box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1); /* soft glow */
+    }
+
+    /* Optional: subtle border on hover */
+    .input-group-sm .form-control:hover {
+    border: 1px solid #440207;
+    }
+
+    .input-group-sm:focus-within .input-group-text {
+    background-color: #f8f0f0;
+    border-color: #440207;
+    color: #440207;
+    }
+  
+</style>
+
+<div class="mt-4 ps-4 pe-4" style="margin-left: 260px; min-height: 100vh;">
+<!-- Header and Navigation Buttons-->
+<div class="election-header text-white mt-4"
+      style="background: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.3)), 
+              url('{% static 'myapp/images/election_bg.jpg' %}');
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+              padding: 50px;
+              min-height: 100px;
+              margin-bottom: 50px;
+              border-radius: 20px;
+              ">
+    <h2 class="fw-bold mb-0">University Student Government Election Dashboard</h2>
+    <p class="mb-0">Monitor, manage, and update election proceedings.</p>
+    <hr class="border-light">
+  </div>
+  
+     <!-- Navigation Buttons -->
+      <div class="d-flex gap-2">
+        <a class="btn tab-btn mb-2 {% if request.resolver_match.url_name == 'admin_election' %}active{% endif %}" 
+          href="{% url 'admin_election' %}">
+          <i class="bi bi-person-circle"></i> Candidates
+        </a>
+
+        <a class="btn tab-btn mb-2 {% if request.resolver_match.url_name == 'admin_election_results' %}active{% endif %}" 
+          href="{% url 'admin_election_results' %}">
+          <i class="bi bi-bar-chart-fill"></i> Results
+        </a>
+
+        <a class="btn tab-btn mb-2 {% if request.resolver_match.url_name == 'admin_election_manage' %}active{% endif %}" 
+          href="{% url 'admin_election_manage' %}">
+          <i class="bi bi-gear-fill"></i> Manage
+        </a>
+      </div>
+
+
+
+
+<!-- Election Results -->
+<div class="tab-content p-4 bg-white border rounded shadow-sm">
+
+   <!--Results Tab -->
+     <div class="container-fluid">
+        <h4><i class="bi bi-bar-chart-fill me-2"></i>Results</h4>
+        <p>See the election results and statistics of all candidates.</p>
+
+        <!-- Filter Toolbar -->
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+          <!-- School Year Dropdown -->
+          <div>
+            <select id="syFilter" class="form-select form-select-sm w-auto">
+              <option value="all">Select School Year</option>
+              <option value="2023-2024">2023-2024</option>
+              <option value="2024-2025">2024-2025</option>
+            </select>
+          </div>
+
+          <!-- Search Input on Right -->
+          <div class="input-group input-group-sm ms-auto w-50">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by name">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- PRESIDENT TABLE -->
+        <div class="position-table" data-position="president" data-sy="2024-2025">
+          <h5 class="fw-bold text-dark"><i class="bi bi-award-fill me-2 text-dark"></i>PRESIDENT 
+            <small class="text-muted">(SY: 2024-2025)</small>
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Votes</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                    <td>John Doe</td>
+                    <td>500</td>
+                    <td>45%</td>
+                </tr>
+                <tr>
+                    <td>Jane Smith</td>
+                    <td>600</td>
+                    <td>55%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VICE PRESIDENT TABLE -->
+        <div class="position-table" data-position="vice-president" data-sy="2024-2025">
+          <h5 class="fw-bold text-dark mt-4"><i class="bi bi-person-vcard me-2 text-dark"></i>VICE PRESIDENT 
+            <small class="text-muted">(SY: 2024-2025)</small>
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Votes</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Emily Cruz</td>
+                    <td>450</td>
+                    <td>48%</td>
+                </tr>
+                <tr>
+                    <td>Mark Lim</td>
+                    <td>480</td>
+                    <td>52%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SENATOR TABLE -->
+        <div class="position-table" data-position="senator" data-sy="2023-2024">
+          <h5 class="fw-bold text-dark mt-4"><i class="bi bi-people-fill me-2 text-dark"></i>SENATORS 
+            <small class="text-muted">(SY: 2023-2024)</small>
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Votes</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                    <td>Candidate A</td>
+                    <td>300</td>
+                    <td>30%</td>
+                </tr>
+                <tr>
+                    <td>Candidate B</td>
+                    <td>280</td>
+                    <td>28%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- GOVERNOR TABLE -->
+        <div class="position-table" data-position="governor" data-sy="2024-2025">
+          <h5 class="fw-bold text-dark mt-4"><i class="bi bi-building me-2 text-dark"></i>GOVERNORS 
+            <small class="text-muted">(SY: 2024-2025)</small>
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Votes</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Governor X</td>
+                    <td>350</td>
+                    <td>65%</td>
+                </tr>
+                <tr>
+                    <td>Governor Y</td>
+                    <td>190</td>
+                    <td>35%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div> <!-- End .container-fluid -->
+    
+    </div>
+
+
+
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  
+  /* Sidebar Functions*/
+            // Toggle Sidebar
+            function toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('show');
+            }
+
+            // Handle Dropdowns Uniformly
+            function handleDropdown(menuId) {
+                const clickedIcon = document.getElementById(`icon-${menuId}`);
+                const clickedMenu = document.getElementById(menuId);
+                const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
+
+                // Toggle clicked menu
+                if (clickedMenu.classList.contains('show')) {
+                clickedCollapse.hide();
+                clickedIcon.classList.remove('rotate');
+                } else {
+                clickedCollapse.show();
+                clickedIcon.classList.add('rotate');
+                }
+
+                // Hide other open menus
+                const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
+                allDropdowns.forEach(id => {
+                if (id !== menuId) {
+                    const menu = document.getElementById(id);
+                    const icon = document.getElementById(`icon-${id}`);
+                    const collapse = bootstrap.Collapse.getInstance(menu);
+                    if (collapse) collapse.hide();
+                    if (icon) icon.classList.remove('rotate');
+                }
+                });
+            }
+
+            // Highlight Active Link
+            document.addEventListener('DOMContentLoaded', function () {
+                const currentUrl = window.location.href;
+                const navLinks = document.querySelectorAll('.nav-link');
+
+                navLinks.forEach(link => {
+                if (link.href && currentUrl.includes(link.href)) {
+                    link.classList.add('active');
+                }
+                });
+            });
+
+  ///////////////////////////// START HERE MAG ADD
+
+
+  ///////////////////////////// RESULTS
+ document.addEventListener('DOMContentLoaded', function () {
+  const searchInput = document.getElementById('searchInput');
+  const syFilter = document.getElementById('syFilter');
+  const tables = document.querySelectorAll('.position-table');
+
+  function applyFilters() {
+    const selectedSY = syFilter.value;
+    const query = searchInput.value.toLowerCase();
+
+    tables.forEach(table => {
+      const matchesSY = selectedSY === 'all' || table.dataset.sy === selectedSY;
+
+      let tableVisible = matchesSY;
+      let hasMatch = false;
+
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => row.style.display = ''); // reset
+
+      // Remove previous "no match" message if it exists
+      const tbody = table.querySelector('tbody');
+      const existingMsg = tbody.querySelector('.no-match-msg');
+      if (existingMsg) existingMsg.remove();
+
+      if (tableVisible && query) {
+        rows.forEach(row => {
+          const nameCell = row.querySelector('td');
+          if (nameCell && nameCell.textContent.toLowerCase().includes(query)) {
+            row.style.display = '';
+            hasMatch = true;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+
+        if (!hasMatch) {
+          const noRow = document.createElement('tr');
+          noRow.classList.add('no-match-msg');
+          noRow.innerHTML = `<td colspan="4" class="text-center text-muted">No matching candidates name found.</td>`;
+          tbody.appendChild(noRow);
+          tableVisible = true;
+        }
+      } else if (!query) {
+        hasMatch = true;
+      }
+
+      table.style.display = tableVisible ? '' : 'none';
+    });
+  }
+
+  syFilter.addEventListener('change', applyFilters);
+  searchInput.addEventListener('input', applyFilters);
+});
+
+
+  </script>
+</body>
+</html>

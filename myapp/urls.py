@@ -23,7 +23,7 @@ urlpatterns = [
     path('client_studentAssistantship/', views.client_studentAssistantship_view, name='client_studentAssistantship'),
     path('client_ACSO/', views.client_ACSO_view, name='client_ACSO'),
     path('client_lostandfound/', views.client_lostandfound_view, name='client_lostandfound'),
-    path('client_view_election/', views.client_view_election_view, name='client_view_election'),
+  
 
     
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
@@ -106,7 +106,16 @@ urlpatterns = [
 
 
     
+    ###-------------------ELECTION - admin
+    path('admin_election/', views.admin_election_view, name='admin_election'),
+    path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
+    path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
     
+     
+    ###-------------------ELECTION - client
+    path('client_election/', views.client_election_view, name='client_election'),
+    path('client_view_election/', views.client_view_election_view, name='client_view_election'),
+
     
     
     
