@@ -114,6 +114,9 @@ urlpatterns = [
     path('admin_election/candidates/<int:cid>/delete/', views.delete_candidate, name='admin_delete_candidate'),  # POST
     
     path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
+    path('api/admin/elections/', views.api_admin_elections_list, name='api_admin_elections_list'),  # <—         # dropdown source
+    path('api/admin/results/', views.api_admin_results_data, name='api_admin_results_data'),      # data for one election
+
     
     path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
     # NEW actions for the manage page (no /admin/ prefix)

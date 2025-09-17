@@ -732,6 +732,8 @@ def login_view(request):
                     return redirect('guard_violation')
                 elif user.role == 'scholarship':
                     return redirect('admin_scholarships')
+                elif user.role == 'comselec':
+                    return redirect('admin_election_view')
                 else:
                     messages.error(request, "Account role not recognized.", extra_tags="LOGIN")
             else:
@@ -3543,7 +3545,7 @@ def cs_case_detail_api(request, case_id):
 
 
 #election
-
+@role_required(['admin', 'comselec'])
 def admin_election_view(request):
     return render (request, 'myapp/admin_election.html')
 
@@ -3561,7 +3563,7 @@ def _pos_rank(pos: str) -> int:
     if pos.endswith('Governor'): return 3  
     return 99
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_http_methods(["GET"])
 def get_candidates(request):
     e = _active_election()
@@ -3622,7 +3624,7 @@ def add_candidate(request):
     except Exception as ex:
         return JsonResponse({"status":"error","message": f"{ex}"}, status=500)
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def delete_candidate(request, cid):
     c = get_object_or_404(Candidate, id=cid)
@@ -3633,11 +3635,261 @@ def delete_candidate(request, cid):
 
 
 ###################################################################
+@role_required(['admin', 'comselec'])
 def admin_election_results_view(request):
-    return render (request, 'myapp/admin_election_results.html')
+    """
+    Renders the results page. The page will call the JSON APIs below to load
+    the election list and the result tallies.
+    """
+    return render(request, 'myapp/admin_election_results.html')
+
+
+@role_required(['admin', 'comselec'])
+@require_http_methods(["GET"])
+def api_admin_elections_list(request):
+    """
+    GET /api/admin/elections/
+    Returns a small list for the dropdown:
+      { status:'success', elections:[{id,label,is_active}, ...] }
+    """
+    rows = Election.objects.order_by('-start_date', '-id')
+    out = []
+    for e in rows:
+        # status text for the label, mark (Active) if so
+        status_tag = "Active" if e.status == 'active' else e.status.capitalize()
+        out.append({
+            "id": e.id,
+            "label": f"{e.name} ({e.academic_year}) — {status_tag}",
+            "is_active": (e.status == 'active'),
+        })
+    return JsonResponse({"status": "success", "elections": out})
+
+
+@role_required(['admin', 'comselec'])
+@require_http_methods(["GET"])
+def api_admin_results_data(request):
+    """
+    GET /api/admin/results/?election_id=<id>   (if omitted -> active election)
+
+    Response shape:
+    {
+      status: "success",
+      election: {id, name, academic_year},
+      positions: {
+        "President":     {candidates:[{id,name,party,votes,percent}], abstain:int},
+        "Vice President":{candidates:[...], abstain:int},
+        "Senator": {
+           mode: "plurality" | "majority",
+           seat_count: 9,
+           candidates:[{id,name,party,votes,percent}],  # percent = share of ballots
+           # plurality-only:
+           winners:[{...}],
+           abstain_slots: <sum of blank senator slots across all ballots>,
+           # majority-only:
+           threshold: <50%+1 of ballots>,
+           approved:[{...}],
+           vacant_seats: <0..9>,
+           notes: "Uncontested senate: each candidate must reach 50%+1 of ballots."
+        },
+        "Governors": {
+           groups: { "FEO Governor": {candidates:[...]}, ... },
+           overall_abstain: <count of ballots with governor=None>
+        }
+      }
+    }
+    """
+    # --- resolve election ---
+    eid = request.GET.get('election_id')
+    if eid:
+        e = get_object_or_404(Election, id=eid)
+    else:
+        e = _active_election()
+        if not e:
+            e = Election.objects.order_by('-start_date', '-id').first()
+            if not e:
+                return JsonResponse({"status": "success",
+                                     "message": "No elections found.",
+                                     "positions": {} })
+
+    # --- base candidates ---
+    base = Candidate.objects.filter(election=e, is_withdrawn=False)
+
+    pres_qs = base.filter(position='President').order_by('name')
+    vp_qs   = base.filter(position='Vice President').order_by('name')
+    sen_qs  = base.filter(position='Senator').order_by('name')
+    gov_qs  = base.filter(position__icontains='Governor').order_by('position','name')
+
+    # --- all vote rows for this election ---
+    votes_qs = Vote.objects.filter(election=e)
+    ballots_total = votes_qs.count()  # used for senator majority threshold & percentages
+
+    # --- init tallies ---
+    def init_counts(qs):
+        return {cid: 0 for cid in qs.values_list('id', flat=True)}
+
+    pres_counts = init_counts(pres_qs)
+    vp_counts   = init_counts(vp_qs)
+    sen_counts  = init_counts(sen_qs)
+
+    gov_labels = sorted(gov_qs.values_list('position', flat=True).distinct())
+    gov_counts_by_label = {label: init_counts(gov_qs.filter(position=label)) for label in gov_labels}
+    governor_abstain_overall = 0
+
+    SENATOR_SEATS = 9
+
+    pres_abstain = 0
+    vp_abstain   = 0
+    senator_filled_slots_total = 0   # number of non-empty senator picks across all ballots
+    senator_total_slots = ballots_total * SENATOR_SEATS
+
+    # --- tally loop ---
+    for v in votes_qs:
+        b = v.ballot or {}
+
+        # President
+        pid = b.get('president')
+        if pid and pid in pres_counts:
+            pres_counts[pid] += 1
+        else:
+            pres_abstain += 1
+
+        # Vice President
+        vid = b.get('vice_president')
+        if vid and vid in vp_counts:
+            vp_counts[vid] += 1
+        else:
+            vp_abstain += 1
+
+        # Senators (dedupe per ballot)
+        seen = set()
+        for sid in (b.get('senators') or []):
+            if sid and sid in sen_counts and sid not in seen:
+                sen_counts[sid] += 1
+                senator_filled_slots_total += 1
+                seen.add(sid)
+
+        # Governor
+        gid = b.get('governor')
+        if gid:
+            for label in gov_labels:
+                if gid in gov_counts_by_label[label]:
+                    gov_counts_by_label[label][gid] += 1
+                    break
+        else:
+            governor_abstain_overall += 1
+
+    # --- helpers to pack lists ---
+    def pack_list_percent_of_total_ballots(qs, counts: dict):
+        """Return list with percent relative to *ballots_total* (not candidate sum)."""
+        base_pct = ballots_total or 1
+        meta = {c.id: (c.name, (c.party or '')) for c in qs}
+        out = []
+        for cid, cnt in counts.items():
+            name, party = meta.get(cid, (f"#{cid}", ""))
+            out.append({
+                "id": cid,
+                "name": name,
+                "party": party,
+                "votes": cnt,
+                "percent": round(cnt * 100.0 / base_pct, 2)
+            })
+        out.sort(key=lambda x: (-x['votes'], x['name'].lower()))
+        return out
+
+    def pack_list_percent_of_sum(qs, counts: dict):
+        """Percent relative to sum(counts) — keep this for President/VP UI consistency."""
+        total = sum(counts.values()) or 1
+        meta = {c.id: (c.name, (c.party or '')) for c in qs}
+        out = []
+        for cid, cnt in counts.items():
+            name, party = meta.get(cid, (f"#{cid}", ""))
+            out.append({
+                "id": cid,
+                "name": name,
+                "party": party,
+                "votes": cnt,
+                "percent": round(cnt * 100.0 / total, 2)
+            })
+        out.sort(key=lambda x: (-x['votes'], x['name'].lower()))
+        return out
+
+    # --- President & VP blocks (same as before) ---
+    president_block = {
+        "candidates": pack_list_percent_of_sum(pres_qs, pres_counts),
+        "abstain": pres_abstain
+    }
+    vp_block = {
+        "candidates": pack_list_percent_of_sum(vp_qs, vp_counts),
+        "abstain": vp_abstain
+    }
+
+    # --- Senators: decide MAJORITY vs PLURALITY ---
+    # Normalize parties for mode detection
+    def _norm_party(p):
+        p = (p or '').strip().upper()
+        return p if p else 'INDEPENDENT'
+
+    sen_parties = {_norm_party(c.party) for c in sen_qs}
+    uncontested = (len(sen_parties) == 1 and sen_qs.count() <= SENATOR_SEATS)
+
+    sen_rows = pack_list_percent_of_total_ballots(sen_qs, sen_counts)
+
+    if uncontested:
+        # MAJORITY mode (50%+1 of ballots)
+        threshold = (ballots_total // 2) + 1
+        approved = [r for r in sen_rows if r["votes"] >= threshold]
+        approved = approved[:SENATOR_SEATS]
+        vacant = max(0, SENATOR_SEATS - len(approved))
+
+        senator_block = {
+            "mode": "majority",
+            "seat_count": SENATOR_SEATS,
+            "candidates": sen_rows,
+            "threshold": threshold,
+            "approved": approved,
+            "vacant_seats": vacant,
+            "notes": "Uncontested senate: each candidate must reach 50%+1 of ballots."
+        }
+    else:
+        # PLURALITY mode (Top 9)
+        winners = sen_rows[:SENATOR_SEATS]
+        # optional transparency: how many senator slots were left blank
+        abstain_slots = max(0, senator_total_slots - senator_filled_slots_total)
+
+        senator_block = {
+            "mode": "plurality",
+            "seat_count": SENATOR_SEATS,
+            "candidates": sen_rows,
+            "winners": winners,
+            "abstain_slots": abstain_slots
+        }
+
+    # --- Governors by org label ---
+    def pack_governor_block(label):
+        qs = gov_qs.filter(position=label)
+        counts = gov_counts_by_label[label]
+        # For governors, percent-of-sum is fine (single-seat race per org)
+        return {"candidates": pack_list_percent_of_sum(qs, counts)}
+
+    gov_groups = {label: pack_governor_block(label) for label in gov_labels}
+    governors_block = {
+        "groups": gov_groups,
+        "overall_abstain": governor_abstain_overall
+    }
+
+    return JsonResponse({
+        "status": "success",
+        "election": {"id": e.id, "name": e.name, "academic_year": e.academic_year},
+        "positions": {
+            "President": president_block,
+            "Vice President": vp_block,
+            "Senator": senator_block,
+            "Governors": governors_block
+        }
+    })
 
 ###################################################################
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 def admin_election_manage_view(request):
     elections = Election.objects.order_by('-start_date')[:20]
     today = timezone.localdate()
@@ -3646,7 +3898,7 @@ def admin_election_manage_view(request):
         'now': today,  
     })
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def eligibles_upload_view(request, eid):
     election = get_object_or_404(Election, id=eid)
@@ -3719,7 +3971,7 @@ def normalize_tup_id(s: str) -> str:
     # uppercase
     return s.upper()
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def eligibles_verify_view(request, eid):
     election = get_object_or_404(Election, id=eid)
@@ -3766,7 +4018,7 @@ def _someone_else_active(exclude_id=None):
         qs = qs.exclude(id=exclude_id)
     return qs.exists()
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def admin_election_create(request):
     name = (request.POST.get('name') or 'Student Government Election').strip()
@@ -3811,7 +4063,7 @@ def admin_election_create(request):
     return redirect('admin_election_manage')
 
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def admin_election_open_now(request, eid):
     with transaction.atomic():
@@ -3832,7 +4084,7 @@ def admin_election_open_now(request, eid):
     messages.success(request, f"Election opened today for {e.academic_year}.")
     return redirect('admin_election_manage')
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def admin_election_close_now(request, eid):
     e = get_object_or_404(Election, id=eid)
@@ -3846,7 +4098,7 @@ def admin_election_close_now(request, eid):
     messages.success(request, f"Election {e.name} is already closed.")
     return redirect('admin_election_manage')
 
-@role_required(['admin'])
+@role_required(['admin', 'comselec'])
 @require_POST
 def admin_election_finalize(request, eid):
     e = get_object_or_404(Election, id=eid)

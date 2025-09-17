@@ -133,6 +133,11 @@
               </div>
             </li>
           {% endif %}
+
+          {# =============== COMSELEC: ELECTIONS =============== #}
+          {% if role == 'comselec' %}
+            <li><a href="{% url 'admin_election' %}" class="nav-link"><i class="fas fa-user-cog"></i> Elections</a></li>
+          {% endif %}
         </ul>
       {% endwith %}
     </div>

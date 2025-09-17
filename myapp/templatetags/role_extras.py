@@ -7,6 +7,7 @@ ROLE_LABELS = {
     "staff": "Staff",
     "studasst": "Student Assistant",
     "scholarship": "Scholarship Coordinator",
+    "comselec": "Comselec",
 }
 
 @register.filter

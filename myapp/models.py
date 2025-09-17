@@ -33,6 +33,7 @@ class UserAccount(models.Model):
         ('scholarship', 'Scholarship Coordinator'),
         ('staff', 'Staff'),
         ('studasst', 'Student Assistant'),
+        ('comselec', 'Comselec'),
     ]
 
     full_name = models.CharField(max_length=128)
