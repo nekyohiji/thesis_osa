@@ -12,7 +12,10 @@
   <link rel="stylesheet" href="{% static 'myapp/css/admin_election.css' %}">
 </head>
 <body>
+  <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
+  {% include "partials/sidebar.html" %}
+  {% include "partials/logout_modal.html" %}
 <!-- //////////////////////////START HERE MAG CODE ///////////////////////////-->
 
 

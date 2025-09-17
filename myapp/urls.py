@@ -108,14 +108,33 @@ urlpatterns = [
     
     ###-------------------ELECTION - admin
     path('admin_election/', views.admin_election_view, name='admin_election'),
+    # Candidates (active-election scoped)
+    path('admin_election/candidates/', views.get_candidates, name='admin_get_candidates'),                 # GET
+    path('admin_election/candidates/add/', views.add_candidate, name='admin_add_candidate'),              # POST
+    path('admin_election/candidates/<int:cid>/delete/', views.delete_candidate, name='admin_delete_candidate'),  # POST
+    
     path('admin_election_results/', views.admin_election_results_view, name='admin_election_results'),
+    
     path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
+    # NEW actions for the manage page (no /admin/ prefix)
+    path('admin_election/create/', views.admin_election_create, name='admin_election_create'),
+    path('admin_election/<int:eid>/open_now/', views.admin_election_open_now, name='admin_election_open_now'),
+    path('admin_election/<int:eid>/close_now/', views.admin_election_close_now, name='admin_election_close_now'),
+    path('admin_election/<int:eid>/finalize/', views.admin_election_finalize, name='admin_election_finalize'),
+
+    # Whitelist (TUP-ID only) upload + verify
+    path('admin_election/<int:eid>/eligibles/upload/', views.eligibles_upload_view, name='eligibles_upload'),
+    path('admin_election/<int:eid>/eligibles/verify/', views.eligibles_verify_view, name='eligibles_verify'),
+
     
      
     ###-------------------ELECTION - client
     path('client_election/', views.client_election_view, name='client_election'),
     path('client_view_election/', views.client_view_election_view, name='client_view_election'),
-
+    path('api/eligibility/', views.api_check_eligibility, name='api_check_eligibility'),
+    path('api/ballot/', views.api_get_ballot, name='api_get_ballot'),
+    path('api/submit_vote/', views.api_submit_vote, name='api_submit_vote'),
+    path('logout/', views.client_logout, name='client_logout'),
     
     
     

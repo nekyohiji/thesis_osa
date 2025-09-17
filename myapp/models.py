@@ -607,9 +607,6 @@ class CommunityServiceLog(models.Model):
         case.is_closed = (case.remaining_hours == 0)
         case.save(update_fields=["hours_completed", "is_closed", "updated_at"])
 
-
-
-
 PH_PHONE_RE = RegexValidator(
     regex=r'^\+63\s\d{10}$',
     message="Contact number must be exactly in the format: +63 XXXXXXXXXX (10 digits after a space)."
@@ -722,3 +719,72 @@ class Facilitator(models.Model):
     def __str__(self):
         return f"{self.full_name} ({self.faculty_id})"
 
+class Election(models.Model):
+    STATUS_CHOICES = [
+        ('scheduled', 'Scheduled'),
+        ('active', 'Active'),
+        ('closed', 'Closed'),
+        ('finalized', 'Finalized'),
+    ]
+    name = models.CharField(max_length=120)
+    academic_year = models.CharField(max_length=9)  # e.g., "2025-2026"
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    is_finalized = models.BooleanField(default=False)
+    def __str__(self): return f"{self.name} ({self.academic_year})"
+    class Meta:
+        db_table = 'Election'
+
+class EligibleVoter(models.Model):
+    election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name='eligibles')
+    student_id = models.CharField(max_length=32)
+    is_eligible = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = [('election', 'student_id')]
+        indexes = [models.Index(fields=['election','student_id'])]
+        db_table = 'EligibleVoter'
+
+class Vote(models.Model):
+    election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name='votes')
+    voter_student_id = models.CharField(max_length=32)
+    cast_at = models.DateTimeField(auto_now_add=True)
+    email = models.EmailField(blank=True, null=True, default="")  # <-- make optional
+    ballot = models.JSONField(default=dict)  
+    email = models.EmailField(blank=True)
+    class Meta:
+        unique_together = [('election', 'voter_student_id')]
+        indexes = [models.Index(fields=['election','voter_student_id'])]
+        db_table = 'Vote'
+        
+class Candidate(models.Model):
+    POSITION_CHOICES = [
+        ("President", "President"),
+        ("Vice President", "Vice President"),
+        ("Senator", "Senator"),
+        ("Governor", "Governor"),
+    ]
+    election       = models.ForeignKey('Election', on_delete=models.CASCADE, related_name='candidates')
+    academic_year  = models.CharField(max_length=9)  # keep for quick filtering/archives
+    tupc_id        = models.CharField(max_length=50)
+    name           = models.CharField(max_length=100)
+    section        = models.CharField(max_length=50)
+    position       = models.CharField(max_length=32, choices=POSITION_CHOICES)
+    party          = models.CharField(max_length=80, blank=True)  # <— NEW: simple text
+    image          = models.ImageField(upload_to='candidates/')
+    is_withdrawn   = models.BooleanField(default=False)
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "Candidate"
+        indexes = [
+            models.Index(fields=['election','position']),
+            models.Index(fields=['election','tupc_id']),
+            models.Index(fields=['academic_year']),
+            models.Index(fields=['party']),
+        ]
+        unique_together = [('election','tupc_id','position')]  # prevents same person duping a position in this election
+
+    def __str__(self):
+        return f"{self.name} - {self.position} - {self.academic_year}"

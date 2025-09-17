@@ -187,9 +187,23 @@ color: #66666679;
     <p class="text-center">Please enter your registered TUPC ID number to vote.</p>
 
     <div class="input-row">
-      <div class="input-group">
-        <label for="surname_election"><b>Surname:</b></label>
-        <input type="text" id="surname_election" placeholder="Enter your Surname" />
+      <div class="mb-3">
+        <label for="orgInput" class="form-label"><b>Program Organization</b></label>
+        <input list="orgOptions" id="orgInput" class="form-control" placeholder="Start typing…" required>
+        <datalist id="orgOptions">
+          <option value="ACETS"></option>
+          <option value="ACTS"></option>
+          <option value="APPLETS"></option>
+          <option value="ETECHS"></option>
+          <option value="FEO"></option>
+          <option value="JIIEE"></option>
+          <option value="METALS"></option>
+          <option value="ODD"></option>
+          <option value="PICE"></option>
+          <option value="PSME"></option>
+          <option value="SETS"></option>
+        </datalist>
+        <div class="form-text">Examples: FEO, ACETS, ACTS, PICE</div>
       </div>
 
       <div class="input-group">
@@ -199,7 +213,7 @@ color: #66666679;
 
       <div class="input-group" style="align-self: end;">
         <label style="visibility: hidden;">Submit</label>
-        <button type="submit" id="id_election" onclick="location.href='{% url 'client_view_election' %}'">
+        <button type="submit" id="id_election">
           Vote Now!
         </button>
       </div>
@@ -207,7 +221,21 @@ color: #66666679;
   </div>
 </section>
 
-
+<!-- Feedback Modal -->
+<div class="modal fade" id="msgModal" tabindex="-1" aria-labelledby="msgModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div id="msgModalHeader" class="modal-header">
+        <h5 class="modal-title" id="msgModalLabel">Notice</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div id="msgModalBody" class="modal-body">...</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <!-- BOTTOM SECTION -->
@@ -217,6 +245,7 @@ color: #66666679;
     <p>Technological University of the Philippines - Cavite | University Student Government Election</p>
     <div class="signature">
       <i class="fas fa-pen-nib"></i> — Office of Student Affairs
+      <i class="fas fa-pen-nib"></i> — TUP Cavite: Commission of Student Elections 
     </div>
   </div>
   <div class="image">
@@ -230,6 +259,64 @@ color: #66666679;
 
 <!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const msgModal    = new bootstrap.Modal(document.getElementById('msgModal'));
+const msgHeader   = document.getElementById('msgModalHeader');
+const msgTitle    = document.getElementById('msgModalLabel');
+const msgBody     = document.getElementById('msgModalBody');
+function showMsg(type, title, body){
+  const bg = {success:'bg-success text-white', warning:'bg-warning', danger:'bg-danger text-white', info:'bg-primary text-white'}[type] || 'bg-primary text-white';
+  msgHeader.className = 'modal-header ' + bg;
+  msgTitle.textContent = title;
+  msgBody.textContent  = body;
+  msgModal.show();
+}
 
+const orgEl  = document.getElementById('orgInput');
+const idEl   = document.getElementById('tupc_election');
+const btn    = document.getElementById('id_election');
+
+const normalizeOrg = s => (s || '').toUpperCase().trim();
+const normalizeID  = s => (s || '').toUpperCase().replace(/\s+/g,'').trim();
+
+orgEl.addEventListener('input', e => e.target.value = normalizeOrg(e.target.value));
+idEl.addEventListener('input', e => e.target.value  = normalizeID(e.target.value));
+idEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });
+
+btn.addEventListener('click', async (e) => {
+  e.preventDefault();
+
+  const sid = normalizeID(idEl.value);
+  const org = normalizeOrg(orgEl.value);
+
+  if (!org) { showMsg('warning','Missing Program Organization','Please select or type your Program/Organization.'); return; }
+  if (!sid) { showMsg('warning','Missing TUPC ID','Please enter your TUPC ID.'); return; }
+
+  btn.disabled = true; const original = btn.innerText; btn.innerText = 'Checking...';
+
+  const fd = new FormData();
+  fd.append('student_id', sid);
+  fd.append('org', org);
+
+  try {
+    const res = await fetch('/api/eligibility/', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (data.status === 'eligible') {
+      // ✅ redirect after session is set
+      window.location.href = "{% url 'client_view_election' %}";
+      return;
+    }
+    if (data.status === 'already_voted') return showMsg('info','Already Voted','You have already voted.');
+    if (data.status === 'not_listed') return showMsg('danger','Not Eligible','This TUPC ID is not eligible.');
+    return showMsg('warning','Error', data.message || 'Unable to proceed.');
+  } catch (err) {
+    console.error(err);
+    showMsg('danger','Network Error','Please check your connection.');
+  } finally {
+    btn.disabled = false; btn.innerText = original;
+  }
+});
+</script>
 </body>
 </html>

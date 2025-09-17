@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta, time
 from decimal import Decimal
 from io import BytesIO
 from . import models
+from functools import wraps
 # ── Third-party
 from PIL import Image as PILImage
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
@@ -48,6 +49,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.finders import find as find_static
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.contrib import messages
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import make_aware, is_naive
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -108,6 +111,10 @@ from .models import (
     UserAccount,
     Violation,
     Facilitator,
+    Election,
+    EligibleVoter,
+    Vote,
+    Candidate,
 )
 from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email, build_student_email, send_violation_notice
 
@@ -3529,21 +3536,622 @@ def cs_case_detail_api(request, case_id):
 
     # ------------------------ ELECTION - ADMIN
 
+
+
+
+
+
+
+#election
+
 def admin_election_view(request):
     return render (request, 'myapp/admin_election.html')
 
+def _active_election():
+    return Election.objects.filter(status='active').order_by('-start_date').first()
+
+def _clean_org(s: str) -> str:
+    s = re.sub(r'[^A-Za-z0-9 .&-]+', '', s or '').strip()
+    return re.sub(r'\s+', ' ', s)
+
+def _pos_rank(pos: str) -> int:
+    if pos == 'President': return 0
+    if pos == 'Vice President': return 1
+    if pos == 'Senator': return 2
+    if pos.endswith('Governor'): return 3  
+    return 99
+
+@role_required(['admin'])
+@require_http_methods(["GET"])
+def get_candidates(request):
+    e = _active_election()
+    if not e:
+        return JsonResponse({"status":"no_active"})
+    qs = Candidate.objects.filter(election=e, is_withdrawn=False)
+    data = [{
+        "id": c.id,
+        "name": c.name,
+        "section": c.section,
+        "tupc_id": c.tupc_id,
+        "position": c.position, 
+        "party": c.party or "",
+        "image": c.image.url if c.image and hasattr(c.image,'url') else "",
+    } for c in sorted(qs, key=lambda c: (_pos_rank(c.position), c.name.lower()))]
+    return JsonResponse({"status":"success","election":{"id":e.id,"name":e.name,"academic_year":e.academic_year},"candidates":data})
+
+def add_candidate(request):
+    try:
+        with transaction.atomic():
+            e = Election.objects.select_for_update().filter(status='active').order_by('-start_date').first()
+            if not e:
+                return JsonResponse({"status":"error","message":"No active election to add candidates."}, status=400)
+            if e.status == 'finalized':
+                return JsonResponse({"status":"error","message":"Election is finalized."}, status=400)
+
+            name     = (request.POST.get('name') or '').strip()
+            section  = (request.POST.get('section') or '').strip()
+            tupc_id  = normalize_tup_id(request.POST.get('tupc_id') or '')
+            position = (request.POST.get('position') or '').strip()
+            party    = (request.POST.get('party') or '').strip()
+            photo    = request.FILES.get('photo')
+            org      = (request.POST.get('org') or '').strip()
+
+            if not all([name, section, tupc_id, position, photo]):
+                return JsonResponse({"status":"error","message":"Missing required fields."}, status=400)
+
+            if Candidate.objects.filter(election=e, tupc_id__iexact=tupc_id).exists():
+                return JsonResponse({"status":"error","message":"This TUPC ID already has a candidate entry in this election."}, status=409)
+
+            if position.lower() == 'governor':
+                if not org:
+                    return JsonResponse({"status":"error","message":"Program/Organization is required for Governor."}, status=400)
+                org_clean = _clean_org(org)
+                position = f"{org_clean} Governor"
+
+            c = Candidate.objects.create(
+                election=e,
+                academic_year=e.academic_year,
+                tupc_id=tupc_id,
+                name=name,
+                section=section,
+                position=position,   
+                party=party,
+                image=photo
+            )
+        return JsonResponse({"status":"success","id": c.id})
+    except Exception as ex:
+        return JsonResponse({"status":"error","message": f"{ex}"}, status=500)
+
+@role_required(['admin'])
+@require_POST
+def delete_candidate(request, cid):
+    c = get_object_or_404(Candidate, id=cid)
+    if c.election.status != 'active': 
+        return JsonResponse({"status":"error","message":"Election not active. Deletion disabled."}, status=400)
+    c.delete()
+    return JsonResponse({"status":"success"})
+
+
+###################################################################
 def admin_election_results_view(request):
     return render (request, 'myapp/admin_election_results.html')
 
+###################################################################
+@role_required(['admin'])
 def admin_election_manage_view(request):
-    return render (request, 'myapp/admin_election_manage.html')
+    elections = Election.objects.order_by('-start_date')[:20]
+    today = timezone.localdate()
+    return render(request, 'myapp/admin_election_manage.html', {
+        'elections': elections,
+        'now': today,  
+    })
 
+@role_required(['admin'])
+@require_POST
+def eligibles_upload_view(request, eid):
+    election = get_object_or_404(Election, id=eid)
+    f = request.FILES.get('csv')
+    if not f:
+        messages.error(request, "Please choose a CSV file (one TUP ID per line, no headers).")
+        return redirect('admin_election_manage')
 
+    try:
+        raw = f.read().decode('utf-8-sig', errors='ignore')  
+        raw_ids = (line.strip().strip(',;') for line in io.StringIO(raw))
+        ids = []
+        seen = set()
+        for s in raw_ids:
+            sid = normalize_tup_id(s) 
+            if sid and sid not in seen:
+                ids.append(sid)
+                seen.add(sid)
+
+        if not ids:
+            messages.error(request, "No valid TUP IDs found in file.")
+            return redirect('admin_election_manage')
+
+        existing = set(
+            Student.objects.filter(tupc_id__in=ids)
+            .values_list('tupc_id', flat=True)
+        )
+        matched = [sid for sid in ids if sid in existing]
+        skipped = [sid for sid in ids if sid not in existing]
+
+        with transaction.atomic():
+            EligibleVoter.objects.filter(election=election).delete()
+            EligibleVoter.objects.bulk_create(
+                [EligibleVoter(election=election, student_id=sid, is_eligible=True) for sid in matched],
+                batch_size=2000
+            )
+
+        total = len(list(io.StringIO(raw)))
+        messages.success(
+            request,
+            (
+                f"Uploaded for {election.academic_year}: "
+                f"{len(ids)} unique IDs parsed; "
+                f"{len(matched)} matched Student records and added as eligible; "
+                f"{len(skipped)} skipped (not in Student)."
+            )
+        )
+        if skipped:
+            sample = ", ".join(skipped[:10])
+            more = f" …(+{len(skipped)-10} more)" if len(skipped) > 10 else ""
+            messages.info(request, f"Not in Student (sample): {sample}{more}")
+
+    except Exception as e:
+        messages.error(request, f"Upload failed: {e}")
+
+    return redirect('admin_election_manage')
+
+DASHES = r"[‐-‒–—―]" 
+
+def normalize_tup_id(s: str) -> str:
+    if not s:
+        return ""
+    s = s.strip()
+    # unify dashes to ASCII hyphen
+    s = re.sub(DASHES, "-", s)
+    # collapse internal spaces (remove or you can change to replace with nothing)
+    s = re.sub(r"\s+", "", s)
+    # keep only A–Z, 0–9, and hyphen
+    s = re.sub(r"[^A-Za-z0-9-]", "", s)
+    # uppercase
+    return s.upper()
+
+@role_required(['admin'])
+@require_POST
+def eligibles_verify_view(request, eid):
+    election = get_object_or_404(Election, id=eid)
+    raw = (request.POST.get('student_id') or '')
+    sid = normalize_tup_id(raw)
+
+    status = 'missing'
+    if sid:
+        # case-insensitive match just in case
+        ev = EligibleVoter.objects.filter(
+            election=election,
+            student_id__iexact=sid,
+            is_eligible=True
+        ).exists()
+
+        if not ev:
+            status = 'not_listed'
+        else:
+            already = Vote.objects.filter(
+                election=election,
+                voter_student_id__iexact=sid
+            ).exists()
+            status = 'already_voted' if already else 'eligible'
+
+    request.session['verify_result'] = {'eid': election.id, 'sid': sid, 'status': status}
+    return redirect('admin_election_manage')
 
     # ------------------------ ELECTION - CLIENT
 
-def client_election_view(request):
-    return render (request, 'myapp/client_election.html')
+def _to_aware(dt_str):
+    dt = parse_datetime(dt_str)  # expects 'YYYY-MM-DDTHH:MM'
+    if dt is None: return None
+    return make_aware(dt) if is_naive(dt) else dt
 
+def _someone_else_active(exclude_id=None):
+    qs = Election.objects.filter(status='active')
+    if exclude_id:
+        qs = qs.exclude(id=exclude_id)
+    return qs.exists()
+
+def _someone_else_active(exclude_id=None):
+    qs = Election.objects.filter(status__in=['active', 'scheduled'])
+    if exclude_id:
+        qs = qs.exclude(id=exclude_id)
+    return qs.exists()
+
+@role_required(['admin'])
+@require_POST
+def admin_election_create(request):
+    name = (request.POST.get('name') or 'Student Government Election').strip()
+    ay   = (request.POST.get('academic_year') or '').strip()
+    sd   = request.POST.get('start_date')
+    ed   = request.POST.get('end_date')
+
+    try:
+        start_date = date.fromisoformat(sd)
+        end_date   = date.fromisoformat(ed)
+    except Exception:
+        messages.error(request, "Invalid dates.")
+        return redirect('admin_election_manage')
+
+    today = timezone.localdate()
+    if not ay:
+        messages.error(request, "Academic year is required."); return redirect('admin_election_manage')
+    if start_date < today:
+        messages.error(request, "Start cannot be in the past."); return redirect('admin_election_manage')
+    if end_date < start_date:
+        messages.error(request, "End cannot be before Start."); return redirect('admin_election_manage')
+    if end_date > start_date + timedelta(days=60):
+        messages.error(request, "Window must be within 60 days from Start."); return redirect('admin_election_manage')
+
+    # 🔒 Hard rule: cannot create ANY election (even scheduled) while another is active
+    if _someone_else_active():
+        messages.error(request, "Cannot create a new election while another election is ACTIVE or SCHEDULED. Close/finalize it first.")
+        return redirect('admin_election_manage')
+
+    # Decide initial status only after we know none are active
+    status = 'active' if start_date == today else 'scheduled'
+
+    Election.objects.create(
+        name=name,
+        academic_year=ay,
+        start_date=start_date,
+        end_date=end_date,
+        status=status,
+        is_finalized=False,
+    )
+    messages.success(request, f"Election {ay} created as {'Active' if status=='active' else 'Scheduled'}.")
+    return redirect('admin_election_manage')
+
+
+@role_required(['admin'])
+@require_POST
+def admin_election_open_now(request, eid):
+    with transaction.atomic():
+        e = Election.objects.select_for_update().get(id=eid)
+        if Election.objects.select_for_update().filter(status='active').exclude(id=e.id).exists():
+            messages.error(request, "Cannot open: another election is already ACTIVE.")
+            return redirect('admin_election_manage')
+
+        today = timezone.localdate()
+        e.start_date = today
+        max_end = e.start_date + timedelta(days=60)
+        if e.end_date < e.start_date or e.end_date > max_end:
+            e.end_date = max_end
+        e.status = 'active'
+        e.is_finalized = False
+        e.save(update_fields=['start_date','end_date','status','is_finalized'])
+
+    messages.success(request, f"Election opened today for {e.academic_year}.")
+    return redirect('admin_election_manage')
+
+@role_required(['admin'])
+@require_POST
+def admin_election_close_now(request, eid):
+    e = get_object_or_404(Election, id=eid)
+    if e.status in ('closed', 'finalized'):
+        messages.info(request, "Election is already closed.")
+        return redirect('admin_election_manage')
+
+    e.status = 'closed'
+    e.end_date = timezone.localdate()  # keep audit trail; status controls UI/logic
+    e.save(update_fields=['status','end_date'])
+    messages.success(request, f"Election {e.name} is already closed.")
+    return redirect('admin_election_manage')
+
+@role_required(['admin'])
+@require_POST
+def admin_election_finalize(request, eid):
+    e = get_object_or_404(Election, id=eid)
+    e.status = 'finalized'
+    e.is_finalized = True
+    e.save(update_fields=['status','is_finalized'])
+    messages.success(request, "Election finalized (locked).")
+    return redirect('admin_election_manage')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# === views.py (client election) ==============================================
+
+def _get_voter_from_session(request):
+    return request.session.get('voter') or {}
+
+def __clean_org(s: str) -> str:
+    return (s or '').upper().strip()
+
+def voter_required_page(view_func):
+    """Require active election + voter session for PAGE views."""
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        e = _active_election()
+        voter = _get_voter_from_session(request)
+        if not e:
+            messages.warning(request, "No active election.")
+            return redirect('client_election')
+        if not voter or voter.get('election_id') != e.id:
+            messages.warning(request, "Please log in with your TUPC ID and organization to access the ballot.")
+            return redirect('client_election')
+        request.election = e
+        request.voter = voter
+        return view_func(request, *args, **kwargs)
+    return _wrapped
+
+def voter_required_api(view_func):
+    """Require active election + voter session for API endpoints (JSON)."""
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        e = _active_election()
+        voter = _get_voter_from_session(request)
+        if not e:
+            return JsonResponse({"status":"error","message":"No active election."}, status=400)
+        if not voter or voter.get('election_id') != e.id:
+            return JsonResponse({"status":"error","message":"Login required."}, status=401)
+        request.election = e
+        request.voter = voter
+        return view_func(request, *args, **kwargs)
+    return _wrapped
+
+# ---------- Pages ----------
+@ensure_csrf_cookie
+def client_election_view(request):
+    """Login page (org + TUPC ID)."""
+    return render(request, 'myapp/client_election.html')
+
+@ensure_csrf_cookie
+@voter_required_page
 def client_view_election_view(request):
-    return render (request, 'myapp/client_view_election.html')
+    """Ballot page (requires voter session)."""
+    return render(request, 'myapp/client_view_election.html', {
+        'election': request.election,
+        'voter_sid': request.voter.get('student_id'),
+        'voter_org': request.voter.get('org'),
+    })
+
+def client_logout(request):
+    request.session.pop('voter', None)
+    request.session.modified = True
+    messages.success(request, "You have been logged out.")
+    return redirect(request, 'myapp/client_election.html')
+
+# ---------- Login API (eligibility + session login) ----------
+
+@csrf_exempt
+@require_POST
+def api_check_eligibility(request):
+    """POST: student_id, org  → session login if eligible & not yet voted."""
+    sid = normalize_tup_id(request.POST.get('student_id') or '')
+    org = __clean_org(request.POST.get('org') or '')
+
+    if not sid:
+        return JsonResponse({"status":"error","message":"Missing TUPC ID."}, status=400)
+    if not org:
+        return JsonResponse({"status":"error","message":"Program/Organization is required."}, status=400)
+
+    e = _active_election()
+    if not e:
+        return JsonResponse({"status":"error","message":"No active election right now."}, status=400)
+
+    listed = EligibleVoter.objects.filter(election=e, student_id__iexact=sid, is_eligible=True).exists()
+    if not listed:
+        return JsonResponse({"status":"not_listed"})
+
+    already = Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists()
+    if already:
+        return JsonResponse({"status":"already_voted"})
+
+    # Login (scope to this active election)
+    request.session['voter'] = {'election_id': e.id, 'student_id': sid, 'org': org}
+    request.session.modified = True
+
+    return JsonResponse({
+        "status":"eligible",
+        "election":{"id": e.id, "name": e.name, "academic_year": e.academic_year}
+    })
+
+# ---------- Ballot API (fetch lists + parties) ----------
+
+@voter_required_api
+@require_http_methods(["GET"])
+def api_get_ballot(request):
+    """
+    Returns candidate lists for President, Vice President, Senator (all),
+    and <ORG> Governor (only that org). Also returns distinct party names.
+    Seats: senators=9, governor=1.
+    """
+    e = request.election
+    org = request.voter.get('org')
+
+    base = Candidate.objects.filter(election=e, is_withdrawn=False)
+
+    presidents = list(base.filter(position='President').order_by('name'))
+    vps        = list(base.filter(position='Vice President').order_by('name'))
+    senators   = list(base.filter(position='Senator').order_by('name'))
+
+    gov_label = f"{org} Governor"
+    governors = list(base.filter(position__iexact=gov_label).order_by('name'))
+
+    def pack(qs):
+        return [{
+            "id": c.id,
+            "name": c.name,
+            "section": c.section,
+            "party": c.party or "",
+            "image": (c.image.url if c.image and hasattr(c.image,'url') else "")
+        } for c in qs]
+
+    # distinct non-empty parties in this election
+    parties = list(
+        base.exclude(party__isnull=True).exclude(party__exact="")
+            .values_list('party', flat=True).distinct().order_by('party')
+    )
+
+    seats = {"senator": 9, "governor": 1}
+
+    return JsonResponse({
+        "status": "success",
+        "election": {"id": e.id, "name": e.name, "academic_year": e.academic_year},
+        "org": org,
+        "ballot": {
+            "President": pack(presidents),
+            "Vice President": pack(vps),
+            "Senator": pack(senators),
+            gov_label: pack(governors),  
+        },
+        "seats": seats,
+        "parties": parties,
+    })
+
+# ---------- Submit vote API (stores JSON ballot + optional email; logs out) ----------
+
+@voter_required_api
+@require_POST
+def api_submit_vote(request):
+    """
+    POST fields:
+      - president: candidate_id or "" (abstain)
+      - vice_president: candidate_id or "" (abstain)
+      - senators: JSON array (length up to 9) of candidate_id or "" (abstain entries ok)
+      - governor: candidate_id or "" (abstain)
+      - email: optional (to send receipt)
+    """
+    e = request.election
+    voter = request.voter
+    sid = voter.get('student_id')
+    org = voter.get('org')
+
+    SENATOR_SEATS = 9
+
+    def to_id_or_none(raw):
+        s = (raw or "").strip()
+        return int(s) if s.isdigit() else None
+
+    # Parse selections
+    president_id      = to_id_or_none(request.POST.get('president'))
+    vice_president_id = to_id_or_none(request.POST.get('vice_president'))
+    governor_id       = to_id_or_none(request.POST.get('governor'))
+    email_raw         = (request.POST.get('email') or '').strip()
+
+    # Validate optional email
+    email = ""
+    if email_raw:
+        try:
+            validate_email(email_raw)
+            email = email_raw
+        except ValidationError:
+            return JsonResponse({"status":"error","message":"Invalid email address."}, status=400)
+
+    # Senators
+    senators_raw = request.POST.get('senators')
+    try:
+        senators_list = json.loads(senators_raw) if senators_raw else []
+    except Exception:
+        return JsonResponse({"status":"error","message":"Invalid senators payload."}, status=400)
+
+    # Normalize senators to <= seats; allow None/"" for abstain
+    norm_sen = []
+    for x in senators_list:
+        if x is None or str(x).strip()=="":
+            continue
+        if str(x).isdigit():
+            norm_sen.append(int(x))
+        else:
+            return JsonResponse({"status":"error","message":"Invalid senator choice."}, status=400)
+    # Ensure uniqueness & cap to seats
+    norm_sen = list(dict.fromkeys(norm_sen))[:SENATOR_SEATS]
+
+    # Validate choices against current ballot
+    base = Candidate.objects.filter(election=e, is_withdrawn=False)
+    pres_ids = set(base.filter(position='President').values_list('id', flat=True))
+    vp_ids   = set(base.filter(position='Vice President').values_list('id', flat=True))
+    sen_ids  = set(base.filter(position='Senator').values_list('id', flat=True))
+    gov_ids  = set(base.filter(position__iexact=f"{org} Governor").values_list('id', flat=True))
+
+    if president_id is not None and president_id not in pres_ids:
+        return JsonResponse({"status":"error","message":"Invalid president choice."}, status=400)
+    if vice_president_id is not None and vice_president_id not in vp_ids:
+        return JsonResponse({"status":"error","message":"Invalid vice president choice."}, status=400)
+    if any(i not in sen_ids for i in norm_sen):
+        return JsonResponse({"status":"error","message":"Invalid senator choice(s)."}, status=400)
+    if governor_id is not None and governor_id not in gov_ids:
+        return JsonResponse({"status":"error","message":"Invalid governor choice for your organization."}, status=400)
+
+    # Final guard: one vote per voter per election
+    if Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists():
+        return JsonResponse({"status":"error","message":"You have already voted."}, status=409)
+
+    # Persist the vote (single row design)
+    with transaction.atomic():
+        Vote.objects.create(
+            election=e,
+            voter_student_id=sid,
+            email=email or "",
+            ballot={
+                "president": president_id,             # or None (abstain)
+                "vice_president": vice_president_id,   # or None
+                "senators": norm_sen,                  # list of ids (<=9)
+                "governor": governor_id                # or None
+            }
+        )
+
+    # Email receipt (optional; never fail the vote if email sending fails)
+    if email:
+        chosen_ids = [x for x in [president_id, vice_president_id, governor_id, *norm_sen] if x]
+        names = dict(Candidate.objects.filter(id__in=chosen_ids).values_list('id','name'))
+
+        def n(id_): return "ABSTAIN" if not id_ else names.get(int(id_), f"#{id_}")
+        lines = []
+        lines.append(f"Election: {e.name} ({e.academic_year})")
+        lines.append(f"Voter: {sid}")
+        if org: lines.append(f"Program/Organization: {org}")
+        lines.append("")
+        lines.append(f"President: {n(president_id)}")
+        lines.append(f"Vice President: {n(vice_president_id)}")
+        lines.append("Senators: " + (", ".join([n(x) for x in norm_sen]) if norm_sen else "ABSTAIN ALL"))
+        lines.append(f"Governor: {n(governor_id)}")
+        lines.append("")
+        lines.append("Thank you for voting!")
+        body = "\n".join(lines)
+
+        try:
+            send_mail(
+                subject=f"{e.name} ({e.academic_year}) - Your Ballot Receipt",
+                message=body,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@localhost'),
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            # optional copy to OSA (respect your env switches)
+            if getattr(settings, 'OSA_SEND_USER_COPY', True):
+                osa = getattr(settings, 'OSA_INBOX', None)
+                if osa:
+                    send_mail(
+                        subject=f"[Copy] {e.name} ({e.academic_year}) - Ballot for {sid}",
+                        message=body,
+                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@localhost'),
+                        recipient_list=[osa],
+                        fail_silently=True,
+                    )
+        except Exception as ex:
+            # Don’t fail vote on email errors; surface as note to frontend if you want
+            return JsonResponse({"status":"success", "email_error": str(ex), "logout_after": 5})
+
+    # ✅ Tell frontend to show success modal for 5s, then redirect to /logout/
+    return JsonResponse({"status":"success", "logout_after": 5})

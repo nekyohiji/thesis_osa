@@ -15,7 +15,10 @@
 </head>
 
 <body>
+  <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
 
+  {% include "partials/sidebar.html" %}
+  {% include "partials/logout_modal.html" %}
 <!-- /////////////////////////START HERE MAG CODE ///////////////////////////-->
 
 
@@ -35,6 +38,46 @@
     border-color: #440207;
     color: #440207;
   }
+  .image-preview{
+  position: relative;
+  width: 180px;               /* adjust to taste */
+  height: 220px;              /* adjust to taste (your “200x200-ish”) */
+  border: 2px dashed #bbb;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.image-preview img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;              /* hidden until a file is chosen */
+}
+.placeholder-text{
+  color: #888;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0 8px;
+}
+.image-btn{
+  position: absolute;
+  right: -10px;               /* tuck into the corner */
+  bottom: -10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #212529;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.image-btn:hover{ opacity: .9; }
   </style>
 
 
@@ -85,14 +128,9 @@
         <h4 class="fw-bold">
           <i class="bi bi-person-circle me-2"></i>Candidates
         </h4>
+        <div id="notice" class="alert alert-info d-none"></div>
         <div></div>
         <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
-          <!-- School Year Dropdown -->
-          <div>
-            <select id="syFilter" class="form-select form-select-sm w-auto">
-              <option value="none">Select School Year</option>
-            </select>
-          </div>
       </div>
 
       <div class="container-fluid px-4">
@@ -105,26 +143,26 @@
               <h5 class="fw-bold text-center mb-4">Candidate Details</h5>
 
               <div class="d-flex justify-content-center mb-3">
-                <div class="position-relative">
-                  <div class="image-preview d-flex align-items-center justify-content-center" id="imagePreviewContainer">
-                    <img id="previewImage" src="" alt="Preview" style="display: none;">
-                    <span id="placeholderText" class="placeholder-text">Upload a photo here</span>
-                  </div>
-                  <button type="button" class="image-btn" onclick="document.getElementById('imageInput').click()">
+                <div class="image-preview" id="imagePreviewContainer">
+                  <img id="previewImage" src="" alt="Preview">
+                  <span id="placeholderText" class="placeholder-text">Upload a photo here</span>
+
+                  <!-- Keep the button INSIDE the preview box so it's positioned relative to it -->
+                  <button type="button" class="image-btn" id="imageBtn">
                     <i class="bi bi-plus"></i>
                   </button>
-                  <input type="file" accept="image/*" id="imageInput" style="display: none;">
+
+                  <!-- Hidden file input -->
+                  <input type="file" accept="image/*" id="imageInput" hidden>
                 </div>
               </div>
 
               <div id="formWarning" class="alert alert-warning d-none" role="alert">
                 Please fill out all fields and upload a photo.
               </div>
-
               <form id="candidateForm" enctype="multipart/form-data">
-                <input type="text" class="form-control custom-input mb-2" placeholder="20XX-20XX" id="academicyear" minlength="9" maxlength="20" required>
                 <input type="text" class="form-control custom-input mb-2" placeholder="Enter Name" id="candidateName" minlength="3" maxlength="100" required>
-                <input type="text" class="form-control custom-input mb-2" placeholder="Enter Year and Section" id="candidateSection" maxlength="50" required>
+                <input type="text" class="form-control custom-input mb-2" placeholder="Enter Program" id="candidateSection" maxlength="50" required>
                 <input type="text" class="form-control custom-input mb-2" placeholder="TUPC-XX-XXX" id="candidateID" minlength="4" maxlength="50" required>
 
                 <select id="candidatePosition" class="form-control custom-input mb-2" required>
@@ -134,6 +172,14 @@
                   <option value="Senator">Senator</option>
                   <option value="Governor">Governor</option>
                 </select>
+                <div id="orgGroup" class="mb-2 d-none">
+                  <div class="form-text">Required for Governor candidates.</div>
+                  <input type="text" class="form-control custom-input"
+                        id="orgInput"
+                        placeholder="Program/Organization (e.g., FEO, ACETS, PICE)">
+                </div>
+
+                <input type="text" class="form-control custom-input mb-3" placeholder="Party (optional)" id="candidateParty" maxlength="80">
 
                 <hr>
                 <div class="text-end mt-2">
@@ -150,22 +196,6 @@
 
           <!-- CANDIDATES DISPLAY-->
           <div class="col-md-7">
-            <!-- Position Filters -->
-            <div class="d-flex flex-wrap justify-content-between gap-2 mb-4" id="positionFilters">
-              <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="President">
-                <div class="fw-bold">President</div>
-              </div>
-              <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="Vice President">
-                <div class="fw-bold">Vice President</div>
-              </div>
-              <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="Senator">
-                <div class="fw-bold">Senator</div>
-              </div>
-              <div class="text-center px-3 py-2 bg-custom-dark text-custom-white rounded position-filter flex-grow-1" data-position="Governor">
-                <div class="fw-bold">Governor</div>
-              </div>
-            </div>
-
             <div id="candidateList" class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
               <!-- Cards appear dynamically here -->
             </div>
@@ -210,22 +240,8 @@
       </div>
     </div>
 
-
-
-
-
-
-          
-
-
-
-
-
-
-
-
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 
 
@@ -276,283 +292,234 @@
         });
       });
 ///////////////////////////// START HERE MAG ADD
+</script>
+<script>
+function getCookie(name){
+  const v=`; ${document.cookie}`.split(`; ${name}=`);
+  if(v.length===2) return v.pop().split(';').shift();
+}
+const csrftoken = getCookie('csrftoken');
+// ---- Modals ----
+const alertModal = new bootstrap.Modal(document.getElementById("alertModal"));
+const withdrawModal = new bootstrap.Modal(document.getElementById("withdrawModal"));
+const alertModalTitle = document.getElementById("alertModalLabel");
+const alertModalBody  = document.getElementById("alertModalBody");
 
+// ---- Elements ----
+const form          = document.getElementById("candidateForm");
+const previewImage  = document.getElementById("previewImage");
+const imageInput    = document.getElementById("imageInput");
+const candidateList = document.getElementById("candidateList");
+const confirmWithdrawBtn = document.getElementById("confirmWithdrawBtn");
+const notice        = document.getElementById("notice");
+const positionSelect = document.getElementById('candidatePosition');
+const orgGroup = document.getElementById('orgGroup');
+const orgInput = document.getElementById('orgInput')
 
+// ---- State ----
+let candidates = [];
+let withdrawIndex = null;
 
+// ---- Helpers ----
+function showAlert(title, message, isError = true){
+  alertModalTitle.textContent = title;
+  alertModalBody.textContent = message;
+  alertModalTitle.className = `modal-title text-white ${isError ? 'bg-danger' : 'bg-success'}`;
+  alertModal.show();
+}
 
+async function loadCandidates(){
+  try{
+    const res = await fetch('/admin_election/candidates/');
+    const data = await res.json();
 
-
-
-
-
-
-
-
-
-
-
-
-  const alertModal = new bootstrap.Modal(document.getElementById("alertModal"));
-  const withdrawModal = new bootstrap.Modal(document.getElementById("withdrawModal"));
-
-  const form = document.getElementById("candidateForm");
-  const previewImage = document.getElementById("previewImage");
-  const imageInput = document.getElementById("imageInput");
-  const candidateList = document.getElementById("candidateList");
-  const positionFilters = document.querySelectorAll(".position-filter");
-  const confirmWithdrawBtn = document.getElementById("confirmWithdrawBtn");
-
-  let candidates = [];
-  let currentFilter = "All";
-  let currentYear = "all";
-  let withdrawIndex = null;
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const currentUrl = window.location.href;
-    document.querySelectorAll('.nav-link').forEach(link => {
-      if (link.href && currentUrl.includes(link.href)) {
-        link.classList.add('active');
-      }
-    });
-    populateAcademicYearDropdown().then(() => {
-      loadCandidatesFromServer();
-    });
-  });
-
-  function showAlertModal(title, message, isError = true) {
-    const alertModalTitle = document.getElementById("alertModalLabel");
-    const alertModalBody = document.getElementById("alertModalBody");
-
-    alertModalTitle.textContent = title;
-    alertModalBody.textContent = message;
-    alertModalTitle.className = isError
-      ? 'modal-title text-white bg-danger'
-      : 'modal-title text-white bg-success';
-
-    alertModal.show();
-  }
-
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const name = document.getElementById("candidateName").value.trim();
-    const section = document.getElementById("candidateSection").value.trim();
-    const tupc_id = document.getElementById("candidateID").value.trim();
-    const position = document.getElementById("candidatePosition").value;
-    const academic_year = document.getElementById("academicyear").value.trim();
-    const photoFile = imageInput.files[0];
-
-    if (!name || !section || !tupc_id || !position || !academic_year || !photoFile) {
-      showAlertModal("Missing Fields", "Please fill out all fields and upload a photo.");
+    if(data.status !== 'success'){
+      // No active election -> read-only empty state
+      notice.classList.remove('d-none','alert-success');
+      notice.classList.add('alert-warning');
+      notice.textContent = 'No active election. Candidates hidden and adding is disabled.';
+      disableForm(true);
+      candidateList.innerHTML = "<div class='text-center text-muted'>No candidates to display.</div>";
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("section", section);
-    formData.append("tupc_id", tupc_id);
-    formData.append("position", position);
-    formData.append("academic_year", academic_year);
-    formData.append("photo", photoFile);
+    // Active election banner
+    notice.classList.remove('d-none','alert-warning');
+    notice.classList.add('alert-success');
+    notice.textContent = `Active: ${data.election.name} (${data.election.academic_year})`;
 
-    try {
-      const response = await fetch("/add-candidate/", { method: "POST", body: formData });
-      const result = await response.json();
+    disableForm(false);
 
-      if (!response.ok || result.status !== "success") {
-        showAlertModal("Submission Failed", result.message || "Unknown error occurred.");
-        return;
-      }
+    candidates = data.candidates || [];
+    renderCandidates(candidates);
+  } catch(err){
+    console.error(err);
+    showAlert('Network Error','Failed to load candidates.');
+  }
+}
 
+function disableForm(disabled){
+  form.querySelectorAll('input,select,button').forEach(el => el.disabled = disabled);
+}
+
+function renderCandidates(list){
+  if(!list.length){
+    candidateList.innerHTML = "<div class='text-center text-muted'>No candidates yet.</div>";
+    return;
+  }
+  candidateList.innerHTML = '';
+  list.forEach((c, idx) => {
+    const card = document.createElement('div');
+    card.className = "card d-flex flex-row align-items-center p-2 shadow-sm justify-content-between mb-2";
+    card.innerHTML = `
+      <div class="d-flex align-items-center w-100 p-3">
+        <img src="${c.image || ''}" class="rounded border me-3" style="width: 80px; height: 80px; object-fit: cover;">
+        <div style="width:1px;height:80px;background-color:#dee2e6;" class="me-3"></div>
+        <div class="flex-grow-1">
+          <p class="mb-1 small"><strong>Name:</strong> ${c.name}</p>
+          <p class="mb-1 small"><strong>Year & Section:</strong> ${c.section}</p>
+          <p class="mb-1 small text-muted"><strong>TUPC ID:</strong> ${c.tupc_id}</p>
+        </div>
+        <div class="text-end me-3">
+          <span class="badge bg-secondary px-3 py-2" style="font-size:0.85rem;">${c.position}</span>
+          ${c.party ? `<div class="small mt-1"><i class="bi bi-people-fill me-1"></i>${c.party}</div>` : ``}
+        </div>
+        <div class="d-flex flex-column gap-2 ms-2">
+          <button class="btn btn-sm btn-danger withdraw-btn" data-index="${idx}">
+            <i class="bi bi-x-circle me-1"></i> Delete
+          </button>
+        </div>
+      </div>
+    `;
+    candidateList.appendChild(card);
+  });
+}
+
+// ---- Form submit (ADD) ----
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name     = document.getElementById("candidateName").value.trim();
+  const section  = document.getElementById("candidateSection").value.trim();
+  const tupc_id  = document.getElementById("candidateID").value.trim();
+  const position = document.getElementById("candidatePosition").value;
+  const party    = document.getElementById("candidateParty").value.trim();
+  const photo    = imageInput.files[0];
+  const org      = (orgInput?.value || '').trim(); // <-- get org here
+
+  if(!name || !section || !tupc_id || !position || !photo){
+    showAlert("Missing Fields","Please fill out all required fields and upload a photo.");
+    return;
+  }
+
+  // Governor requires org
+  if (position === 'Governor' && !org) {
+    showAlert('Missing Program/Organization','Please enter the program/organization for a Governor candidate.');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('section', section);
+  fd.append('tupc_id', tupc_id);
+  fd.append('position', position);
+  fd.append('party', party);
+  fd.append('photo', photo);
+  if (position === 'Governor') fd.append('org', org); // <-- include org only for Governor
+
+  try{
+    const res = await fetch('/admin_election/candidates/add/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrftoken },
+      body: fd
+    });
+    const data = await res.json();
+    if(res.ok && data.status === 'success'){
       form.reset();
-      previewImage.src = "";
-      previewImage.style.display = "none";
+      previewImage.src = ''; previewImage.style.display = 'none';
       document.getElementById("candidatePosition").selectedIndex = 0;
-
-      const syFilter = document.getElementById("syFilter");
-      let alreadyExists = Array.from(syFilter.options).some(opt => opt.value === academic_year);
-      if (!alreadyExists) {
-        const newOption = new Option(academic_year, academic_year);
-        syFilter.appendChild(newOption);
-      }
-
-      syFilter.value = academic_year;
-      currentYear = academic_year;
-      showAlertModal("Candidate Added", "Successfully added candidate!", false);
-      setTimeout(() => {
-        loadCandidatesFromServer();
-      }, 500);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      showAlertModal("Network Error", "Failed to connect to server.");
-    }
-  });
-
-  async function loadCandidatesFromServer() {
-    try {
-      const response = await fetch("/get-candidates/");
-      const result = await response.json();
-      if (result.status !== "success") return;
-
-      const selectedYear = document.getElementById("syFilter").value;
-      const allCandidates = result.candidates || [];
-
-      candidates = allCandidates;
-      currentYear = selectedYear;
-
-      const filteredByYear = selectedYear === "all"
-        ? allCandidates
-        : allCandidates.filter(c => c.academic_year === selectedYear);
-      applyFilters();
-
-    } catch (err) {
-      console.error("Failed to load candidates:", err);
-    }
-  }
-
-  function applyFilters() {
-    let filtered = [...candidates];
-    if (currentYear !== "all") {
-      filtered = filtered.filter(c => c.academic_year === currentYear);
-    }
-    if (currentFilter !== "All") {
-      filtered = filtered.filter(c => c.position === currentFilter);
-    }
-
-    if (filtered.length === 0) {
-      candidateList.innerHTML = "<div class='text-center text-muted'>No candidates yet.</div>";
+      orgGroup.classList.add('d-none'); // hide org field after reset
+      showAlert('Candidate Added','Successfully added candidate!', false);
+      await loadCandidates();
     } else {
-      renderCandidatesFromList(filtered);
+      showAlert('Submission Failed', data.message || 'Unknown error.');
     }
+  } catch(err){
+    console.error(err);
+    showAlert('Network Error','Failed to connect to server.');
   }
+});
 
-  function renderCandidatesFromList(filtered) {
-    candidateList.innerHTML = "";
-    filtered.forEach((candidate, index) => {
-      const card = document.createElement("div");
-      card.className = "card d-flex flex-row align-items-center p-2 shadow-sm justify-content-between mb-2";
-      card.innerHTML = `
-        <div class="d-flex align-items-center w-100 p-3">
-          <img src="${candidate.image}" class="rounded border me-3" style="width: 80px; height: 80px; object-fit: cover;" id="image-${index}">
-          <div style="width: 1px; height: 80px; background-color: #dee2e6;" class="me-3"></div>
-          <div class="flex-grow-1">
-            <p class="mb-1 small"><strong>Name:</strong> ${candidate.name}</p>
-            <p class="mb-1 small"><strong>Year & Section:</strong> ${candidate.section}</p>
-            <p class="mb-1 small text-muted"><strong>TUPC ID:</strong> ${candidate.tupc_id}</p>
-            <p class="mb-1 small text-muted"><strong>Academic Year:</strong> ${candidate.academic_year}</p>
-          </div>
-          <div class="d-flex align-items-center justify-content-center px-3" style="min-width: 140px;">
-            <span class="badge bg-secondary px-3 py-2" style="font-size: 0.85rem;">${candidate.position}</span>
-          </div>
-          <div class="d-flex flex-column gap-2 ms-2">
-            <button class="btn btn-sm btn-danger withdraw-btn" data-index="${index}">
-              <i class="bi bi-x-circle me-1"></i> Withdraw
-            </button>
-          </div>
-        </div>`;
-      candidateList.appendChild(card);
+// ---- Delete (Withdraw) ----
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".withdraw-btn");
+  if(!btn) return;
+  withdrawIndex = parseInt(btn.getAttribute("data-index"), 10);
+  withdrawModal.show();
+});
+
+confirmWithdrawBtn.addEventListener("click", async () => {
+  if(withdrawIndex == null) return;
+  const c = candidates[withdrawIndex];
+  try{
+    const res = await fetch(`/admin_election/candidates/${c.id}/delete/`, {
+      method: 'POST', // POST for easy CSRF
+      headers: { 'X-CSRFToken': csrftoken }
     });
+    const data = await res.json();
+    if(res.ok && data.status === 'success'){
+      withdrawModal.hide();
+      showAlert('Candidate Removed', 'The candidate has been deleted.', false);
+      await loadCandidates();
+    } else {
+      showAlert('Delete Failed', data.message || 'Could not remove candidate.');
+    }
+  } catch(err){
+    console.error(err);
+    showAlert('Network Error', 'Could not reach server.');
+  } finally {
+    withdrawIndex = null;
   }
+});
 
-  confirmWithdrawBtn.addEventListener("click", async () => {
-    if (withdrawIndex !== null) {
-      const candidate = candidates[withdrawIndex];
-      try {
-        const response = await fetch(`/delete-candidate/${candidate.id}/`, { method: "DELETE" });
-        const result = await response.json();
+// ---- Image preview ----
+document.getElementById('imageBtn').addEventListener('click', () => {
+  document.getElementById('imageInput').click();
+});
 
-        if (!response.ok || result.status !== "success") {
-          showAlertModal("Delete Failed", result.message || "Could not remove candidate.");
-          return;
-        }
-
-        candidates.splice(withdrawIndex, 1);
-        loadCandidatesFromServer();
-        withdrawModal.hide();
-        showAlertModal("Candidate Removed", "The candidate has been successfully withdrawn.", false);
-        withdrawIndex = null;
-
-      } catch (err) {
-        showAlertModal("Network Error", "Could not reach server.");
-        console.error(err);
-      }
-    }
-  });
-
-  document.getElementById("syFilter").addEventListener("change", function () {
-    currentYear = this.value;
-    currentFilter = "All";
-    positionFilters.forEach(f => f.classList.remove("bg-primary", "text-white", "active"));
-    document.querySelector('[data-position="All"]').classList.add("bg-primary", "text-white", "active");
-
-    const filteredCandidates = currentYear === "all"
-      ? candidates
-      : candidates.filter(c => c.academic_year === currentYear);
-
-    renderCandidatesFromList(filteredCandidates);
-  });
-
-  positionFilters.forEach(filterDiv => {
-    filterDiv.addEventListener("click", () => {
-      currentFilter = filterDiv.getAttribute("data-position");
-      positionFilters.forEach(f => f.classList.remove("bg-primary", "text-white", "active"));
-      filterDiv.classList.add("bg-primary", "text-white", "active");
-
-      const filteredByYear = currentYear === "all"
-        ? candidates
-        : candidates.filter(c => c.academic_year === currentYear);
-
-      const finalFiltered = currentFilter === "All"
-        ? filteredByYear
-        : filteredByYear.filter(c => c.position === currentFilter);
-
-      renderCandidatesFromList(finalFiltered);
-    });
-  });
-
-
-  imageInput.addEventListener("change", () => {
-    const file = imageInput.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        previewImage.src = e.target.result;
-        previewImage.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  document.addEventListener("click", function (e) {
-    if (e.target.closest(".withdraw-btn")) {
-      withdrawIndex = e.target.closest(".withdraw-btn").getAttribute("data-index");
-      withdrawModal.show();
-    }
-  });
-
-  alertModal._element.addEventListener('hidden.bs.modal', function () {
-    setTimeout(loadCandidatesFromServer, 500);
-  });
-
-  async function populateAcademicYearDropdown() {
-    try {
-      const response = await fetch('/get-academic-years/');
-      const data = await response.json();
-      const dropdown = document.getElementById("syFilter");
-      dropdown.innerHTML = '<option value="all">Select School Year</option>';
-      if (response.ok && data.status === "success") {
-        data.academic_years.forEach(year => {
-          const option = document.createElement("option");
-          option.value = year;
-          option.textContent = year;
-          dropdown.appendChild(option);
-        });
-      }
-    } catch (err) {
-      console.error("Error loading academic years:", err);
-    }
+imageInput.addEventListener("change", () => {
+  const file = imageInput.files[0];
+  const placeholder = document.getElementById("placeholderText");
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImage.src = e.target.result;
+      previewImage.style.display = "block";
+      placeholder.style.display = "none";
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // reset if user cancels
+    previewImage.src = "";
+    previewImage.style.display = "none";
+    placeholder.style.display = "block";
   }
+});
+// --- Show org input only for Governors ---
+positionSelect.addEventListener('change', () => {
+  if (positionSelect.value === 'Governor') {
+    orgGroup.classList.remove('d-none');
+  } else {
+    orgGroup.classList.add('d-none');
+    orgInput.value = '';
+  }
+});
+
+// Apply once on load (in case the select has a remembered value)
+document.addEventListener('DOMContentLoaded', () => {
+  positionSelect.dispatchEvent(new Event('change'));
+});
+// ---- Kickoff ----
+document.addEventListener('DOMContentLoaded', loadCandidates);
 </script>
-
-
 </body>
 </html>
