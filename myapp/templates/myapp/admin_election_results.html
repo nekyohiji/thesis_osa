@@ -57,13 +57,13 @@
     </div>
 
     <!-- Results -->
-    <div class="tab-content p-4 bg-white border rounded shadow-sm">
+    <div class="tab-content p-5 border rounded shadow-sm" style="background: #dddddd3b">
       <div class="container-fluid">
-        <h4><i class="bi bi-bar-chart-fill me-2"></i>Results</h4>
+        <h4><i class="bi bi-bar-chart-fill me-2"></i><strong>Results</strong></h4>
         <p>See the election results and statistics of all candidates.</p>
-
+        <hr class="bg-dark"><br>
         <!-- Toolbar -->
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
           <div>
             <select id="electionFilter" class="form-select form-select-sm w-auto">
               <option value="">Loading elections…</option>
@@ -149,16 +149,16 @@
 
     function blockHTML(title, rows, extras){
       const abstainRow = (extras && typeof extras.abstain !== 'undefined')
-        ? `<tr class="abstain-row table-warning"><td><em>ABSTAIN</em></td><td>${extras.abstain}</td><td></td></tr>`
+        ? `<tr class="abstain-row table-danger"><td class="fw-bold">ABSTAIN</td><td>${extras.abstain}</td><td></td></tr>`
         : '';
       const subtitle = extras?.subtitle ? `<small class="text-muted ms-2">${extras.subtitle}</small>` : '';
       const modeBadge = extras?.modeBadge ? ` <span class="badge text-bg-info mode-badge">${extras.modeBadge}</span>` : '';
       return `
-        <div class="position-table">
+        <div class="position-table"  style="border: 0.5px solid rgb(65, 4, 4);  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); border-radius: 1rem;">
           <h5 class="fw-bold text-dark">${title}${modeBadge} ${subtitle}</h5>
           <div class="table-responsive">
-            <table class="table table-bordered align-middle text-center">
-              <thead class="table-light"><tr><th>Name</th><th>Votes</th><th>Percentage</th></tr></thead>
+            <table class="table table-dark align-middle text-center">
+              <thead class="table"><tr><th>Name</th><th>Votes</th><th>Percentage</th></tr></thead>
               <tbody>
                 ${rows.map(rowHTML).join('')}
                 ${abstainRow}
@@ -211,10 +211,12 @@
           modeBadge: 'Majority (50%+1)'
         });
         const infoHTML = `
+        
+        <div class="w-100 mb-3 text-center"> 
           <div class="alert alert-info py-2 mb-2">
             ${sen.notes || 'Each candidate must reach the threshold to be seated.'}
-          </div>
-          <div class="d-flex flex-wrap gap-3 align-items-center mb-2">
+          </div><br>
+          <div class="d-flex flex-wrap align-items-center gap-3 mb-2 justify-content-center">
             <span class="badge text-bg-secondary">Threshold: ${sen.threshold} ballot${sen.threshold===1?'':'s'}</span>
             <span class="badge text-bg-dark">Seats: ${sen.seat_count}</span>
             <span class="badge text-bg-success">Approved: ${(sen.approved||[]).length}</span>
@@ -224,6 +226,7 @@
             <span class="badge text-bg-success">Approved Candidates</span>
             <div class="small text-muted mt-1">${(sen.approved||[]).map(w=>w.name).join(', ') || '—'}</div>
           </div>
+        </div>
         `;
         senWrap.querySelector('.position-table').insertAdjacentHTML('afterbegin', infoHTML);
         root.appendChild(senWrap.firstElementChild);

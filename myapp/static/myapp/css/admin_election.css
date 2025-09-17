@@ -325,7 +325,6 @@ hr {
 
 /* Panel background and layout */
 .candidate-panel {
-  background-color:#00000039; /* light gray */
   padding: 2rem;
   border-radius: 1rem;
   border: 0.5px solid rgb(65, 4, 4);

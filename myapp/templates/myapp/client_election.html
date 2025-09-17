@@ -167,6 +167,7 @@ color: #66666679;
   color: white;
 }
 
+
 </style>
 
 
@@ -187,9 +188,9 @@ color: #66666679;
     <p class="text-center">Please enter your registered TUPC ID number to vote.</p>
 
     <div class="input-row">
-      <div class="mb-3">
-        <label for="orgInput" class="form-label"><b>Program Organization</b></label>
-        <input list="orgOptions" id="orgInput" class="form-control" placeholder="Start typing…" required>
+      <div class="input-group">
+        <label for="orgInput" ><b>Program Organization:</b></label>
+        <input list="orgOptions" id="orgInput"  class="rounded" placeholder="Examples: FEO, ACETS, ACTS, PICE" required>
         <datalist id="orgOptions">
           <option value="ACETS"></option>
           <option value="ACTS"></option>
@@ -203,12 +204,11 @@ color: #66666679;
           <option value="PSME"></option>
           <option value="SETS"></option>
         </datalist>
-        <div class="form-text">Examples: FEO, ACETS, ACTS, PICE</div>
       </div>
 
       <div class="input-group">
         <label for="tupc_election"><b>TUPC-ID:</b></label>
-        <input type="text" id="tupc_election" placeholder="TUPC-XX-XXXX" />
+        <input type="text" id="tupc_election" class="rounded" placeholder="TUPC-XX-XXXX" />
       </div>
 
       <div class="input-group" style="align-self: end;">
@@ -244,7 +244,7 @@ color: #66666679;
     <h2><i class="fas fa-vote-yea"></i> Vote Wisely!</h2>
     <p>Technological University of the Philippines - Cavite | University Student Government Election</p>
     <div class="signature">
-      <i class="fas fa-pen-nib"></i> — Office of Student Affairs
+      <i class="fas fa-pen-nib"></i> — Office of Student Affairs<br>
       <i class="fas fa-pen-nib"></i> — TUP Cavite: Commission of Student Elections 
     </div>
   </div>

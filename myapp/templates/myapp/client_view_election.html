@@ -30,15 +30,32 @@
     .email-input{flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#0f0f0f; color:#eee;}
     .submit-btn{padding:10px 16px; border-radius:10px; border:none; background:#0a7a19; color:#fff;}
     .icon-tag{margin-right:8px; color:#aaa;}
+
+
+      .highlight {
+    background: #44444444; /* your accent color */
+    color: #d7d7d7;
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+
+  .preview img {
+    width: 140px;  /* increase size */
+    height: 140px; /* increase size */
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #333;
+  }
+
   </style>
 </head>
 <body>
 
 <div class="container-narrow">
-  <h2 class="mb-3">University Student Government Ballot</h2>
-  <div class="text-muted mb-3">
-    Election: {{ election.name }} ({{ election.academic_year }}) • Voter: {{ voter_sid }} • Org: {{ voter_org }}
-  </div>
+  <h2 class="mb-3"><strong>University Student Government Ballot</strong></h2>
+  <div class="text-light mb-3">
+   <strong> Election:</strong> <span class="highlight"> {{ election.name }} ( {{ election.academic_year }}) </span>  •<strong> Voter:</strong> <span class="highlight">{{ voter_sid }} </span> •<strong> Org:</strong> <span class="highlight"> {{ voter_org }} </span>
+  </div><br>
 
   <!-- Stepper -->
   <div class="stepper">
@@ -102,7 +119,7 @@ const msgHeader = document.getElementById('msgModalHeader');
 const msgTitle  = document.getElementById('msgModalLabel');
 const msgBody   = document.getElementById('msgModalBody');
 function showMsg(type, title, body){
-  const bg = {success:'bg-success text-white', warning:'bg-warning', danger:'bg-danger text-white', info:'bg-primary text-white'}[type] || 'bg-primary text-white';
+  const bg = {success:'bg-success text-dark', warning:'bg-warning', danger:'bg-danger text-dark', info:'bg-primary text-dark'}[type] || 'bg-primary text-dark';
   msgHeader.className = 'modal-header ' + bg;
   msgTitle.textContent = title;
   msgBody.textContent = body;
@@ -176,12 +193,12 @@ function buildDropdownBox(label, list, selectId, onChange){
   wrap.className = 'position-box';
   wrap.innerHTML = `
     <h3><i class="bi bi-person-square icon-tag"></i>${label}</h3>
-    <select id="${selectId}" class="styled-select">
+    <select id="${selectId}" class="styled-select text-center">
       <option value="">-- Select Candidate --</option>
       ${list.map(c => `<option value="${c.id}">${c.name}${c.party ? ' ('+c.party+')':''}</option>`).join('')}
       <option value="ABSTAIN">Abstain</option>
     </select>
-    <div class="preview" style="display:none;">
+    <div class="preview justify-content-center" style="display:none;">
       <img src="" alt="">
       <div class="preview-info"></div>
     </div>`;
@@ -224,7 +241,7 @@ function injectStraightPartySelector(containerEl){
       <button class="btn btn-sm btn-dark" id="apply-party">Apply</button>
       <button class="btn btn-sm btn-outline-secondary" id="clear-party">Clear</button>
     </div>
-    <div class="form-text mt-2">
+    <div class="text-light mt-1 " style="font-size:15px;">
       Auto-fills President, Vice President, up to ${seats.senator} Senators, and your org’s Governor from that party. Missing positions become Abstain.
     </div>`;
   containerEl.prepend(box);
