@@ -77,6 +77,15 @@
   width: 100%;
 }
 
+
+
+.input-row input:focus {
+  outline: none;
+  border-color: #700f1b; /* same as your button hover theme */
+  box-shadow: 0 0 5px rgba(112, 15, 27, 0.3);
+}
+
+
 .input-row button {
   white-space: nowrap;
   background-color: #360107;
@@ -147,8 +156,9 @@ color: #66666679;
 
 .bottom-section .image img {
   border-radius: 8px;
-  height: 100px;
-  width: 100px;
+  height: 150px;
+  width: 150px;
+  
 }
 
 .footer {
@@ -168,6 +178,52 @@ color: #66666679;
 }
 
 
+
+
+
+.input-row select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  width: 100%;
+  background-color: #fff;
+  appearance: none; /* removes browser's default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.input-row select:focus {
+  outline: none;
+  border-color: #700f1b; /* same as your button hover theme */
+  box-shadow: 0 0 5px rgba(112, 15, 27, 0.3);
+}
+
+.input-row select {
+  background: #fff url("data:image/svg+xml;utf8,<svg fill='%23666' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>") no-repeat right 10px center;
+  background-size: 16px;
+  padding-right: 35px; /* space for the arrow */
+}
+
+
+
+#orgInput option[disabled] {
+  color: #888888ff;   /* gray text */
+}
+
+#orgInput:invalid {
+  color: #999;   /* gray text when placeholder is active */
+}
+
+#orgInput {
+  color: #000000ff;   /* gray text when placeholder is active */
+}
+
+#orgInput {
+  color: #000;   /* normal text color when user selects */
+}
+
+
 </style>
 
 
@@ -177,6 +233,7 @@ color: #66666679;
   <div class="hero-text">
   </div>
 </header>
+
 
 <!-- ENTER TUPC-IDD  -->
 <section class="donation-box">
@@ -190,26 +247,25 @@ color: #66666679;
       <div class="input-row">
         <div class="input-group">
           <label for="orgInput"><b>Program Organization:</b></label>
-          <select id="orgInput" class="rounded" required>
+          <select id="orgInput" class="rounded text-center" required>
             <option value="" disabled selected>Select your organization</option>
-            <option value="ACETS">ACETS</option>
-            <option value="ACTS">ACTS</option>
-            <option value="APPLETS">APPLETS</option>
-            <option value="ETECHS">ETECHS</option>
-            <option value="FEO">FEO</option>
-            <option value="JIIEE">JIIEE</option>
-            <option value="METALS">METALS</option>
-            <option value="ODD">ODD</option>
-            <option value="PICE">PICE</option>
-            <option value="PSME">PSME</option>
-            <option value="SETS">SETS</option>
+            <option class="text-dark" value="ACETS">ACETS</option>
+            <option class="text-dark" value="ACTS">ACTS</option>
+            <option class="text-dark" value="APPLETS">APPLETS</option>
+            <option class="text-dark" value="ETECHS">ETECHS</option>
+            <option class="text-dark" value="FEO">FEO</option>
+            <option class="text-dark" value="JIIEE">JIIEE</option>
+            <option class="text-dark" value="METALS">METALS</option>
+            <option class="text-dark" value="ODD">ODD</option>
+            <option class="text-dark" value="PICE">PICE</option>
+            <option class="text-dark" value="PSME">PSME</option>
+            <option class="text-dark" value="SETS">SETS</option>
           </select>
         </div>
-      </div>
 
       <div class="input-group">
         <label for="tupc_election"><b>TUPC-ID:</b></label>
-        <input type="text" id="tupc_election" class="rounded" placeholder="TUPC-XX-XXXX" autocomplete="off"  />
+        <input type="text" id="tupc_election" class="rounded text-center" placeholder="TUPC-XX-XXXX" autocomplete="off"  />
       </div>
 
       <div class="input-group" style="align-self: end;">
@@ -247,10 +303,13 @@ color: #66666679;
     <div class="signature">
       <i class="fas fa-pen-nib"></i> — Office of Student Affairs<br>
       <i class="fas fa-pen-nib"></i> — TUP Cavite: Commission of Student Elections 
+      <p class="text" style="text-align:start; padding:10px;">
+        Acknowledgment is extended to <strong> Mark Symon Martinez</strong> for the image used.
+
     </div>
   </div>
-  <div class="image">
-    <img src="{% static 'myapp/images/logo.png' %}" alt="Sketch" />
+  <div class="image signature">
+    <img src="{% static 'myapp/images/logo.png' %}" alt="Sketch" /><br>
   </div>
   
 </section>
