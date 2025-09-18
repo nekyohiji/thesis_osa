@@ -121,6 +121,7 @@ urlpatterns = [
     path('admin_election_manage/', views.admin_election_manage_view, name='admin_election_manage'),
     # NEW actions for the manage page (no /admin/ prefix)
     path('admin_election/create/', views.admin_election_create, name='admin_election_create'),
+    path("api/admin/eligibles/scan/<int:eid>/", views.api_eligible_scan, name="eligible_scan"),
     path('admin_election/<int:eid>/open_now/', views.admin_election_open_now, name='admin_election_open_now'),
     path('admin_election/<int:eid>/close_now/', views.admin_election_close_now, name='admin_election_close_now'),
     path('admin_election/<int:eid>/finalize/', views.admin_election_finalize, name='admin_election_finalize'),

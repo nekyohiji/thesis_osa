@@ -149,13 +149,19 @@
 
     function blockHTML(title, rows, extras){
       const abstainRow = (extras && typeof extras.abstain !== 'undefined')
-        ? `<tr class="abstain-row table-danger"><td class="fw-bold">ABSTAIN</td><td>${extras.abstain}</td><td></td></tr>`
+        ? `<tr class="abstain-row table-danger">
+            <td class="fw-bold">ABSTAIN</td>
+            <td>${extras.abstain}</td>
+            <td>${typeof extras.abstain_percent === 'number' ? pct(extras.abstain_percent) + '%' : ''}</td>
+          </tr>`
         : '';
       const subtitle = extras?.subtitle ? `<small class="text-muted ms-2">${extras.subtitle}</small>` : '';
       const modeBadge = extras?.modeBadge ? ` <span class="badge text-bg-info mode-badge">${extras.modeBadge}</span>` : '';
+      const headerInfo = extras?.headerInfo ? `<div class="small text-muted">${extras.headerInfo}</div>` : '';
       return `
         <div class="position-table"  style="border: 0.5px solid rgb(65, 4, 4);  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); border-radius: 1rem;">
           <h5 class="fw-bold text-dark">${title}${modeBadge} ${subtitle}</h5>
+          ${headerInfo}
           <div class="table-responsive">
             <table class="table table-dark align-middle text-center">
               <thead class="table"><tr><th>Name</th><th>Votes</th><th>Percentage</th></tr></thead>
@@ -171,29 +177,69 @@
     function render(){
       if (!payload) return;
       const pos = payload.positions;
+      const ballotsTotal = payload.ballots_total; // <— from backend
       root.innerHTML = '';
 
       // President
+      const p = pos['President'];
       root.insertAdjacentHTML('beforeend', blockHTML(
         'PRESIDENT',
-        pos['President'].candidates,
-        { subtitle:`(SY: ${payload.election.academic_year})`, abstain: pos['President'].abstain }
+        p.candidates,
+        {
+          subtitle:`(SY: ${payload.election.academic_year})`,
+          abstain: p.abstain,
+          abstain_percent: p.abstain_percent,
+          headerInfo: typeof ballotsTotal === 'number' ? `Ballots: ${ballotsTotal}` : '',
+          modeBadge: p.mode === 'majority' ? 'Majority (50%+1)' : undefined
+        }
       ));
+      if (p.mode === 'majority') {
+        root.querySelector('.position-table:last-of-type').insertAdjacentHTML('afterbegin', `
+          <div class="w-100 mb-2 text-center">
+            <div class="alert alert-info py-2">${p.notes || 'Candidate must reach threshold to be seated.'}</div>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-2 justify-content-center">
+              <span class="badge text-bg-secondary">Threshold: ${p.threshold} ballots</span>
+              <span class="badge text-bg-success">Approved: ${(p.approved||[]).length}</span>
+            </div>
+          </div>
+        `);
+      }
 
       // Vice President
+      const v = pos['Vice President'];
       root.insertAdjacentHTML('beforeend', blockHTML(
         'VICE PRESIDENT',
-        pos['Vice President'].candidates,
-        { subtitle:`(SY: ${payload.election.academic_year})`, abstain: pos['Vice President'].abstain }
+        v.candidates,
+        {
+          subtitle:`(SY: ${payload.election.academic_year})`,
+          abstain: v.abstain,
+          abstain_percent: v.abstain_percent,
+          headerInfo: typeof ballotsTotal === 'number' ? `Ballots: ${ballotsTotal}` : '',
+          modeBadge: v.mode === 'majority' ? 'Majority (50%+1)' : undefined
+        }
       ));
+      if (v.mode === 'majority') {
+        root.querySelector('.position-table:last-of-type').insertAdjacentHTML('afterbegin', `
+          <div class="w-100 mb-2 text-center">
+            <div class="alert alert-info py-2">${v.notes || 'Candidate must reach threshold to be seated.'}</div>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-2 justify-content-center">
+              <span class="badge text-bg-secondary">Threshold: ${v.threshold} ballots</span>
+              <span class="badge text-bg-success">Approved: ${(v.approved||[]).length}</span>
+            </div>
+          </div>
+        `);
+      }
 
-      // Senators (plurality vs majority)
+      // Senators
       const sen = pos['Senator'];
       if (sen.mode === 'plurality') {
         const senWrap = document.createElement('div');
         senWrap.innerHTML = blockHTML('SENATORS', sen.candidates, {
           subtitle:`(SY: ${payload.election.academic_year})`,
           abstain: sen.abstain_slots,
+          headerInfo: typeof sen.ballots_total === 'number'
+            ? `Ballots: ${sen.ballots_total}`
+            : (typeof ballotsTotal === 'number' ? `Ballots: ${ballotsTotal}` : ''),
           modeBadge: 'Plurality'
         });
         senWrap.querySelector('.position-table').insertAdjacentHTML('afterbegin', `
@@ -204,35 +250,35 @@
         `);
         root.appendChild(senWrap.firstElementChild);
       } else {
-        // Majority mode
         const senWrap = document.createElement('div');
         senWrap.innerHTML = blockHTML('SENATORS', sen.candidates, {
           subtitle:`(SY: ${payload.election.academic_year})`,
+          headerInfo: typeof sen.ballots_total === 'number'
+            ? `Ballots: ${sen.ballots_total}`
+            : (typeof ballotsTotal === 'number' ? `Ballots: ${ballotsTotal}` : ''),
           modeBadge: 'Majority (50%+1)'
         });
         const infoHTML = `
-        
-        <div class="w-100 mb-3 text-center"> 
-          <div class="alert alert-info py-2 mb-2">
-            ${sen.notes || 'Each candidate must reach the threshold to be seated.'}
-          </div><br>
-          <div class="d-flex flex-wrap align-items-center gap-3 mb-2 justify-content-center">
-            <span class="badge text-bg-secondary">Threshold: ${sen.threshold} ballot${sen.threshold===1?'':'s'}</span>
-            <span class="badge text-bg-dark">Seats: ${sen.seat_count}</span>
-            <span class="badge text-bg-success">Approved: ${(sen.approved||[]).length}</span>
-            <span class="badge text-bg-warning">Vacant: ${sen.vacant_seats}</span>
-          </div>
-          <div class="mb-2">
-            <span class="badge text-bg-success">Approved Candidates</span>
-            <div class="small text-muted mt-1">${(sen.approved||[]).map(w=>w.name).join(', ') || '—'}</div>
-          </div>
-        </div>
-        `;
+          <div class="w-100 mb-3 text-center"> 
+            <div class="alert alert-info py-2 mb-2">
+              ${sen.notes || 'Each candidate must reach the threshold to be seated.'}
+            </div><br>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-2 justify-content-center">
+              <span class="badge text-bg-secondary">Threshold: ${sen.threshold} ballots</span>
+              <span class="badge text-bg-dark">Seats: ${sen.seat_count}</span>
+              <span class="badge text-bg-success">Approved: ${(sen.approved||[]).length}</span>
+              <span class="badge text-bg-warning">Vacant: ${sen.vacant_seats}</span>
+            </div>
+            <div class="mb-2">
+              <span class="badge text-bg-success">Approved Candidates</span>
+              <div class="small text-muted mt-1">${(sen.approved||[]).map(w=>w.name).join(', ') || '—'}</div>
+            </div>
+          </div>`;
         senWrap.querySelector('.position-table').insertAdjacentHTML('afterbegin', infoHTML);
         root.appendChild(senWrap.firstElementChild);
       }
 
-      // Governors by org label
+      // Governors per org
       const gov = pos['Governors'];
       const groups = gov.groups || {};
       const titles = Object.keys(groups).sort();
@@ -241,20 +287,34 @@
       } else {
         titles.forEach(orgLabel=>{
           const g = groups[orgLabel];
-          root.insertAdjacentHTML('beforeend', blockHTML(
-            orgLabel.toUpperCase(),
-            g.candidates,
-            { subtitle:`(SY: ${payload.election.academic_year})` }
-          ));
+          const extras = {
+            subtitle: `(SY: ${payload.election.academic_year})`,
+            headerInfo: `Total Ballots from this Organization: ${g.org_ballots} `,
+            abstain: g.abstain,
+            abstain_percent: g.abstain_percent,
+            modeBadge: g.mode === 'majority' ? 'Majority (50%+1)' : 'Plurality'
+          };
+          root.insertAdjacentHTML('beforeend', blockHTML(orgLabel.toUpperCase(), g.candidates, extras));
+          if (g.mode === 'majority') {
+            root.querySelector('.position-table:last-of-type').insertAdjacentHTML('afterbegin', `
+              <div class="w-100 mb-2 text-center">
+                <div class="alert alert-info py-2">${g.notes || 'Candidate must reach threshold to be seated.'}</div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-2 justify-content-center">
+                  <span class="badge text-bg-secondary">Threshold: ${g.threshold} ballots</span>
+                  <span class="badge text-bg-success">Approved: ${(g.approved||[]).length}</span>
+                </div>
+              </div>
+            `);
+          }
         });
         root.insertAdjacentHTML('beforeend',
           `<div class="small text-muted">Overall Governor abstain ballots: ${gov.overall_abstain}</div>`
         );
       }
-
       // Apply search
       root.querySelectorAll('tbody').forEach(filterTable);
     }
+
 
     async function loadElections(){
       electionFilter.innerHTML = `<option value="">Loading elections…</option>`;

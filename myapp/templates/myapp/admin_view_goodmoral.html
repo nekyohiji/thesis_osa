@@ -128,11 +128,11 @@
           </div>
           <div class="col-md-4">
             <label class="form-label">Date & Time Requested:</label>
-            <input class="form-control" value="" disabled></input>
+            <input class="form-control" value="{{ r.submitted_at }}" disabled></input>
           </div>
           <div class="col-md-4">
             <label class="form-label">Action Taken at:</label>
-            <input class="form-control" value="" disabled></input>
+            <input class="form-control" value="{{ r.updated_at }}" disabled></input>
           </div>
           <div class="col-md-4">
             <label class="form-label">Name of Requester:</label>

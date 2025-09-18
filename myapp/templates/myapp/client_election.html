@@ -187,28 +187,29 @@ color: #66666679;
     <h3 class="text-center">Start to Vote Now!!</h3>
     <p class="text-center">Please enter your registered TUPC ID number to vote.</p>
 
-    <div class="input-row">
-      <div class="input-group">
-        <label for="orgInput" ><b>Program Organization:</b></label>
-        <input list="orgOptions" id="orgInput"  class="rounded" placeholder="Examples: FEO, ACETS, ACTS, PICE" required>
-        <datalist id="orgOptions">
-          <option value="ACETS"></option>
-          <option value="ACTS"></option>
-          <option value="APPLETS"></option>
-          <option value="ETECHS"></option>
-          <option value="FEO"></option>
-          <option value="JIIEE"></option>
-          <option value="METALS"></option>
-          <option value="ODD"></option>
-          <option value="PICE"></option>
-          <option value="PSME"></option>
-          <option value="SETS"></option>
-        </datalist>
+      <div class="input-row">
+        <div class="input-group">
+          <label for="orgInput"><b>Program Organization:</b></label>
+          <select id="orgInput" class="rounded" required>
+            <option value="" disabled selected>Select your organization</option>
+            <option value="ACETS">ACETS</option>
+            <option value="ACTS">ACTS</option>
+            <option value="APPLETS">APPLETS</option>
+            <option value="ETECHS">ETECHS</option>
+            <option value="FEO">FEO</option>
+            <option value="JIIEE">JIIEE</option>
+            <option value="METALS">METALS</option>
+            <option value="ODD">ODD</option>
+            <option value="PICE">PICE</option>
+            <option value="PSME">PSME</option>
+            <option value="SETS">SETS</option>
+          </select>
+        </div>
       </div>
 
       <div class="input-group">
         <label for="tupc_election"><b>TUPC-ID:</b></label>
-        <input type="text" id="tupc_election" class="rounded" placeholder="TUPC-XX-XXXX" />
+        <input type="text" id="tupc_election" class="rounded" placeholder="TUPC-XX-XXXX" autocomplete="off"  />
       </div>
 
       <div class="input-group" style="align-self: end;">

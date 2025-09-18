@@ -78,11 +78,7 @@
         </a>
       </div>
 
-
-
-
 <!-- ELECTION MANAGE -->
-
 
 <div class="container-fluid p-5 rounded" style="background: #c2c1c13b ;">
 
@@ -140,7 +136,9 @@
                       </td>
 
                       {# ✅ Eligible Count cell #}
-                      <td>{{ e.eligibles.all.count }}</td>
+                      <td>
+                        <span class="eligible-count" data-eid="{{ e.id }}">{{ e.eligibles.all.count }}</span>
+                      </td>
 
                       {# Actions #}
                       <td class="text-nowrap d-flex flex-column justify-content-center gap-2">
@@ -232,7 +230,16 @@
             </div>
             <div class="col-6">
               <label class="form-label fw-bold">Start:</label>
-              <input type="date" name="start_date" id="start_date" class="form-control text-center" required min="{{ now|date:'Y-m-d' }}" required>
+              <input
+                type="date"
+                name="start_date"
+                id="start_date"
+                class="form-control text-center"
+                required
+                value="{{ now|date:'Y-m-d' }}"
+                min="{{ now|date:'Y-m-d' }}"
+                max="{{ now|date:'Y-m-d' }}"
+              >
             </div>
             <div class="col-6">
               <label class="form-label fw-bold">End:</label>
@@ -253,38 +260,38 @@
 
 
 
-      {% if request.session.verify_result %}
-        {% with r=request.session.verify_result %}
-          <div class="card mt-3" style="border: 0.5px solid rgb(65, 4, 4);  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); border-radius: 1rem;">
-            <div class="card-body">
-              <h6 class="card-title fw-bold">Verify Result:</h6>
-              <p class="mb-1 text-center"><strong>TUP ID:</strong> {{ r.sid }}</p>
-              {% if r.status == 'eligible' %}
-                <div class="alert alert-success py-2 mb-0 text-center">Eligible to vote.</div>
-              {% elif r.status == 'already_voted' %}
-                <div class="alert alert-info py-2 mb-0 text-center">Vote already recorded.</div>
-              {% elif r.status == 'not_listed' %}
-                <div class="alert alert-danger py-2 mb-0 text-center">Not in eligible list for this election.</div>
-              {% else %}
-                <div class="alert alert-secondary py-2 mb-0 text-center">Enter a TUP ID above to verify.</div>
-              {% endif %}
-            </div>
+      <div class="card mt-3" style="border: 0.5px solid rgb(65, 4, 4); box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-radius: 1rem;">
+        <div class="card-body">
+          <h6 class="card-title fw-bold">Scan / Enroll Eligible</h6>
+
+          <div class="mb-2">
+            <label class="form-label small">Election:</label>
+            <select id="scanElection" class="form-select form-select-sm">
+              {% for e in elections %}
+                <option value="{{ e.id }}" {% if e.status == 'active' %}selected{% endif %}>
+                  {{ e.name }} ({{ e.academic_year }}) — {{ e.status|capfirst }}
+                </option>
+              {% endfor %}
+            </select>
           </div>
-        {% endwith %}
-        {% comment %} clear it next request if you want via view {% endcomment %}
-      {% endif %}
+
+          <div class="input-group input-group-sm mb-2">
+            <span class="input-group-text"><i class="bi bi-qr-code-scan"></i></span>
+            <input id="scanBox" class="form-control" placeholder="Scan or type TUP ID (press Enter)" autocomplete="off" autofocus>
+          </div>
+
+          <div id="scanHint" class="small text-muted mb-2">
+            Tip: handheld scanners act like keyboards—ensure it sends an Enter key after the scan.
+          </div>
+
+          <div id="scanResult" class="d-none"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-
-
-
-
-
-
-
-    <!-- //////////////////////////FOR MODALS-->
+<!-- //////////////////////////FOR MODALS-->
 
 <!-- Enable Voting Modal -->
   <div class="modal fade" id="confirmEnableModal" tabindex="-1" aria-labelledby="enableModalLabel" aria-hidden="true">
@@ -358,16 +365,6 @@
       </div>
   </div>
 
-
-
-
-
-
-          
-  
-  
-  
-  
 <form id="endNowForm" method="post" class="d-none">
   {% csrf_token %}
 </form>
@@ -426,6 +423,100 @@
 </script>
 
 <script>
+(function(){
+  // Build URL like you do for "close now"
+  const scanBase = "{% url 'eligible_scan' 0 %}";
+
+  const elSel   = document.getElementById('scanElection');
+  const elBox   = document.getElementById('scanBox');
+  const elRes   = document.getElementById('scanResult');
+
+  function showResult(kind, html){
+    elRes.className = ''; // reset
+    elRes.classList.add('alert', 'py-2', 'mb-0');
+    elRes.classList.add(kind); // 'alert-success' | 'alert-info' | 'alert-warning' | 'alert-danger'
+    elRes.innerHTML = html;
+    elRes.classList.remove('d-none');
+  }
+
+  function tupOnly(raw){
+    // mirror backend logic: extract TUP id-ish token
+    const m = raw.match(/(TUP[A-Z]*-\d{2}-\d{3,10})/i);
+    let token = m ? m[1] : (raw.split(/\s+/)[0] || raw);
+    token = token.replace(/[‐-‒–—―]/g, '-').replace(/\s+/g, '').replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+    return token.startsWith('TUP') ? token : '';
+  }
+
+  async function doScanSubmit(raw){
+    const eid = elSel.value;
+    const sid = tupOnly(raw);
+    if (!sid){
+      showResult('alert-warning', 'No TUP ID detected. Please scan again.');
+      return;
+    }
+    // POST
+    const url = scanBase.replace('/0/', `/${eid}/`);
+    const fd  = new FormData();
+    fd.append('payload', raw);
+
+    try{
+      const resp = await fetch(url, { method: 'POST', body: fd, headers: { 'X-CSRFToken': '{{ csrf_token }}' }});
+      const data = await resp.json();
+
+      if (data.status === 'enrolled'){
+        showResult('alert-success', `<strong>${data.sid}</strong> enrolled. Eligible count: ${data.eligible_count}${data.already_voted ? ' — <em>Already Voted</em>' : ''}`);
+      } else if (data.status === 'already_eligible'){
+        showResult('alert-info', `<strong>${data.sid}</strong> is already eligible${data.already_voted ? ' — <em>Already Voted</em>' : ''}.`);
+      } else if (data.status === 're_enabled'){
+        showResult('alert-success', `<strong>${data.sid}</strong> re-enabled as eligible.`);
+      } else if (data.status === 'not_in_student'){
+        showResult('alert-danger', `<strong>${data.sid}</strong> not found in Student records.`);
+      } else {
+        showResult('alert-warning', data.message || 'Unexpected response.');
+      }
+      if (Object.prototype.hasOwnProperty.call(data, 'eligible_count')) {
+        document
+          .querySelectorAll(`.eligible-count[data-eid="${eid}"]`)
+          .forEach(el => {
+            el.textContent = Number(data.eligible_count).toLocaleString();
+            el.classList.remove('flash'); // retrigger animation
+            // force reflow to restart CSS animation
+            void el.offsetWidth;
+            el.classList.add('flash');
+          });
+      }
+    }catch(err){
+      showResult('alert-danger', 'Network or server error.');
+    }finally{
+      elBox.value = '';
+      elBox.focus();
+    }
+  }
+
+  if (elBox){
+    // Scanner usually "types" then presses Enter
+    elBox.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        doScanSubmit(elBox.value.trim());
+      }
+    });
+    // Optional: paste trigger
+    elBox.addEventListener('paste', (e) => {
+      setTimeout(() => doScanSubmit(elBox.value.trim()), 0);
+    });
+  }
+})();
+// stay focused even after accidental clicks
+elBox.addEventListener('blur', () => setTimeout(() => elBox.focus(), 0));
+
+// some scanners inject a newline char instead of Enter
+elBox.addEventListener('input', () => {
+  if (/\r|\n/.test(elBox.value)) {
+    const trimmed = elBox.value.replace(/[\r\n]+/g,'').trim();
+    if (trimmed) doScanSubmit(trimmed);
+  }
+});
 document.addEventListener("DOMContentLoaded", function() {
   const startEl = document.getElementById("start_date");
   const endEl = document.getElementById("end_date");
@@ -502,17 +593,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Submit POST when user confirms
   confirmBtn.addEventListener('click', () => form.submit());
 });
-
-
-
-
-
-
-
-
-
-
-
 
   // Toggle buttons (verify and uplaod)
 document.addEventListener('DOMContentLoaded', function () {

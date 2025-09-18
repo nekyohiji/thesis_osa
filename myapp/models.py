@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
 from django.db.models import Q
+from django.utils.timezone import now
 
 class Student(models.Model):
     tupc_id = models.CharField(max_length=50, unique=True)
@@ -360,6 +361,7 @@ class IDSurrenderRequest(models.Model):
     status   = models.CharField(max_length=8, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
     message  = models.TextField(blank=True) 
     submitted_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    status_updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
     acknowledgement_receipt = models.FileField(
     upload_to="surrender_ids/receipts/%Y/%m/%d/",
     validators=[FileExtensionValidator(["pdf"]), validate_file_size],
@@ -384,6 +386,16 @@ class IDSurrenderRequest(models.Model):
         elif self.document_type == self.DOC_AFFIDAVIT:
             if not self.upload_id_front:
                 raise ValidationError({"upload_id_front": "Affidavit first page is required."})
+            
+    def save(self, *args, **kwargs):
+        if self.pk:  # record already exists
+            old = IDSurrenderRequest.objects.filter(pk=self.pk).values("status").first()
+            if old and old["status"] != self.status:
+                self.status_updated_at = now()
+        else:
+            # On creation, set status_updated_at same as submitted_at
+            self.status_updated_at = now()
+        super().save(*args, **kwargs)
         
     def __str__(self):
         return f"{self.student_number} — {self.surname}, {self.first_name} ({self.status})"

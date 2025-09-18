@@ -112,10 +112,10 @@
         <div class="card-header bg-white text-dark fw-bold"> <i class="bi bi-journal-text"></i> Request Details</div><br>
         <div class="card-body row g-3">
           <div class="col"><label class="form-label"> Date and time Requested:</label>
-            <input class="form-control" value="" disabled>
+            <input class="form-control" value="{{ req.submitted_at }}" disabled>
           </div>
           <div class="col"><label class="form-label">Action Taken at:</label>
-            <input class="form-control" value="" disabled>
+            <input class="form-control" value="{{ req.status_updated_at }}" disabled>
           </div>
         </div>
       </div>

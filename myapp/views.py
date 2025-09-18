@@ -733,7 +733,7 @@ def login_view(request):
                 elif user.role == 'scholarship':
                     return redirect('admin_scholarships')
                 elif user.role == 'comselec':
-                    return redirect('admin_election_view')
+                    return redirect('admin_election')
                 else:
                     messages.error(request, "Account role not recognized.", extra_tags="LOGIN")
             else:
@@ -3637,12 +3637,7 @@ def delete_candidate(request, cid):
 ###################################################################
 @role_required(['admin', 'comselec'])
 def admin_election_results_view(request):
-    """
-    Renders the results page. The page will call the JSON APIs below to load
-    the election list and the result tallies.
-    """
     return render(request, 'myapp/admin_election_results.html')
-
 
 @role_required(['admin', 'comselec'])
 @require_http_methods(["GET"])
@@ -3664,39 +3659,11 @@ def api_admin_elections_list(request):
         })
     return JsonResponse({"status": "success", "elections": out})
 
-
 @role_required(['admin', 'comselec'])
 @require_http_methods(["GET"])
 def api_admin_results_data(request):
     """
     GET /api/admin/results/?election_id=<id>   (if omitted -> active election)
-
-    Response shape:
-    {
-      status: "success",
-      election: {id, name, academic_year},
-      positions: {
-        "President":     {candidates:[{id,name,party,votes,percent}], abstain:int},
-        "Vice President":{candidates:[...], abstain:int},
-        "Senator": {
-           mode: "plurality" | "majority",
-           seat_count: 9,
-           candidates:[{id,name,party,votes,percent}],  # percent = share of ballots
-           # plurality-only:
-           winners:[{...}],
-           abstain_slots: <sum of blank senator slots across all ballots>,
-           # majority-only:
-           threshold: <50%+1 of ballots>,
-           approved:[{...}],
-           vacant_seats: <0..9>,
-           notes: "Uncontested senate: each candidate must reach 50%+1 of ballots."
-        },
-        "Governors": {
-           groups: { "FEO Governor": {candidates:[...]}, ... },
-           overall_abstain: <count of ballots with governor=None>
-        }
-      }
-    }
     """
     # --- resolve election ---
     eid = request.GET.get('election_id')
@@ -3721,7 +3688,7 @@ def api_admin_results_data(request):
 
     # --- all vote rows for this election ---
     votes_qs = Vote.objects.filter(election=e)
-    ballots_total = votes_qs.count()  # used for senator majority threshold & percentages
+    ballots_total = votes_qs.count()  # used for thresholds & percentages
 
     # --- init tallies ---
     def init_counts(qs):
@@ -3732,8 +3699,26 @@ def api_admin_results_data(request):
     sen_counts  = init_counts(sen_qs)
 
     gov_labels = sorted(gov_qs.values_list('position', flat=True).distinct())
-    gov_counts_by_label = {label: init_counts(gov_qs.filter(position=label)) for label in gov_labels}
-    governor_abstain_overall = 0
+
+    # Helpers for org-based governor math
+    def _org_key_from_label(label: str) -> str:
+        # "FEO Governor" -> "FEO"
+        return (label or "").replace(" Governor", "").strip().upper()
+
+    # Map governor-candidate-id -> org key
+    gov_cid_to_org = {}
+    for label in gov_labels:
+        orgk = _org_key_from_label(label)
+        for cid in gov_qs.filter(position=label).values_list('id', flat=True):
+            gov_cid_to_org[cid] = orgk
+
+    # Per-org electorate and per-org candidate counters
+    org_keys = sorted({_org_key_from_label(lbl) for lbl in gov_labels} - {''})
+    ballots_per_org = {k: 0 for k in org_keys}
+    gov_counts_by_org = {
+        k: {cid: 0 for cid in gov_qs.filter(position=f"{k} Governor").values_list('id', flat=True)}
+        for k in org_keys
+    }
 
     SENATOR_SEATS = 9
 
@@ -3768,15 +3753,21 @@ def api_admin_results_data(request):
                 senator_filled_slots_total += 1
                 seen.add(sid)
 
-        # Governor
+        # Governor (per-org electorate)
         gid = b.get('governor')
-        if gid:
-            for label in gov_labels:
-                if gid in gov_counts_by_label[label]:
-                    gov_counts_by_label[label][gid] += 1
-                    break
+        voter_org = (b.get('voter_org') or '').strip().upper()
+
+        # infer org for legacy rows with no voter_org but with a governor pick
+        if not voter_org and gid and gid in gov_cid_to_org:
+            voter_org = gov_cid_to_org.get(gid, '')
+
+        if voter_org in ballots_per_org:
+            ballots_per_org[voter_org] += 1
+            if gid and gid in gov_counts_by_org[voter_org]:
+                gov_counts_by_org[voter_org][gid] += 1
         else:
-            governor_abstain_overall += 1
+            # no org / not mapped -> exclude from org electorates (doesn't harm anyone)
+            pass
 
     # --- helpers to pack lists ---
     def pack_list_percent_of_total_ballots(qs, counts: dict):
@@ -3796,35 +3787,27 @@ def api_admin_results_data(request):
         out.sort(key=lambda x: (-x['votes'], x['name'].lower()))
         return out
 
-    def pack_list_percent_of_sum(qs, counts: dict):
-        """Percent relative to sum(counts) — keep this for President/VP UI consistency."""
-        total = sum(counts.values()) or 1
-        meta = {c.id: (c.name, (c.party or '')) for c in qs}
-        out = []
-        for cid, cnt in counts.items():
-            name, party = meta.get(cid, (f"#{cid}", ""))
-            out.append({
-                "id": cid,
-                "name": name,
-                "party": party,
-                "votes": cnt,
-                "percent": round(cnt * 100.0 / total, 2)
-            })
-        out.sort(key=lambda x: (-x['votes'], x['name'].lower()))
-        return out
+    # --- Single-seat blocks (President/VP as percent of total ballots) ---
+    def single_seat_block(qs, counts, abstain_count, title):
+        rows = pack_list_percent_of_total_ballots(qs, counts)
+        single_candidate = qs.count() == 1
+        block = {
+            "mode": "majority" if single_candidate else "plurality",
+            "candidates": rows,
+            "abstain": abstain_count,
+            "abstain_percent": round((abstain_count * 100.0 / (ballots_total or 1)), 2),
+        }
+        if single_candidate:
+            threshold = (ballots_total // 2) + 1 if ballots_total > 0 else 0
+            block["threshold"] = threshold
+            block["approved"] = [r for r in rows if r["votes"] >= threshold][:1]
+            block["notes"] = f"Uncontested {title}: candidate must reach 50%+1 of ballots."
+        return block
 
-    # --- President & VP blocks (same as before) ---
-    president_block = {
-        "candidates": pack_list_percent_of_sum(pres_qs, pres_counts),
-        "abstain": pres_abstain
-    }
-    vp_block = {
-        "candidates": pack_list_percent_of_sum(vp_qs, vp_counts),
-        "abstain": vp_abstain
-    }
+    president_block = single_seat_block(pres_qs, pres_counts, pres_abstain, "President")
+    vp_block        = single_seat_block(vp_qs,   vp_counts,   vp_abstain,   "Vice President")
 
     # --- Senators: decide MAJORITY vs PLURALITY ---
-    # Normalize parties for mode detection
     def _norm_party(p):
         p = (p or '').strip().upper()
         return p if p else 'INDEPENDENT'
@@ -3836,11 +3819,9 @@ def api_admin_results_data(request):
 
     if uncontested:
         # MAJORITY mode (50%+1 of ballots)
-        threshold = (ballots_total // 2) + 1
-        approved = [r for r in sen_rows if r["votes"] >= threshold]
-        approved = approved[:SENATOR_SEATS]
+        threshold = (ballots_total // 2) + 1 if ballots_total > 0 else 0
+        approved = [r for r in sen_rows if r["votes"] >= threshold][:SENATOR_SEATS]
         vacant = max(0, SENATOR_SEATS - len(approved))
-
         senator_block = {
             "mode": "majority",
             "seat_count": SENATOR_SEATS,
@@ -3853,9 +3834,7 @@ def api_admin_results_data(request):
     else:
         # PLURALITY mode (Top 9)
         winners = sen_rows[:SENATOR_SEATS]
-        # optional transparency: how many senator slots were left blank
         abstain_slots = max(0, senator_total_slots - senator_filled_slots_total)
-
         senator_block = {
             "mode": "plurality",
             "seat_count": SENATOR_SEATS,
@@ -3864,22 +3843,70 @@ def api_admin_results_data(request):
             "abstain_slots": abstain_slots
         }
 
-    # --- Governors by org label ---
+    # include ballots_total for both senator modes
+    senator_block["ballots_total"] = ballots_total
+
+    # --- Governors by org label (percent & thresholds use org electorate) ---
     def pack_governor_block(label):
+        orgk = _org_key_from_label(label)
         qs = gov_qs.filter(position=label)
-        counts = gov_counts_by_label[label]
-        # For governors, percent-of-sum is fine (single-seat race per org)
-        return {"candidates": pack_list_percent_of_sum(qs, counts)}
+        candidate_ids = list(qs.values_list('id', flat=True))
+
+        org_total = ballots_per_org.get(orgk, 0)
+        counts_map = gov_counts_by_org.get(orgk, {cid: 0 for cid in candidate_ids})
+
+        base_pct = org_total or 1
+        meta = {c.id: (c.name, (c.party or '')) for c in qs}
+        rows = []
+        for cid in candidate_ids:
+            cnt = counts_map.get(cid, 0)
+            name, party = meta.get(cid, (f"#{cid}", ""))
+            rows.append({
+                "id": cid,
+                "name": name,
+                "party": party,
+                "votes": cnt,
+                "percent": round(cnt * 100.0 / base_pct, 2)
+            })
+        rows.sort(key=lambda x: (-x['votes'], x['name'].lower()))
+
+        abstain_cnt = max(0, org_total - sum(counts_map.get(cid, 0) for cid in candidate_ids))
+        abstain_pct = round(abstain_cnt * 100.0 / base_pct, 2)
+
+        mode = "majority" if qs.count() == 1 else "plurality"
+        block = {
+            "candidates": rows,
+            "mode": mode,
+            "org_ballots": org_total,
+            "abstain": abstain_cnt,
+            "abstain_percent": abstain_pct,
+        }
+        if mode == "majority":
+            threshold = (org_total // 2) + 1 if org_total > 0 else 0
+            block["threshold"] = threshold
+            block["approved"] = [r for r in rows if r["votes"] >= threshold][:1]
+            block["notes"] = f"{label}: candidate must reach 50%+1 of eligible ballots."
+        return block
 
     gov_groups = {label: pack_governor_block(label) for label in gov_labels}
+
+    # Optional: overall governor abstain (sum of per-org abstains)
+    overall_abstain = sum(
+        max(0, ballots_per_org.get(_org_key_from_label(lbl), 0) -
+                sum(gov_counts_by_org.get(_org_key_from_label(lbl), {}).values()))
+        for lbl in gov_labels
+    )
+
     governors_block = {
         "groups": gov_groups,
-        "overall_abstain": governor_abstain_overall
+        "overall_abstain": overall_abstain
     }
 
+    # --- RESPONSE ---
     return JsonResponse({
         "status": "success",
         "election": {"id": e.id, "name": e.name, "academic_year": e.academic_year},
+        "ballots_total": ballots_total,  # top-level for easy UI reference
         "positions": {
             "President": president_block,
             "Vice President": vp_block,
@@ -3887,6 +3914,8 @@ def api_admin_results_data(request):
             "Governors": governors_block
         }
     })
+
+
 
 ###################################################################
 @role_required(['admin', 'comselec'])
@@ -3971,6 +4000,76 @@ def normalize_tup_id(s: str) -> str:
     # uppercase
     return s.upper()
 
+ID_SCAN_REGEX = re.compile(r"(TUP[A-Z]*-\d{2}-\d{3,10})", re.IGNORECASE)
+
+def extract_tup_id_from_qr(raw: str) -> str:
+    if not raw:
+        return ""
+    m = ID_SCAN_REGEX.search(raw)
+    if m:
+        return normalize_tup_id(m.group(1))
+    # fallback: take first token & normalize if it looks like a TUP id
+    token = (raw.split()[0] if raw.split() else raw)
+    token = normalize_tup_id(token)
+    return token if token.startswith("TUP") else ""
+
+@role_required(['admin', 'comselec'])
+@require_POST
+def api_eligible_scan(request, eid):
+    """
+    POST /api/admin/eligibles/scan/<eid>/
+    Body: payload=<raw QR/string>   (e.g., "TUPC-22-0374 RIBERAL LORD ...")
+    Action:
+      - parse TUP ID
+      - ensure Student exists
+      - add to EligibleVoter(election=eid) if not present
+      - report already_voted / already_eligible
+    """
+    election = get_object_or_404(Election, id=eid)
+    raw = (request.POST.get('payload') or '').strip()
+    sid = extract_tup_id_from_qr(raw)
+
+    if not sid:
+        return JsonResponse({"status": "error", "message": "No TUP ID found in scan."}, status=400)
+
+    # Must exist in Student table (same check as CSV upload)
+    from myapp.models import Student  # adjust import path if needed
+    exists = Student.objects.filter(tupc_id__iexact=sid).exists()
+    if not exists:
+        return JsonResponse({"status": "not_in_student", "sid": sid})
+
+    # Check vote status
+    already_voted = Vote.objects.filter(election=election, voter_student_id__iexact=sid).exists()
+
+    # Create or reuse EligibleVoter
+    qs = EligibleVoter.objects.filter(election=election, student_id__iexact=sid)
+    if qs.exists():
+        ev = qs.first()
+        if not ev.is_eligible:
+            ev.is_eligible = True
+            ev.save(update_fields=['is_eligible'])
+            result = "re_enabled"
+        else:
+            result = "already_eligible"
+    else:
+        EligibleVoter.objects.create(election=election, student_id=sid, is_eligible=True)
+        result = "enrolled"
+
+    # Optional: pull student info to display
+    stu = Student.objects.filter(tupc_id__iexact=sid).values('tupc_id', 'first_name', 'last_name', 'program').first() or {}
+    name = f"{stu.get('first_name','') or ''} {stu.get('last_name','') or ''}".strip() or None
+
+    return JsonResponse({
+        "status": result,
+        "sid": sid,
+        "already_voted": already_voted,
+        "eligible_count": election.eligibles.count(),
+        "student": {
+            "name": name,
+            "program": stu.get('program') or None,
+        }
+    })
+    
 @role_required(['admin', 'comselec'])
 @require_POST
 def eligibles_verify_view(request, eid):
@@ -3998,8 +4097,6 @@ def eligibles_verify_view(request, eid):
 
     request.session['verify_result'] = {'eid': election.id, 'sid': sid, 'status': status}
     return redirect('admin_election_manage')
-
-    # ------------------------ ELECTION - CLIENT
 
 def _to_aware(dt_str):
     dt = parse_datetime(dt_str)  # expects 'YYYY-MM-DDTHH:MM'
@@ -4061,7 +4158,6 @@ def admin_election_create(request):
     )
     messages.success(request, f"Election {ay} created as {'Active' if status=='active' else 'Scheduled'}.")
     return redirect('admin_election_manage')
-
 
 @role_required(['admin', 'comselec'])
 @require_POST
@@ -4359,7 +4455,8 @@ def api_submit_vote(request):
                 "president": president_id,             # or None (abstain)
                 "vice_president": vice_president_id,   # or None
                 "senators": norm_sen,                  # list of ids (<=9)
-                "governor": governor_id                # or None
+                "governor": governor_id,                # or None
+                "voter_org": org                       # <— ADD THIS (critical)
             }
         )
 

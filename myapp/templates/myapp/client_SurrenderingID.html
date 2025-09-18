@@ -105,7 +105,15 @@ surrendering id
                     <div class="col-md-6 mb-3" id="programCol">
                         <label class="form-label fw-semibold">Program (Acronym Only):</label>
                         <input type="text" class="form-control" id="program_surrender" name="program" placeholder="BET-COET" minlength ="2" maxlength="10" required
-                          inputmode="text" pattern="^[A-Za-z]+(?:-[A-Za-z]+)*$" title="Letters and hyphens only. No spaces; hyphens must be between letters." oninput="this.value=this.value.replace(/[^A-Za-z-]/g,'').replace(/-{2,}/g,'-').replace(/^-+|-+$/g,'')">
+                          inputmode="text" pattern="^[A-Za-z]+(?:[-\u2010\u2011\u2012\u2013\u2014\u2212][A-Za-z]+)*$" title="Letters and hyphens only. No spaces; hyphens must be between letters." 
+                          oninput="this.value = this.value
+                              .normalize('NFC')
+                              .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g,'-')  /* normalize unicode dashes */
+                              .replace(/[^A-Za-z-]/g,'')                               /* keep letters & '-' */
+                              .replace(/-{2,}/g,'-')                                   /* collapse -- */
+                              .replace(/^-+/, '');                                     /* strip **leading** '-' only */"
+                            onblur="this.value = this.value.replace(/-+$/,'');"         /* strip trailing '-' when leaving field */
+                          />
                     </div>
                 
 
