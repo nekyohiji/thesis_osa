@@ -138,7 +138,7 @@ urlpatterns = [
     path('api/eligibility/', views.api_check_eligibility, name='api_check_eligibility'),
     path('api/ballot/', views.api_get_ballot, name='api_get_ballot'),
     path('api/submit_vote/', views.api_submit_vote, name='api_submit_vote'),
-    path('logout/', views.client_logout, name='client_logout'),
+    path('client/logout/', views.client_logout, name='client_logout'),
     
     
     

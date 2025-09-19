@@ -48,6 +48,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.finders import find as find_static
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from django.contrib import messages
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_naive
@@ -4258,11 +4259,13 @@ def voter_required_api(view_func):
     return _wrapped
 
 # ---------- Pages ----------
+@never_cache
 @ensure_csrf_cookie
 def client_election_view(request):
     """Login page (org + TUPC ID)."""
     return render(request, 'myapp/client_election.html')
 
+@never_cache
 @ensure_csrf_cookie
 @voter_required_page
 def client_view_election_view(request):
@@ -4273,11 +4276,12 @@ def client_view_election_view(request):
         'voter_org': request.voter.get('org'),
     })
 
+@never_cache
 def client_logout(request):
     request.session.pop('voter', None)
     request.session.modified = True
     messages.success(request, "You have been logged out.")
-    return redirect(request, 'myapp/client_election.html')
+    return redirect('client_election')
 
 # ---------- Login API (eligibility + session login) ----------
 
