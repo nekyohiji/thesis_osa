@@ -25,6 +25,8 @@ from django.core.mail import EmailMultiAlternatives, BadHeaderError
 from django.utils import timezone
 import unicodedata
 import re
+from threading import Thread
+from django.core.mail import send_mail as _send_mail
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -506,3 +508,17 @@ def safe_body(request):
 def gen_otp():
     # 6-digit, cryptographically secure
     return "".join(secrets.choice("0123456789") for _ in range(6))
+
+
+
+
+
+#################################
+def send_mail_async(*args, **kwargs):
+    def _job():
+        try:
+            _send_mail(*args, **kwargs)
+        except Exception:
+            # optional: log the exception
+            pass
+    Thread(target=_job, daemon=True).start()

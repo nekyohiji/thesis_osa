@@ -116,7 +116,7 @@ from .models import (
     Vote,
     Candidate,
 )
-from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email, build_student_email, send_violation_notice
+from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email, build_student_email, send_violation_notice, send_mail_async
 
 logger = logging.getLogger(__name__)
 #################################################################################################################
@@ -4463,7 +4463,7 @@ def api_submit_vote(request):
     # Email receipt (optional; never fail the vote if email sending fails)
     if email:
         chosen_ids = [x for x in [president_id, vice_president_id, governor_id, *norm_sen] if x]
-        names = dict(Candidate.objects.filter(id__in=chosen_ids).values_list('id','name'))
+        names = dict(Candidate.objects.filter(id__in=chosen_ids).values_list('id', 'name'))
 
         def n(id_): return "ABSTAIN" if not id_ else names.get(int(id_), f"#{id_}")
         lines = []
@@ -4479,28 +4479,15 @@ def api_submit_vote(request):
         lines.append("Thank you for voting!")
         body = "\n".join(lines)
 
-        try:
-            send_mail(
+        def _send():
+            send_mail_async(
                 subject=f"{e.name} ({e.academic_year}) - Your Ballot Receipt",
                 message=body,
                 from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@localhost'),
                 recipient_list=[email],
                 fail_silently=False,
             )
-            # optional copy to OSA (respect your env switches)
-            if getattr(settings, 'OSA_SEND_USER_COPY', True):
-                osa = getattr(settings, 'OSA_INBOX', None)
-                if osa:
-                    send_mail(
-                        subject=f"[Copy] {e.name} ({e.academic_year}) - Ballot for {sid}",
-                        message=body,
-                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@localhost'),
-                        recipient_list=[osa],
-                        fail_silently=True,
-                    )
-        except Exception as ex:
-            # Don’t fail vote on email errors; surface as note to frontend if you want
-            return JsonResponse({"status":"success", "email_error": str(ex), "logout_after": 5})
+        transaction.on_commit(_send)  # only fire after the DB commit succeeds
 
     # ✅ Tell frontend to show success modal for 5s, then redirect to /logout/
     return JsonResponse({"status":"success", "logout_after": 5})
