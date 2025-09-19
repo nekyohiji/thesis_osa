@@ -723,7 +723,7 @@ function isArray(x) { return Array.isArray(x); }
     el.type = (el.type === 'password') ? 'text' : 'password';
   };
 
-  const gmailOnly = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // matches your HTML pattern
+  const gmailOnly = /^[A-Za-z0-9._%+-]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$/i; // matches your HTML pattern
 
   function allCreateFieldsValid() {
     const fullName = (fullNameEl.value || '').trim();
