@@ -146,7 +146,6 @@
 
 
                         <button type="button" class="btn btn-sm  elig-toggle-btn text-light"  style="background: #440207;" data-target="upload">Upload</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary elig-toggle-btn" data-target="verify">Verify ID</button>
 
                         <!-- Upload eligibles -->
                         <form method="post" action="{% url 'eligibles_upload' e.id %}" enctype="multipart/form-data" class="d-none toggle-form upload mt-2">
@@ -155,15 +154,6 @@
                         <div class="d-flex gap-2 align-items-center">
                           <input type="file" name="csv" accept=".csv" class="form-control form-control-sm" required>
                           <button class="btn btn-sm text-light " style="background: #440207;">Upload</button>
-                        </div>
-                        </form>
-
-                        <!-- Verify -->
-                        <form method="post" action="{% url 'eligibles_verify' e.id %}" class="d-none toggle-form verify mt-2">
-                          {% csrf_token %}
-                        <div class="d-flex gap-2 align-items-center">
-                          <input name="student_id" placeholder="TUP ID" class="form-control form-control-sm" required>
-                          <button class="btn btn-sm btn-outline-secondary">Verify ID</button>
                         </div>
                         </form>
 
@@ -424,44 +414,54 @@
 
 <script>
 (function(){
-  // Build URL like you do for "close now"
   const scanBase = "{% url 'eligible_scan' 0 %}";
 
-  const elSel   = document.getElementById('scanElection');
-  const elBox   = document.getElementById('scanBox');
-  const elRes   = document.getElementById('scanResult');
+  const elSel = document.getElementById('scanElection');
+  const elBox = document.getElementById('scanBox');
+  const elRes = document.getElementById('scanResult');
+
+  if (!elBox || !elSel || !elRes) return; // guard against missing nodes
 
   function showResult(kind, html){
-    elRes.className = ''; // reset
-    elRes.classList.add('alert', 'py-2', 'mb-0');
-    elRes.classList.add(kind); // 'alert-success' | 'alert-info' | 'alert-warning' | 'alert-danger'
+    elRes.className = '';
+    elRes.classList.add('alert','py-2','mb-0', kind);
     elRes.innerHTML = html;
     elRes.classList.remove('d-none');
   }
 
   function tupOnly(raw){
-    // mirror backend logic: extract TUP id-ish token
     const m = raw.match(/(TUP[A-Z]*-\d{2}-\d{3,10})/i);
     let token = m ? m[1] : (raw.split(/\s+/)[0] || raw);
-    token = token.replace(/[‐-‒–—―]/g, '-').replace(/\s+/g, '').replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+    token = token.replace(/[‐-‒–—―]/g,'-').replace(/\s+/g,'').replace(/[^A-Za-z0-9-]/g,'').toUpperCase();
     return token.startsWith('TUP') ? token : '';
   }
+
+  function getCookie(name){
+    return document.cookie.split('; ').reduce((a,v)=>{
+      const [k, ...rest] = v.split('=');
+      return k===name ? decodeURIComponent(rest.join('=')) : a;
+    }, null);
+  }
+  const csrftoken = getCookie('csrftoken');
 
   async function doScanSubmit(raw){
     const eid = elSel.value;
     const sid = tupOnly(raw);
-    if (!sid){
-      showResult('alert-warning', 'No TUP ID detected. Please scan again.');
-      return;
-    }
-    // POST
+    if (!sid){ showResult('alert-warning','No TUP ID detected. Please scan again.'); return; }
+
     const url = scanBase.replace('/0/', `/${eid}/`);
     const fd  = new FormData();
     fd.append('payload', raw);
 
     try{
-      const resp = await fetch(url, { method: 'POST', body: fd, headers: { 'X-CSRFToken': '{{ csrf_token }}' }});
-      const data = await resp.json();
+      const resp = await fetch(url, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-CSRFToken': csrftoken },
+        credentials: 'same-origin'
+      });
+      let data; try{ data = await resp.json(); } catch { data = {}; }
+      if (!resp.ok){ showResult('alert-danger', data.message || 'Scan failed (CSRF/session or server error).'); return; }
 
       if (data.status === 'enrolled'){
         showResult('alert-success', `<strong>${data.sid}</strong> enrolled. Eligible count: ${data.eligible_count}${data.already_voted ? ' — <em>Already Voted</em>' : ''}`);
@@ -474,49 +474,50 @@
       } else {
         showResult('alert-warning', data.message || 'Unexpected response.');
       }
-      if (Object.prototype.hasOwnProperty.call(data, 'eligible_count')) {
-        document
-          .querySelectorAll(`.eligible-count[data-eid="${eid}"]`)
-          .forEach(el => {
-            el.textContent = Number(data.eligible_count).toLocaleString();
-            el.classList.remove('flash'); // retrigger animation
-            // force reflow to restart CSS animation
-            void el.offsetWidth;
-            el.classList.add('flash');
-          });
+
+      if (Object.prototype.hasOwnProperty.call(data, 'eligible_count')){
+        document.querySelectorAll(`.eligible-count[data-eid="${eid}"]`).forEach(el=>{
+          el.textContent = Number(data.eligible_count).toLocaleString();
+          el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+        });
       }
-    }catch(err){
-      showResult('alert-danger', 'Network or server error.');
-    }finally{
+    } catch {
+      showResult('alert-danger','Network or server error.');
+    } finally {
       elBox.value = '';
       elBox.focus();
     }
   }
 
-  if (elBox){
-    // Scanner usually "types" then presses Enter
-    elBox.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter'){
-        e.preventDefault();
-        doScanSubmit(elBox.value.trim());
-      }
-    });
-    // Optional: paste trigger
-    elBox.addEventListener('paste', (e) => {
-      setTimeout(() => doScanSubmit(elBox.value.trim()), 0);
-    });
-  }
-})();
-// stay focused even after accidental clicks
-elBox.addEventListener('blur', () => setTimeout(() => elBox.focus(), 0));
+  elBox.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); doScanSubmit(elBox.value.trim()); }
+  });
 
-// some scanners inject a newline char instead of Enter
-elBox.addEventListener('input', () => {
-  if (/\r|\n/.test(elBox.value)) {
-    const trimmed = elBox.value.replace(/[\r\n]+/g,'').trim();
-    if (trimmed) doScanSubmit(trimmed);
-  }
-});
+  elBox.addEventListener('paste', () => {
+    setTimeout(() => doScanSubmit(elBox.value.trim()), 0);
+  });
+
+  let keepScanFocus = false; // leave false to avoid trapping the form
+  elBox.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!keepScanFocus) return;
+      const ae = document.activeElement;
+      if (!ae || ae === document.body) elBox.focus();
+    }, 0);
+  }); // ← you were missing this
+
+  elBox.addEventListener('input', () => {
+    if (/\r|\n/.test(elBox.value)) {
+      const trimmed = elBox.value.replace(/[\r\n]+/g,'').trim();
+      if (trimmed) doScanSubmit(trimmed);
+    }
+  });
+
+  // nice-to-have: clear result when switching election
+  elSel.addEventListener('change', () => { elRes.classList.add('d-none'); elRes.innerHTML=''; });
+})();
+
+
 document.addEventListener("DOMContentLoaded", function() {
   const startEl = document.getElementById("start_date");
   const endEl = document.getElementById("end_date");

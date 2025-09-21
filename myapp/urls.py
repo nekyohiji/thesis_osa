@@ -128,10 +128,7 @@ urlpatterns = [
 
     # Whitelist (TUP-ID only) upload + verify
     path('admin_election/<int:eid>/eligibles/upload/', views.eligibles_upload_view, name='eligibles_upload'),
-    path('admin_election/<int:eid>/eligibles/verify/', views.eligibles_verify_view, name='eligibles_verify'),
 
-    
-     
     ###-------------------ELECTION - client
     path('client_election/', views.client_election_view, name='client_election'),
     path('client_view_election/', views.client_view_election_view, name='client_view_election'),

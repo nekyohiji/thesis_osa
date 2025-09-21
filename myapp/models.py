@@ -734,20 +734,27 @@ class Facilitator(models.Model):
 
 class Election(models.Model):
     STATUS_CHOICES = [
-        ('scheduled', 'Scheduled'),
         ('active', 'Active'),
         ('closed', 'Closed'),
         ('finalized', 'Finalized'),
     ]
     name = models.CharField(max_length=120)
-    academic_year = models.CharField(max_length=9)  # e.g., "2025-2026"
+    academic_year = models.CharField(max_length=9) 
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     is_finalized = models.BooleanField(default=False)
     def __str__(self): return f"{self.name} ({self.academic_year})"
     class Meta:
         db_table = 'Election'
+        indexes = [models.Index(fields=['status'])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['status'],
+                condition=Q(status='active'),
+                name='only_one_active_election',
+            ),
+        ]
 
 class EligibleVoter(models.Model):
     election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name='eligibles')
@@ -765,7 +772,6 @@ class Vote(models.Model):
     cast_at = models.DateTimeField(auto_now_add=True)
     email = models.EmailField(blank=True, null=True, default="")  # <-- make optional
     ballot = models.JSONField(default=dict)  
-    email = models.EmailField(blank=True)
     class Meta:
         unique_together = [('election', 'voter_student_id')]
         indexes = [models.Index(fields=['election','voter_student_id'])]

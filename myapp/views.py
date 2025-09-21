@@ -3938,41 +3938,66 @@ def eligibles_upload_view(request, eid):
         return redirect('admin_election_manage')
 
     try:
-        raw = f.read().decode('utf-8-sig', errors='ignore')  
+        raw = f.read().decode('utf-8-sig', errors='ignore')
         raw_ids = (line.strip().strip(',;') for line in io.StringIO(raw))
-        ids = []
-        seen = set()
+
+        ids, seen = [], set()
         for s in raw_ids:
-            sid = normalize_tup_id(s) 
+            sid = normalize_tup_id(s)
             if sid and sid not in seen:
-                ids.append(sid)
-                seen.add(sid)
+                ids.append(sid); seen.add(sid)
 
         if not ids:
             messages.error(request, "No valid TUP IDs found in file.")
             return redirect('admin_election_manage')
 
-        existing = set(
-            Student.objects.filter(tupc_id__in=ids)
-            .values_list('tupc_id', flat=True)
+        existing_students = set(
+            Student.objects.filter(tupc_id__in=ids).values_list('tupc_id', flat=True)
         )
-        matched = [sid for sid in ids if sid in existing]
-        skipped = [sid for sid in ids if sid not in existing]
+        matched = [sid for sid in ids if sid in existing_students]
+        skipped = [sid for sid in ids if sid not in existing_students]
+
+        if not matched:
+            messages.error(request, "No IDs matched Student records.")
+            if skipped:
+                sample = ", ".join(skipped[:10])
+                more = f" …(+{len(skipped)-10} more)" if len(skipped) > 10 else ""
+                messages.info(request, f"Not in Student (sample): {sample}{more}")
+            return redirect('admin_election_manage')
+
+        created_count = 0
+        enabled_count = 0
 
         with transaction.atomic():
-            EligibleVoter.objects.filter(election=election).delete()
-            EligibleVoter.objects.bulk_create(
-                [EligibleVoter(election=election, student_id=sid, is_eligible=True) for sid in matched],
-                batch_size=2000
+            existing_qs = EligibleVoter.objects.select_for_update().filter(
+                election=election, student_id__in=matched
             )
+            existing_list = list(existing_qs)
+            existing_map = {ev.student_id: ev for ev in existing_list}
+            to_create_sids = [sid for sid in matched if sid not in existing_map]
+            to_create = [
+                EligibleVoter(election=election, student_id=sid, is_eligible=True)
+                for sid in to_create_sids
+            ]
+            if to_create:
+                EligibleVoter.objects.bulk_create(to_create, ignore_conflicts=True, batch_size=2000)
+                created_count = EligibleVoter.objects.filter(
+                    election=election, student_id__in=to_create_sids
+                ).count()
 
-        total = len(list(io.StringIO(raw)))
+            to_enable_ids = [ev.id for ev in existing_list if not ev.is_eligible]
+            if to_enable_ids:
+                updated = EligibleVoter.objects.filter(id__in=to_enable_ids).update(is_eligible=True)
+                enabled_count = updated
+
         messages.success(
             request,
             (
                 f"Uploaded for {election.academic_year}: "
                 f"{len(ids)} unique IDs parsed; "
-                f"{len(matched)} matched Student records and added as eligible; "
+                f"{len(matched)} matched Student records; "
+                f"{created_count} newly added; "
+                f"{enabled_count} re-enabled; "
                 f"{len(skipped)} skipped (not in Student)."
             )
         )
@@ -4017,88 +4042,50 @@ def extract_tup_id_from_qr(raw: str) -> str:
 @role_required(['admin', 'comselec'])
 @require_POST
 def api_eligible_scan(request, eid):
-    """
-    POST /api/admin/eligibles/scan/<eid>/
-    Body: payload=<raw QR/string>   (e.g., "TUPC-22-0374 RIBERAL LORD ...")
-    Action:
-      - parse TUP ID
-      - ensure Student exists
-      - add to EligibleVoter(election=eid) if not present
-      - report already_voted / already_eligible
-    """
     election = get_object_or_404(Election, id=eid)
     raw = (request.POST.get('payload') or '').strip()
-    sid = extract_tup_id_from_qr(raw)
+    sid = extract_tup_id_from_qr(raw)  
 
     if not sid:
         return JsonResponse({"status": "error", "message": "No TUP ID found in scan."}, status=400)
 
-    # Must exist in Student table (same check as CSV upload)
-    from myapp.models import Student  # adjust import path if needed
-    exists = Student.objects.filter(tupc_id__iexact=sid).exists()
-    if not exists:
+    if not Student.objects.filter(tupc_id__iexact=sid).exists():
         return JsonResponse({"status": "not_in_student", "sid": sid})
-
-    # Check vote status
-    already_voted = Vote.objects.filter(election=election, voter_student_id__iexact=sid).exists()
-
-    # Create or reuse EligibleVoter
-    qs = EligibleVoter.objects.filter(election=election, student_id__iexact=sid)
-    if qs.exists():
-        ev = qs.first()
-        if not ev.is_eligible:
-            ev.is_eligible = True
-            ev.save(update_fields=['is_eligible'])
-            result = "re_enabled"
-        else:
-            result = "already_eligible"
-    else:
-        EligibleVoter.objects.create(election=election, student_id=sid, is_eligible=True)
-        result = "enrolled"
-
-    # Optional: pull student info to display
-    stu = Student.objects.filter(tupc_id__iexact=sid).values('tupc_id', 'first_name', 'last_name', 'program').first() or {}
-    name = f"{stu.get('first_name','') or ''} {stu.get('last_name','') or ''}".strip() or None
+    already_voted = Vote.objects.filter(
+        election=election,
+        voter_student_id__iexact=sid
+    ).exists()
+    try:
+        with transaction.atomic():
+            ev, created = EligibleVoter.objects.select_for_update().get_or_create(
+                election=election,
+                student_id=sid,              
+                defaults={"is_eligible": True}
+            )
+            if created:
+                result = "enrolled"
+            elif not ev.is_eligible:
+                ev.is_eligible = True
+                ev.save(update_fields=["is_eligible"])
+                result = "re_enabled"
+            else:
+                result = "already_eligible"
+    except IntegrityError:
+        result = "already_eligible"
+    eligible_count = EligibleVoter.objects.filter(election=election, is_eligible=True).count()
+    stu = Student.objects.filter(tupc_id__iexact=sid).values(
+        'first_name', 'last_name', 'program'
+    ).first() or {}
+    name = f"{(stu.get('first_name') or '').strip()} {(stu.get('last_name') or '').strip()}".strip() or None
 
     return JsonResponse({
         "status": result,
         "sid": sid,
         "already_voted": already_voted,
-        "eligible_count": election.eligibles.count(),
-        "student": {
-            "name": name,
-            "program": stu.get('program') or None,
-        }
+        "eligible_count": eligible_count,
+        "student": {"name": name, "program": stu.get('program') or None},
     })
     
-@role_required(['admin', 'comselec'])
-@require_POST
-def eligibles_verify_view(request, eid):
-    election = get_object_or_404(Election, id=eid)
-    raw = (request.POST.get('student_id') or '')
-    sid = normalize_tup_id(raw)
-
-    status = 'missing'
-    if sid:
-        # case-insensitive match just in case
-        ev = EligibleVoter.objects.filter(
-            election=election,
-            student_id__iexact=sid,
-            is_eligible=True
-        ).exists()
-
-        if not ev:
-            status = 'not_listed'
-        else:
-            already = Vote.objects.filter(
-                election=election,
-                voter_student_id__iexact=sid
-            ).exists()
-            status = 'already_voted' if already else 'eligible'
-
-    request.session['verify_result'] = {'eid': election.id, 'sid': sid, 'status': status}
-    return redirect('admin_election_manage')
-
 def _to_aware(dt_str):
     dt = parse_datetime(dt_str)  # expects 'YYYY-MM-DDTHH:MM'
     if dt is None: return None
@@ -4110,54 +4097,41 @@ def _someone_else_active(exclude_id=None):
         qs = qs.exclude(id=exclude_id)
     return qs.exists()
 
-def _someone_else_active(exclude_id=None):
-    qs = Election.objects.filter(status__in=['active', 'scheduled'])
-    if exclude_id:
-        qs = qs.exclude(id=exclude_id)
-    return qs.exists()
-
 @role_required(['admin', 'comselec'])
 @require_POST
 def admin_election_create(request):
     name = (request.POST.get('name') or 'Student Government Election').strip()
     ay   = (request.POST.get('academic_year') or '').strip()
-    sd   = request.POST.get('start_date')
-    ed   = request.POST.get('end_date')
+    end  = request.POST.get('end_date')
 
+    if not ay:
+        messages.error(request, "Academic year is required.")
+        return redirect('admin_election_manage')
     try:
-        start_date = date.fromisoformat(sd)
-        end_date   = date.fromisoformat(ed)
+        end_date = date.fromisoformat(end)
     except Exception:
-        messages.error(request, "Invalid dates.")
+        messages.error(request, "Invalid end date.")
         return redirect('admin_election_manage')
 
     today = timezone.localdate()
-    if not ay:
-        messages.error(request, "Academic year is required."); return redirect('admin_election_manage')
-    if start_date < today:
-        messages.error(request, "Start cannot be in the past."); return redirect('admin_election_manage')
-    if end_date < start_date:
-        messages.error(request, "End cannot be before Start."); return redirect('admin_election_manage')
-    if end_date > start_date + timedelta(days=60):
-        messages.error(request, "Window must be within 60 days from Start."); return redirect('admin_election_manage')
+    if end_date < today:
+        messages.error(request, "End cannot be before today."); return redirect('admin_election_manage')
+    if end_date > today + timedelta(days=60):
+        messages.error(request, "Window must be within 60 days."); return redirect('admin_election_manage')
 
-    # 🔒 Hard rule: cannot create ANY election (even scheduled) while another is active
     if _someone_else_active():
-        messages.error(request, "Cannot create a new election while another election is ACTIVE or SCHEDULED. Close/finalize it first.")
+        messages.error(request, "Cannot create a new election while another is ACTIVE. Close/finalize it first.")
         return redirect('admin_election_manage')
-
-    # Decide initial status only after we know none are active
-    status = 'active' if start_date == today else 'scheduled'
 
     Election.objects.create(
         name=name,
         academic_year=ay,
-        start_date=start_date,
+        start_date=today,
         end_date=end_date,
-        status=status,
+        status='active',
         is_finalized=False,
     )
-    messages.success(request, f"Election {ay} created as {'Active' if status=='active' else 'Scheduled'}.")
+    messages.success(request, f"Election {ay} created and opened today.")
     return redirect('admin_election_manage')
 
 @role_required(['admin', 'comselec'])
@@ -4186,7 +4160,7 @@ def admin_election_open_now(request, eid):
 def admin_election_close_now(request, eid):
     e = get_object_or_404(Election, id=eid)
     if e.status in ('closed', 'finalized'):
-        messages.info(request, "Election is already closed.")
+        messages.success(request, f"Election {e.name} closed.")
         return redirect('admin_election_manage')
 
     e.status = 'closed'
