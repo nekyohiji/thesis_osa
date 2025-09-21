@@ -29,7 +29,7 @@ urlpatterns = [
     path('client_view_CS/', views.client_view_CS_view, name='client_view_CS'),
     path('client_CS/', views.client_CS_view, name='client_CS'),
     path("client_cs/otp/", views.otp_api, name="otp_api"), 
-    path("client/logout/", views.facilitator_logout_view, name="facilitator_logout"),
+    path("facilitator/logout/", views.facilitator_logout_view, name="facilitator_logout"),
      
     path('client_clearance/', views.client_clearance_view, name='client_clearance'),
     path("clearance/", views.clearance_request_view, name="clearance_request"),

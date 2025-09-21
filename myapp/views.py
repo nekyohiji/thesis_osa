@@ -4201,7 +4201,6 @@ def __clean_org(s: str) -> str:
     return (s or '').upper().strip()
 
 def voter_required_page(view_func):
-    """Require active election + voter session for PAGE views."""
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         e = _active_election()
@@ -4212,13 +4211,21 @@ def voter_required_page(view_func):
         if not voter or voter.get('election_id') != e.id:
             messages.warning(request, "Please log in with your TUPC ID and organization to access the ballot.")
             return redirect('client_election')
+
+        # Block page if already voted
+        sid = voter.get('student_id')
+        if Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists():
+            request.session.pop('voter', None)     # optional but nice
+            request.session.modified = True
+            messages.info(request, "You have already voted.")
+            return redirect('client_election')
+
         request.election = e
         request.voter = voter
         return view_func(request, *args, **kwargs)
     return _wrapped
 
 def voter_required_api(view_func):
-    """Require active election + voter session for API endpoints (JSON)."""
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         e = _active_election()
@@ -4227,6 +4234,15 @@ def voter_required_api(view_func):
             return JsonResponse({"status":"error","message":"No active election."}, status=400)
         if not voter or voter.get('election_id') != e.id:
             return JsonResponse({"status":"error","message":"Login required."}, status=401)
+
+        # HARD STOP: one ballot per voter per election
+        sid = voter.get('student_id')
+        if Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists():
+            # (optional) clear the stale voter session to avoid confusion
+            request.session.pop('voter', None)
+            request.session.modified = True
+            return JsonResponse({"status":"already_voted"}, status=409)
+
         request.election = e
         request.voter = voter
         return view_func(request, *args, **kwargs)
@@ -4252,12 +4268,12 @@ def client_view_election_view(request):
 
 @never_cache
 def client_logout(request):
-    request.session.pop('voter', None)
-    request.session.modified = True
+    request.session.flush()           
     messages.success(request, "You have been logged out.")
     return redirect('client_election')
 
 # ---------- Login API (eligibility + session login) ----------
+
 
 @csrf_exempt
 @require_POST
@@ -4430,11 +4446,11 @@ def api_submit_vote(request):
             voter_student_id=sid,
             email=email or "",
             ballot={
-                "president": president_id,             # or None (abstain)
-                "vice_president": vice_president_id,   # or None
-                "senators": norm_sen,                  # list of ids (<=9)
-                "governor": governor_id,                # or None
-                "voter_org": org                       # <— ADD THIS (critical)
+                "president": president_id,        
+                "vice_president": vice_president_id, 
+                "senators": norm_sen,                
+                "governor": governor_id,          
+                "voter_org": org                  
             }
         )
 
@@ -4465,7 +4481,6 @@ def api_submit_vote(request):
                 recipient_list=[email],
                 fail_silently=False,
             )
-        transaction.on_commit(_send)  # only fire after the DB commit succeeds
+        transaction.on_commit(_send) 
 
-    # ✅ Tell frontend to show success modal for 5s, then redirect to /logout/
     return JsonResponse({"status":"success", "logout_after": 5})

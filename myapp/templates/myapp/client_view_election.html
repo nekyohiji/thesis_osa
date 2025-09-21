@@ -509,12 +509,17 @@ async function loadBallot(){
 
     if (res.status === 401) {
       showMsg('warning','Login Required','Please log in again to access the ballot.');
-      setTimeout(()=>{ window.location.href = "{% url 'client_election' %}"; }, 2000);
+      setTimeout(()=>{ window.location.replace("{% url 'client_election' %}"); }, 2000);
       return;
     }
     if (res.status === 400) {
       showMsg('warning','Unavailable', data.message || 'No active election right now.');
-      setTimeout(()=>{ window.location.href = "{% url 'client_election' %}"; }, 2500);
+      setTimeout(()=>{ window.location.replace("{% url 'client_election' %}"); }, 2500);
+      return;
+    }
+    if (res.status === 409 || data.status === 'already_voted') {
+      showMsg('info','Already Voted','You have already voted.');
+      setTimeout(()=>{ window.location.replace("{% url 'client_election' %}"); }, 1200);
       return;
     }
     if(data.status!=='success'){
@@ -574,7 +579,7 @@ async function submitVote(){
         secSpan.textContent = seconds;
         if(seconds <= 0){
           clearInterval(timer);
-          window.location.href = "{% url 'client_election' %}";
+          window.location.replace("{% url 'client_election' %}");
         }
       },1000);
       return;
@@ -595,10 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let submitting = false;
 
-  // Prevent Enter key from triggering duplicate submits
   form.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-      // let the normal submit happen once; block extra keydown submits
       if (submitting) e.preventDefault();
     }
   });
@@ -610,8 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const original = btn.innerText || btn.value || 'Submit';
     if (btn.innerText !== undefined) btn.innerText = 'Submitting…';
     if (btn.value !== undefined) btn.value = 'Submitting…';
-
-    // Safety re-enable in case of network issue; your server also redirects after success
     setTimeout(() => {
       submitting = false;
       btn.disabled = false;
@@ -619,6 +620,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (btn.value !== undefined) btn.value = original;
     }, 8000);
   });
+});
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    loadBallot(); 
+  }
 });
 
 window.addEventListener('load', loadBallot);
