@@ -1181,16 +1181,25 @@ def generate_guard_report_pdf(request):
 @role_required(['admin', 'staff'])
 def upload_student_csv(request):
     if request.method == 'POST' and request.FILES.get('csv_file'):
+        import re, unicodedata  # add these imports
         csv_file = request.FILES['csv_file']
         decoded_file = csv_file.read().decode('utf-8-sig').splitlines()
         reader = csv.DictReader(decoded_file)
+
+        def _mail_part(s: str) -> str:
+            """lowercase, strip spaces/punct/accents, keep letters+digits only"""
+            s = (s or "").strip()
+            s = unicodedata.normalize('NFKD', s)
+            s = ''.join(c for c in s if not unicodedata.combining(c))
+            s = re.sub(r'[^A-Za-z0-9]', '', s)  # removes spaces, dots, hyphens, apostrophes, etc.
+            return s.lower()
 
         skipped_duplicates = []
         skipped_missing_fields = []
         skipped_invalid_lengths = []
 
         for line_num, row in enumerate(reader, start=2):
-            cleaned_row = {k.strip().upper(): v.strip() for k, v in row.items()}
+            cleaned_row = {k.strip().upper(): (v.strip() if v is not None else '') for k, v in row.items()}
 
             tupc_id = cleaned_row.get('TUPC_ID', '')
             last_name = cleaned_row.get('LAST_NAME', '')
@@ -1198,6 +1207,7 @@ def upload_student_csv(request):
             program = cleaned_row.get('PROGRAM', '')
             middle_initial = cleaned_row.get('MIDDLE_INITIAL', '').strip().upper()
             extension = cleaned_row.get('EXT', '').strip().upper()
+
             if not tupc_id or not last_name:
                 skipped_missing_fields.append(f"Row {line_num}")
                 continue
@@ -1218,10 +1228,16 @@ def upload_student_csv(request):
                 skipped_duplicates.append(full_name)
                 continue
 
+            # normalize MI/EXT fields for storage
             middle_initial = '' if middle_initial in ['', 'NA'] else middle_initial
             extension = '' if extension in ['', 'NA'] else extension
 
-            email = f"{first_name.replace(' ', '').lower()}.{last_name.replace(' ', '').lower()}@gsfe.tupcavite.edu.ph"
+            # ✅ build email: firstname.lastname{ext}@...
+            first_part = _mail_part(first_name)
+            last_part  = _mail_part(last_name)
+            ext_part   = _mail_part(extension)  # "JR" / "JR." -> "jr"; "II" -> "ii"
+            local = f"{first_part}.{last_part}{ext_part}"
+            email = f"{local}@gsfe.tupcavite.edu.ph"
 
             Student.objects.create(
                 tupc_id=tupc_id,
@@ -1232,7 +1248,7 @@ def upload_student_csv(request):
                 extension=extension,
                 email=email
             )
-            
+
         if skipped_duplicates:
             messages.warning(request, f"⚠️ Skipped existing students: {', '.join(skipped_duplicates)}")
         if skipped_missing_fields:
@@ -1248,9 +1264,31 @@ def upload_student_csv(request):
 
 @role_required(['admin', 'staff'])
 def admin_student_view(request):
-    students = Student.objects.all().order_by(Lower('last_name'), Lower('first_name'))
-    return render(request, 'myapp/admin_student.html', {'students': students})
+    q = (request.GET.get('q') or '').strip()
 
+    qs = Student.objects.all()
+    if q:
+        qs = qs.filter(
+            Q(tupc_id__icontains=q) |
+            Q(program__icontains=q) |
+            Q(last_name__icontains=q) |
+            Q(first_name__icontains=q) |
+            Q(middle_initial__icontains=q) |
+            Q(extension__icontains=q) |
+            Q(email__icontains=q)
+        )
+
+    qs = qs.order_by(Lower('last_name'), Lower('first_name'))
+
+    paginator = Paginator(qs, 50) 
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'myapp/admin_student.html', {
+        'students': page_obj.object_list,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'q': q,
+    })
 #---------Admin Manage Accounts----------------------#
 OTP_TTL_MINUTES = 10  
 
