@@ -40,8 +40,8 @@
   }
 
   .preview img {
-    width: 140px;  /* increase size */
-    height: 140px; /* increase size */
+    width: 200px;  /* increase size */
+    height: 200px; /* increase size */
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid #333;
@@ -238,9 +238,10 @@ function buildDropdownBox(label, list, selectId, onChange){
       <option value="ABSTAIN">Abstain</option>
     </select>
     <div class="preview justify-content-center" style="display:none;">
-      <img src="" alt="">
+      <img src="" alt="" style="display:none;">
       <div class="preview-info"></div>
     </div>`;
+
   const select = wrap.querySelector('select');
   const preview= wrap.querySelector('.preview');
   const img    = preview.querySelector('img');
@@ -248,20 +249,29 @@ function buildDropdownBox(label, list, selectId, onChange){
 
   select.addEventListener('change', () => {
     const val = select.value;
-    if(val && val!=='ABSTAIN'){
-      const c = list.find(x => String(x.id)===val);
-      if(c){
-        preview.style.display='flex';
-        img.src = c.image||'';
-        info.innerHTML = `<strong>${c.name}</strong><br>${c.section}${c.party?`<br>${c.party}`:''}`;
+
+    if (val && val !== 'ABSTAIN') {
+      const c = list.find(x => String(x.id) === val);
+      if (c) {
+        preview.style.display = 'flex';
+        img.style.display = 'block';
+        img.src = c.image || '';
+        info.innerHTML = `<strong>${c.name}</strong><br>${c.section}${c.party ? `<br>${c.party}` : ''}`;
       }
-    } else if(val==='ABSTAIN'){
-      preview.style.display='flex'; img.src=''; info.innerHTML='<em>Abstained</em>';
+    } else if (val === 'ABSTAIN') {
+      preview.style.display = 'flex';
+      img.style.display = 'none';
+      info.innerHTML = '<em>Abstained</em>';
     } else {
-      preview.style.display='none';
+      preview.style.display = 'none';
+      img.style.display = 'none';
+      img.src = '';
+      info.innerHTML = '';
     }
+
     onChange(val);
   });
+
   return wrap;
 }
 
@@ -457,14 +467,14 @@ function renderReview(){
   picks.senators.forEach((sid, i)=> lines.push(`SENATOR #${i+1}: ${nameById(ballotData.ballot['Senator'], sid)}`));
   const hasGov = (ballotData.ballot[govKey]||[]).length>0;
   lines.push(`${govKey.toUpperCase()}: ${hasGov? nameById(ballotData.ballot[govKey], picks.governor) : '— (no candidates)'}`);
-  lines.push('', 'Enter your email if you want a copy of your ballot (optional).');
+  lines.push('', 'Enter your email to have a copy of your ballot.');
   pre.textContent = lines.join('\n');
 
   if(!document.getElementById('emailBox')){
     const box=document.createElement('div'); 
     box.className='submit-container';
     box.innerHTML=`
-      <input id="emailBox" type="email" class="email-input" placeholder="your.email@gmail.com" required>
+      <input id="emailBox" type="email" class="email-input" placeholder="@gmail.com/@gsfe.tupcavite.edu.ph" required>
       <small style="color:white;">Email is required.</small>
       <button class="submit-btn" id="submitBtn" disabled>
         <i class="bi bi-check-circle-fill"></i> Submit Vote
