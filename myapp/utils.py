@@ -510,15 +510,18 @@ def gen_otp():
     return "".join(secrets.choice("0123456789") for _ in range(6))
 
 
-
-
-
 #################################
 def send_mail_async(*args, **kwargs):
     def _job():
         try:
             _send_mail(*args, **kwargs)
         except Exception:
-            # optional: log the exception
             pass
     Thread(target=_job, daemon=True).start()
+    
+    
+def no_store(response):
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response

@@ -38,7 +38,7 @@
 
       <!-- Right side: Welcome message -->
       <div class="p-2 text-end">
-        <span class="fw-semibold">Welcome, Jochelle!</span>
+        <span class="fw-semibold">Welcome</span>
       </div>
 
     </div>
@@ -483,6 +483,10 @@
   });
 })();
 </script>
-
+<script>
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+</script>
 </body>
 </html>

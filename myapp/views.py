@@ -48,6 +48,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.finders import find as find_static
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 from django.contrib import messages
 from django.utils.dateparse import parse_datetime
@@ -117,7 +118,15 @@ from .models import (
     Vote,
     Candidate,
 )
-from .utils import generate_gmf_pdf, send_clearance_confirmation, send_violation_email, build_student_email, send_violation_notice, send_mail_async
+from .utils import (
+    generate_gmf_pdf,
+    send_clearance_confirmation,
+    send_violation_email,
+    build_student_email,
+    send_violation_notice,
+    send_mail_async,
+    no_store
+    )
 
 logger = logging.getLogger(__name__)
 #################################################################################################################
@@ -692,61 +701,65 @@ def clearance_request_view(request):
 
 #########################LOGIN
 
+@never_cache
 def login_view(request):
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
-
-        # Validate email
+        # Basic validation
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(email_regex, email):
+        if not re.match(email_regex, email) or len(email) > 164:
             messages.error(request, "Please enter a valid email address.", extra_tags="LOGIN")
-            return render(request, 'myapp/login.html')
-        if len(email) > 164:
-            messages.error(request, "Please enter a valid email.", extra_tags="LOGIN")
-            return render(request, 'myapp/login.html')
+            resp = render(request, 'myapp/login.html', {"next": next_url})
+            return no_store(resp)
 
-        # Validate password length
-        if len(password) < 8:
-            messages.error(request, "Password must be at least 8 characters.", extra_tags="LOGIN")
-            return render(request, 'myapp/login.html')
-        if len(password) > 128:
-            messages.error(request, "Password is too long.", extra_tags="LOGIN")
-            return render(request, 'myapp/login.html')
+        if not (8 <= len(password) <= 128):
+            messages.error(request, "Password must be between 8 and 128 characters.", extra_tags="LOGIN")
+            resp = render(request, 'myapp/login.html', {"next": next_url})
+            return no_store(resp)
 
         try:
             user = UserAccount.objects.get(email=email, is_active=True)
             if check_password(password, user.password):
+                request.session.flush()
                 request.session['user_id'] = user.id
                 request.session['role'] = user.role
                 request.session['full_name'] = user.full_name
                 request.session['email'] = user.email
+                request.session.set_expiry(0)
+                if next_url and url_has_allowed_host_and_scheme(next_url, {request.get_host()}):
+                    resp = redirect(next_url)
+                    return no_store(resp)
 
-                # Redirect by role
-                if user.role == 'admin':
-                    return redirect('admin_dashboard')
-                elif user.role == 'staff':
-                    return redirect('admin_dashboard')
-                elif user.role == 'studasst':
-                    return redirect('admin_dashboard')
-                elif user.role == 'guard':
-                    return redirect('guard_violation')
-                elif user.role == 'scholarship':
-                    return redirect('admin_scholarships')
-                elif user.role == 'comselec':
-                    return redirect('admin_election')
+                # Role-based redirect
+                role = (user.role or "").lower()
+                if role in ('admin', 'staff', 'studasst'):
+                    resp = redirect('admin_dashboard')
+                elif role == 'guard':
+                    resp = redirect('guard_violation')
+                elif role == 'scholarship':
+                    resp = redirect('admin_scholarships')
+                elif role == 'comselec':
+                    resp = redirect('admin_election')
                 else:
                     messages.error(request, "Account role not recognized.", extra_tags="LOGIN")
+                    resp = render(request, 'myapp/login.html', {"next": next_url})
+                return no_store(resp)
+
             else:
                 messages.error(request, "Incorrect password.", extra_tags="LOGIN")
         except UserAccount.DoesNotExist:
             messages.error(request, "Account not found or inactive.", extra_tags="LOGIN")
 
-    return render(request, 'myapp/login.html')
+    resp = render(request, 'myapp/login.html', {"next": next_url})
+    return no_store(resp)
 
 def logout_view(request):
     request.session.flush()
-    return redirect('login')
+    resp = redirect('login')
+    return no_store(resp)
 
 LOGIN_OTP_TTL_MINUTES = 5
 LOGIN_OTP_LENGTH = 6
@@ -916,7 +929,6 @@ def guard_report_view(request):
     }
     return render(request, 'myapp/guard_report.html', context)
 
-
 def get_student_by_id(request, tupc_id):
     try:
         student = Student.objects.get(tupc_id=tupc_id)
@@ -951,9 +963,9 @@ def submit_violation(request):
                 success_message += " Note: This student has an unsettled first violation. Please confiscate the student's ID."
 
             v = form.save(commit=False)
-            v.severity = "MINOR"            # guards only submit minors (for now)
+            v.severity = "MINOR"           
             v.status = 'Pending'
-            v.settlement_type = "None"      # determined on approval
+            v.settlement_type = "None"      
             v.is_settled = False
             v.save()
 
@@ -1289,6 +1301,7 @@ def admin_student_view(request):
         'is_paginated': page_obj.has_other_pages(),
         'q': q,
     })
+    
 #---------Admin Manage Accounts----------------------#
 OTP_TTL_MINUTES = 10  
 
@@ -3386,30 +3399,26 @@ def _rl_hit(key: str, limit: int) -> bool:
     cache.set(key, bucket, RL_WINDOW)
     return True
 
-@ensure_csrf_cookie
+@never_cache
 def client_CS_view(request):
-    """
-    Login page (no auto-login). If session exists, go to viewer.
-    """
     if request.session.get("facilitator_pk"):
-        return redirect("client_view_CS")
-    return render(request, "myapp/client_CS.html")
+        resp = redirect("client_view_CS")
+        return no_store(resp)
+    resp = render(request, "myapp/client_CS.html")
+    return no_store(resp)
 
 @facilitator_required
 def client_view_CS_view(request):
-    """
-    Protected viewer (requires facilitator session and active account).
-    """
     fpk = request.session.get("facilitator_pk")
     if not fpk:
         messages.warning(request, "Please log in with your Faculty ID.")
-        return redirect("client_CS")
+        return no_store(redirect("client_CS"))
 
     if not Facilitator.objects.filter(pk=fpk, is_active=True).exists():
         for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
             request.session.pop(k, None)
         messages.error(request, "Session expired. Please log in again.")
-        return redirect("client_CS")
+        return no_store(redirect("client_CS"))
 
     q = (request.GET.get("q") or "").strip()
     qs = CommunityServiceCase.objects.order_by("-updated_at")
@@ -3418,9 +3427,11 @@ def client_view_CS_view(request):
             Q(last_name__icontains=q) | Q(first_name__icontains=q) |
             Q(program_course__icontains=q) | Q(student_id__icontains=q)
         )
-    return render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
+    resp = render(request, "myapp/client_view_CS.html", {"cases": qs, "q": q})
+    return no_store(resp)
 
 @require_POST
+@never_cache
 def otp_api(request):
     """
     POST actions:
@@ -3434,85 +3445,78 @@ def otp_api(request):
 
     # Basic faculty_id validation for both actions
     if not ID_PATTERN.match(faculty_id):
-        return JsonResponse({"ok": False, "msg": "Invalid Faculty ID format."}, status=400)
+        return no_store(JsonResponse({"ok": False, "msg": "Invalid Faculty ID format."}, status=400))
 
     fac = (Facilitator.objects
            .filter(faculty_id=faculty_id, is_active=True)
            .only("id", "full_name", "email")
            .first())
     if not fac or not fac.email:
-        return JsonResponse({"ok": False, "msg": "Account not found or no email on file."}, status=404)
+        return no_store(JsonResponse({"ok": False, "msg": "Account not found or no email on file."}, status=404))
 
     if action == "send":
-        # rate limit
         if not _rl_hit(f"otp_send:{faculty_id}", SEND_LIMIT) or not _rl_hit(f"otp_send_ip:{ip}", SEND_LIMIT):
-            return JsonResponse({"ok": False, "msg": "Too many requests. Try again later."}, status=429)
+            return no_store(JsonResponse({"ok": False, "msg": "Too many requests. Try again later."}, status=429))
 
-        # generate and store (hash only)
         code = _generate_otp()
         otp_hash = make_password(code)
         OTPVerification.objects.filter(email=fac.email).delete()
         OTPVerification.objects.create(
             email=fac.email,
-            otp=otp_hash,         # store HASH (safer)
+            otp=otp_hash,
             full_name=fac.full_name,
             role="facilitator",
-            password="",          # unused in this flow
+            password="",
             is_active=False,
         )
 
         try:
             _send_otp_email(fac.email, code, fac.full_name)
         except Exception:
-            return JsonResponse({"ok": False, "msg": "Failed to send OTP."}, status=500)
+            return no_store(JsonResponse({"ok": False, "msg": "Failed to send OTP."}, status=500))
 
-        return JsonResponse({"ok": True, "msg": "OTP sent to your email."})
+        return no_store(JsonResponse({"ok": True, "msg": "OTP sent to your email."}))
 
     elif action == "verify":
-        # rate limit
         if not _rl_hit(f"otp_verify:{faculty_id}", VERIFY_LIMIT) or not _rl_hit(f"otp_verify_ip:{ip}", VERIFY_LIMIT):
-            return JsonResponse({"ok": False, "msg": "Too many attempts. Try again later."}, status=429)
+            return no_store(JsonResponse({"ok": False, "msg": "Too many attempts. Try again later."}, status=429))
 
         otp_plain = (request.POST.get("otp") or "").strip()
         if not (otp_plain.isdigit() and len(otp_plain) == OTP_LENGTH):
-            return JsonResponse({"ok": False, "msg": "Invalid OTP."}, status=400)
+            return no_store(JsonResponse({"ok": False, "msg": "Invalid OTP."}, status=400))
 
         row = OTPVerification.objects.filter(email=fac.email).only("id", "otp", "created_at", "is_active").first()
         if not row:
-            return JsonResponse({"ok": False, "msg": "No OTP request found."}, status=404)
+            return no_store(JsonResponse({"ok": False, "msg": "No OTP request found."}, status=404))
 
-        # TTL via created_at
         if timezone.now() - row.created_at > OTP_TTL:
-            # Expired -> delete to clean up
             row.delete()
-            return JsonResponse({"ok": False, "msg": "OTP expired. Request a new one."}, status=400)
+            return no_store(JsonResponse({"ok": False, "msg": "OTP expired. Request a new one."}, status=400))
 
-        # Validate hash
         if not check_password(otp_plain, row.otp):
-            return JsonResponse({"ok": False, "msg": "Incorrect OTP."}, status=400)
+            return no_store(JsonResponse({"ok": False, "msg": "Incorrect OTP."}, status=400))
 
-        # Success: mark active (optional), then delete to prevent reuse
+        # Success
         row.is_active = True
         row.save(update_fields=["is_active"])
         row.delete()
-
-        # Start session
         request.session["facilitator_pk"] = fac.id
         request.session["facilitator_id"] = faculty_id
         request.session["facilitator_name"] = fac.full_name
+        request.session.set_expiry(0)  
 
-        return JsonResponse({"ok": True, "msg": "Logged in."})
+        return no_store(JsonResponse({"ok": True, "msg": "Logged in."}))
 
     else:
-        return JsonResponse({"ok": False, "msg": "Unknown action."}, status=400)
-    
+        return no_store(JsonResponse({"ok": False, "msg": "Unknown action."}, status=400))
+
 @require_http_methods(["GET"])
+@never_cache
 def facilitator_logout_view(request):
-    # Clear ONLY facilitator session keys
     for k in ("facilitator_pk", "facilitator_id", "facilitator_name"):
         request.session.pop(k, None)
     messages.success(request, "Logged out (facilitator).")
-    return redirect("client_CS")  # change if you prefer a different landing page 
+    return no_store(redirect("client_CS"))
 
 def cs_case_detail_api(request, case_id):
     case = get_object_or_404(CommunityServiceCase, id=case_id)
@@ -3522,7 +3526,6 @@ def cs_case_detail_api(request, case_id):
            .order_by('-violation_date', '-created_at')
            .values('violation_type', 'violation_date', 'status', 'id'))
 
-    # map violations to simple JSON
     violations = [{
         "type": Violation.VIOLATION_TYPES_DICT.get(v['violation_type'], v['violation_type'])
                 if hasattr(Violation, 'VIOLATION_TYPES_DICT') else v['violation_type'],
@@ -3530,7 +3533,6 @@ def cs_case_detail_api(request, case_id):
         "severity": getattr(Violation, 'severity', 'Minor') and 'Minor',  # fallback label
     } for v in vio]
 
-    # pull facilitator snapshot + is_official too
     logs_qs = (case.logs
                    .order_by('-check_in_at')
                    .only('check_in_at', 'check_out_at', 'hours', 'is_official',
@@ -3583,7 +3585,8 @@ def cs_case_detail_api(request, case_id):
 
 
 
-#election
+
+#---------Election Accounts---------------------#
 @role_required(['admin', 'comselec'])
 def admin_election_view(request):
     return render (request, 'myapp/admin_election.html')
@@ -4312,7 +4315,6 @@ def client_logout(request):
 
 # ---------- Login API (eligibility + session login) ----------
 
-
 @csrf_exempt
 @require_POST
 def api_check_eligibility(request):
@@ -4337,7 +4339,6 @@ def api_check_eligibility(request):
     if already:
         return JsonResponse({"status":"already_voted"})
 
-    # Login (scope to this active election)
     request.session['voter'] = {'election_id': e.id, 'student_id': sid, 'org': org}
     request.session.modified = True
 
@@ -4377,7 +4378,6 @@ def api_get_ballot(request):
             "image": (c.image.url if c.image and hasattr(c.image,'url') else "")
         } for c in qs]
 
-    # distinct non-empty parties in this election
     parties = list(
         base.exclude(party__isnull=True).exclude(party__exact="")
             .values_list('party', flat=True).distinct().order_by('party')
@@ -4398,8 +4398,6 @@ def api_get_ballot(request):
         "seats": seats,
         "parties": parties,
     })
-
-# ---------- Submit vote API (stores JSON ballot + optional email; logs out) ----------
 
 @voter_required_api
 @require_POST
@@ -4423,13 +4421,10 @@ def api_submit_vote(request):
         s = (raw or "").strip()
         return int(s) if s.isdigit() else None
 
-    # Parse selections
     president_id      = to_id_or_none(request.POST.get('president'))
     vice_president_id = to_id_or_none(request.POST.get('vice_president'))
     governor_id       = to_id_or_none(request.POST.get('governor'))
     email_raw         = (request.POST.get('email') or '').strip()
-
-    # Validate optional email
     email = ""
     if email_raw:
         try:
@@ -4438,14 +4433,11 @@ def api_submit_vote(request):
         except ValidationError:
             return JsonResponse({"status":"error","message":"Invalid email address."}, status=400)
 
-    # Senators
     senators_raw = request.POST.get('senators')
     try:
         senators_list = json.loads(senators_raw) if senators_raw else []
     except Exception:
         return JsonResponse({"status":"error","message":"Invalid senators payload."}, status=400)
-
-    # Normalize senators to <= seats; allow None/"" for abstain
     norm_sen = []
     for x in senators_list:
         if x is None or str(x).strip()=="":
@@ -4454,10 +4446,7 @@ def api_submit_vote(request):
             norm_sen.append(int(x))
         else:
             return JsonResponse({"status":"error","message":"Invalid senator choice."}, status=400)
-    # Ensure uniqueness & cap to seats
     norm_sen = list(dict.fromkeys(norm_sen))[:SENATOR_SEATS]
-
-    # Validate choices against current ballot
     base = Candidate.objects.filter(election=e, is_withdrawn=False)
     pres_ids = set(base.filter(position='President').values_list('id', flat=True))
     vp_ids   = set(base.filter(position='Vice President').values_list('id', flat=True))
@@ -4473,11 +4462,9 @@ def api_submit_vote(request):
     if governor_id is not None and governor_id not in gov_ids:
         return JsonResponse({"status":"error","message":"Invalid governor choice for your organization."}, status=400)
 
-    # Final guard: one vote per voter per election
     if Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists():
         return JsonResponse({"status":"error","message":"You have already voted."}, status=409)
 
-    # Persist the vote (single row design)
     with transaction.atomic():
         Vote.objects.create(
             election=e,
@@ -4492,7 +4479,6 @@ def api_submit_vote(request):
             }
         )
 
-    # Email receipt (optional; never fail the vote if email sending fails)
     if email:
         chosen_ids = [x for x in [president_id, vice_president_id, governor_id, *norm_sen] if x]
         names = dict(Candidate.objects.filter(id__in=chosen_ids).values_list('id', 'name'))

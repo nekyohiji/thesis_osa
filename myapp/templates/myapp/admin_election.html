@@ -258,8 +258,6 @@
   <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-
-
 /* Sidebar Functions*/
         // Toggle Sidebar
       function toggleSidebar() {
@@ -537,26 +535,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ---- Kickoff ----
 document.addEventListener('DOMContentLoaded', loadCandidates);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+</script>
+<script>
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
 </script>
 </body>
 </html>

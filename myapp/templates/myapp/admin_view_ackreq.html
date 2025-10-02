@@ -379,6 +379,10 @@
   ajaxSubmit('declineForm', 'declineSubmitBtn', 'Declined. Email sent.');
 })();
 </script>
-
+<script>
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+</script>
 </body>
 </html>
