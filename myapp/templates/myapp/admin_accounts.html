@@ -844,12 +844,38 @@ function fetchAndDisplayAccounts() {
       return res.json().catch(() => { throw new Error('Invalid JSON from /get-accounts/'); });
     })
     .then(data => {
-      const active = isArray(data?.active) ? data.active : [];
-      const deactivated = isArray(data?.deactivated) ? data.deactivated : [];
+      const active = Array.isArray(data?.active) ? data.active.slice() : [];
+      const deactivated = Array.isArray(data?.deactivated) ? data.deactivated : [];
+
+      // --- hard order for ACTIVE roles ---
+      const ORDER = ['admin', 'scholarship', 'guard', 'staff', 'studasst', 'comselec'];
+      const ALIASES = {
+        'studsst': 'studasst',              // tolerate common typo
+        'student assistant': 'studasst',    // human label → key
+        'security guard': 'guard'
+      };
+      const rank = (roleRaw) => {
+        const r = (roleRaw || '').toString().trim().toLowerCase();
+        const key = ALIASES[r] || r;
+        const i = ORDER.indexOf(key);
+        return i === -1 ? 999 : i;
+      };
+
+      // stable-ish sort: by rank, then by full_name (A→Z)
+      active.sort((a, b) => {
+        const ra = rank(a?.role), rb = rank(b?.role);
+        if (ra !== rb) return ra - rb;
+        const na = (a?.full_name || '').toLowerCase();
+        const nb = (b?.full_name || '').toLowerCase();
+        return na.localeCompare(nb);
+      });
 
       const activeList = document.getElementById('activeAccountsList');
       const deactivatedList = document.getElementById('deactivatedAccountsList');
-      if (!activeList || !deactivatedList) { console.error('Lists not found'); showMessage('Accounts containers missing from DOM.', 'danger'); return; }
+      if (!activeList || !deactivatedList) {
+        console.error('Accounts containers missing from DOM.');
+        return;
+      }
 
       activeList.innerHTML = '';
       deactivatedList.innerHTML = '';
@@ -897,13 +923,22 @@ function fetchAndDisplayAccounts() {
         return div;
       }
 
-      if (active.length === 0) activeList.innerHTML = `<p class="text-muted mt-3" style="text-align:left;">No active accounts yet.</p>`;
-      else active.forEach(acc => activeList.appendChild(createCard(acc, 'active')));
+      if (active.length === 0) {
+        activeList.innerHTML = `<p class="text-muted mt-3" style="text-align:left;">No active accounts yet.</p>`;
+      } else {
+        active.forEach(acc => activeList.appendChild(createCard(acc, 'active')));
+      }
 
-      if (deactivated.length === 0) deactivatedList.innerHTML = `<p class="text-muted mt-3" style="text-align:left;">No deactivated accounts yet.</p>`;
-      else deactivated.forEach(acc => deactivatedList.appendChild(createCard(acc, 'deactivated')));
+      if (deactivated.length === 0) {
+        deactivatedList.innerHTML = `<p class="text-muted mt-3" style="text-align:left;">No deactivated accounts yet.</p>`;
+      } else {
+        deactivated.forEach(acc => deactivatedList.appendChild(createCard(acc, 'deactivated')));
+      }
     })
-    .catch(err => { console.error(err); showMessage('Unable to load accounts. Check server or payload format.', 'danger'); });
+    .catch(err => {
+      console.error(err);
+      // optional: toast/alert if you have a helper
+    });
 }
 
 /* ---------- KEBAB + EDIT MODAL ---------- */

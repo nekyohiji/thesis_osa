@@ -410,15 +410,24 @@ class CommunityServiceCase(models.Model):
     total_required_hours goes up with manual assignments.
     hours_completed never resets (remaining = total - completed).
     """
-    # INSERTED: denormalized student snapshot (admin types these)
+    # Denormalized student snapshot
     last_name = models.CharField(max_length=50, default="", blank=True)
     first_name = models.CharField(max_length=50, default="", blank=True)
     middle_initial = models.CharField(max_length=10, default="", blank=True)   # optional
     extension_name = models.CharField(max_length=10, default="", blank=True)   # optional
     program_course = models.CharField(max_length=100, default="", blank=True)
 
-    # (kept) student id
+    # Student id
     student_id = models.CharField(max_length=20, db_index=True)
+
+    # NEW: SDT Resolution No. (optional, unique when non-blank)
+    sdt_resolution_no = models.CharField(
+        "SDT Resolution No.",
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="Resolution number from the Student Disciplinary/Tribunal converting a major case to community service.",
+    )
 
     total_required_hours = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
     hours_completed = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
@@ -431,14 +440,22 @@ class CommunityServiceCase(models.Model):
         db_table = "community_service_case"
         indexes = [
             models.Index(fields=["student_id", "is_closed"]),
-            # INSERTED: quick name search
-            models.Index(fields=["last_name", "first_name"]),
+            models.Index(fields=["last_name", "first_name"]),  # quick name search
+            models.Index(fields=["sdt_resolution_no"]),        # quick lookup by resolution
+        ]
+        constraints = [
+            # Ensure non-blank SDT resolution numbers are unique
+            models.UniqueConstraint(
+                fields=["sdt_resolution_no"],
+                name="uniq_sdt_resolution_no_when_present",
+                condition=~Q(sdt_resolution_no="")
+            )
         ]
 
     def __str__(self):
-        # UPDATED: include snapshot name
         full = f"{self.last_name}, {self.first_name}".strip(", ")
-        return f"{full} ({self.student_id}) | required={self.total_required_hours} done={self.hours_completed}"
+        tag = f" | SDT:{self.sdt_resolution_no}" if self.sdt_resolution_no else ""
+        return f"{full} ({self.student_id}){tag} | required={self.total_required_hours} done={self.hours_completed}"
 
     @property
     def remaining_hours(self) -> Decimal:
@@ -446,18 +463,22 @@ class CommunityServiceCase(models.Model):
         return rem if rem > 0 else Decimal('0.0')
 
     def adjust_total_required(self, new_total: Decimal) -> None:
-        """
-        Set the TOTAL required hours to a new value without changing completed hours.
-        Never go below completed; auto-close when remaining hits 0.
-        """
         if new_total < self.hours_completed:
             new_total = self.hours_completed
         self.total_required_hours = new_total
         self.is_closed = (self.remaining_hours == 0)
         self.save(update_fields=["total_required_hours", "is_closed", "updated_at"])
 
-    # ---------- Helpers for manual workflow ----------
+    # Convenience setter (optional)
+    def set_sdt_resolution(self, resolution_no: str) -> None:
+        """
+        Attach an SDT resolution number (unique when non-blank).
+        """
+        self.sdt_resolution_no = (resolution_no or "").strip()
+        # Save separately so UniqueConstraint can trigger immediately if violated
+        self.save(update_fields=["sdt_resolution_no", "updated_at"])
 
+    # ---------- Helpers for manual workflow ----------
     @classmethod
     @transaction.atomic
     def get_or_create_open(
@@ -470,10 +491,6 @@ class CommunityServiceCase(models.Model):
         middle_initial: str = "",
         extension_name: str = "",
     ) -> "CommunityServiceCase":
-        """
-        App-level guarantee of one open case per student.
-        If none exists, create with the admin-typed snapshot.
-        """
         case = (cls.objects
                   .select_for_update()
                   .filter(student_id=student_id, is_closed=False)
@@ -491,7 +508,6 @@ class CommunityServiceCase(models.Model):
 
     @transaction.atomic
     def top_up_required_hours(self, add_hours: Decimal) -> None:
-        """Manually increase the required hours."""
         add_hours = Decimal(add_hours)
         if add_hours <= 0:
             return
@@ -521,19 +537,16 @@ class CommunityServiceCase(models.Model):
         self.is_closed = locked.is_closed
         return log
 
-
     @transaction.atomic
     def has_open_session(self) -> bool:
-        # UPDATED: lock when checking to avoid races
         return self.logs.select_for_update().filter(check_out_at__isnull=True).exists()
-    
+
     @transaction.atomic
     def open_session(
         self, *, facilitator_name: str | None = None, facilitator_source: str | None = None
     ) -> "CommunityServiceLog":
         existing = (self.logs.select_for_update().filter(check_out_at__isnull=True).first())
         if existing:
-            # Optional: backfill if empty
             if not existing.facilitator_name and facilitator_name:
                 existing.facilitator_name = facilitator_name
                 existing.facilitator_source = (facilitator_source or "")
@@ -620,6 +633,22 @@ class CommunityServiceLog(models.Model):
         case.is_closed = (case.remaining_hours == 0)
         case.save(update_fields=["hours_completed", "is_closed", "updated_at"])
 
+class CommunityServiceAdjustment(models.Model):
+    """
+    One CS 'top-up' booked against a single violation (idempotency & audit).
+    """
+    case = models.ForeignKey("CommunityServiceCase", on_delete=models.CASCADE, related_name="adjustments")
+    violation = models.OneToOneField("Violation", on_delete=models.CASCADE, related_name="cs_adjustment")
+    hours = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal("0.0"))
+    reason = models.CharField(max_length=120, default="", blank=True)  # e.g. "2nd offense: +20h"
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "community_service_adjustment"
+        indexes = [
+            models.Index(fields=["case"]),
+        ]
+        
 PH_PHONE_RE = RegexValidator(
     regex=r'^\+63\s\d{10}$',
     message="Contact number must be exactly in the format: +63 XXXXXXXXXX (10 digits after a space)."

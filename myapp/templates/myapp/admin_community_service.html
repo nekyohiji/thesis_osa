@@ -284,11 +284,25 @@
 
             <div class="col-md-6">
               <label class="form-label fw-semibold">Student ID:</label>
-              <input name="{{ cs_form.student_id.name }}" type="text"
-                     value="{{ cs_form.student_id.value|default_if_none:'' }}"
-                     minlength="1" maxlength="20" placeholder="Enter student ID"
-                     class="form-control {% if cs_form.student_id.errors %}is-invalid{% endif %}" required>
+              <input
+                id="cs_student_id"
+                name="{{ cs_form.student_id.name }}"
+                type="text"
+                value="{{ cs_form.student_id.value|default_if_none:'' }}"
+                placeholder="TUPC-XX-XXXX"
+                maxlength="16"
+                autocomplete="off"
+                spellcheck="false"
+                inputmode="text"
+                pattern="^TUPC-\d{2}-\d{4,8}$"
+                class="form-control {% if cs_form.student_id.errors %}is-invalid{% endif %}"
+                required
+                aria-describedby="csStudentIdHelp"
+                data-lookup-prefix="{% url 'get_student_by_id' tupc_id='TUPC-00-0000' %}|prefix"
+              >
               {% for err in cs_form.student_id.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+              <div id="csStudentIdHelp" class="form-text">Format: TUPC-##-####. Scan or type, then press Enter.</div>
+              <div id="csLookupFeedback" class="small mt-1"></div>
             </div>
 
             <div class="col-md-6">
@@ -300,7 +314,26 @@
                      inputmode="text" pattern="^[A-Za-z]+(?:-[A-Za-z]+)*$" title="Letters and hyphens only. No spaces; hyphens must be between letters." oninput="this.value=this.value.replace(/[^A-Za-z-]/g,'').replace(/-{2,}/g,'-').replace(/^-+|-+$/g,'')">
               {% for err in cs_form.program_course.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
             </div>
-
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">SDT Resolution No. (optional):</label>
+              <input
+                id="cs_sdt_resolution_no"
+                name="sdt_resolution_no"
+                type="text"
+                class="form-control {% if cs_form and cs_form.sdt_resolution_no.errors %}is-invalid{% endif %}"
+                placeholder="e.g., SDT-2025-00123"
+                maxlength="64"
+                autocomplete="off"
+                value="{{ cs_form.sdt_resolution_no.value|default_if_none:'' }}"
+              >
+              {% if cs_form and cs_form.sdt_resolution_no.errors %}
+                <div class="invalid-feedback">
+                  {{ cs_form.sdt_resolution_no.errors|striptags }}
+                </div>
+              {% else %}
+                <div class="form-text">Leave blank if not applicable.</div>
+              {% endif %}
+            </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Hours (Total Required):</label>
               <input name="{{ cs_form.hours.name }}" type="number" 
@@ -334,7 +367,141 @@
 
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* Community Service — hard-trim to first TUPC + freeze to block trailing scanner chars */
+(() => {
+  const modal = document.getElementById('csCreateAdjustModal')
+             || document.getElementById('createCommunityServiceModal');
+  const form  = modal?.querySelector('form');
+  if (!form) return;
+
+  const sid = document.getElementById('cs_student_id');
+  const fb  = document.getElementById('csLookupFeedback');
+
+  const TUPC_FULL    = /^TUPC-\d{2}-\d{4,8}$/;
+  const TUPC_CAPTURE = /(TUPC-\d{2}-\d{4,8})/i;
+
+  let freezeUntil = 0;     // while frozen, ignore any inserted characters
+  let lockedId    = '';    // the ID we keep during freeze
+
+  const setFeedback = (kind, text) => {
+    if (!fb) return;
+    fb.className = 'small mt-1 ' + (kind==='ok' ? 'text-success' : kind==='warn' ? 'text-warning' : 'text-danger');
+    fb.textContent = text || '';
+  };
+
+  const normalize = v => String(v||'')
+    .toUpperCase()
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/[^A-Z0-9\- ]/g, '');
+
+  const firstId = v => {
+    const m = String(v||'').toUpperCase().match(TUPC_CAPTURE);
+    return m ? m[1] : '';
+  };
+
+  function getLookupPrefix() {
+    const raw = sid?.dataset?.lookupPrefix || "";
+    const beforePipe = raw.split('|')[0];
+    const cleaned = beforePipe.replace(/TUPC-00-0000\/?$/i, '');
+    return cleaned.endsWith('/') ? cleaned : cleaned + '/';
+  }
+
+  function fillIfEmpty(name, val) {
+    const el = form.querySelector(`[name="${name}"]`);
+    if (el && !el.value) el.value = val || '';
+  }
+
+  async function doLookup() {
+    const id = sid.value.toUpperCase().trim();
+    if (!TUPC_FULL.test(id)) return;
+    const url = getLookupPrefix() + encodeURIComponent(id) + '/';
+    setFeedback('warn', 'Looking up student…');
+    try {
+      const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (data && data.success) {
+        fillIfEmpty('last_name',      data.last_name);
+        fillIfEmpty('first_name',     data.first_name);
+        fillIfEmpty('middle_initial', data.middle_initial);
+        fillIfEmpty('extension_name', data.extension);
+        fillIfEmpty('program_course', data.program);
+        setFeedback('ok', 'Student found. Fields filled (you can still edit).');
+      } else {
+        setFeedback('err', 'Student not found.');
+      }
+    } catch (e) {
+      console.error('[CS TUPC lookup]', e);
+      setFeedback('err', 'Lookup failed. See console.');
+    }
+  }
+
+  // Freeze helpers
+  function startFreeze(id) {
+    lockedId = id;
+    freezeUntil = Date.now() + 500; // 0.5s is enough to swallow the scanner tail
+  }
+  function isFrozen() { return Date.now() < freezeUntil; }
+
+  // Block inserts while frozen (but allow deletions/navigation)
+  sid.addEventListener('beforeinput', (e) => {
+    if (!isFrozen()) return;
+    const type = e.inputType || '';
+    if (!type.startsWith('delete') && type !== 'historyUndo' && type !== 'historyRedo') {
+      e.preventDefault();
+    }
+  });
+
+  // Keep value locked during freeze
+  const enforceLock = () => {
+    if (isFrozen()) {
+      sid.value = lockedId;
+      // keep caret at end
+      try { sid.setSelectionRange(lockedId.length, lockedId.length); } catch {}
+    }
+  };
+
+  // Snap + lookup
+  const snapAndLookup = () => {
+    sid.value = normalize(sid.value);
+    const id = firstId(sid.value);
+    if (id) {
+      sid.value = id;      // hard-trim to the ID
+      startFreeze(id);     // block any tail (e.g., "RIBERAL 4351")
+      doLookup();
+      enforceLock();
+    }
+  };
+
+  // Prevent Enter from submitting modal
+  form.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+  });
+
+  if (sid) {
+    sid.addEventListener('input',  () => { snapAndLookup(); enforceLock(); });
+    sid.addEventListener('blur',   () => { snapAndLookup(); enforceLock(); });
+    sid.addEventListener('change', () => { snapAndLookup(); enforceLock(); });
+    sid.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); snapAndLookup(); enforceLock(); }
+    });
+    sid.addEventListener('paste',  () => setTimeout(() => { snapAndLookup(); enforceLock(); }, 0));
+  }
+
+  // Focus on open; reset on close
+  modal?.addEventListener('shown.bs.modal', () => sid?.focus());
+  modal?.addEventListener('hidden.bs.modal', () => {
+    form.reset();
+    form.querySelectorAll('input,select,textarea').forEach(el => el.style.borderColor = '');
+    setFeedback('ok', '');
+    lockedId = ''; freezeUntil = 0;
+  });
+})();
+</script>
+
+
 
 <script>
 

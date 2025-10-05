@@ -247,36 +247,14 @@ class IDSurrenderRequestForm(forms.ModelForm):
         return email
     
 class CSCreateOrAdjustForm(forms.Form):
-    last_name = forms.CharField(
-        label="Last Name",
-        max_length=50,
-        validators=[MinLengthValidator(1)],
-    )
-    first_name = forms.CharField(
-        label="First Name",
-        max_length=50,
-        validators=[MinLengthValidator(1)],
-    )
-    middle_initial = forms.CharField(
-        label="Middle Initial",
-        max_length=10,
-        required=False,
-    )
-    extension_name = forms.CharField(
-        label="Ext",
-        max_length=10,
-        required=False,
-    )
-    student_id = forms.CharField(
-        label="Student ID",
-        max_length=20,
-        validators=[MinLengthValidator(1)],
-    )
-    program_course = forms.CharField(
-        label="Program",
-        max_length=100,
-        validators=[MinLengthValidator(1)],
-    )
+    last_name = forms.CharField(label="Last Name", max_length=50, validators=[MinLengthValidator(1)])
+    first_name = forms.CharField(label="First Name", max_length=50, validators=[MinLengthValidator(1)])
+    middle_initial = forms.CharField(label="Middle Initial", max_length=10, required=False)
+    extension_name = forms.CharField(label="Ext", max_length=10, required=False)
+
+    student_id = forms.CharField(label="Student ID", max_length=20, validators=[MinLengthValidator(1)])
+    program_course = forms.CharField(label="Program", max_length=100, validators=[MinLengthValidator(1)])
+
     hours = forms.DecimalField(
         label="Hours (Total Required)",
         max_digits=5,
@@ -285,10 +263,39 @@ class CSCreateOrAdjustForm(forms.Form):
         help_text="Set the TOTAL required hours (0.5 increments).",
     )
 
+    # NEW: SDT Resolution No. (optional)
+    sdt_resolution_no = forms.CharField(
+        label="SDT Resolution No.",
+        max_length=64,
+        required=False,
+        help_text="e.g., SDT-2025-00123",
+    )
+    _TUPC_CAPTURE = re.compile(r'(TUPC-\d{2}-\d{4,8})', re.I)
+    def clean_student_id(self):
+        raw = (self.cleaned_data.get("student_id") or "").strip().upper()
+        m = self._TUPC_CAPTURE.search(raw)
+        if not m:
+            raise forms.ValidationError("Enter a valid TUPC ID like TUPC-22-0374.")
+        return m.group(1)
+
+    def clean_sdt_resolution_no(self):
+        val = (self.cleaned_data.get("sdt_resolution_no") or "").strip().upper()
+        if not val:
+            return ""
+        return val
+
+    def clean_hours(self):
+        q = self.cleaned_data.get("hours")
+        if q is None:
+            return q
+        if (q * 10) % 5 != 0:
+            raise forms.ValidationError("Hours must be in 0.5 increments (e.g., 0.5, 1.0, 10.5).")
+        return q
+
     def clean(self):
         cleaned = super().clean()
-        # optional: strip spaces from text fields
-        for f in ("last_name","first_name","middle_initial","extension_name","student_id","program_course"):
+        # trim whitespace on text fields
+        for f in ("last_name","first_name","middle_initial","extension_name","program_course","sdt_resolution_no"):
             if f in cleaned and isinstance(cleaned[f], str):
                 cleaned[f] = cleaned[f].strip()
         return cleaned

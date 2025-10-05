@@ -27,6 +27,7 @@ import unicodedata
 import re
 from threading import Thread
 from django.core.mail import send_mail as _send_mail
+from decimal import Decimal
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -525,3 +526,16 @@ def no_store(response):
     response["Pragma"] = "no-cache"
     response["Expires"] = "0"
     return response
+
+
+##################################
+CS_EXEMPT_TYPES = {"Attempt Fraternity"}  # keys must match Violation.violation_type
+
+def compute_cs_topup_for_minor(violation_type: str, approved_count_of_same_type: int) -> Decimal:
+    if violation_type in CS_EXEMPT_TYPES:
+        return Decimal("0")
+    if approved_count_of_same_type == 2:
+        return Decimal("20")
+    if approved_count_of_same_type == 3:
+        return Decimal("10")
+    return Decimal("0")  # 1st or 4th+ => no hours

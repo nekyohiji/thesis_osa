@@ -82,6 +82,14 @@
                 <label class="form-label">Student ID (TUPC-ID):</label>
                 <input type="text" class="form-control fw-bold text-center" value="{{ case.student_id }}" readonly>
               </div>
+              <div class="mb-2">
+                <label class="form-label">SDT Resolution No.:</label>
+                <input
+                  type="text"
+                  class="form-control fw-bold text-center"
+                  value="{{ case.sdt_resolution_no|default:'—' }}"
+                  readonly>
+              </div>
 
               <div class="row mb-2">
                 <div class="col">
