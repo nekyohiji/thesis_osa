@@ -44,10 +44,10 @@
             </h2>
             <div class="requirements-box p-4 p-md-5">
                 {% if accreditation %}
-                    <div class="text-start" style="white-space: pre-wrap;">
-                        {{ accreditation.content }}
-                    </div>
-                    <p class="mt-3 text-muted text-end">
+                    <div class="text-start" style="font-size:35px;">
+                        {{ accreditation.content}}
+                    </div><hr>
+                    <p class="mt-3 text-light text-end">
                         📅 Last Updated: {{ accreditation.last_updated|date:"F j, Y - g:i A" }}
                     </p>
                 {% else %}
