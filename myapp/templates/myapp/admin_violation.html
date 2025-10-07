@@ -443,6 +443,7 @@
                               && (document.activeElement?.id !== 'pendingSearch')
                               && !document.getElementById('violations_pending_table')?.classList.contains('interacting')]
                   "
+
                   hx-on="htmx:beforeSwap:
                     if (window.__navClicking || document.getElementById('violations_pending_table')?.classList.contains('interacting')) {
                       event.detail.shouldSwap = false;
@@ -474,7 +475,7 @@
                     </td>
                   </tr>
                   {% empty %}
-                  <tr><td colspan="5">No pending violations</td></tr>
+                  <tr><td colspan="6">No pending violations</td></tr>
                   {% endfor %}
                 </tbody>
               </table>
@@ -934,6 +935,22 @@
         }
       });
     });
+
+
+
+
+// Para mawala blinking ng 
+    document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('violations_pending_table');
+
+    // Lock interaction during hover or click
+    table.addEventListener('mouseenter', () => table.classList.add('interacting'));
+    table.addEventListener('mouseleave', () => table.classList.remove('interacting'));
+    table.addEventListener('click', () => {
+      table.classList.add('interacting');
+      setTimeout(() => table.classList.remove('interacting'), 4000); // resume after 4s
+    });
+  });
 </script>
 
 
