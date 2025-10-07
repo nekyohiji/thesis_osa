@@ -195,9 +195,9 @@
                         <td>{{ case.remaining_hours }}h</td>
                         <td>
                           {% if case.is_closed %}
-                            <span class="badge bg-secondary">Closed</span>
+                            <span class="badge bg-secondary">Completed</span>
                           {% else %}
-                            <span class="badge bg-success">Open</span>
+                            <span class="badge bg-success">Ongoing</span>
                           {% endif %}
                         </td>
                         <td>{{ case.updated_at|date:"M d, Y H:i" }}</td>

@@ -425,6 +425,7 @@
                     <th>Name</th>
                     <th>Course/Program</th>
                     <th>Violation</th>
+                    <th>Date Time</th>
                     <th>Actions</th>
                     <th>Details</th>
                   </tr>
@@ -451,6 +452,7 @@
                     <td>{{ v.first_name }} {{ v.last_name }}</td>
                     <td>{{ v.program_course }}</td>
                     <td>{{ v.get_violation_type_display }}</td>
+                    <td>{{ v.violation_date }} {{ v.violation_time }}</td>
                     <td>
                       <div class="d-flex justify-content-center gap-2">
                         <a href="{% url 'admin_approve_violation' v.id %}" class="btn btn-sm btn-success" data-safe-nav>
@@ -517,7 +519,7 @@
                 {% for v in history_violations %}
                 <tr>
                   <td>{{ v.first_name }} {{ v.last_name }}</td>
-                  <td>{{ v.violation_date }}</td>
+                  <td>{{ v.violation_date }} {{ v.violation_time }}</td>
                   <td>
                     <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
                           onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
