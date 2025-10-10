@@ -476,7 +476,6 @@ def admin_community_service(request):
 @role_required(['admin', 'staff'])
 def admin_view_community_service(request, case_id):
     case = get_object_or_404(CommunityServiceCase, id=case_id)
-    # Pull violations for the *same student_id*
     violations = (Violation.objects
                   .filter(student_id=case.student_id)
                   .order_by('-violation_date', '-created_at'))
