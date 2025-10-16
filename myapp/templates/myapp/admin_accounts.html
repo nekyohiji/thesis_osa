@@ -703,6 +703,7 @@ function showMessage(text, type = 'success', timeout = 4000) {
 function isArray(x) { return Array.isArray(x); }
 
 /* ---------- CREATE ACCOUNT (Request OTP → Verify) WITH LIVE DISABLE ---------- */
+/* ---------- CREATE ACCOUNT (Request OTP → Verify) WITH LIVE DISABLE ---------- */
 (function () {
   const form        = document.getElementById('createAccountForm');
   const btnCreate   = document.getElementById('createAccountBtn');
@@ -716,14 +717,21 @@ function isArray(x) { return Array.isArray(x); }
   const passEl      = document.getElementById('createPassword');
   const confirmEl   = document.getElementById('confirmPassword');
 
-  // eye icons used by create/confirm password fields
+  // eye toggle stays the same
   window.togglePasswordVisibility = function (id) {
     const el = document.getElementById(id);
-    if (!el) return;
-    el.type = (el.type === 'password') ? 'text' : 'password';
+    if (el) el.type = (el.type === 'password') ? 'text' : 'password';
   };
 
-  const gmailOnly = /^[A-Za-z0-9._%+-]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$/i; // matches your HTML pattern
+  const gmailOnly = /^[A-Za-z0-9._%+-]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$/i;
+
+  // NEW: lock flag + locker to freeze inputs during OTP phase
+  let createLocked = false;
+  function lockCreateFields(lock) {
+    createLocked = !!lock;
+    [fullNameEl, emailEl, positionEl, passEl, confirmEl].forEach(el => { if (el) el.disabled = createLocked; });
+    if (btnCreate) btnCreate.disabled = true; // force disabled while locked
+  }
 
   function allCreateFieldsValid() {
     const fullName = (fullNameEl.value || '').trim();
@@ -742,24 +750,21 @@ function isArray(x) { return Array.isArray(x); }
   }
 
   function updateCreateBtnState() {
-    btnCreate.disabled = !allCreateFieldsValid();
+    // respect lock: never re-enable while we're in OTP phase
+    if (createLocked) { if (btnCreate) btnCreate.disabled = true; return; }
+    if (btnCreate) btnCreate.disabled = !allCreateFieldsValid();
   }
 
-  // Live validation wiring
   [fullNameEl, emailEl, positionEl, passEl, confirmEl].forEach(el => {
     if (!el) return;
-    const evt = (el === positionEl) ? 'change' : 'input';
-    el.addEventListener(evt, updateCreateBtnState);
+    el.addEventListener(el === positionEl ? 'change' : 'input', updateCreateBtnState);
   });
-
-  // Initial state (disabled until valid)
   updateCreateBtnState();
 
-  function val(id){ return (document.getElementById(id)?.value || '').trim(); }
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
 
   // Step 1: request OTP for account creation
   btnCreate?.addEventListener('click', async () => {
-    // double-check before submit
     if (!allCreateFieldsValid()) {
       updateCreateBtnState();
       showMessage('Please complete the form correctly.', 'warning');
@@ -771,7 +776,11 @@ function isArray(x) { return Array.isArray(x); }
     const position = val('position');
     const pass     = val('createPassword');
 
-    btnCreate.disabled = true;
+    // lock immediately; keep locked during OTP phase
+    lockCreateFields(true);
+    const old = btnCreate.textContent;
+    btnCreate.textContent = 'Sending OTP…';
+
     try {
       const res = await fetch(form.action || '{% url "request_otp" %}', {
         method: 'POST',
@@ -781,37 +790,44 @@ function isArray(x) { return Array.isArray(x); }
       const data = await res.json().catch(()=>null);
 
       if (!res.ok || data?.status === 'error') {
-        if (data?.errors) {
-          const msg = Array.isArray(data.errors) ? data.errors.join(' ')
-                    : (typeof data.errors === 'object' ? Object.values(data.errors).join(' ')
-                    : (data.message || 'Validation failed.'));
-          showMessage(msg, 'danger');
-        } else {
-          showMessage(data?.message || 'Failed to request OTP.', 'danger');
-        }
+        const msg = data?.errors
+          ? (Array.isArray(data.errors) ? data.errors.join(' ')
+             : (typeof data.errors === 'object' ? Object.values(data.errors).join(' ')
+             : (data.message || 'Validation failed.')))
+          : (data?.message || 'Failed to request OTP.');
+        showMessage(msg, 'danger');
+        // unlock so admin can fix inputs
+        lockCreateFields(false);
+        updateCreateBtnState();
         return;
       }
 
-      // Success -> show OTP input
-      otpSection.style.display = 'block';
+      // success → keep locked; reveal OTP ui; rename Verify button; focus OTP
+      if (otpSection) { otpSection.style.display = 'block'; otpSection.classList.remove('d-none'); }
       showMessage('OTP sent to email. It expires in 10 minutes.', 'success');
-      if (data?.dev_otp) console.log('DEV OTP:', data.dev_otp); // helpful in DEBUG
-    } catch (e) {
+      if (btnVerify) btnVerify.textContent = 'Verify and Create Account';
+      otpInput?.focus();
+      if (data?.dev_otp) console.log('DEV OTP:', data.dev_otp);
+    } catch {
       showMessage('Network error while requesting OTP.', 'danger');
-    } finally {
-      // keep disabled if form became invalid while waiting
+      lockCreateFields(false);
       updateCreateBtnState();
+    } finally {
+      btnCreate.textContent = old;
     }
   });
 
   // Step 2: verify OTP and create account
   btnVerify?.addEventListener('click', async () => {
     const email = val('email');
-    const code  = otpInput.value.trim();
+    const code  = (otpInput?.value || '').trim();
     if (!email) { showMessage('Email missing.', 'danger'); return; }
     if (!/^\d{6}$/.test(code)) { showMessage('Enter the 6-digit OTP.', 'warning'); return; }
 
     btnVerify.disabled = true;
+    const old = btnVerify.textContent;
+    btnVerify.textContent = 'Verifying…';
+
     try {
       const res = await fetch('{% url "verify_otp" %}', {
         method: 'POST',
@@ -819,19 +835,25 @@ function isArray(x) { return Array.isArray(x); }
         body: JSON.stringify({ email, otp: code })
       });
       const data = await res.json().catch(()=>null);
+
       if (!res.ok || data?.status === 'error') {
         showMessage(data?.message || 'OTP verification failed.', 'danger');
+        // remain locked (still in OTP phase) so fields don’t drift; allow retry
         return;
       }
+
+      // success → reset, hide OTP, unlock, refresh list
       showMessage('Account successfully created!', 'success');
-      form.reset();
-      otpSection.style.display = 'none';
+      form?.reset();
+      if (otpSection) { otpSection.style.display = 'none'; otpSection.classList.add('d-none'); }
+      lockCreateFields(false);
+      updateCreateBtnState();
       if (typeof fetchAndDisplayAccounts === 'function') fetchAndDisplayAccounts();
-    } catch (e) {
+    } catch {
       showMessage('Network error while verifying OTP.', 'danger');
     } finally {
       btnVerify.disabled = false;
-      updateCreateBtnState();
+      btnVerify.textContent = old; // remains your label
     }
   });
 })();

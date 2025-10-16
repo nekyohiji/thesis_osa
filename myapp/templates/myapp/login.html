@@ -314,9 +314,30 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+{% if force_pw_change %}
 <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Prefill the modal email
+    var email = "{{ force_reset_email|escapejs }}";
+    var emailInput = document.getElementById('LOGIN_fp_email');
+    if (emailInput) {
+      emailInput.value = email || (document.getElementById('email_login')?.value || "");
+      emailInput.dispatchEvent(new Event('input'));
+    }
 
+    // Open the modal (block closing until done)
+    var modalEl = document.getElementById('LOGIN_fpModal');
+    if (modalEl && window.bootstrap?.Modal) {
+      var modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+      modal.show();
+    } else {
+      // Fallback: click the existing trigger if Bootstrap isn't ready yet
+      document.getElementById('forgotpass_login')?.click();
+    }
+  });
+</script>
+{% endif %}
+<script>
   function setupPasswordToggle(inputId, eyeId) {
     const input = document.getElementById(inputId);
     const eye = document.getElementById(eyeId);
@@ -395,6 +416,18 @@
     const confirmPass  = $("#LOGIN_confirm_pass");
     const btnSave      = $("#LOGIN_btn_save_pass");
 
+    // NEW: modal instance with static backdrop (prevents accidental close)
+    const modalEl = document.getElementById('LOGIN_fpModal');
+    const modal = (modalEl && window.bootstrap)
+      ? bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static', keyboard: false })
+      : null;
+
+    // Helpers to disable/enable all relevant controls
+    function setDisabled(disabled) {
+      [emailInput, newPass, confirmPass, btnSend, btnVerify, btnCancel, btnSave, otpInput]
+        .forEach(el => el && (el.disabled = disabled));
+    }
+
     // --- Cooldown helpers ---
     let cooldownTimer = null;
     function getRemainingCooldown() {
@@ -464,7 +497,6 @@
         const data = await res.json();
 
         if (!res.ok) {
-          // If rate-limited, start cooldown anyway
           if (res.status === 429) {
             show(data.msg || "Please wait before requesting another code.", "warning");
             startCooldown(getRemainingCooldown() || COOLDOWN_SECONDS);
@@ -474,7 +506,6 @@
           return;
         }
 
-        // success: notify, auto-open OTP section, focus input, start cooldown
         show(data.msg || "OTP sent. Check your email.", "success");
         otpSection && otpSection.classList.remove("d-none");
         resetSection && resetSection.classList.add("d-none");
@@ -515,6 +546,7 @@
       finally{ btnVerify.disabled = false; }
     });
 
+    // UPDATED: Save handler with 5s countdown, no auto-close on click
     btnSave && btnSave.addEventListener("click", async ()=>{
       if (!emailInput || !newPass || !confirmPass) return;
       ALERT && (ALERT.innerHTML = "");
@@ -523,7 +555,11 @@
       if (p1.length < 8){ show("Password must be at least 8 characters."); return; }
       if (p1 !== p2){ show("Passwords do not match."); return; }
 
-      btnSave.disabled = true;
+      // lock UI while saving
+      setDisabled(true);
+      const originalText = btnSave.textContent;
+      btnSave.textContent = 'Saving…';
+
       try{
         const res = await fetch("{% url 'login_reset_password' %}", {
           method: "POST",
@@ -531,11 +567,31 @@
           body: new URLSearchParams({ email, new_password: p1, confirm_password: p2 })
         });
         const data = await res.json();
-        if(!res.ok) throw new Error(data.msg || "Could not reset password.");
-        show(data.msg, "success");
-        // setTimeout(()=>bootstrap.Modal.getInstance(document.getElementById('LOGIN_fpModal'))?.hide(), 1200);
-      }catch(e){ show(e.message || "Error saving password."); }
-      finally{ btnSave.disabled = false; }
+
+        if(!res.ok || !data.ok){
+          throw new Error((data && (data.msg || data.message)) || "Could not reset password.");
+        }
+
+        // success – keep modal open and count down before closing
+        show(data.msg || "Password updated. Please log in with your new password.", "success");
+
+        let secs = 5;
+        const tick = () => {
+          btnSave.textContent = `Reloading in ${secs}s…`;
+          secs--;
+          if (secs < 0) {
+            location.reload(); 
+          } else {
+            setTimeout(tick, 1000);
+          }
+        };
+        tick();
+
+      } catch(e){
+        show(e.message || "Error saving password.");
+        setDisabled(false);
+        btnSave.textContent = originalText;
+      }
     });
   })();
 </script>

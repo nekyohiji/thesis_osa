@@ -43,6 +43,8 @@ class UserAccount(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    must_change_password = models.BooleanField(default=False)
+    
     class Meta:
         db_table = 'user_accounts'
     def __str__(self):

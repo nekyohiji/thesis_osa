@@ -173,7 +173,6 @@ def client_lostandfound_view(request):
     items = LostAndFound.objects.order_by('-posted_date')
     return render(request, 'myapp/client_lostandfound.html', {'items': items})
 
-
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
 
@@ -718,13 +717,14 @@ def clearance_request_view(request):
 #########################LOGIN
 
 @never_cache
+@never_cache
 def login_view(request):
     next_url = request.GET.get("next") or request.POST.get("next") or ""
 
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
-        # Basic validation
+
         email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_regex, email) or len(email) > 164:
             messages.error(request, "Please enter a valid email address.", extra_tags="LOGIN")
@@ -739,17 +739,29 @@ def login_view(request):
         try:
             user = UserAccount.objects.get(email=email, is_active=True)
             if check_password(password, user.password):
+                if user.must_change_password:
+                    messages.info(request,
+                        "Security requirement: Please set a new password to continue.",
+                        extra_tags="LOGIN")
+                    ctx = {
+                        "next": next_url,
+                        "force_pw_change": True,        
+                        "force_reset_email": user.email, 
+                    }
+                    resp = render(request, 'myapp/login.html', ctx)
+                    return no_store(resp)
+
                 request.session.flush()
                 request.session['user_id'] = user.id
                 request.session['role'] = user.role
                 request.session['full_name'] = user.full_name
                 request.session['email'] = user.email
                 request.session.set_expiry(0)
+
                 if next_url and url_has_allowed_host_and_scheme(next_url, {request.get_host()}):
                     resp = redirect(next_url)
                     return no_store(resp)
 
-                # Role-based redirect
                 role = (user.role or "").lower()
                 if role in ('admin', 'staff', 'studasst'):
                     resp = redirect('admin_dashboard')
@@ -875,13 +887,17 @@ def login_reset_password(request):
         return JsonResponse({"ok": False, "msg": "Account not found or inactive."}, status=404)
 
     user.password = make_password(new_password)
-    user.save(update_fields=['password'])
+    user.must_change_password = False   
+    user.save(update_fields=['password', 'must_change_password'])
 
     OTPVerification.objects.filter(email=email).delete()
     cache.delete_many([LOGIN_cache_key_attempts(email), LOGIN_cache_key_send(email)])
     request.session.pop(LOGIN_SESSION_RESET_OK_FOR, None)
 
-    return JsonResponse({"ok": True, "msg": "Password updated. You can now log in."})
+    return JsonResponse({
+        "ok": True,
+        "msg": "Password updated. Please log in with your new password."
+    })
 
 
 
@@ -1554,6 +1570,7 @@ def change_password(request, email: str):
     try:
         with transaction.atomic():
             account.password = make_password(new_password)
+            account.must_change_password = True
             account.save(update_fields=["password"])
             rec.delete()  # consume OTP once used
     except Exception:
@@ -1664,8 +1681,9 @@ def verify_otp(request):
                 full_name=rec.full_name,
                 email=rec.email,
                 role=rec.role,
-                password=rec.password,  # already hashed
+                password=rec.password,  
                 is_active=True,
+                must_change_password=True,
             )
             rec.delete()
     except IntegrityError:
