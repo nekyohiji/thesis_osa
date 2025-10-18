@@ -174,7 +174,7 @@
             <!-- identity -->
             <div class="col-md-6">
               <label class="form-label fw-semibold">Last Name:</label>
-              <input name="last_name" type="text" class="form-control" autocomplete="off" required
+              <input name="last_name" type="text" class="form-control" autocomplete="off" pattern="[A-Za-z]+" required
                      value="{{ major_form.last_name.value|default_if_none:'' }}">
               {% if major_form and major_form.last_name.errors %}
                 <div class="text-danger small">{{ major_form.last_name.errors|striptags }}</div>
@@ -182,7 +182,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">First Name:</label>
-              <input name="first_name" type="text" class="form-control" autocomplete="off" required
+              <input name="first_name" type="text" class="form-control" autocomplete="off" pattern="[A-Za-z]+" required
                      value="{{ major_form.first_name.value|default_if_none:'' }}">
               {% if major_form and major_form.first_name.errors %}
                 <div class="text-danger small">{{ major_form.first_name.errors|striptags }}</div>
@@ -190,7 +190,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Middle Initial (optional):</label>
-              <input name="middle_initial" type="text" class="form-control" autocomplete="off"
+              <input name="middle_initial" type="text" class="form-control" pattern="[A-Za-z]+" autocomplete="off"
                      value="{{ major_form.middle_initial.value|default_if_none:'' }}">
             </div>
             <div class="col-md-6">
