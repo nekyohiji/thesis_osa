@@ -212,9 +212,9 @@ class IDSurrenderRequestForm(forms.ModelForm):
             "extension": forms.TextInput(attrs={"maxlength": 10, "placeholder": "Jr., Sr., II (optional)"}),
             "program": forms.TextInput(attrs={"maxlength": 100}),
             "student_number": forms.TextInput(attrs={
-                "maxlength": 18,
+                "maxlength": 23,
                 "placeholder": "TUPC-23-0123 … TUPC-23-1234567890",
-                "title": "Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–10 digits)",
+                "title": "Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 digits)",
             }),
             "inclusive_years": forms.TextInput(attrs={
                 "placeholder": "2019-2023",
@@ -222,22 +222,20 @@ class IDSurrenderRequestForm(forms.ModelForm):
             }),
             "upload_id_front": forms.ClearableFileInput(attrs={"accept": ".jpg,.jpeg,.png,.pdf"}),
             "upload_id_back": forms.ClearableFileInput(attrs={"accept": ".jpg,.jpeg,.png,.pdf"}),
-            "contact_email": forms.EmailInput(attrs={"placeholder": "you@tup.edu.ph"}),
+            "contact_email": forms.EmailInput(attrs={"placeholder": "you@gmail.com"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Require email (even though model allows null/blank)
         if "contact_email" in self.fields:
             self.fields["contact_email"].required = True
-        # Require choosing a document type (front-end also enforces this)
         if "document_type" in self.fields:
             self.fields["document_type"].required = True
 
     def clean_student_number(self):
         sn = (self.cleaned_data.get("student_number") or "").strip()
-        if not re.match(r"^TUPC-\d{2}-\d{4,10}$", sn):
-            raise ValidationError("Use TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–10 digits).")
+        if not re.match(r"TUPC-\d{2}-[A-Za-z0-9]{4,15}$", sn):
+            raise ValidationError("Use TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 characters).")
         return sn
 
     def clean_contact_email(self):
@@ -312,7 +310,7 @@ def load_programs_from_csv():
                     programs.append(val)
     return programs
 
-STUDENT_RE = re.compile(r'^TUPC-[A-Z0-9]{2}-\d{4,10}$')
+STUDENT_RE = re.compile(r'TUPC-\d{2}-[A-Za-z0-9]{4,15}$')
 
 class ClearanceRequestForm(forms.ModelForm):
     hasExtension = forms.ChoiceField(
@@ -327,7 +325,7 @@ class ClearanceRequestForm(forms.ModelForm):
     extension  = forms.CharField(required=False, min_length=2, max_length=15)
     email      = forms.EmailField()
     contact    = forms.CharField(min_length=14, max_length=14)
-    student_number = forms.CharField(min_length=12, max_length=18)
+    student_number = forms.CharField(min_length=12, max_length=23)
     program    = forms.CharField(min_length=2, max_length=100)
 
     year_level = forms.ChoiceField(choices=[('', '-- Select --')] + YEAR_LEVEL_CHOICES)
@@ -350,7 +348,7 @@ class ClearanceRequestForm(forms.ModelForm):
         })
         self.fields["student_number"].widget.attrs.update({
             "placeholder": "TUPC-XX-XXXXXXXX (4–10 digits)",
-            "pattern": r"^TUPC-[A-Z0-9]{2}-\d{4,10}$"
+            "pattern": r"TUPC-\d{2}-[A-Za-z0-9]{4,15}$"
         })
     def clean(self):
         cleaned = super().clean()
@@ -372,7 +370,7 @@ class ClearanceRequestForm(forms.ModelForm):
             cleaned["student_number"] = sn
             if not STUDENT_RE.fullmatch(sn):
                 self.add_error("student_number",
-                               "Use TUPC-XX-XXXXXXXX (XX letters/digits; 4–10 digits at end).")
+                               "Use TUPC-XX-XXXXXXXX (XX letters/digits; 4–15 characters at end).")
         prog = cleaned.get("program","")
         if not prog:
             self.add_error("program", "Program is required.")

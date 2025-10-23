@@ -2633,11 +2633,9 @@ def batch_view_gmf(request):
     to  = _num(request.GET.get('to'),  frm)
     if to < frm:
         return HttpResponseBadRequest("Invalid range.")
-
-    # Filter first, slice second. This includes pending+approved, excludes rejected.
     qs = (GoodMoralRequest.objects
           .filter(is_rejected=False)
-          .order_by('submitted_at', 'pk'))  # mirror your UI sort if needed
+          .order_by('submitted_at', 'pk'))  
 
     start = frm - 1
     end   = to
@@ -2648,7 +2646,7 @@ def batch_view_gmf(request):
     merger = PdfMerger(strict=False)
     for req in rows:
         try:
-            pdf_bytes = generate_gmf_pdf(req)  # your existing function
+            pdf_bytes = generate_gmf_pdf(req) 
             merger.append(BytesIO(pdf_bytes))
         except Exception:
             # Skip problematic rows silently; log if you prefer
@@ -2704,18 +2702,14 @@ def admin_ackreq_view(request):
 @role_required(['admin', 'staff', 'studasst'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
-
-    # Pull the single active admin's name and uppercase it
     admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
     admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
 
     try:
         pdf_path = build_ack_pdf(req, admin_name_upper)
     except Exception as e:
-        # show a basic error in-browser
         raise Http404(f"PDF generation failed: {e}")
 
-    # Stream inline so Chrome opens a new tab instead of forcing a download
     filename = os.path.basename(pdf_path)
     resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
@@ -2747,11 +2741,8 @@ def batch_view_ackreq_receipts(request):
     if to < frm:
         return HttpResponseBadRequest("Invalid range.")
 
-    # One lookup for the active admin (same as your single view)
     admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
     admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
-
-    # Base queryset — keep ordering simple & stable
     qs = IDSurrenderRequest.objects.order_by('pk')
 
     start = frm - 1
@@ -2760,7 +2751,6 @@ def batch_view_ackreq_receipts(request):
     if not rows:
         return HttpResponseBadRequest("No requests in that range.")
 
-    # Optional safety cap to prevent mega-merges
     MAX_ROWS = 300
     if len(rows) > MAX_ROWS:
         return HttpResponseBadRequest(f"Too many rows ({len(rows)}). Limit is {MAX_ROWS} per batch.")
@@ -2894,13 +2884,11 @@ def admin_view_violation(request):
 
     violation = get_object_or_404(Violation, id=violation_id)
     student   = get_object_or_404(Student, tupc_id=violation.student_id)
-
-    # “Profile” tables in the template = Approved + Pending for that student
     approved_violations = (
         Violation.objects
         .filter(student_id=student.tupc_id, status='Approved')
         .order_by('-violation_date','-created_at')
-        .defer('evidence_1','evidence_2')  # table shows links; you can remove defer if you need urls immediately
+        .defer('evidence_1','evidence_2')  
     )
     pending_violations = (
         Violation.objects
@@ -2909,7 +2897,7 @@ def admin_view_violation(request):
         .defer('evidence_1','evidence_2')
     )
 
-    total_violations = approved_violations.count()  # matches how your template displays “Total Violations”
+    total_violations = approved_violations.count() 
 
     return render(request, 'myapp/admin_view_violation.html', {
         'violation': violation,
@@ -2941,13 +2929,11 @@ def admin_violation_view(request):
                 sdt_resolution_no = (request.POST.get("sdt_resolution_no") or "").strip()
 
                 with transaction.atomic():
-                    # Save violation (your form likely sets status appropriately when approver is passed)
                     violation = add_form.save(approved_by_user=approver)
 
                     # --- Auto CS logic ONLY if this is Approved & MINOR ---
                     hours_topup = Decimal("0")
                     if (violation.status == "Approved") and (violation.severity == "MINOR") and (violation.violation_type not in CS_EXEMPT_TYPES):
-                        # lock student row
                         student = Student.objects.select_for_update().get(tupc_id=violation.student_id)
 
                         # count approved of SAME TYPE for this student (includes this new one)
@@ -2965,9 +2951,7 @@ def admin_violation_view(request):
                         hours_topup = compute_cs_topup_for_minor(violation.violation_type, approved_count)
 
                         if hours_topup > 0:
-                            # Idempotency: only apply if no adjustment yet for this violation
                             if not hasattr(violation, "cs_adjustment"):
-                                # ensure/open CS case (lock via get_or_create_open internals)
                                 case = CommunityServiceCase.get_or_create_open(
                                     student_id=student.tupc_id,
                                     last_name=getattr(violation, "last_name", "") or student.last_name or "",
@@ -3744,7 +3728,6 @@ def api_admin_elections_list(request):
     rows = Election.objects.order_by('-start_date', '-id')
     out = []
     for e in rows:
-        # status text for the label, mark (Active) if so
         status_tag = "Active" if e.status == 'active' else e.status.capitalize()
         out.append({
             "id": e.id,
@@ -3901,7 +3884,6 @@ def api_admin_results_data(request):
     president_block = single_seat_block(pres_qs, pres_counts, pres_abstain, "President")
     vp_block        = single_seat_block(vp_qs,   vp_counts,   vp_abstain,   "Vice President")
 
-    # --- Senators: decide MAJORITY vs PLURALITY ---
     def _norm_party(p):
         p = (p or '').strip().upper()
         return p if p else 'INDEPENDENT'
@@ -3912,7 +3894,6 @@ def api_admin_results_data(request):
     sen_rows = pack_list_percent_of_total_ballots(sen_qs, sen_counts)
 
     if uncontested:
-        # MAJORITY mode (50%+1 of ballots)
         threshold = (ballots_total // 2) + 1 if ballots_total > 0 else 0
         approved = [r for r in sen_rows if r["votes"] >= threshold][:SENATOR_SEATS]
         vacant = max(0, SENATOR_SEATS - len(approved))
@@ -3926,7 +3907,6 @@ def api_admin_results_data(request):
             "notes": "Uncontested senate: each candidate must reach 50%+1 of ballots."
         }
     else:
-        # PLURALITY mode (Top 9)
         winners = sen_rows[:SENATOR_SEATS]
         abstain_slots = max(0, senator_total_slots - senator_filled_slots_total)
         senator_block = {
@@ -3936,8 +3916,6 @@ def api_admin_results_data(request):
             "winners": winners,
             "abstain_slots": abstain_slots
         }
-
-    # include ballots_total for both senator modes
     senator_block["ballots_total"] = ballots_total
 
     # --- Governors by org label (percent & thresholds use org electorate) ---
@@ -3983,8 +3961,6 @@ def api_admin_results_data(request):
         return block
 
     gov_groups = {label: pack_governor_block(label) for label in gov_labels}
-
-    # Optional: overall governor abstain (sum of per-org abstains)
     overall_abstain = sum(
         max(0, ballots_per_org.get(_org_key_from_label(lbl), 0) -
                 sum(gov_counts_by_org.get(_org_key_from_label(lbl), {}).values()))
@@ -3996,11 +3972,10 @@ def api_admin_results_data(request):
         "overall_abstain": overall_abstain
     }
 
-    # --- RESPONSE ---
     return JsonResponse({
         "status": "success",
         "election": {"id": e.id, "name": e.name, "academic_year": e.academic_year},
-        "ballots_total": ballots_total,  # top-level for easy UI reference
+        "ballots_total": ballots_total, 
         "positions": {
             "President": president_block,
             "Vice President": vp_block,
@@ -4257,7 +4232,7 @@ def admin_election_close_now(request, eid):
         return redirect('admin_election_manage')
 
     e.status = 'closed'
-    e.end_date = timezone.localdate()  # keep audit trail; status controls UI/logic
+    e.end_date = timezone.localdate() 
     e.save(update_fields=['status','end_date'])
     messages.success(request, f"Election {e.name} is already closed.")
     return redirect('admin_election_manage')
@@ -4305,10 +4280,9 @@ def voter_required_page(view_func):
             messages.warning(request, "Please log in with your TUPC ID and organization to access the ballot.")
             return redirect('client_election')
 
-        # Block page if already voted
         sid = voter.get('student_id')
         if Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists():
-            request.session.pop('voter', None)     # optional but nice
+            request.session.pop('voter', None)   
             request.session.modified = True
             messages.info(request, "You have already voted.")
             return redirect('client_election')
@@ -4327,11 +4301,8 @@ def voter_required_api(view_func):
             return JsonResponse({"status":"error","message":"No active election."}, status=400)
         if not voter or voter.get('election_id') != e.id:
             return JsonResponse({"status":"error","message":"Login required."}, status=401)
-
-        # HARD STOP: one ballot per voter per election
         sid = voter.get('student_id')
         if Vote.objects.filter(election=e, voter_student_id__iexact=sid).exists():
-            # (optional) clear the stale voter session to avoid confusion
             request.session.pop('voter', None)
             request.session.modified = True
             return JsonResponse({"status":"already_voted"}, status=409)

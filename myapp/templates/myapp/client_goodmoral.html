@@ -167,7 +167,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Student ID Number:</label>
-                            <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" maxlength="25" placeholder="TUPC-XX-XXXX" required>
+                            <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" minlength="12" maxlength="23" pattern="^TUPC-\d{2}-[A-Z0-9]{4,15}$" placeholder="TUPC-XX-XXXX" required>
                         </div>
                         <div class="col-md-6 mb-3">
                         <label class="form-label">Program/Course:</label>
@@ -596,7 +596,7 @@
             const former    = document.getElementById('status_former')?.checked;
             const current   = document.getElementById('status_current')?.checked;
 
-            const idPattern   = /^TUPC-\d{2}-\d{4}$/;
+            const idPattern   = /^TUPC-\d{2}-[A-Z0-9]{4,15}$/;
             const stayPattern = /^\d{4}-\d{4}$/;
             const yearPattern = /^\d{4}$/;
             const CURRENT_YEAR = new Date().getFullYear();
@@ -604,7 +604,7 @@
             if (studentID && !idPattern.test(studentID.value.trim())) {
             valid = false;
             studentID.classList.add('is-invalid');
-            if (alertDiv) alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX';
+            if (alertDiv) alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX (last block 4-15 digits)';
             } else if (studentID) studentID.classList.remove('is-invalid');
 
             if (former) {

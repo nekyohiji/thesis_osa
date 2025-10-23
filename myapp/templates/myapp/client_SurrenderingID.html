@@ -153,8 +153,10 @@ surrendering id
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Student Number:</label>
-                        <input type="text" class="form-control" name="student_number" id="studentID_surrender" placeholder="TUPC-XX-XXXXXXXXXX" minlength="12" maxlength="25" title="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–13 digits)"
->
+                        <input type="text" class="form-control" name="student_number" id="studentID_surrender" placeholder="TUPC-XX-XXXXXXXXXX" 
+                        minlength="12" 
+                        maxlength="23" 
+                        title="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 digits)">
                     </div>
                 <!-- Year Level (corrected) -->
                 <div class="col-md-6 mb-3">
@@ -357,7 +359,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const re = new RegExp(pattern);
         if (!re.test(val)) {
-          if (input.id === 'studentID_surrender') setInvalid(input, 'Format: TUPC-XX-XXXX (last block 4–10 digits).');
+          if (input.id === 'studentID_surrender') setInvalid(input, 'Format: TUPC-XX-XXXX (last block 4–15 characters).');
           else if (input.id === 'stay_surrender') setInvalid(input, 'Use YYYY-YYYY (e.g., 2019-2023).');
           else setInvalid(input, 'Invalid format.');
           return false;

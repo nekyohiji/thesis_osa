@@ -231,7 +231,7 @@ class GoodMoralRequest(models.Model):
     surname = models.CharField(max_length=50)
     ext = models.CharField(max_length=10, blank=True)
     sex = models.CharField(max_length=10)
-    student_id = models.CharField(max_length=20)
+    student_id = models.CharField(max_length=23)
     program = models.CharField(max_length=100)
     status = models.CharField(max_length=20)
     date_graduated = models.DateField(null=True, blank=True)
@@ -338,8 +338,8 @@ class IDSurrenderRequest(models.Model):
     # --- Academic Information ---
     reason = models.CharField(max_length=30, choices=REASON_CHOICES)
     student_number = models.CharField(
-        max_length=18,
-        validators=[RegexValidator(r"^TUPC-\d{2}-\d{4,10}$", message="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX.")],
+        max_length=23,
+        validators=[RegexValidator(r"^TUPC-\d{2}-[A-Za-z0-9]{4,15}$", message="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX.")],
         db_index=True,  
     )
     year_level = models.CharField(max_length=12, choices=YEAR_LEVEL_CHOICES)
@@ -657,8 +657,8 @@ PH_PHONE_RE = RegexValidator(
 )
 
 STUDENT_NO_RE = RegexValidator(
-    regex=r'^TUPC-[A-Z0-9]{2}-\d{4,10}$',
-    message="Student number must match TUPC-XX-XXXXXXXX (4–10 digits at the end)."
+    regex=r'^TUPC-\d{2}-[A-Za-z0-9]{4,15}$',
+    message="Student number must match TUPC-XX-XXXXXXXX (4–15 digits at the end)."
 )
 
 YEAR_LEVEL_CHOICES = [
@@ -700,7 +700,6 @@ class ClearanceRequest(models.Model):
     contact    = models.CharField(max_length=14, validators=[PH_PHONE_RE])
 
     # Academic
-    # Max length still 23: len("TUPC-")=5 + 2 + 1 + 10 = 18 (but we allow up to 23 for safety)
     student_number = models.CharField(max_length=23, validators=[STUDENT_NO_RE])
     program    = models.CharField(max_length=100)  # free text OK (CSV-guided on the UI)
     year_level = models.CharField(max_length=20, choices=YEAR_LEVEL_CHOICES)
