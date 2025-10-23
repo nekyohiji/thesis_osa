@@ -141,10 +141,10 @@
               <table class="table table-hover table-bordered align-middle text-center mb-0" id="facilitatorTable">
                 <thead class="table-secondary sticky-top border">
                   <tr>
-                    <th style="width:160px;">ID Number</th>
-                    <th>Name</th>
+                    <th style="width:240px;">ID Number</th>
+                    <th style="width:300px">Name</th>
                     <th style="width:240px;">Email</th>
-                    <th style="width:140px;">Actions</th>
+                    <th style="width:240px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="facilitatorTbody">
@@ -154,7 +154,7 @@
                           data-id="{{ f.faculty_id|escape }}"
                           data-email="{{ f.email|default_if_none:''|escape }}">
                         <td class="font-monospace">{{ f.faculty_id }}</td>
-                        <td class="text-start">{{ f.full_name }}</td>
+                        <td class="text-center">{{ f.full_name }}</td>
                         <td class="text-center">
                           {% if f.email %}
                             <a href="mailto:{{ f.email|escape }}">{{ f.email }}</a>

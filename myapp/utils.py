@@ -90,7 +90,7 @@ def send_violation_email(request, violation, student, violation_count=None, sett
         f"Dear {student.first_name} {student.last_name},\n\n"
         f"You have committed your {ord_str} violation on {violation.violation_date}.\n"
         f"Violation Type: {violation.get_violation_type_display()}\n"
-        f"You are required to submit a {settlement_type} at the Office of Student Affairs to settle this violation.\n\n"
+        f"You are required to settle the {settlement_type} at the Office of Student Affairs IMMEDIATELY.\n\n"
         f"{evidence_line_text}\n\n"
         f"Please visit the Office of Student Affairs for more details.\n\n"
         f"Thank you."
@@ -100,7 +100,7 @@ def send_violation_email(request, violation, student, violation_count=None, sett
         f"<p>Dear {escape(student.first_name)} {escape(student.last_name)},</p>"
         f"<p>You have committed your <strong>{escape(ord_str)}</strong> violation on {escape(str(violation.violation_date))}.<br>"
         f"Violation Type: <strong>{escape(violation.get_violation_type_display())}</strong><br>"
-        f"You are required to submit a <strong>{escape(settlement_type)}</strong> at the Office of Student Affairs to settle this violation.</p>"
+        f"You are required to settle the <strong>{escape(settlement_type)}</strong> at the Office of Student Affairs IMMEDIATELY.</p>"
         f"{evidence_line_html}"
         f"<p>Please visit the Office of Student Affairs for more details.</p>"
         f"<p>Thank you.</p>"
@@ -240,7 +240,6 @@ def send_violation_notice(violation, to_email: str, *, max_history: int = 10) ->
       </tbody>
     </table>
 
-    <p>If you believe this is incorrect, please contact the Office of Student Affairs.</p>
     <p style="color:#666">This is an automated message. Please do not reply to this email.</p>
     """
 

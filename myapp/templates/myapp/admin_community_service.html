@@ -336,7 +336,7 @@
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Hours (Total Required):</label>
-              <input name="{{ cs_form.hours.name }}" type="number" 
+              <input name="{{ cs_form.hours.name }}" type="number"  max = "500"
                      value="{{ cs_form.hours.value|default_if_none:'' }}"
                      class="form-control {% if cs_form.hours.errors %}is-invalid{% endif %}" required>
               {% for err in cs_form.hours.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}

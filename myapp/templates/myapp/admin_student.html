@@ -111,15 +111,17 @@
           </div>
 
           <!-- Search Section -->
-          <form method="get" class="input-group input-group-sm">
-            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search">
-            <button class="btn btn-outline-secondary" type="submit">
-              <i class="bi bi-search"></i>
-            </button>
-            {% if q %}
-              <a class="btn btn-outline-secondary" href="{% url 'admin_student' %}">Clear</a>
-            {% endif %}
-          </form>
+          <div class="d-flex justify-content-end">
+            <form method="get" class="input-group input-group-sm " style="max-width: 400px;">
+              <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search">
+              <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-search"></i>
+              </button>
+              {% if q %}
+                <a class="btn btn-outline-secondary" href="{% url 'admin_student' %}">Clear</a>
+              {% endif %}
+            </form>
+          </div>
         </div>
       </div>
 

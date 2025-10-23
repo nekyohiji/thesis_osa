@@ -245,15 +245,11 @@
           {% csrf_token %}
           <div class="mb-3">
             <input type="text"
-                   name="faculty_id"
-                   id="faculty_id"
-                   class="form-control form-control-lg text-center"
-                   placeholder="12-345"
-                   required
-                   maxlength="6"
-                   inputmode="numeric"
-                   pattern="\d{2}-\d{3}"
-                   value="{{ prefill|default:'' }}">
+                  name="faculty_id"
+                  id="faculty_id"
+                  class="form-control form-control-lg text-center"
+                  placeholder="Enter Faculty ID"
+                  value="{{ prefill|default:'' }}">
             <div class="invalid-feedback text-start">Login credentials invalid.</div>
           </div>
         <button type="button" class="btn btn-lg fw-normal"   

@@ -108,15 +108,12 @@
                   <input type="text" class="form-control fw-bold text-center" value="{{ case.program_course }}" readonly>
                 </div>
                 <div class="col">
-                  <label class="form-label">Year Level:</label>
-                  <input type="text" class="form-control fw-bold text-center" value="3rd Year" readonly>
+                  <label class="form-label">Remaining Community Service Hours:</label>
+                  <input type="text" class="form-control fw-bold text-center text-danger" value="{{ case.remaining_hours }}" readonly>
                 </div>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Remaining Community Service Hours:</label>
-                <input type="text" class="form-control fw-bold text-center text-danger" value="{{ case.remaining_hours }}" readonly>
-              </div>
+           
             </div>
           </div>
 
@@ -127,7 +124,7 @@
                 <i class="bi bi-exclamation-triangle"></i> Violations
                 <hr class="mt-1 mb-2">
               </div>
-              <div class="violations-scroll flex-grow-1" style="max-height:250px;overflow-y:auto;">
+              <div class="violations-scroll flex-grow-1" style="max-height:330px;overflow-y:auto;">
                 {% if violations %}
                   {% for v in violations %}
                     <div class="bg-light border rounded px-3 py-2 mb-2">
@@ -178,7 +175,7 @@
             <label class="mb-0 me-2"><strong>Hours (Total Required):</strong></label>
      
             <input type="number" id="cs_total_input" class="form-control form-control-sm text-center"
-            value="{{ case.total_required_hours }}" min="{{ case.hours_completed }}" step="0.5"
+            value="{{ case.total_required_hours }}" min="{{ case.hours_completed }}" max="500" step="0.5"
             style="width:90px;background-color:transparent;border:1px solid #440207;color:#000;" disabled>
 
             <button id="cs_edit_btn" class="btn btn-sm text-light" style="background-color:#440207;">Edit</button>
@@ -256,12 +253,12 @@
             <div class="modal-dialog modal-dialog-centered">
               <div class="modal-content border">
                 <div class="modal-header">
-                  <h5 class="modal-title">Scan ID</h5>
+                  <h5 class="modal-title">Enter Student ID</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                  <p class="mb-2 small text-muted">Please scan the student ID now. We will parse the TUPC ID before the surname.</p>
-                  <input type="text" id="scanInput" class="form-control" placeholder="Focus here and scan..." autocomplete="off">
+                  <p class="mb-2 small text-muted">Please Type or Scan the student ID now. We will parse the TUPC ID before the surname.</p>
+                  <input type="text" id="scanInput" class="form-control" placeholder="Type here or scan..." autocomplete="off">
                   <div class="text-muted small mt-2">Expected sample: <code>TUPC-22-0374 RIBERAL LORD BET-COET 4351</code></div>
                   <div id="scanError" class="text-danger small mt-2 d-none"></div>
                 </div>
