@@ -1045,55 +1045,11 @@ def generate_guard_report_pdf(request):
     table_cell_style = ParagraphStyle(name='table_cell', parent=styles['Normal'], fontSize=7, leading=9)
 
     def header_footer(canvas, doc):
-        canvas.saveState()
-        if getattr(doc, "page", 0) in (0, 1):  # set once on first page
-            canvas.setTitle(f"Violations Report - {guard_name} ({timezone.localdate()})")
-            canvas.setAuthor("TUP-Cavite Student Violation System")
-            canvas.setSubject("Guard violations report")
-            canvas.setCreator("ReportLab")
-            gray = colors.Color(0.45, 0.45, 0.45)
-            canvas.setFillColor(gray)
-
-        # Left header text
-        x, y = 40, A4[1] - 50
-        canvas.setFont("Helvetica", 10)
-        canvas.drawString(x, y, "Republic of the Philippines")
-        y -= 13
-        canvas.setFont("Helvetica-Bold", 10)
-        canvas.drawString(x, y, "TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS")
-        y -= 13
-        canvas.setFont("Helvetica", 10)
-        canvas.drawString(x, y, "Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114")
-
-        # Right logos (optional)
-        image_names = ["tuplogo.png", "bgph.png", "ISO.png"]
-        img_size, pad = 40, 8
-        right_x = A4[0] - 40
-        for name in reversed(image_names):
-            img_path = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'images', name)
-            if os.path.exists(img_path):
-                try:
-                    img = Image.open(img_path)
-                    img.thumbnail((img_size, img_size), Image.LANCZOS)
-                    buff = io.BytesIO(); img.save(buff, format='PNG'); buff.seek(0)
-                    right_x -= img.size[0]
-                    canvas.drawImage(ImageReader(buff), right_x, A4[1] - 60,
-                                     width=img.size[0], height=img.size[1], mask='auto')
-                    right_x -= pad
-                except Exception:
-                    pass
-
-        # Footer
-        canvas.setFillColor(colors.HexColor("#666666"))
-        canvas.setFont("Helvetica", 8)
-        canvas.drawString(40, 30, f"Generated on: {generated_on}")
-        canvas.drawRightString(A4[0] - 40, 30,
-                               "This report was generated automatically by the Student Violation System.")
-        canvas.restoreState()
+        pass
 
     doc = BaseDocTemplate(
-        response, pagesize=A4,
-        leftMargin=40, rightMargin=40, topMargin=110, bottomMargin=60
+        response, pagesize=A4,  
+        leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=60
     )
     frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
     doc.addPageTemplates([PageTemplate(id='normal', frames=[frame], onPage=header_footer)])
@@ -1119,7 +1075,14 @@ def generate_guard_report_pdf(request):
         doc.width * 0.08, doc.width * 0.16, doc.width * 0.12, doc.width * 0.10,
     ]
 
-    rows = [[Paragraph(h, styles['Heading5']) for h in headers]]
+    header_style = ParagraphStyle(
+    name='HeaderWhite',
+    parent=styles['Heading5'],
+    textColor=colors.whitesmoke
+    )
+
+    rows = [[Paragraph(h, header_style) for h in headers]]
+
     for v in qs.order_by('violation_date', 'violation_time'):
         rows.append([
             Paragraph(f"{v.first_name} {v.last_name}", table_cell_style),
@@ -1154,6 +1117,7 @@ def generate_guard_report_pdf(request):
             ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
             ('TOPPADDING', (0, 0), (-1, 0), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ]
         for i in range(1, len(chunk)):
             style.append(('BACKGROUND', (0, i), (-1, i),
@@ -1853,84 +1817,16 @@ def _fmt_date(d):
     return d.strftime("%m/%d/%Y")
 
 def _header_footer_factory(pdf_title: str):
-    generated_on = timezone.now().strftime('%Y-%m-%d %H:%M')
 
     def _header_footer(canvas: Canvas, doc):
-        canvas.saveState()
-        page_w, page_h = doc.pagesize
-
-        # ------- layout knobs (easy to tune) -------
-        LEFT_X      = 40          # left margin for header text
-        TOP_GAP     = 60          # distance from top of page to first header line
-        LINE_STEP   = 14          # line spacing for the 3 header lines
-        IMG_MAX     = 56          # max logo box (increase/decrease logo size)
-        IMG_PAD     = 10          # space between logos
-        RIGHT_PAD   = 40          # right edge padding
-        RULE_GAP    = 12          # gap between the lowest element and the horizontal rule
-
-        # ------- left header text -------
-        header_top_y = page_h - TOP_GAP
-        canvas.setFillColor(colors.Color(0.45, 0.45, 0.45))
-        canvas.setFont("Helvetica", 10);      canvas.drawString(LEFT_X, header_top_y, "Republic of the Philippines")
-        canvas.setFont("Helvetica-Bold", 10); canvas.drawString(LEFT_X, header_top_y - LINE_STEP, "TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS")
-        canvas.setFont("Helvetica", 10);      canvas.drawString(LEFT_X, header_top_y - 2*LINE_STEP, "Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114")
-
-        # The lowest point used by the text block:
-        text_bottom_y = header_top_y - 2*LINE_STEP  # bottom of the 3rd line
-
-        # ------- right logos (ISO rightmost) -------
-        image_names = ["tuplogo.png", "bgph.png", "ISO.png"]  # static/myapp/images/...
-        right_x = page_w - RIGHT_PAD
-
-        # align logos vertically to the text block's vertical center
-        block_mid_y  = (header_top_y + text_bottom_y) / 2.0
-        # drawImage uses bottom-left origin; compute bottom so logo centers align to block_mid_y
-        def logo_bottom(h): return block_mid_y - (h / 2.0)
-
-        for name in reversed(image_names):
-            path = find_static(f"myapp/images/{name}")
-            if not path:
-                continue
-            try:
-                ir = ImageReader(path)
-                iw, ih = ir.getSize()
-                scale = IMG_MAX / max(iw, ih)  # preserve aspect ratio
-                w, h = iw * scale, ih * scale
-                right_x -= w
-                canvas.drawImage(ir, right_x, logo_bottom(h), width=w, height=h,
-                                 preserveAspectRatio=True, mask='auto')
-                right_x -= IMG_PAD
-            except Exception:
-                pass
-
-        # ------- thin rule safely below both text and logos -------
-        # take whichever goes lower: the text bottom or the logos bottom
-        header_bottom_y = min(text_bottom_y, logo_bottom(IMG_MAX))
-        rule_y = header_bottom_y - RULE_GAP
-        canvas.setStrokeColor(colors.HexColor("#CCCCCC")); canvas.setLineWidth(0.5)
-        canvas.line(36, rule_y, page_w - 36, rule_y)
-
-        # ------- footer -------
-        canvas.setFillColor(colors.HexColor("#666666"))
-        canvas.setFont("Helvetica", 8)
-        canvas.drawString(40, 30, f"Generated on: {generated_on}")
-        canvas.drawRightString(page_w - 40, 30,
-                               "This report was generated automatically by the Student Violation System.")
-
-        # PDF metadata (fixes Chrome “(anonymous)” title)
-        canvas.setTitle(pdf_title)
-        canvas.setAuthor("Technological University of the Philippines - Cavite Campus")
-        canvas.setCreator("Student Violation System")
-        canvas.setSubject(pdf_title)
-
-        canvas.restoreState()
+        pass
 
     return _header_footer
 
 def _start_doc(response, title_text):
     doc = BaseDocTemplate(
         response, pagesize=PH_LONG_LANDSCAPE,
-        leftMargin=36, rightMargin=36, topMargin=105, bottomMargin=54
+        leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36
     )
     frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
     doc.addPageTemplates([PageTemplate(id='normal', frames=[frame],
