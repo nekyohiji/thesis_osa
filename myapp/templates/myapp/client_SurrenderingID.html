@@ -61,19 +61,19 @@ surrendering id
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">First Name:</label>
                         <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" minlength="1" maxlength="50" required
-                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
+                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols.">
                     </div>
                     <!-- Middle Name -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Middle Name:</label>
                         <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name" maxlength="50"
-                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
+                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols.">
                     </div>
                     <!-- Surname -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Surname:</label>
                         <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" minlength="1" maxlength="50" required
-                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
+                          inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols.">
                     </div>
                 </div>
 
@@ -153,7 +153,7 @@ surrendering id
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Student Number:</label>
-                        <input type="text" class="form-control" name="student_number" id="studentID_surrender" placeholder="TUPC-XX-XXXXXXXXXX" required pattern="^TUPC-\d{2}-\d{4,10}$" minlength="12" maxlength="18" title="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–10 digits)"
+                        <input type="text" class="form-control" name="student_number" id="studentID_surrender" placeholder="TUPC-XX-XXXXXXXXXX" minlength="12" maxlength="25" title="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–13 digits)"
 >
                     </div>
                 <!-- Year Level (corrected) -->
