@@ -113,7 +113,7 @@
 
 <!-- ########################## GOOD MORAL REPORT ##########################-->
      
-<div id="goodMoralTable" class="card shadow-sm rounded border report-table" style="display: block;">
+<div id="goodMoralTable" class="card shadow-sm rounded border report-table">
   <div class="container-fluid p-4">
     <h5 class="fw-bold mb-1">
       <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>Generate Good Moral Reports
@@ -636,7 +636,7 @@
   }
 
   // defaults
-  showOnly('goodMoralTable');
+  showOnly(select?.value || '');
   refreshButtons();
 })();
 </script>
