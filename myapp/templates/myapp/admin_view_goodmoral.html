@@ -492,5 +492,121 @@
     if (e.persisted) location.reload();
   });
 </script>
+<script>
+/* One-click-only for modal Accept / Decline in admin_view_goodmoral.html (additive, safe) */
+(() => {
+  // If you have specific IDs, set them here (optional):
+  const IDS = {
+    acceptModal:  'acceptModal',     // modal id for Accept
+    declineModal: 'declineModal',    // modal id for Decline
+    acceptForm:   'acceptForm',      // form id inside Accept modal (optional)
+    declineForm:  'declineForm',     // form id inside Decline modal (optional)
+    acceptBtn:    'acceptSubmitBtn', // submit button id in Accept modal (optional)
+    declineBtn:   'declineSubmitBtn' // submit button id in Decline modal (optional)
+  };
+
+  let inFlight = false;
+  let safetyTimer = null;
+
+  function findForm(modalEl, explicitId) {
+    if (explicitId) {
+      const f = document.getElementById(explicitId);
+      if (f) return f;
+    }
+    return modalEl ? modalEl.querySelector('form') : null;
+  }
+
+  function findSubmitBtn(modalEl, explicitId) {
+    if (explicitId) {
+      const b = document.getElementById(explicitId);
+      if (b) return b;
+    }
+    // Common fallbacks: a .btn in footer with type=submit or obvious classes
+    return modalEl
+      ? (modalEl.querySelector('.modal-footer button[type="submit"]')
+        || modalEl.querySelector('.modal-footer .btn-success')
+        || modalEl.querySelector('.modal-footer .btn-danger'))
+      : null;
+  }
+
+  function lockFooterButtons(clickedBtn) {
+    const footer = clickedBtn?.closest('.modal-footer');
+    if (!footer) return;
+    footer.querySelectorAll('button').forEach(b => {
+      b.classList.add('disabled');
+      b.setAttribute('aria-disabled', 'true');
+      b.style.pointerEvents = 'none';
+      b.style.opacity = '0.7';
+      b.style.cursor = 'not-allowed';
+    });
+    const label = clickedBtn.textContent.trim() || 'Working';
+    clickedBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + label;
+  }
+
+  function armSafetyReset() {
+    clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(() => {
+      inFlight = false;
+      document.querySelectorAll('.modal-footer .disabled').forEach(b => {
+        b.classList.remove('disabled');
+        b.removeAttribute('aria-disabled');
+        b.style.pointerEvents = '';
+        b.style.opacity = '';
+        b.style.cursor = '';
+      });
+    }, 15000); // 15s fallback if we stayed on the same page
+  }
+
+  function wireModal(modalId, formId, btnId) {
+    const modalEl = document.getElementById(modalId);
+    if (!modalEl) return;
+
+    const form = findForm(modalEl, formId);
+    const submitBtn = findSubmitBtn(modalEl, btnId);
+
+    // Guard rapid clicks on the submit button
+    submitBtn?.addEventListener('click', (e) => {
+      if (inFlight) { e.preventDefault(); e.stopPropagation(); return false; }
+      // First click: lock UI and allow the submit to proceed
+      inFlight = true;
+      lockFooterButtons(submitBtn);
+      armSafetyReset();
+    }, true);
+
+    // Guard at the form level as well (covers Enter key)
+    form?.addEventListener('submit', (e) => {
+      if (inFlight) { e.preventDefault(); e.stopPropagation(); return false; }
+      inFlight = true;
+      if (submitBtn) lockFooterButtons(submitBtn);
+      armSafetyReset();
+      // DO NOT disable inputs → CSRF & fields remain posted
+      // Let the native submit proceed
+    }, true);
+
+    // When modal is fully hidden, clear local UI state (just cosmetic)
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      // If you programmatically reopen without navigating, make sure buttons look normal again
+      document.querySelectorAll(`#${modalId} .modal-footer .disabled`).forEach(b => {
+        b.classList.remove('disabled');
+        b.removeAttribute('aria-disabled');
+        b.style.pointerEvents = '';
+        b.style.opacity = '';
+        b.style.cursor = '';
+      });
+    });
+  }
+
+  // Wire both modals (update IDs above if yours differ)
+  wireModal(IDS.acceptModal,  IDS.acceptForm,  IDS.acceptBtn);
+  wireModal(IDS.declineModal, IDS.declineForm, IDS.declineBtn);
+
+  // Reset the in-flight flag when we navigate or return via bfcache
+  window.addEventListener('pageshow', () => {
+    inFlight = false;
+    clearTimeout(safetyTimer);
+  });
+})();
+</script>
 </body>
 </html>

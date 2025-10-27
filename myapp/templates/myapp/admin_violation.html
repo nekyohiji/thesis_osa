@@ -952,6 +952,112 @@
     });
   });
 </script>
+<script>
+/* One-click-only for Approve/Lift (anchors or buttons with data-safe-nav) */
+(() => {
+  if (typeof window.__navClicking === 'undefined') window.__navClicking = false;
+
+  function lockRowButtons(anchor) {
+    const row = anchor.closest('tr');
+    if (!row) return;
+    row.querySelectorAll('a[data-safe-nav],button[data-safe-nav]').forEach(btn => {
+      btn.classList.add('disabled');
+      btn.setAttribute('aria-disabled', 'true');
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.6';
+      const label = btn.textContent.trim() || 'Working';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + label;
+    });
+  }
+  const overlay = document.getElementById('loadingOverlay');
+  const showOverlay = () => { if (overlay) overlay.style.display = 'flex'; };
+  const hideOverlay = () => { if (overlay) overlay.style.display = 'none'; };
+
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-safe-nav],button[data-safe-nav]');
+    if (!a) return;
+
+    if (window.__navClicking) { // already in-flight → ignore
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    window.__navClicking = true;
+    lockRowButtons(a);
+    showOverlay();
+    setTimeout(() => { window.__navClicking = false; hideOverlay(); }, 12000);
+  });
+
+  window.addEventListener('pageshow', () => {
+    window.__navClicking = false;
+    hideOverlay();
+  });
+})();
+</script>
+<script>
+/* One-click-only for "Save" on #majorForm" — inputs stay enabled so POST includes CSRF + fields */
+(() => {
+  const form = document.getElementById('majorForm');
+  if (!form) return;
+
+  const saveBtn = document.getElementById('saveBtn');
+  const overlay = document.getElementById('loadingOverlay');
+  if (typeof window.__navClicking === 'undefined') window.__navClicking = false;
+
+  let submitting = false, resetTimer = null;
+  const showOverlay = () => { if (overlay) overlay.style.display = 'flex'; };
+  const hideOverlay  = () => { if (overlay) overlay.style.display = 'none'; };
+
+  function lockSubmitButtons() {
+    // Lock only submit-type buttons; DO NOT disable inputs/CSRF fields.
+    form.querySelectorAll('button[type="submit"]').forEach(btn => {
+      btn.classList.add('disabled');
+      btn.setAttribute('aria-disabled', 'true');
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.7';
+      btn.style.cursor  = 'not-allowed';
+      if (btn === saveBtn) {
+        const label = btn.textContent.trim() || 'Saving';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + label;
+      }
+    });
+  }
+
+  function armSafetyReset() {
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => {
+      submitting = false; window.__navClicking = false;
+      form.querySelectorAll('button[type="submit"]').forEach(btn => {
+        btn.classList.remove('disabled');
+        btn.removeAttribute('aria-disabled');
+        btn.style.pointerEvents = '';
+        btn.style.opacity = '';
+        btn.style.cursor  = '';
+      });
+      hideOverlay();
+    }, 15000);
+  }
+
+  saveBtn?.addEventListener('click', (e) => {
+    if (submitting) { e.preventDefault(); e.stopPropagation(); return false; }
+  });
+
+  form.addEventListener('submit', (e) => {
+    if (submitting) { e.preventDefault(); e.stopPropagation(); return false; }
+    if (saveBtn && saveBtn.disabled) { e.preventDefault(); return false; } // respect your existing validation
+
+    submitting = true;
+    window.__navClicking = true;     // keeps your HTMX list from swapping mid-submit
+    lockSubmitButtons();              // <-- only buttons, not inputs
+    showOverlay();
+    armSafetyReset();
+    // Let the native submit proceed normally.
+  });
+
+  window.addEventListener('pageshow', () => {
+    submitting = false; window.__navClicking = false;
+    clearTimeout(resetTimer); hideOverlay();
+  });
+})();
+</script>
 
 
 </body>

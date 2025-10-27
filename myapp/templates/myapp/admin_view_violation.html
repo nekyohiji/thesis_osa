@@ -130,7 +130,7 @@
                     {% if v.is_settled %}
                       <span class="badge bg-success">Apology Letter Settled</span>
                     {% else %}
-                      <a href="{% url 'mark_apology_settled' v.id %}" class="btn btn-sm btn-warning">
+                      <a href="{% url 'mark_apology_settled' v.id %}" class="btn btn-sm btn-warning" data-safe-nav>
                         Mark Apology Letter as Received
                       </a>
                     {% endif %}
@@ -271,6 +271,43 @@
   window.addEventListener('pageshow', function (e) {
     if (e.persisted) location.reload();
   });
+</script>
+<script>
+/* One-click-only for any anchor/button marked data-safe-nav */
+(() => {
+  if (typeof window.__navClicking === 'undefined') window.__navClicking = false;
+
+  function lockOne(a) {
+    a.classList.add('disabled');
+    a.setAttribute('aria-disabled', 'true');
+    a.style.pointerEvents = 'none';
+    a.style.opacity = '0.7';
+    const label = a.textContent.trim() || 'Working';
+    a.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' +
+      label;
+  }
+
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-safe-nav],button[data-safe-nav]');
+    if (!a) return;
+
+    // already in-flight? ignore further clicks
+    if (window.__navClicking || a.dataset.locked === '1') {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+
+    a.dataset.locked = '1';
+    window.__navClicking = true;
+    lockOne(a);
+
+    // Safety reset in case navigation doesn’t occur
+    setTimeout(() => { window.__navClicking = false; }, 12000);
+  });
+
+  // Clear the lock when the page finishes navigating / bfcache restore
+  window.addEventListener('pageshow', () => { window.__navClicking = false; });
+})();
 </script>
 </body>
 </html>

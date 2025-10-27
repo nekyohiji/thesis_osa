@@ -748,6 +748,33 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initial state on load
   updateSubmitState();
 });
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('violationForm');
+  const btnOpenModal   = document.getElementById('submit_btn_gv');
+  const btnModalSubmit = document.querySelector('#submitModal [type="submit"]');
+
+  let isSubmitting = false;
+
+  form.addEventListener('submit', function (e) {
+    if (isSubmitting) {
+      e.preventDefault();         // block duplicate submit
+      return;
+    }
+    isSubmitting = true;
+
+    // lock UI
+    if (btnModalSubmit) {
+      btnModalSubmit.disabled = true;
+      btnModalSubmit.setAttribute('aria-disabled', 'true');
+      btnModalSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+    }
+    if (btnOpenModal) {
+      btnOpenModal.disabled = true;
+      btnOpenModal.setAttribute('aria-disabled', 'true');
+      btnOpenModal.classList.add('disabled');
+    }
+  }, { once: false }); // keep listener to catch back/forward nav edge-cases
+});
 </script>
 
 

@@ -384,5 +384,82 @@
     if (e.persisted) location.reload();
   });
 </script>
+<script>
+/* One-click guard tied to the actual submit event (safe with your AJAX + CSRF) */
+(() => {
+  const PAIRS = [
+    ['acceptForm',  'acceptSubmitBtn'],
+    ['declineForm', 'declineSubmitBtn']
+  ];
+  const inFlight = new Set();
+  let safetyTimer = null;
+
+  function lockFooterButtons(clickedBtn) {
+    const footer = clickedBtn?.closest('.modal-footer');
+    if (!footer) return;
+    footer.querySelectorAll('button').forEach(b => {
+      b.classList.add('disabled');
+      b.setAttribute('aria-disabled', 'true');
+      b.style.pointerEvents = 'none';
+      b.style.opacity = '0.7';
+      b.style.cursor = 'not-allowed';
+    });
+    const label = clickedBtn.textContent.trim() || 'Working';
+    clickedBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' + label;
+  }
+
+  function armSafetyReset() {
+    clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(() => {
+      inFlight.clear();
+      document.querySelectorAll('.modal-footer .disabled').forEach(b => {
+        b.classList.remove('disabled');
+        b.removeAttribute('aria-disabled');
+        b.style.pointerEvents = '';
+        b.style.opacity = '';
+        b.style.cursor = '';
+      });
+    }, 15000);
+  }
+
+  function wire(formId, submitBtnId) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+      // If already in-flight, block duplicates
+      if (inFlight.has(form)) { e.preventDefault(); e.stopPropagation(); return false; }
+
+      // Respect your required validation (e.g., decline reason)
+      const must = form.querySelector('[required]');
+      if (must && !String(must.value).trim()) {
+        // Let your existing code show the inline alert; do NOT lock
+        return;
+      }
+
+      // First valid submit → lock this form
+      inFlight.add(form);
+
+      // Prefer the actual submitter button (mouse or Enter key)
+      const clicked = e.submitter || document.getElementById(submitBtnId)
+                     || form.querySelector('.modal-footer button[type="submit"]');
+      if (clicked) lockFooterButtons(clicked);
+
+      // Do NOT disable inputs; your AJAX handler will build FormData and disable controls.
+      armSafetyReset();
+      // Allow your existing AJAX submit handler to run normally.
+    }, true);
+  }
+
+  PAIRS.forEach(([formId, btnId]) => wire(formId, btnId));
+
+  // Clear on navigation/back-forward cache restore
+  window.addEventListener('pageshow', () => {
+    inFlight.clear();
+    clearTimeout(safetyTimer);
+  });
+})();
+</script>
 </body>
 </html>
