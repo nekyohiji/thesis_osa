@@ -24,11 +24,11 @@
     <!-- Status badge -->
     <div>
       {% if r.is_approved %}
-        <span class="badge text-bg-success">Approved</span>
+        <span class="badge text-bg-success text-light" style="margin-right: 50px; font-size: 1.2rem; padding: 0.5em 1em;">Approved</span>
       {% elif r.is_rejected %}
-        <span class="badge text-bg-danger">Rejected</span>
+        <span class="badge text-bg-danger text-light" style="margin-right: 50px; font-size: 1.2rem; padding: 0.5em 1em;">Rejected</span>
       {% else %}
-        <span class="badge text-bg-warning text-dark">Pending</span>
+        <span class="badge text-bg-warning text-dark" style="margin-right: 50px; font-size: 1.2rem; padding: 0.5em 1em;">Pending</span>
       {% endif %}
     </div>
   </div>
