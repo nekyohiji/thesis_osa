@@ -522,7 +522,10 @@
               <label for="fullName" class="form-label small"><b>Full Name:</b></label>
               <div class="input-group input-group-sm mb-3">
                 <input type="text" class="form-control" id="fullName" name="fullName" maxlength="128" placeholder="Enter Full Name" required
-                  inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value.normalize('NFC').replace(/[^\p{L}\p{M} \u2010\-'\u2019]/gu,'').replace(/([\-'\u2010\u2019])\1+/gu,'$1').replace(/ {2,}/g,' ').replace(/^[ '\-\u2010\u2019]+|[ '\-\u2010\u2019]+$/gu,'')">
+                  inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." oninput="this.value=this.value
+                  .normalize('NFC')
+                  .replace(/[^\p{L}\p{M} \u2010\-'\u2019 ]/gu,'')   
+                  .replace(/([\-'\u2010\u2019])\1+/gu,'$1');">
               </div>
 
               <!-- Email -->
