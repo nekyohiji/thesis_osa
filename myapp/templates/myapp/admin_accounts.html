@@ -575,9 +575,9 @@
               <!-- OTP Section -->
               <div id="otpSection" style="display: none;">
                 <label for="otp" class="form-label small">Enter OTP sent to email:</label>
-                <div class="input-group input-group-sm mb-2">
-                  <input type="text" id="otp" class="form-control" maxlength="6" placeholder="6-digit OTP">
-                  <button type="button" class="btn text-light btn-sm" style="background-color: #440207;" id="verifyOtpBtn">Verify</button>
+                <div class="d-flex mb-2">
+                  <input type="text" id="otp" class="form-control me-2" maxlength="6" placeholder="6-digit OTP"  style="flex: 1;">
+                  <button type="button" class="btn text-light btn-sm" style="background-color: #440207;  white-space: nowrap;" id="verifyOtpBtn">Verify</button>
                 </div>
               </div>
             </div>
@@ -720,11 +720,25 @@ function isArray(x) { return Array.isArray(x); }
   const passEl      = document.getElementById('createPassword');
   const confirmEl   = document.getElementById('confirmPassword');
 
-  // eye toggle stays the same
-  window.togglePasswordVisibility = function (id) {
-    const el = document.getElementById(id);
-    if (el) el.type = (el.type === 'password') ? 'text' : 'password';
+  // eye toggle interchanges
+  window.togglePasswordVisibility = function(id) {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    const eye = input.parentElement.querySelector('.eye-icon i');
+    if (!eye) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      eye.classList.remove('fa-eye');
+      eye.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      eye.classList.remove('fa-eye-slash');
+      eye.classList.add('fa-eye');
+    }
   };
+
 
   const gmailOnly = /^[A-Za-z0-9._%+-]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$/i;
 
@@ -808,7 +822,7 @@ function isArray(x) { return Array.isArray(x); }
       // success → keep locked; reveal OTP ui; rename Verify button; focus OTP
       if (otpSection) { otpSection.style.display = 'block'; otpSection.classList.remove('d-none'); }
       showMessage('OTP sent to email. It expires in 10 minutes.', 'success');
-      if (btnVerify) btnVerify.textContent = 'Verify and Create Account';
+      if (btnVerify) btnVerify.textContent = 'Verify';
       otpInput?.focus();
       if (data?.dev_otp) console.log('DEV OTP:', data.dev_otp);
     } catch {

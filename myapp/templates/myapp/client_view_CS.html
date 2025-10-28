@@ -21,6 +21,19 @@
     .badge { border-radius:8px; }
     .section-box { background:#fff; border-radius:12px; border:1px solid #7b0000; padding:1rem 1.25rem; }
     .section-title { font-weight:600; color:#7b0000; display:flex; gap:.5rem; align-items:center; }
+
+
+    .badge-closed {
+      background-color: #6c757d; /* same as Bootstrap secondary */
+      color: white;
+      font-weight: bold;
+      font-size: 0.9rem;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+   
+
   </style>
 </head>
 
@@ -44,9 +57,11 @@
     </div>
 
     <!-- Search Bar -->
-    <div class="input-group mb-3" style="max-width:480px;">
-      <span class="input-group-text" style="border:1px solid #7b0000;"><i class="bi bi-search"></i></span>
-      <input type="text" id="searchInput" class="form-control" placeholder="Search student...">
+    <div class="d-flex">
+      <div class="input-group mb-3 ms-auto" style="max-width:480px;">
+        <span class="input-group-text" ><i class="bi bi-search"></i></span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Search student...">
+      </div>
     </div>
 
     <!-- Student Cards -->
@@ -58,35 +73,33 @@
              data-student-id="{{ c.student_id }}"
              data-fullname="{{ c.last_name }}, {{ c.first_name }}{% if c.middle_initial %} {{ c.middle_initial }}{% endif %}{% if c.extension_name %} {{ c.extension_name }}{% endif %}"
              data-program="{{ c.program_course }}">
+             
+
+        {% if c.is_closed %}
+          <span class="badge badge-closed ms-1 fs-6">Closed</span>
+        {% endif %}
+
           <div class="card-body">
             <h5 class="card-title mb-1">{{ c.last_name|title }}, {{ c.first_name|title }}</h5>
             <p class="card-subtitle text-muted">{{ c.program_course }}</p>
 
             <div class="mt-3">
               <div class="d-flex justify-content-between small mb-1">
-                <span>Hours Rendered</span>
-                <span>{{ c.hours_completed }} / {{ c.total_required_hours }} hrs</span>
-              </div>
-              <div class="progress">
-                {% with pc=0 %}
-                {% if c.total_required_hours > 0 %}
-                  {% widthratio c.hours_completed c.total_required_hours 100 as pc %}
-                {% endif %}
-                {% endwith %}
-                <div class="progress-bar" style="width: {{ pc }}%"></div>
+                <span style="font-size:18px;" class="text-muted">Hours Rendered</span>
+                <span style="font-size:18px;" class="text-muted">{{ c.hours_completed }} / {{ c.total_required_hours }} hrs</span>
               </div>
             </div>
 
             <div class="mt-2">
               <span class="badge bg-success me-1">Rendered: {{ c.hours_completed }}h</span>
               <span class="badge bg-warning text-dark">Left: {{ c.remaining_hours }}h</span>
-              {% if c.is_closed %}
-                <span class="badge bg-secondary ms-1">Closed</span>
-              {% endif %}
             </div>
 
             <div class="mt-3 d-flex gap-2">
-              <button class="btn btn-primary flex-fill btn-view-logs" data-case-id="{{ c.id }}">
+              <button class="btn flex-fill btn-view-logs text-light"  style="background-color: #440207; border-color: #440207;"
+                  onmouseover="this.style.backgroundColor='#5e0000';"
+                  onmouseout="this.style.backgroundColor='#440207';"
+                  data-case-id="{{ c.id }}">
                 <i class="bi bi-eye me-1"></i> View Logs
               </button>
             </div>
