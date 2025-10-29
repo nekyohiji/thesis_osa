@@ -178,6 +178,12 @@ def client_clearance_view(request):
 
 #------------------------------------------------------------------------------------------#
 
+def admin_insurance_view(request):
+    return render (request, 'myapp/admin_insurance.html')
+
+
+#------------------------------------------------------------------------------------------#
+
 @role_required(['admin', 'staff'])
 def admin_old_violation_view(request):     
     return render (request, 'myapp/admin_old_violation.html')

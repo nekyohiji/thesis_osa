@@ -103,7 +103,7 @@ urlpatterns = [
     path('admin_student/', views.admin_student_view, name='admin_student'),
     
 
-
+    path('admin_insurance/', views.admin_insurance_view, name='admin_insurance'),
 
     
     ###-------------------ELECTION - admin

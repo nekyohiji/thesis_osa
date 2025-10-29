@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insuree Certification Dashboard</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <style>
+    /* --- General Certificate Styles --- */
+    @page { size: A4 portrait; margin: 1in 0.7in; }
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+
+    .certificate { width: 100%; margin: 0 auto; line-height: 1.3; text-align: center; }
+
+    .header .line1 { font-size: 11pt; margin-bottom: 1px; }
+    .header .line2 { font-size: 11pt; font-weight: bold; margin-bottom: 2px; }
+    .header .line3 { font-size: 10pt; margin-bottom: 2px; }
+    .header .line4 { font-size: 12pt; font-weight: bold; margin-top: 4px; }
+
+    .title { margin-top: 18px; font-size: 20pt; font-family: "Arial Black", sans-serif; }
+    .certify { margin-top: 18px; font-size: 12pt; }
+    .name { margin-top: 8px; font-family: "Arial Black", sans-serif; font-size: 18pt; text-decoration: underline; }
+    .subtext { font-size: 8pt; margin-top: -3px; letter-spacing: 0.5px; }
+    .level-program { margin-top: 10px; font-family: "Agency FB", sans-serif; font-size: 18pt; }
+    .level-labels { display: block; font-size: 10pt; margin-top: -1px; letter-spacing: 1px; }
+    .content { margin-top: 18px; font-size: 14pt; line-height: 1.5; }
+    .footer { margin-top: 30px; font-size: 12pt; font-weight: bold; line-height: 1.1; }
+    .footer small { display: block; font-weight: normal; font-size: 12pt; margin-top: 2px; }
+    [contenteditable="true"] { text-decoration: underline; font-weight: bold; outline: none; padding: 0 3px; }
+
+    /* Certificate containers */
+    .certificate-container {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .outer-container {
+      border: 3px solid #440207;
+      border-radius: 12px;
+      padding: 10px;
+      max-width: 950px;
+      margin: 30px auto;
+      background-color: #fff;
+    }
+    .number { font-family: "Agency FB", sans-serif; font-weight: bold; }
+
+    /* Button container */
+    .button-container { width: 100%; margin: 20px 0; text-align: center; }
+
+    .sidebar {
+        width: 260px;
+        height: 100vh;
+        background: linear-gradient(to bottom, #000000, #440207);
+        color: #fff;
+        position: fixed;
+        top: 0;
+        left: 0;
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.3s ease-in-out;
+        z-index: 1040;
+        overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+        transform: translateX(-100%);
+        }
+
+        .sidebar .logo {
+        text-align: center;
+        margin-bottom: 40px;
+        }
+
+        .sidebar .logo img {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 10px;
+        }
+
+        .sidebar .logo span {
+        font-size: 18px;
+        font-weight: bold;
+        }
+
+        .sidebar ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        }
+
+        .nav-link {
+        color: #fff !important;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        font-size: 19px;
+        transition: background 0.3s ease, color 0.3s ease, border-left 0.3s ease;
+        text-decoration: none !important;
+        border-left: 4px solid transparent;
+        width: 100%;
+        padding: 12px 0 12px 20px;
+        }
+
+        .nav-link:hover,
+        .nav-link:focus,
+        .nav-link.active {
+        background: rgba(123, 0, 10, 0.27) !important;
+        color: #ffffff !important;
+        font-weight: bold;
+        border-left: 4px solid #7b000a;
+        text-decoration: none !important;
+        }
+
+        .nav-link i {
+        margin-right: 12px;
+        font-size: 18px;
+        }
+
+        .submenu {
+        padding-left: 0;
+        margin-top: 5px;
+        }
+
+        .submenu .nav-link {
+        padding: 10px 0 10px 35px;
+        font-size: 17px;
+        border-left: 4px solid transparent;
+        color: #ffffff !important;
+        text-decoration: none !important;
+        transition: background 0.3s ease, color 0.3s ease, border-left 0.3s ease;
+        }
+
+        .submenu .nav-link:hover,
+        .submenu .nav-link:focus,
+        .submenu .nav-link.active {
+        background: rgba(255, 255, 255, 0.08) !important;
+        font-weight: bold;
+        color: #ffffff !important;
+        border-left: 4px solid rgba(255, 255, 255, 0.3);
+        text-decoration: none !important;
+        }
+
+        .submenu .nav-link i {
+        font-size: 16px;
+        margin-right: 10px;
+        }
+
+        .logout {
+        padding: 0 0 0 20px;
+        }
+
+        .toggle-btn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1050;
+        }
+
+        .dropdown-icon {
+        transition: transform 0.3s ease;
+        }
+
+        .rotate {
+        transform: rotate(180deg);
+        }
+
+        .submenu.border-start {
+        border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        hr {
+        border-top: 1px solid rgba(255, 255, 255, 0.3);
+        margin: 10px 0;
+        }
+
+        /* Responsive Sidebar */
+        @media (min-width: 768px) {
+        .toggle-btn {
+            display: none;
+        }
+        }
+
+        @media (max-width: 767.98px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+        }
+
+
+
+        .logout a {
+        display: flex;
+        align-items: center;
+        color: #ca0303 !important;
+        font-weight: bold;
+        text-decoration: none !important;
+        transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .logout a:hover,
+        .logout a:focus {
+        background: #a11a1a33;
+        color: #ffffff !important;
+        }
+
+        .toggle-btn.btn-primary {
+        background-color: #7b000a !important;
+        border: none;
+        color: #fff !important;
+        }
+
+        .toggle-btn.btn-primary:hover {
+        background-color: #a4000f !important;
+        color: #fff !important;
+        }
+
+            .button-container {
+                width: 100%;
+                text-align: center;
+                padding: 10px 0;
+                background-color: #fff; /* optional: makes it look like a footer */
+                border-top: 1px solid #ddd; /* optional */
+                position: sticky;
+                bottom: 0;
+                z-index: 100;
+            }
+
+        .main-content-wrapper {
+            margin-left: 260px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;  /* horizontal center */
+            align-items: center;      /* vertical center */
+            min-height: 100vh;
+            flex-direction: column;   /* stack certificate + buttons */
+            transition: margin-left 0.3s ease;
+        }
+
+        .outer-container {
+            flex-shrink: 0;           /* prevent shrinking */
+            width: 100%;
+            max-width: 950px;         /* match your previous max-width */
+            padding: 10px;
+            margin: 0 auto;           /* center horizontally */
+            background-color: #fff;
+            border: 3px solid #440207;
+            border-radius: 12px;
+        }
+
+
+  </style>
+</head>
+
+<body>
+
+  <!-- Sidebar -->
+
+  {% include "partials/sidebar.html" %}
+  {% include "partials/logout_modal.html" %}
+
+
+
+
+<!-- Burger Menu Button -->
+<button class="btn toggle-btn btn-primary" type="button" onclick="toggleSidebar()">
+  <i class="fas fa-bars"></i>
+</button>
+
+
+
+  <!-- Main content -->
+  <div class="main-content-wrapper">
+
+    <!-- Certificate -->
+    <div class="outer-container p-3 my-4">
+      <div class="certificate-container p-4 my-4">
+        <div class="certificate">
+          <div class="header">
+            <div class="line1">REPUBLIC OF THE PHILIPPINES</div>
+            <div class="line2">TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS</div>
+            <div class="line3">Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, Philippines</div>
+            <div class="line4">OFFICE OF STUDENT AFFAIRS</div>
+          </div>
+
+          <div class="title">INSUREE CERTIFICATION</div>
+          <div class="certify">This is to certify that</div><br>
+          <div class="name" contenteditable="true">Avdrei Diosdado D. Arevalo</div>
+          <div class="subtext">FIRST NAME&nbsp;&nbsp;&nbsp;MI&nbsp;&nbsp;&nbsp;SURNAME&nbsp;&nbsp;&nbsp;EXT.</div>
+
+          <div class="level-program">
+            <span contenteditable="true">4th year</span>, 
+            <span contenteditable="true">&nbsp;&nbsp;BSIE-ICT&nbsp;&nbsp;</span>
+            <span class="level-labels" style="margin-left:5px">LEVEL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                PROGRAM</span>
+          </div>
+
+          <div class="content">
+            Is included in the list of students (<span class="number" contenteditable="true">#166</span>) insured under the<br>
+            Student Group Accident Insurance<br>
+            with policy number <span contenteditable="true">PA-SPA-HQ-24-0000001-00</span><br>
+            for SY <span contenteditable="true">2023-2024</span> valid up to <span contenteditable="true">January 15, 2025</span>.<br>
+            Given for <span contenteditable="true">In-campus Practice Teaching</span> purposes only.
+          </div>
+
+          <div class="footer">
+            <span contenteditable="true">BEVERLY M. DE VEGA</span><br>
+            <small>Head, TUPC OSA</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="button-container">
+      <button type="button" class="btn me-2 text-light" style="background-color:#440207;" data-bs-toggle="modal" data-bs-target="#confirmModal">
+        Generate Insurance
+      </button>
+      <button type="button" class="btn btn-secondary" id="editBtn">Edit</button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+          </div>
+          <div class="modal-body text-center">
+            Are you sure you want to generate this insurance certificate?
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn text-light" style="background-color:#440207;" id="generateBtn">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+
+    /* Sidebar Functions */
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('show');
+    }
+
+    function handleDropdown(menuId) {
+      const clickedIcon = document.getElementById(`icon-${menuId}`);
+      const clickedMenu = document.getElementById(menuId);
+      const clickedCollapse = bootstrap.Collapse.getOrCreateInstance(clickedMenu);
+
+      if (clickedMenu.classList.contains('show')) {
+        clickedCollapse.hide();
+        clickedIcon.classList.remove('rotate');
+      } else {
+        clickedCollapse.show();
+        clickedIcon.classList.add('rotate');
+      }
+
+      const allDropdowns = ['violationMenu', 'documentsMenu', 'postingsMenu', 'studentRecordMenu'];
+      allDropdowns.forEach(id => {
+        if (id !== menuId) {
+          const menu = document.getElementById(id);
+          const icon = document.getElementById(`icon-${id}`);
+          const collapse = bootstrap.Collapse.getInstance(menu);
+          if (collapse) collapse.hide();
+          if (icon) icon.classList.remove('rotate');
+        }
+      });
+    }
+
+    // Highlight Active Link
+    document.addEventListener('DOMContentLoaded', function () {
+      const currentUrl = window.location.href;
+      const navLinks = document.querySelectorAll('.nav-link');
+      navLinks.forEach(link => {
+        if (link.href && currentUrl.includes(link.href)) {
+          link.classList.add('active');
+        }
+      });
+    });
+
+
+
+
+    // Edit/Save functionality
+    const editBtn = document.getElementById('editBtn');
+    const editableFields = document.querySelectorAll('[contenteditable="true"]');
+
+    function disableEditing() {
+        editableFields.forEach(field => { field.dataset.saved = "true"; });
+    }
+
+    function enableEditing() {
+        editableFields.forEach(field => { delete field.dataset.saved; });
+    }
+
+    editableFields.forEach(field => {
+        field.addEventListener('keydown', (e) => {
+            if (field.dataset.saved === "true") e.preventDefault();
+        });
+    });
+
+    editBtn.addEventListener('click', function() {
+        if (editBtn.innerText === 'Edit') {
+            enableEditing();
+            editBtn.innerText = 'Save';
+            editBtn.classList.remove('btn-secondary');
+            editBtn.classList.add('btn-success');
+        } else {
+            disableEditing();
+            editBtn.innerText = 'Edit';
+            editBtn.classList.remove('btn-success');
+            editBtn.classList.add('btn-secondary');
+        }
+    });
+
+    disableEditing();
+  </script>
+
+</body>
+</html>
