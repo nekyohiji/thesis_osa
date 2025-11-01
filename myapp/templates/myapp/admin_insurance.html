@@ -262,6 +262,21 @@
             border-radius: 12px;
         }
 
+            @media print {
+              /* Remove borders and shadows when printing */
+              .outer-container,
+              .certificate-container {
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+              }
+
+              body {
+                background: #fff !important; /* ensure white background */
+              }
+            }
+
 
   </style>
 </head>
@@ -272,8 +287,6 @@
 
   {% include "partials/sidebar.html" %}
   {% include "partials/logout_modal.html" %}
-
-
 
 
 <!-- Burger Menu Button -->
@@ -355,6 +368,10 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- jsPDF and html2canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 
   <script>
 
@@ -436,6 +453,63 @@
     });
 
     disableEditing();
+
+
+
+
+
+  document.getElementById('generateBtn').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const outerContainer = document.querySelector('.outer-container');
+    const certificateContainer = document.querySelector('.certificate-container');
+
+    // Temporarily hide borders, shadows, and backgrounds
+    outerContainer.style.border = 'none';
+    outerContainer.style.boxShadow = 'none';
+    outerContainer.style.backgroundColor = 'transparent';
+
+    certificateContainer.style.border = 'none';
+    certificateContainer.style.boxShadow = 'none';
+    certificateContainer.style.backgroundColor = 'transparent';
+
+    html2canvas(outerContainer, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        // Calculate image dimensions to fit A4
+        const imgProps = canvas.width / canvas.height;
+        let width = pdfWidth - 40; 
+        let height = width / imgProps;
+        if (height > pdfHeight - 40) {
+            height = pdfHeight - 40;
+            width = height * imgProps;
+        }
+
+        const x = (pdfWidth - width) / 2;
+        const y = 20;
+
+        pdf.addImage(imgData, 'PNG', x, y, width, height);
+        pdf.save('insuree_certificate.pdf');
+
+        // Restore the original styles
+        outerContainer.style.border = '';
+        outerContainer.style.boxShadow = '';
+        outerContainer.style.backgroundColor = '';
+
+        certificateContainer.style.border = '';
+        certificateContainer.style.boxShadow = '';
+        certificateContainer.style.backgroundColor = '';
+    });
+
+    // Close the modal after generating PDF
+    const modalEl = document.getElementById('confirmModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+});
+
   </script>
 
 </body>

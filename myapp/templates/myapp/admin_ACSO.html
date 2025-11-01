@@ -18,11 +18,221 @@
     {% include "partials/sidebar.html" %}
     {% include "partials/logout_modal.html" %}
 
+        <style>
+
+                /* ==== A4 CONTAINER ===== */
+                .a4-container {
+                    display: block; /* block for proper PDF height */
+                    width: 100%;
+                    max-width: 95%;
+                    background: white;
+                    padding: 0.5in;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                    box-sizing: border-box;
+                    margin: 0 auto; /* center in PDF */
+                                }
+
+                /* ===== HEADER ===== */
+                .header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 5px;
+                
+                }
+
+                .header-left {
+                    text-align: left;
+                    line-height: 1.1;
+                }
+
+                .header-left p {
+                    margin: 0;
+                }
+
+                .line1 {
+                    font-size: 10pt;
+                }
+
+                .line2 {
+                    font-size: 11pt;
+                    font-weight: bold;
+                }
+
+                .line3 {
+                    font-size: 10pt;
+                }
+
+                .header-right {
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                }
+
+                .header-right img {
+                    width: 90px;
+                    height: auto;
+                }
+
+                /* ===== RED DOUBLE LINE ===== */
+                .redline {
+                    border-top: 1px solid #b30000;
+                    border-bottom: 1px solid #b30000;
+                    height: 0;
+                    width: calc(100% + 1in); 
+                    margin: 1px 0 1px -0.5in; 
+                    box-sizing: border-box;
+                }
+
+                /* ===== TITLE ===== */
+                .title {
+                    text-align: center;
+                    font-family: "Times New Roman", serif;
+                    font-size: 24pt;
+                    font-weight: bold;
+                    margin-top: 20px;
+                    margin-bottom: 15px;
+                }
+
+                /* ===== BODY CONTENT ===== */
+                .body-content {
+                    flex: 1;
+                    margin-left: calc(0.60in + 0in); /* left margin + gutter */
+                    margin-right: 0.60in;
+                    margin-bottom: 1in;
+                }
+
+                .body-text {
+                    text-align: justify;
+                    font-size: 12pt;
+                    line-height: 1.3;
+                }
+
+                .center {
+                    text-align: center;
+                    font-size: 14pt;
+                }
+
+                .editable {
+                    text-decoration: underline;
+                    font-weight: bold;
+                }
+
+                ol {
+                    margin-top: 8px;
+                    margin-bottom: 8px;
+                    padding-left: 35px;
+                }
+
+                ol li {
+                    margin-bottom: 4px;
+                }
+
+                /* ===== SIGNATURES ===== */
+                .signature-block {
+                    text-align: center;
+                    margin-top: 30px;
+                }
+
+                .signature-name {
+                    font-size: 12pt;
+                    font-weight: bold;
+                    text-decoration: underline;
+                    display: block;
+                }
+
+                .signature-title {
+                    font-size: 11pt;
+                    display: block;
+                    margin-bottom: 15px;
+                }
+
+                /* ===== FOOTER ===== */
+                .footer {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    font-size: 9pt;
+                    margin-top: auto;
+                    padding-top: 5px;
+                    width: 100%;
+                }
+
+                .footer-left {
+                    text-align: left;
+                }
+
+                .footer-right {
+                    text-align: right;
+                    line-height: 1.1;
+                }
+
+                .footer-right p {
+                    margin: 0;
+                }
+
+                .footer-right b {
+                    font-weight: bold;
+                }
+
+
+                .indented {
+                    margin-left: 0.5in;
+                }
+
+                @media print {
+                    body {
+                    background: none;
+                    justify-content: flex-start;
+                    padding: 0;
+                    }
+                    .a4-container {
+                    box-shadow: none;
+                    margin: 0;
+                    width: auto;
+                    height: auto;
+                    }
+                    .editable:hover {
+                    background: none;
+                    }
+                }
+
+
+                @media (max-width: 1200px) {
+                    .a4-container {
+                        max-width: 90%; /* slightly smaller for smaller screens */
+                        padding: 20px;
+                    }
+                }
+
+
+                #a4-container {
+                    box-sizing: border-box; /* include padding in width calculation */
+                }
+
+                /* Remove extra modal padding for PDF */
+                .modal-body.d-flex {
+                    padding: 0 !important;
+                }
+
+            .button-right {
+                margin-left: auto; /* same effect as ms-auto */
+            }
+
+        </style>
+
+
 
     <div class="main-content">
         <div class="container-fluid">
             <div class="section-header">
                 <i class="fas fa-building section-header-icon"></i> ACSO Accreditation
+
+            <div class="button-right">
+                <button type="button" class="btn btn-secondary fs-5"  data-bs-toggle="modal" data-bs-target="#certificateModal">
+                    <i class="fas fa-file-alt"></i> Generate ACSO Certificate
+                </button>
+            </div>
             </div>
 
             <!-- ✅ Form to Update the Requirement -->
@@ -67,8 +277,90 @@
         </div>
     </div>
 
+        <!-- ===== Certificate Modal ===== -->
+    <div class="modal fade" id="certificateModal" tabindex="-1" aria-labelledby="certificateModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="certificateModalLabel">Certificate of Accreditation</h5>
+          </div>
+          <div class="modal-body">
+            <!-- Paste your entire certificate HTML here -->
+            <div class="modal-body d-flex justify-content-center p-0">
+            <div class="a4-container" id="pdfWrapper">
+              <!-- ===== HEADER ===== -->
+              <div class="header">
+                <div class="header-left">
+                  <p class="line1">Republic of the Philippines</p>
+                  <p class="line2">TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES - CAVITE CAMPUS</p>
+                  <p class="line3">Carlos Q. Trinidad Avenue, Salawag, Dasmariñas City, Cavite, 4114</p>
+                </div>
+                <div class="header-right">
+                  <img src="{% static 'myapp/images/logo.png' %}"  alt="TUP Logo Left" style="width:80px; height:auto;">
+                  <img src="{% static 'myapp/images/bgph.png' %}"  alt="TUP Cavite Logo Right" style="width:100px; height:auto;">
+                  <img src="{% static 'myapp/images/certified.jpg' %}"  alt="TUP Cavite Logo Right" style="width:150px; height:auto;">
+                </div>
+              </div>
+              <div class="redline"></div>
+              <div class="redline"></div><br>
+              <div class="body-content">
+                <p class="title">CERTIFICATE OF ACCREDITATION</p><br>
+                <p class="body-text">
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;In compliance with the requirements for accreditation set forth under the TUP Rules and Regulations Governing Organized Student Activities (TUP RRGOSA, Rule IV- Operation of Student Organizations), the University hereby accredits as a legitimate student organization, the
+                </p>
+                <p class="center"><span contenteditable="true" class="editable">ORGANIZATION NAME</span><br>
+                School Year <span contenteditable="true" class="editable">2025–2026</span></p>
+                <p class="body-text">
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Subject to the limitations as provided hereunder, the said organization shall operate in the campus to conduct relevant activities that are consistent with its organizational mandate in pursuit of leadership development that will harmonize with academic excellence and increased civic consciousness:
+                </p>
+                <ol class="body-text">
+                  <li>That all activities of the organization shall be within the framework of the organization's Constitution and By Laws as recognized/approved by the university and shall not be in violation of any existing rules and regulations of the University and laws of the government;</li>
+                  <li>That all activities of the organization shall be subject to the approval of the school authorities through the Office of Students Affairs; and</li>
+                  <li>The faculty adviser as well as the officers of the organization shall be responsible at all times and the activities of the organization are conducted in conformity with good morals and established ethical standards.</li>
+                </ol>
+                <p class="body-text">
+                  This certificate does not constitute as a permit to undertake activities without passing through the proper channels of authority in the University.
+                </p>
+                <p class="body-text">
+                  Given this <span contenteditable="true" class="editable">30th day of October, 2025</span> at <span contenteditable="true" class="editable">TUP Cavite Campus</span>.
+                </p><br>
+                <div class="signature-block">
+                  <span contenteditable="true" class="signature-name">Dr. GATSBY A. VALDEMORO</span>
+                  <span contenteditable="true" class="signature-title">Officer-In-Charge, Head, Office of Student Affairs</span>
+                  <span contenteditable="true" class="signature-name">Engr. GIL S. BELTRAN</span>
+                  <span contenteditable="true" class="signature-title">Officer-In-Charge, Asst. Director for Academic Affairs</span>
+                  <span contenteditable="true" class="signature-name">Atty. DANILO A. ABAYON</span>
+                  <span contenteditable="true" class="signature-title">Officer-In-Charge, Campus Director</span>
+                </div>
+              </div>
+              <div class="redline"></div>
+              <div class="redline"></div><br>
+              <div class="footer">
+                <div class="footer-left">
+                  <p>TUPC-F-OQA-DCG-14 Ø3 (03.28.25)</p>
+                </div>
+                <div class="footer-right">
+                  <p><b>Telephone Number:</b> (046) 416-4920</p>
+                  <p><b>Email:</b> cavite@tup.edu.ph</p>
+                  <p><b>Website:</b> www.tupcavite.edu.ph</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="generatePdfBtn">
+                    <i class="fas fa-file-pdf"></i> Generate PDF
+                </button>
+            </div>
+        </div>
+      </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script>
     // Toggle Sidebar
     function toggleSidebar() {
@@ -136,11 +428,28 @@
             }
         });
     });
-    </script>
-    <script>
-    window.addEventListener('pageshow', function (e) {
-        if (e.persisted) location.reload();
-    });
+
+
+
+
+
+document.getElementById('generatePdfBtn').addEventListener('click', function() {
+    const element = document.getElementById('pdfWrapper');
+
+    const opt = {
+        margin: 0,
+        filename: 'ACSO_Certificate.pdf',
+        image: { type: 'png', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: {
+            unit: 'px',
+            format: [element.offsetWidth, element.offsetHeight],
+            orientation: 'portrait'
+        }
+    };
+
+    html2pdf().set(opt).from(element).save();
+});
     </script>
 </body>
 </html>
