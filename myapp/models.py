@@ -84,7 +84,7 @@ class Violation(models.Model):
         ("Disturbance", "Causing Disturbance During Class Hours"),
         ("Proper Uniform", "Not Wearing Proper Uniform and ID"),
         ("Cross Dressing", "Cross Dressing in Uniform and Wash Days"),
-        ("Facial Hair", "Unwanted Facial Hair"),
+        ("Facial Hair", "Unwanted Facial Hair / Long Haircut / Haircolor"),
         ("Earrings", "Wearing of Earrings or Multiple Earrings"),
         ("Caps", "Wearing of Caps or Hats inside Covered Facilities"),
         ("Entering Classroom", "Entering Classrooms without Permission from Instructor"),
