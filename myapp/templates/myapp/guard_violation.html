@@ -181,16 +181,23 @@
                         <input type="time" class="form-control text-center" id="violation_time_gv" name="violation_time" readonly>
                     </div>
 
-                    <div class="col-md-12 mb-3 d-flex gap-2">
-                        <button type="button" class="btn btn-primary">Minor</button>
-                        <button type="button" class="btn btn-secondary">Major</button>
+                    <!-- inside Violation Details -->
+                    <div class="section-title text-dark">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Type of Violation
                     </div>
 
+                    <div class="col-md-12 mb-3 d-flex gap-4 mt-3 justify-content-center">
+                        <button type="button" id="btnMinor" class="btn btn-secondary">Minor Offense</button>
+                        <button type="button" id="btnMajor" class="btn btn-secondary">Major Offense</button>
+                    </div>
 
+                    <!-- hidden field to tell backend which one was chosen -->
+                    <input type="hidden" name="severity_choice" id="severity_choice" value="">
 
-                    <div class="col-md-12 mb-3">
+                    <!-- Minor dropdown -->
+                    <div class="col-md-12 mb-3 d-none" id="minorDropdown">
                         <label class="form-label">Type of Violation:</label>
-                        <select class="form-select  text-center" id="violation_type_gv" name="violation_type" style="cursor:pointer;">
+                        <select class="form-select text-center" id="minor_violation" style="cursor:pointer;">
                             <option value="">-- Select Violation Type --</option>
                             <option value="Disturbance">Causing Disturbance During Class Hours</option>
                             <option value="Proper Uniform">Not Wearing Proper Uniform and ID</option>
@@ -213,6 +220,43 @@
                             <option value="Cigarette">Possession of Any type of Cigarette or Tobacco inside University</option>
                         </select>
                     </div>
+
+                    <!-- Major dropdown -->
+                    <div class="col-md-12 mb-3 d-none" id="majorDropdown">
+                        <label class="form-label">Types of Major Violation:</label>
+                        <select class="form-select text-center" id="major_violation" style="cursor:pointer;">
+                            <option value="">-- Select Major Violation Type --</option>
+                            <option value="Liquor/Drugs">Liquor and Prohibited Drugs</option>
+                            <option value="Illegal Assembly">Unauthorized Activities / Illegal Assemblies</option>
+                            <option value="Weapons">Deadly and Dangerous Weapons</option>
+                            <option value="Threats/Coercion">Threats / Coercion</option>
+                            <option value="Swindling">Swindling</option>
+                            <option value="Funds Misuse">Misuse of or Failure to Account Funds</option>
+                            <option value="Assault/Injury">Violence and Physical Assault / Injury</option>
+                            <option value="Robbery/Theft">Robbery / Theft</option>
+                            <option value="Damage to Property (Major)">Damage to Property</option>
+                            <option value="Forced Entry">Forcible or Unauthorized entry into the TUP premises</option>
+                            <option value="Cybercrime">Commission of Cyber crimes as defined under R.A. No. 10175</option>
+                            <option value="Slander/Libel">Slander / Libel / Gossip</option>
+                            <option value="Falsification">Falsification of documents, records and credentials</option>
+                            <option value="Academic Dishonesty">Academic Dishonesty</option>
+                            <option value="Immoral Acts">Immoral Acts</option>
+                            <option value="Gambling (Major)">Gambling</option>
+                            <option value="Misrepresentation">False representation or Misrepresentation</option>
+                            <option value="Disrespect">Acts of Disrespect</option>
+                            <option value="Bribery">Offering or Giving Bribes</option>
+                            <option value="Smoking (Major)">Smoking within the University premises of any type of cigarette or tabacco product</option>
+                            <option value="Littering">Littering within the University premises</option>
+                            <option value="Borrowed ID">Entering the University premises with a borrowed ID or registration form</option>
+                            <option value="Lending ID">Leading of ID or Registration form to facilitate the entry of another student into the University premises</option>
+                            <option value="4th Minor">Commission of the same or any minor offense for the 4th time</option>
+                            <option value="Probation Major">Commission of major offense while under academic probation</option>
+                            <option value="Final Conviction">Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances</option>
+                        </select>
+                    </div>
+
+                    <!-- the REAL field that gets posted to Django -->
+                    <input type="hidden" name="violation_type" id="violation_type_gv" value="">
                 </div>
             </div>
         </div>
@@ -780,6 +824,87 @@ document.addEventListener('DOMContentLoaded', function () {
       btnOpenModal.classList.add('disabled');
     }
   }, { once: false }); // keep listener to catch back/forward nav edge-cases
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btnMinor       = document.getElementById('btnMinor');
+  const btnMajor       = document.getElementById('btnMajor');
+  const minorDropdown  = document.getElementById('minorDropdown');
+  const majorDropdown  = document.getElementById('majorDropdown');
+  const minorSelect    = document.getElementById('minor_violation');
+  const majorSelect    = document.getElementById('major_violation');
+  const hiddenType     = document.getElementById('violation_type_gv');
+  const hiddenSeverity = document.getElementById('severity_choice');
+
+  function resetButtons() {
+    btnMinor.classList.remove('btn-danger');
+    btnMinor.classList.add('btn-secondary');
+    btnMajor.classList.remove('btn-danger');
+    btnMajor.classList.add('btn-secondary');
+  }
+
+  // start: none selected, both dropdowns hidden, hiddenType empty
+  hiddenType.value = '';
+  hiddenSeverity.value = '';
+  minorDropdown.classList.add('d-none');
+  majorDropdown.classList.add('d-none');
+
+  btnMinor.addEventListener('click', () => {
+    resetButtons();
+    btnMinor.classList.remove('btn-secondary');
+    btnMinor.classList.add('btn-danger');
+
+    // show minor, hide major
+    minorDropdown.classList.remove('d-none');
+    majorDropdown.classList.add('d-none');
+
+    // clear both selects
+    minorSelect.value = '';
+    majorSelect.value = '';
+
+    // set severity
+    hiddenSeverity.value = 'MINOR';
+    hiddenType.value = ''; // wait for actual pick
+
+    // re-run frontend validation
+    window.updateSubmitState && window.updateSubmitState();
+  });
+
+  btnMajor.addEventListener('click', () => {
+    resetButtons();
+    btnMajor.classList.remove('btn-secondary');
+    btnMajor.classList.add('btn-danger');
+
+    // show major, hide minor
+    majorDropdown.classList.remove('d-none');
+    minorDropdown.classList.add('d-none');
+
+    // clear both selects
+    minorSelect.value = '';
+    majorSelect.value = '';
+
+    // set severity
+    hiddenSeverity.value = 'MAJOR';
+    hiddenType.value = ''; // wait for actual pick
+
+    window.updateSubmitState && window.updateSubmitState();
+  });
+
+  // when user picks from minor
+  minorSelect.addEventListener('change', () => {
+    if (hiddenSeverity.value === 'MINOR') {
+      hiddenType.value = minorSelect.value;
+      window.updateSubmitState && window.updateSubmitState();
+    }
+  });
+
+  // when user picks from major
+  majorSelect.addEventListener('change', () => {
+    if (hiddenSeverity.value === 'MAJOR') {
+      hiddenType.value = majorSelect.value;
+      window.updateSubmitState && window.updateSubmitState();
+    }
+  });
 });
 </script>
 

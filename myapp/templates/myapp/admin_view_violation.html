@@ -136,6 +136,8 @@
                     {% endif %}
                   {% elif v.settlement_type == "Community Service" %}
                     <span class="badge bg-info">Community Service Required</span>
+                  {% elif v.settlement_type == "SDT Settlement" %}
+                    <span class="badge bg-danger">SDT Settlement</span>
                   {% else %}
                     <span class="badge bg-secondary">No Settlement</span>
                   {% endif %}

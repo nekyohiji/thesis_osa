@@ -967,14 +967,24 @@ def guard_report_view(request):
     }
     return render(request, 'myapp/guard_report.html', context)
 
+
 def submit_violation(request):
     guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
+
     if request.method == 'POST':
         form = ViolationForm(request.POST, request.FILES)
+        severity_choice = request.POST.get('severity_choice') 
+
+        if not severity_choice:
+            messages.error(request, "Please select Minor or Major offense first.")
+            return render(request, 'myapp/guard_violation.html', {
+                'form': form,
+                'guards': guards,
+            })
+
         if form.is_valid():
             student_id = form.cleaned_data['student_id']
 
-            # Does the student have an approved first violation that needs an Apology Letter and isn’t settled?
             unsettled_first = Violation.objects.filter(
                 student_id=student_id,
                 status='Approved',
@@ -987,14 +997,20 @@ def submit_violation(request):
                 success_message += " Note: This student has an unsettled first violation. Please confiscate the student's ID."
 
             v = form.save(commit=False)
-            v.severity = "MINOR"           
+            v.severity = severity_choice  
             v.status = 'Pending'
-            v.settlement_type = "None"      
+            v.settlement_type = "None"
             v.is_settled = False
             v.save()
 
             messages.success(request, success_message)
             return redirect('guard_violation')
+        else:
+            return render(request, 'myapp/guard_violation.html', {
+                'form': form,
+                'guards': guards,
+            })
+
     else:
         form = ViolationForm()
 
@@ -2913,74 +2929,86 @@ def admin_view_violation(request):
         'pending_violations': pending_violations,
     })
 
-@role_required(['admin', 'staff'])
 def admin_violation_view(request):
-    """
-    Admin page that:
-      - lists pending/history
-      - allows adding a MINOR or MAJOR violation from one modal (optional evidence)
-      - emails the student after successful save
-      - (NEW) applies auto CS hours + optional SDT Resolution No on create when status is Approved
-    """
     open_major_modal = False
     form_debug = None
 
-    # ----- CREATE (POST) -----
     if request.method == "POST":
-        add_form = AddViolationForm(request.POST, request.FILES)  # include files
+        add_form = AddViolationForm(request.POST, request.FILES)
 
         try:
             if add_form.is_valid():
                 approver = getattr(request.user, "get_full_name", lambda: "")() or request.user.username
-                sdt_resolution_no = (request.POST.get("sdt_resolution_no") or "").strip()
 
                 with transaction.atomic():
                     violation = add_form.save(approved_by_user=approver)
 
-                    # --- Auto CS logic ONLY if this is Approved & MINOR ---
-                    hours_topup = Decimal("0")
-                    if (violation.status == "Approved") and (violation.severity == "MINOR") and (violation.violation_type not in CS_EXEMPT_TYPES):
-                        student = Student.objects.select_for_update().get(tupc_id=violation.student_id)
+                    # MAJOR → SDT Settlement, no CS
+                    if violation.severity == "MAJOR":
+                        violation.settlement_type = "SDT Settlement"
+                        violation.is_settled = False
+                        violation.settled_at = None
+                        violation.save(update_fields=["settlement_type", "is_settled", "settled_at"])
+                        hours_topup = Decimal("0")
 
-                        # count approved of SAME TYPE for this student (includes this new one)
-                        approved_count = (
-                            Violation.objects
-                            .filter(
-                                student_id=violation.student_id,
-                                status='Approved',
-                                severity='MINOR',
-                                violation_type=violation.violation_type,
+                    # MINOR → maybe CS
+                    else:
+                        hours_topup = Decimal("0")
+                        if (
+                            violation.status == "Approved"
+                            and violation.violation_type not in CS_EXEMPT_TYPES
+                        ):
+                            student = Student.objects.select_for_update().get(
+                                tupc_id=violation.student_id
                             )
-                            .count()
-                        )
-
-                        hours_topup = compute_cs_topup_for_minor(violation.violation_type, approved_count)
-
-                        if hours_topup > 0:
-                            if not hasattr(violation, "cs_adjustment"):
-                                case = CommunityServiceCase.get_or_create_open(
-                                    student_id=student.tupc_id,
-                                    last_name=getattr(violation, "last_name", "") or student.last_name or "",
-                                    first_name=getattr(violation, "first_name", "") or student.first_name or "",
-                                    program_course=getattr(violation, "program_course", "") or getattr(student, "program_course", "") or "",
-                                    middle_initial=getattr(violation, "middle_initial", "") or getattr(student, "middle_initial", "") or "",
-                                    extension_name=getattr(violation, "extension_name", "") or getattr(student, "extension_name", "") or "",
+                            approved_count = (
+                                Violation.objects
+                                .filter(
+                                    student_id=violation.student_id,
+                                    status='Approved',
+                                    severity='MINOR',
+                                    violation_type=violation.violation_type,
                                 )
+                                .count()
+                            )
+                            hours_topup = compute_cs_topup_for_minor(
+                                violation.violation_type,
+                                approved_count
+                            )
 
-                                # top-up total
-                                case.top_up_required_hours(hours_topup)
+                            if hours_topup > 0:
+                                if not hasattr(violation, "cs_adjustment"):
+                                    case = CommunityServiceCase.get_or_create_open(
+                                        student_id=student.tupc_id,
+                                        last_name=violation.last_name or student.last_name or "",
+                                        first_name=violation.first_name or student.first_name or "",
+                                        program_course=(
+                                            violation.program_course
+                                            or getattr(student, "program_course", "")
+                                            or ""
+                                        ),
+                                        middle_initial=(
+                                            violation.middle_initial
+                                            or getattr(student, "middle_initial", "")
+                                            or ""
+                                        ),
+                                        extension_name=(
+                                            violation.extension_name
+                                            or getattr(student, "extension_name", "")
+                                            or ""
+                                        ),
+                                    )
+                                    case.top_up_required_hours(hours_topup)
+                                    CommunityServiceAdjustment.objects.create(
+                                        case=case,
+                                        violation=violation,
+                                        hours=hours_topup,
+                                        reason=f"{approved_count} offense of {violation.violation_type}: +{hours_topup}h"
+                                    )
+                                else:
+                                    hours_topup = Decimal("0")
 
-                                # ledger (prevents double-apply)
-                                CommunityServiceAdjustment.objects.create(
-                                    case=case,
-                                    violation=violation,
-                                    hours=hours_topup,
-                                    reason=f"{approved_count} offense of {violation.violation_type}: +{hours_topup}h"
-                                )
-                            else:
-                                hours_topup = Decimal("0")  # already applied before
-
-                # --- EMAIL NOTIFICATION (your existing behavior) ---
+                # EMAIL (no SDT number)
                 student_email = build_student_email(
                     violation.first_name,
                     violation.last_name,
@@ -2988,25 +3016,16 @@ def admin_violation_view(request):
                 )
                 if student_email:
                     ok, info = send_violation_notice(violation, student_email, max_history=10)
-                    # tweak message to show CS top-up & SDT when applicable
+                    extra = f" Community Service +{hours_topup}h applied." if hours_topup > 0 else ""
                     if ok:
-                        extra = ""
-                        if violation.status == "Approved" and hours_topup > 0:
-                            extra = f" Community Service +{hours_topup}h applied."
-                            if sdt_resolution_no:
-                                extra += f" SDT: {sdt_resolution_no}."
                         messages.success(request, f"Violation has been recorded. {info}.{extra}")
                     else:
-                        messages.warning(request, f"Violation recorded, but email not sent: {info}")
+                        messages.warning(request, f"Violation recorded, but email not sent: {info}{extra}")
                 else:
-                    extra = ""
-                    if violation.status == "Approved" and hours_topup > 0:
-                        extra = f" Community Service +{hours_topup}h applied."
-                        if sdt_resolution_no:
-                            extra += f" SDT: {sdt_resolution_no}."
+                    extra = f" Community Service +{hours_topup}h applied." if hours_topup > 0 else ""
                     messages.warning(request, f"Violation recorded, but student email could not be constructed.{extra}")
 
-                return redirect("admin_violation")  # PRG
+                return redirect("admin_violation")
 
             else:
                 open_major_modal = True
@@ -3079,7 +3098,7 @@ def admin_violation_view(request):
         "default_violation_date": default_violation_date,
         "default_violation_time": default_violation_time,
     })
-    
+     
 @role_required(['admin', 'staff'])
 @transaction.atomic
 def admin_decline_violation(request, violation_id):
@@ -3126,10 +3145,32 @@ def admin_decline_violation(request, violation_id):
 def admin_approve_violation(request, violation_id):
     v = Violation.objects.select_for_update().get(id=violation_id)              # lock this violation
     student = Student.objects.select_for_update().get(tupc_id=v.student_id)     # lock per-student
-
-    # Idempotent approve + stamp
     if v.status != 'Approved':
-        v.mark_approved(by_user=getattr(request.user, "get_full_name", lambda:"")())
+        v.mark_approved(by_user=getattr(request.user, "get_full_name", lambda: "")())
+
+    # If MAJOR -> always SDT, no CS, no top-up
+    if v.severity == 'MAJOR':
+        new_settlement = 'SDT Settlement'
+        # update violation if needed
+        if (v.settlement_type != new_settlement) or v.is_settled:
+            v.settlement_type = new_settlement
+            v.is_settled = False
+            v.settled_at = None
+            v.save(update_fields=["settlement_type", "is_settled", "settled_at"])
+
+        # email after commit
+        transaction.on_commit(lambda: send_violation_email(
+            request=request,
+            violation=v,
+            student=student,
+            violation_count=None,    # or 0 / leave out, majors aren’t counted per-type
+            settlement_type=new_settlement,
+        ))
+
+        messages.success(request, f"✅ Approved. Settlement: {new_settlement}.")
+        return redirect('admin_violation')
+
+    # ---------- MINOR logic below ----------
 
     # Count APPROVED MINORs of THIS TYPE for this student (includes this one now)
     approved_count = (
@@ -3143,7 +3184,7 @@ def admin_approve_violation(request, violation_id):
         .count()
     )
 
-    # Decide settlement for this violation
+    # Decide settlement for this MINOR violation
     if v.violation_type in CS_EXEMPT_TYPES:
         new_settlement = 'Apology Letter'
     else:
@@ -3158,14 +3199,12 @@ def admin_approve_violation(request, violation_id):
 
     # ---- Community Service: compute top-up (per-type rule) ----
     hours_topup = Decimal('0')
-    if (v.severity == 'MINOR') and (v.violation_type not in CS_EXEMPT_TYPES):
+    if (v.violation_type not in CS_EXEMPT_TYPES):
         hours_topup = compute_cs_topup_for_minor(v.violation_type, approved_count)
 
     # If there is a top-up, apply it ONCE by ledgering it to this violation
     if hours_topup > 0:
-        # Already applied for this violation?
         if not hasattr(v, "cs_adjustment"):
-            # Ensure there's an open case (will create if none)
             case = CommunityServiceCase.get_or_create_open(
                 student_id=student.tupc_id,
                 last_name=getattr(student, "last_name", "") or "",
@@ -3174,10 +3213,8 @@ def admin_approve_violation(request, violation_id):
                 middle_initial=getattr(student, "middle_initial", "") or "",
                 extension_name=getattr(student, "extension_name", "") or "",
             )
-            # Increase TOTAL required hours (completed stays as-is)
             case.top_up_required_hours(hours_topup)
 
-            # Create a ledger record tied to this violation (idempotency)
             CommunityServiceAdjustment.objects.create(
                 case=case,
                 violation=v,
@@ -3185,7 +3222,6 @@ def admin_approve_violation(request, violation_id):
                 reason=f"{approved_count} offense of {v.violation_type}: +{hours_topup}h"
             )
         else:
-            # Already ledgered (no double-apply)
             hours_topup = Decimal('0')
 
     # Email after commit
@@ -3197,7 +3233,6 @@ def admin_approve_violation(request, violation_id):
         settlement_type=new_settlement,
     ))
 
-    # UI feedback
     if hours_topup > 0:
         messages.success(
             request,
