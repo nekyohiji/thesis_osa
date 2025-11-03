@@ -698,8 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalOK  = hasText(firstName) && hasText(lastName) && hasText(studentID) && hasText(program);
     const datetimeOK  = hasText(vioDate) && hasText(vioTime);
     const selectsOK   = notDefaultSelect(vioType) && notDefaultSelect(guardName);
-    const evidenceOK  = hasFile(evidence);
-    return personalOK && datetimeOK && selectsOK && evidenceOK;
+    return personalOK && datetimeOK && selectsOK;
   }
 
   function updateSubmitState() {
@@ -723,7 +722,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!formIsComplete()) {
       e.preventDefault();
       e.stopPropagation();
-      alert("Please complete all fields and selections, and attach evidence before submitting.");
+      alert("Please complete all required fields (student, date/time, violation type, guard).");
     }
   });
 

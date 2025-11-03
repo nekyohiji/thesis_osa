@@ -28,8 +28,7 @@ class ViolationForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if not cleaned_data.get('evidence_1'):
-            raise forms.ValidationError("At least one evidence photo is required.")
+        # evidence is now OPTIONAL
         return cleaned_data
 
 class AddViolationForm(forms.ModelForm):
