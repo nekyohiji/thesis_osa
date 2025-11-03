@@ -251,15 +251,19 @@
           </div>
           <div class="mb-3">
             <label for="facilitatorEmail" class="form-label fw-semibold">Email:</label>
-            <input type="email"
-                  class="form-control {% if form.email.errors %}is-invalid{% endif %}"
-                  id="facilitatorEmail"
-                  name="email"
-                  placeholder="name@example.com"
-                  inputmode="email"
-                  maxlength="254"
-                  required
-                  value="{{ form.email.value|default:'' }}">
+              <input
+                type="text"
+                class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                id="facilitatorEmail"
+                name="email"
+                placeholder="name@example.com"
+                inputmode="text"
+                autocomplete="email"
+                spellcheck="false"
+                maxlength="254"
+                required
+                value="{{ form.email.value|default:'' }}"
+              >
             {% if form.email.errors %}
               <div class="invalid-feedback">{{ form.email.errors|striptags }}</div>
             {% else %}
