@@ -64,11 +64,22 @@
     <!-- Main Content Card -->
     <div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
       <div class="row g-4">
+
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn text-white" style="background:#440207; font-size: 24px" data-bs-toggle="modal" data-bs-target="#agreementModal">
+            <i class="bi bi-file-text-fill"></i> Agreement Certificate
+          </button>
+
+          <button type="button" class="btn text-white" style="background:#440207; font-size: 24px" data-bs-toggle="modal" data-bs-target="#completionModal">
+            <i class="bi bi-check-circle-fill"></i> Completion Certificate
+          </button>
+        </div>
+
         <h3 class="text-dark fw-bold mb-0 text-center">
           <i class="bi bi-pencil-square"></i> Community Service Details
         </h3>
-        <hr>
-
+  <hr>
+        
         <!-- Student Profile Panel -->
         <div class="row g-2 align-items-stretch">
           <div class="col-md-6 d-flex">
@@ -248,6 +259,7 @@
               <i class="bi bi-box-arrow-left"></i> Log Time Out
             </button>
           </div>
+          
           <!-- Scanner Modal -->
           <div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -274,6 +286,51 @@
       </div>
     </div>
   </div>
+
+
+
+
+
+
+
+  <!-- ////////////// Modals -->
+
+
+  <!-- Agreement Certificate Modal -->
+<div class="modal fade" id="agreementModal" tabindex="-1" aria-labelledby="agreementModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="agreementModalLabel"></h5>
+      </div>
+      <div class="modal-body text-center">
+        Are you sure you want to generate the <strong>Agreement Certificate</strong>?
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn text-light" style="background:#440207;">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Completion Certificate Modal -->
+<div class="modal fade" id="completionModal" tabindex="-1" aria-labelledby="completionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="completionModalLabel"></h5>
+      </div>
+      <div class="modal-body text-center">
+        Are you sure you want to generate the <strong>Completion Certificate</strong>?
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn text-light" style="background:#440207;">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
