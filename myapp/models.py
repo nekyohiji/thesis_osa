@@ -135,6 +135,7 @@ class Violation(models.Model):
         ("None", "None"),
         ("Apology Letter", "Apology Letter"),
         ("Community Service", "Community Service"),
+        ("SDT Settlement", "SDT Settlement"),
     ]
 
     # --- identity
@@ -455,7 +456,7 @@ class CommunityServiceCase(models.Model):
         ]
 
     def __str__(self):
-        full = f"{self.last_name}, {self.first_name}".strip(", ")
+        full = f"{self.last_name}, {self.first_name}".replace(", ,", ",").strip().strip(",")
         tag = f" | SDT:{self.sdt_resolution_no}" if self.sdt_resolution_no else ""
         return f"{full} ({self.student_id}){tag} | required={self.total_required_hours} done={self.hours_completed}"
 
@@ -483,7 +484,7 @@ class CommunityServiceCase(models.Model):
     # ---------- Helpers for manual workflow ----------
     @classmethod
     @transaction.atomic
-    def get_or_create_open(
+    def get_or_reopen_latest(
         cls,
         *,
         student_id: str,
@@ -493,19 +494,41 @@ class CommunityServiceCase(models.Model):
         middle_initial: str = "",
         extension_name: str = "",
     ) -> "CommunityServiceCase":
+        """
+        Return the most recent case for the student (open OR closed).
+        If none exists, create one. Snapshot fields are refreshed if provided.
+        The case will effectively 're-open' once you top_up_required_hours(...).
+        """
         case = (cls.objects
                   .select_for_update()
-                  .filter(student_id=student_id, is_closed=False)
+                  .filter(student_id=student_id)
+                  .order_by('-updated_at', '-created_at')
                   .first())
         if case:
+            # refresh snapshot if newer info provided
+            updates = []
+            for f, v in {
+                "last_name": last_name or "",
+                "first_name": first_name or "",
+                "middle_initial": middle_initial or "",
+                "extension_name": extension_name or "",
+                "program_course": program_course or "",
+            }.items():
+                if v and getattr(case, f) != v:
+                    setattr(case, f, v)
+                    updates.append(f)
+            if updates:
+                case.save(update_fields=updates + ["updated_at"])
             return case
+
+        # none exists → create
         return cls.objects.create(
             student_id=student_id,
-            last_name=last_name,
-            first_name=first_name,
+            last_name=last_name or "",
+            first_name=first_name or "",
             middle_initial=middle_initial or "",
             extension_name=extension_name or "",
-            program_course=program_course,
+            program_course=program_course or "",
         )
 
     @transaction.atomic
@@ -545,41 +568,72 @@ class CommunityServiceCase(models.Model):
 
     @transaction.atomic
     def open_session(
-        self, *, facilitator_name: str | None = None, facilitator_source: str | None = None
+        self, *, facilitator_name: str | None = None,
+        facilitator_source: str | None = None,
+        facilitator_user=None, facilitator_faculty=None
     ) -> "CommunityServiceLog":
-        existing = (self.logs.select_for_update().filter(check_out_at__isnull=True).first())
+        existing = (self.logs.select_for_update()
+                    .filter(check_out_at__isnull=True).first())
         if existing:
-            if not existing.facilitator_name and facilitator_name:
-                existing.facilitator_name = facilitator_name
-                existing.facilitator_source = (facilitator_source or "")
-                existing.save(update_fields=["facilitator_name", "facilitator_source"])
+            # Backfill missing metadata for legacy logs
+            updates = []
+            if facilitator_name and not existing.facilitator_name:
+                existing.facilitator_name = facilitator_name; updates.append("facilitator_name")
+            if facilitator_source and not existing.facilitator_source:
+                existing.facilitator_source = facilitator_source; updates.append("facilitator_source")
+            if facilitator_user and existing.facilitator_user_id is None:
+                existing.facilitator_user = facilitator_user; updates.append("facilitator_user")
+            if facilitator_faculty and existing.facilitator_faculty_id is None:
+                existing.facilitator_faculty = facilitator_faculty; updates.append("facilitator_faculty")
+            if updates:
+                existing.save(update_fields=updates)
             return existing
+
         return CommunityServiceLog.objects.create(
             case=self,
             facilitator_name=facilitator_name or "",
             facilitator_source=facilitator_source or "",
+            facilitator_user=facilitator_user if facilitator_source == "admin" else None,
+            facilitator_faculty=facilitator_faculty if facilitator_source == "faculty" else None,
         )
 
     @transaction.atomic
     def close_open_session(
-        self, *, facilitator_name: str | None = None, facilitator_source: str | None = None
+        self, *, facilitator_name: str | None = None,
+        facilitator_source: str | None = None,
+        facilitator_user=None, facilitator_faculty=None
     ) -> "CommunityServiceLog | None":
-        log = (self.logs.select_for_update().filter(check_out_at__isnull=True).first())
-        if log:
-            if not log.facilitator_name and facilitator_name:
-                log.facilitator_name = facilitator_name
-                log.facilitator_source = (facilitator_source or "")
-                log.save(update_fields=["facilitator_name", "facilitator_source"])
-            log.close()
+        log = (self.logs.select_for_update()
+            .filter(check_out_at__isnull=True).first())
+        if not log:
+            return None
+
+        # If identity already stamped, enforce exact match
+        if log.facilitator_source == "admin" and log.facilitator_user_id:
+            if not facilitator_user or facilitator_user.pk != log.facilitator_user_id:
+                raise PermissionError("Only the same admin who timed in can time out this session.")
+        elif log.facilitator_source == "faculty" and log.facilitator_faculty_id:
+            if not facilitator_faculty or facilitator_faculty.pk != log.facilitator_faculty_id:
+                raise PermissionError("Only the same faculty facilitator who timed in can time out this session.")
+        else:
+            # Legacy/blank: stamp identity now (first timeout ever on old rows)
+            updates = []
+            if facilitator_name and not log.facilitator_name:
+                log.facilitator_name = facilitator_name; updates.append("facilitator_name")
+            if facilitator_source and not log.facilitator_source:
+                log.facilitator_source = facilitator_source; updates.append("facilitator_source")
+            if facilitator_user and log.facilitator_user_id is None and facilitator_source == "admin":
+                log.facilitator_user = facilitator_user; updates.append("facilitator_user")
+            if facilitator_faculty and log.facilitator_faculty_id is None and facilitator_source == "faculty":
+                log.facilitator_faculty = facilitator_faculty; updates.append("facilitator_faculty")
+            if updates:
+                log.save(update_fields=updates)
+
+        # Proceed to close (computes hours, updates case safely)
+        log.close()
         return log
 
 class CommunityServiceLog(models.Model):
-    """
-    Server-authoritative session log:
-      - check_in_at set by DB/app server time when the row is created
-      - check_out_at set on close()
-      - hours computed on the server and added to the case
-    """
     case = models.ForeignKey("CommunityServiceCase", on_delete=models.CASCADE, related_name="logs")
     facilitator_name = models.CharField(max_length=150, blank=True, default="")
     facilitator_source = models.CharField(
@@ -587,6 +641,15 @@ class CommunityServiceLog(models.Model):
         choices=[("admin", "AdminUser"), ("faculty", "Faculty")],
         blank=True, default=""
     )
+    facilitator_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="cs_logs_operated"
+    )
+    facilitator_faculty = models.ForeignKey(
+        "Facilitator", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="cs_logs_operated"
+    )
+
     check_in_at = models.DateTimeField(auto_now_add=True, db_default=Now())
     check_out_at = models.DateTimeField(null=True, blank=True)
 
@@ -599,7 +662,21 @@ class CommunityServiceLog(models.Model):
     class Meta:
         db_table = "community_service_log"
         indexes = [
-            models.Index(fields=["case", "check_out_at"]),  # speeds up "find open log"
+            models.Index(fields=["case", "check_out_at"]),
+            models.Index(fields=["facilitator_user", "check_out_at"]),
+            models.Index(fields=["facilitator_faculty", "check_out_at"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                name="log_identity_consistent",
+                check=(
+                    Q(facilitator_source="admin", facilitator_user__isnull=False, facilitator_faculty__isnull=True)
+                    |
+                    Q(facilitator_source="faculty", facilitator_faculty__isnull=False, facilitator_user__isnull=True)
+                    |
+                    Q(facilitator_source="", facilitator_user__isnull=True, facilitator_faculty__isnull=True)
+                )
+            )
         ]
 
     def __str__(self):
@@ -613,11 +690,6 @@ class CommunityServiceLog(models.Model):
         super().save(*args, **kwargs)
 
     def close(self):
-        """
-        Close the session using server time and compute hours.
-        Also updates the parent case's hours_completed and closure status.
-        Concurrency-safe with row lock on case in the final update.
-        """
         if self.check_out_at is None:
             self.check_out_at = timezone.now()
 

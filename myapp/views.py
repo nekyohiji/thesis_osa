@@ -129,6 +129,7 @@ from .utils import (
     no_store,
     compute_cs_topup_for_minor,
     CS_EXEMPT_TYPES,
+    _current_facilitator_entities,
     )
 
 logger = logging.getLogger(__name__)
@@ -2978,25 +2979,13 @@ def admin_violation_view(request):
 
                             if hours_topup > 0:
                                 if not hasattr(violation, "cs_adjustment"):
-                                    case = CommunityServiceCase.get_or_create_open(
+                                    case = CommunityServiceCase.get_or_reopen_latest(
                                         student_id=student.tupc_id,
                                         last_name=violation.last_name or student.last_name or "",
                                         first_name=violation.first_name or student.first_name or "",
-                                        program_course=(
-                                            violation.program_course
-                                            or getattr(student, "program_course", "")
-                                            or ""
-                                        ),
-                                        middle_initial=(
-                                            violation.middle_initial
-                                            or getattr(student, "middle_initial", "")
-                                            or ""
-                                        ),
-                                        extension_name=(
-                                            violation.extension_name
-                                            or getattr(student, "extension_name", "")
-                                            or ""
-                                        ),
+                                        program_course=violation.program_course or getattr(student, "program_course", "") or "",
+                                        middle_initial=violation.middle_initial or getattr(student, "middle_initial", "") or "",
+                                        extension_name=violation.extension_name or getattr(student, "extension_name", "") or "",
                                     )
                                     case.top_up_required_hours(hours_topup)
                                     CommunityServiceAdjustment.objects.create(
@@ -3101,47 +3090,6 @@ def admin_violation_view(request):
      
 @role_required(['admin', 'staff'])
 @transaction.atomic
-def admin_decline_violation(request, violation_id):
-    v = Violation.objects.select_for_update().get(id=violation_id)
-    # lock the student row to serialize actions for the same student
-    student = Student.objects.select_for_update().get(tupc_id=v.student_id)
-
-    if v.status == 'Rejected':
-        messages.info(request, "Already declined.")
-        return redirect('admin_violation')
-
-    # delete files from storage (saves space)
-    if v.evidence_1:
-        v.evidence_1.delete(save=False); v.evidence_1 = None
-    if v.evidence_2:
-        v.evidence_2.delete(save=False); v.evidence_2 = None
-
-    # reset workflow/settlement info
-    v.status = 'Rejected'
-    v.reviewed_at = timezone.now()
-    v.approved_at = None
-    v.approved_by = ""
-    v.settlement_type = "None"
-    v.is_settled = False
-    v.settled_at = None
-    v.save(update_fields=[
-        "status","reviewed_at","approved_at","approved_by",
-        "settlement_type","is_settled","settled_at","evidence_1","evidence_2"
-    ])
-
-    # send only after DB commit
-    transaction.on_commit(lambda: send_violation_email(
-        request=request,
-        violation=v,
-        student=student,
-        declined=True,
-    ))
-
-    messages.error(request, f"❌ Violation for {student.first_name} {student.last_name} was lifted.")
-    return redirect('admin_violation')
-
-@role_required(['admin', 'staff'])
-@transaction.atomic
 def admin_approve_violation(request, violation_id):
     v = Violation.objects.select_for_update().get(id=violation_id)              # lock this violation
     student = Student.objects.select_for_update().get(tupc_id=v.student_id)     # lock per-student
@@ -3205,7 +3153,7 @@ def admin_approve_violation(request, violation_id):
     # If there is a top-up, apply it ONCE by ledgering it to this violation
     if hours_topup > 0:
         if not hasattr(v, "cs_adjustment"):
-            case = CommunityServiceCase.get_or_create_open(
+            case = CommunityServiceCase.get_or_reopen_latest(
                 student_id=student.tupc_id,
                 last_name=getattr(student, "last_name", "") or "",
                 first_name=getattr(student, "first_name", "") or "",
@@ -3246,6 +3194,47 @@ def admin_approve_violation(request, violation_id):
 
 @role_required(['admin', 'staff'])
 @transaction.atomic
+def admin_decline_violation(request, violation_id):
+    v = Violation.objects.select_for_update().get(id=violation_id)
+    # lock the student row to serialize actions for the same student
+    student = Student.objects.select_for_update().get(tupc_id=v.student_id)
+
+    if v.status == 'Rejected':
+        messages.info(request, "Already declined.")
+        return redirect('admin_violation')
+
+    # delete files from storage (saves space)
+    if v.evidence_1:
+        v.evidence_1.delete(save=False); v.evidence_1 = None
+    if v.evidence_2:
+        v.evidence_2.delete(save=False); v.evidence_2 = None
+
+    # reset workflow/settlement info
+    v.status = 'Rejected'
+    v.reviewed_at = timezone.now()
+    v.approved_at = None
+    v.approved_by = ""
+    v.settlement_type = "None"
+    v.is_settled = False
+    v.settled_at = None
+    v.save(update_fields=[
+        "status","reviewed_at","approved_at","approved_by",
+        "settlement_type","is_settled","settled_at","evidence_1","evidence_2"
+    ])
+
+    # send only after DB commit
+    transaction.on_commit(lambda: send_violation_email(
+        request=request,
+        violation=v,
+        student=student,
+        declined=True,
+    ))
+
+    messages.error(request, f"Violation for {student.first_name} {student.last_name} was lifted.")
+    return redirect('admin_violation')
+
+@role_required(['admin', 'staff'])
+@transaction.atomic
 def mark_apology_settled(request, violation_id):
     v = get_object_or_404(Violation, id=violation_id)
     if v.status != 'Approved' or v.settlement_type != 'Apology Letter':
@@ -3262,16 +3251,6 @@ def mark_apology_settled(request, violation_id):
 
 #------------------------------------#
 
-def _current_facilitator_snapshot(request) -> tuple[str, str]:
-    """
-    Returns (name, source) where source in {"admin","faculty"} or ("","") if none.
-    """
-    s = request.session
-    if s.get("facilitator_pk"):  # OTP flow
-        return (s.get("facilitator_name", "") or "", "faculty")
-    if s.get("user_id"):         # Admin/Staff login
-        return (s.get("full_name", "") or "", "admin")
-    return ("", "")
 
 #-----admin community service--------#
 
@@ -3415,8 +3394,13 @@ def cs_scan_time_in(request, case_id):
     if case.is_closed:
         return JsonResponse({"ok": False, "error": "Case is closed. Add hours first."}, status=400)
 
-    fname, fsrc = _current_facilitator_snapshot(request)
-    log = case.open_session(facilitator_name=fname, facilitator_source=fsrc)
+    ctx = _current_facilitator_entities(request)
+    log = case.open_session(
+        facilitator_name=ctx["name"],
+        facilitator_source=ctx["source"],
+        facilitator_user=ctx["user"],
+        facilitator_faculty=ctx["faculty"],
+    )
     return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
 
 @require_POST
@@ -3428,8 +3412,17 @@ def cs_scan_time_out(request, case_id):
     if not scanned_id or scanned_id != case.student_id:
         return JsonResponse({"ok": False, "error": "ID mismatch or unreadable scan."}, status=400)
 
-    fname, fsrc = _current_facilitator_snapshot(request)
-    log = case.close_open_session(facilitator_name=fname, facilitator_source=fsrc)
+    ctx = _current_facilitator_entities(request)
+    try:
+        log = case.close_open_session(
+            facilitator_name=ctx["name"],
+            facilitator_source=ctx["source"],
+            facilitator_user=ctx["user"],
+            facilitator_faculty=ctx["faculty"],
+        )
+    except PermissionError as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=403)
+
     if not log:
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})

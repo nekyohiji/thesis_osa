@@ -538,3 +538,37 @@ def compute_cs_topup_for_minor(violation_type: str, approved_count_of_same_type:
     if approved_count_of_same_type == 3:
         return Decimal("10")
     return Decimal("0")  # 1st or 4th+ => no hours
+
+def _current_facilitator_entities(request):
+    """
+    Returns a dict:
+      {
+        "source": "admin"|"faculty"|"",
+        "name":   "Display Name",
+        "user":   <User or None>,
+        "faculty":<Facilitator or None>
+      }
+    """
+    s = request.session
+    # Faculty OTP flow
+    if s.get("facilitator_pk"):
+        from myapp.models import Facilitator  # adjust import if needed
+        fac = Facilitator.objects.filter(pk=s["facilitator_pk"], is_active=True).first()
+        return {
+            "source": "faculty",
+            "name": s.get("facilitator_name", "") or (fac.full_name if fac else ""),
+            "user": None,
+            "faculty": fac,
+        }
+    # Admin/Staff login
+    if s.get("user_id"):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        user = User.objects.filter(pk=s["user_id"], is_active=True).first()
+        return {
+            "source": "admin",
+            "name": s.get("full_name", "") or (getattr(user, "get_full_name", lambda: "")() if user else ""),
+            "user": user,
+            "faculty": None,
+        }
+    return {"source": "", "name": "", "user": None, "faculty": None}
