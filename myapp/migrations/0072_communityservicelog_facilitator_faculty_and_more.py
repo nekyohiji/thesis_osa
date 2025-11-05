@@ -36,8 +36,4 @@ class Migration(migrations.Migration):
             model_name='communityservicelog',
             index=models.Index(fields=['facilitator_faculty', 'check_out_at'], name='community_s_facilit_2adb8d_idx'),
         ),
-        migrations.AddConstraint(
-            model_name='communityservicelog',
-            constraint=models.CheckConstraint(condition=models.Q(models.Q(('facilitator_faculty__isnull', True), ('facilitator_source', 'admin'), ('facilitator_user__isnull', False)), models.Q(('facilitator_faculty__isnull', False), ('facilitator_source', 'faculty'), ('facilitator_user__isnull', True)), models.Q(('facilitator_faculty__isnull', True), ('facilitator_source', ''), ('facilitator_user__isnull', True)), _connector='OR'), name='log_identity_consistent'),
-        ),
     ]
