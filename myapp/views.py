@@ -733,7 +733,7 @@ def login_view(request):
                 request.session['full_name'] = user.full_name
                 request.session['email'] = user.email
                 request.session.set_expiry(0)
-                request.session['last_touch'] = int(time.time())
+                request.session['last_touch'] = int(timezone.now().timestamp())
 
                 if next_url and url_has_allowed_host_and_scheme(next_url, {request.get_host()}):
                     resp = redirect(next_url)
