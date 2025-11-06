@@ -1,0 +1,283 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Assistantship Form Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'myapp/css/admin_view_clearance.css' %}">
+</head>
+
+<body style="background: linear-gradient(to bottom right, #000000, #440207, #440207, #000000);">
+
+<div class="container-fluid py-4">
+
+  <!-- Top Navigation -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'admin_clearance' %}" class="btn text-light">
+      <i class="bi bi-arrow-left text-light"></i> Back
+    </a>
+
+    <span class="badge text-bg-light">
+      Submitted: {{ obj.created_at|date:"M d, Y h:i A" }}
+    </span>
+  </div>
+
+  <!-- Form Container -->
+  <div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h3 class="text-dark fw-bold mb-0">
+        <i class="bi bi-file-check"></i> Student Assistantship Form
+      </h3>
+    </div>
+    <hr>
+
+    <div class="row g-4">
+
+      <!-- Personal Information Card -->
+      <div class="card mb-4 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-person-fill"></i> Personal Information
+        </div>
+        <div class="card-body row g-3">
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="first_name">Full Name:</label>
+            <input type="text" class="form-control" id="first_name" name="first_name"
+                   value="{{ obj.first_name }}" readonly>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label fw-semibold" for="age">Age:</label>
+            <input type="number" class="form-control" id="age" name="age"
+                   value="{{ obj.age }}" readonly>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label fw-semibold" for="sex">Sex:</label>
+            <select class="form-select" id="sex" name="sex" disabled>
+              <option value="">-- Select --</option>
+              <option >Male</option>
+              <option >Female</option>
+            </select>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="id">ID:</label>
+            <input type="text" class="form-control" id="id" name="id"
+                   value="{{ obj.student_id }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="program">Program:</label>
+            <input type="text" class="form-control" id="program" name="program"
+                   value="{{ obj.program }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
+            <input type="text" class="form-control" id="contact_surrender" name="contact"
+                   value="{{ obj.contact }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="address">Address:</label>
+            <input type="text" class="form-control" id="address" name="address"
+                   value="{{ obj.address }}" readonly>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Client Type Card -->
+      <div class="card mb-4 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-mortarboard-fill"></i> Client Type
+        </div>
+        <div class="card-body row g-3">
+
+          <!-- Client Type Checkboxes -->
+          <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">Client Type:</label><br>
+            <div class="d-flex flex-wrap gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="citizen" name="client_type[]" 
+                       value="Citizen" {% if 'Citizen' in obj.client_type %}checked{% endif %} disabled>
+                <label class="form-check-label" for="citizen">Citizen</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="business" name="client_type[]" 
+                       value="Business" {% if 'Business' in obj.client_type %}checked{% endif %} disabled>
+                <label class="form-check-label" for="business">Business</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="government" name="client_type[]" 
+                       value="Government" {% if 'Government' in obj.client_type %}checked{% endif %} disabled>
+                <label class="form-check-label" for="government">Government (Employee or another agency)</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Client Category -->
+          <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">Are you a/an <span class="fst-italic">(Ikaw ba ay isang?):</span></label>
+            <div class="row mt-2 gy-2">
+
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="tupc_student" name="client_category[]" 
+                         value="TUPC Student" {% if 'TUPC Student' in obj.client_category %}checked{% endif %} disabled>
+                  <label class="form-check-label" for="tupc_student">
+                    TUPC Student — Year level
+                  </label>
+                  <input type="text" class="form-control mt-1" id="year_level" name="year_level" 
+                         value="{{ obj.year_level }}" readonly>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="external_client" name="client_category[]" 
+                         value="External Client" {% if 'External Client' in obj.client_category %}checked{% endif %} disabled>
+                  <label class="form-check-label" for="external_client">External client</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="alumnus" name="client_category[]" 
+                         value="Alumnus" {% if 'Alumnus' in obj.client_category %}checked{% endif %} disabled>
+                  <label class="form-check-label" for="alumnus">Alumnus</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="parent_guardian" name="client_category[]" 
+                         value="Parent/Guardian" {% if 'Parent/Guardian' in obj.client_category %}checked{% endif %} disabled>
+                  <label class="form-check-label" for="parent_guardian">Parent/Guardian</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="student_other" name="client_category[]" 
+                         value="Student from other school" {% if 'Student from other school' in obj.client_category %}checked{% endif %} disabled>
+                  <label class="form-check-label" for="student_other">Student from other school</label>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="tupc_employee" name="client_category[]" 
+                         value="TUPC Employee" {% if 'TUPC Employee' in obj.client_category %}checked{% endif %} disabled>
+                  <label class="form-check-label" for="tupc_employee">TUPC Employee</label>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div> <!-- End row -->
+
+  </div> <!-- End form container -->
+
+</div> <!-- End container-fluid -->
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+</script>
+
+
+
+<script>
+
+(function () {
+  // where to send users if the session is gone
+  var loginUrl = "{% url 'login' %}";
+  function goLogin() {
+    var next = encodeURIComponent(location.pathname + location.search + location.hash);
+    location.replace(loginUrl + "?next=" + next);
+  }
+
+  // --- 1) HTMX: if any background request gets 401, bounce to login
+  document.body.addEventListener('htmx:responseError', function (e) {
+    var xhr = e.detail && e.detail.xhr;
+    if (!xhr) return;
+
+    // 401 = unauthenticated; (optionally also 440 if you ever use it)
+    if (xhr.status === 401 || xhr.status === 440) {
+      goLogin();
+    }
+  });
+
+  // Optional: pause HTMX polling while tab hidden (saves requests, doesn’t affect auth)
+  if (window.htmx) {
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        // disable all polling elements
+        document.querySelectorAll('[hx-trigger*="every"]').forEach(function (el) {
+          el.setAttribute('data-poll-disabled', '1');
+          el.setAttribute('hx-trigger', el.getAttribute('hx-trigger') + ' consume');
+        });
+      } else {
+        // re-enable by forcing a refresh of attributes
+        document.querySelectorAll('[data-poll-disabled="1"]').forEach(function (el) {
+          el.removeAttribute('data-poll-disabled');
+          var trig = el.getAttribute('hx-trigger') || '';
+          el.setAttribute('hx-trigger', trig.replace(/\s*consume\b/, ''));
+          // optional: kick one refresh
+          if (el.matches('[hx-get], [hx-post], [hx-patch], [hx-put]')) {
+            htmx.trigger(el, 'refresh');
+          }
+        });
+      }
+    });
+  }
+
+  // --- 2) fetch(): wrap to catch 401s from non-HTMX AJAX
+  if (!window.__fetchWrapped) {
+    var _fetch = window.fetch;
+    window.fetch = function () {
+      return _fetch.apply(this, arguments).then(function (res) {
+        if (res && (res.status === 401 || res.status === 440)) {
+          goLogin();
+          // return a never-resolving promise to stop downstream handlers
+          return new Promise(function () {});
+        }
+        return res;
+      }).catch(function (err) {
+        // network errors stay as-is
+        throw err;
+      });
+    };
+    window.__fetchWrapped = true;
+  }
+
+  // --- 3) (Optional nicety) if the page was restored from bfcache, hard-reload
+  // so we don’t show a stale “logged-in” view after logout in another tab.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+
+})();
+
+</script>
+
+
+</body>
+</html>

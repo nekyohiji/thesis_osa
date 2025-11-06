@@ -193,10 +193,35 @@ def client_lostandfound_view(request):
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
 
+
+
+
+def client_studentAssistantship_form_view(request):
+    return render (request, 'myapp/client_studentAssistantship_form.html')
+
+def client_ACSO_form_view(request):
+    return render (request, 'myapp/client_ACSO_form.html')
+
+
+
+
+
 #------------------------------------------------------------------------------------------#
+
+def admin_assistantship_logs_view(request):
+    return render (request, 'myapp/admin_assistantship_logs.html')
+
+def admin_view_assistantship_logs_view(request):
+    return render (request, 'myapp/admin_view_assistantship_logs.html')
+
+def admin_ACSO_logs_view(request):
+    return render (request, 'myapp/admin_ACSO_logs.html')
+
 
 def admin_insurance_view(request):
     return render (request, 'myapp/admin_insurance.html')
+
+
 
 
 #------------------------------------------------------------------------------------------#

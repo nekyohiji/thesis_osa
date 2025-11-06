@@ -36,9 +36,11 @@
               </a>
               <div class="collapse submenu ps-3 border-start" id="documentsMenu">
                 <a class="nav-link" href="{% url 'admin_goodmoral' %}"><i class="fas fa-shield-alt"></i> Good Moral</a>
-                <a class="nav-link" href="{% url 'admin_ackreq' %}"><i class="fas fa-file-download"></i> Acknowledgement Receipt</a>
+                <a class="nav-link" href="{% url 'admin_ackreq' %}"><i class="fas fa-file-download"></i> <span class="text-start fw-normal "> Acknowledgement Receipt </span></a>
                 <a class="nav-link" href="{% url 'admin_clearance' %}"><i class="fas fa-certificate"></i> Clearance</a>
                 <a class="nav-link" href="{% url 'admin_insurance' %}"><i class="fas fa-shield-alt"></i> Insurance</a>
+                <a class="nav-link" href="{% url 'admin_assistantship_logs' %}"><i class="fas fa-users"></i> <span class="text-start fw-normal ">Student Assistantship</span></a>
+                <a class="nav-link" href="{% url 'admin_ACSO_logs' %}"><i class="fas fa-award"></i>  <span class="text-start fw-normal ">ACSO<br> Accreditation</span></a>
               </div>
             </li>
 
@@ -50,8 +52,8 @@
               <div class="collapse submenu ps-3 border-start" id="postingsMenu">
                 <a class="nav-link" href="{% url 'admin_scholarships' %}"><i class="fas fa-award"></i> Scholarships</a>
                 <a class="nav-link" href="{% url 'admin_lostandfound' %}"><i class="fas fa-search"></i> Lost and Found</a>
-                <a class="nav-link" href="{% url 'admin_ACSO' %}"><i class="fas fa-building"></i> ACSO<br>Accreditation</a>
-                <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i> Student<br>Assistantship</a>
+                <a class="nav-link" href="{% url 'admin_ACSO' %}"><i class="fas fa-building"></i>  <span class="text-start fw-normal ">ACSO<br>Accreditation </span></a>
+                <a class="nav-link" href="{% url 'admin_assistantship' %}"><i class="fas fa-briefcase"></i><span class="text-start fw-normal "> Student<br>Assistantship </span></a>
               </div>
             </li>
 

@@ -173,7 +173,9 @@
 <!-- RIGHT PANEL -->
     <div class="right-panel" >
         <div class="login-form" >
-           <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2 logo-img">
+          <a href="{% url 'client_home' %}">
+            <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2 logo-img">
+          </a>
            <h3 class="text-center" ><b>Welcome Admin!</b></h3>
             <p class="text-center">Sign in to access your dashboard</p>
             {% if messages %}

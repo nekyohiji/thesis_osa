@@ -4,7 +4,7 @@
 <html>
 <head>
   <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-  <title>OSA - Clearance Request</title>
+  <title>OSA - Student Assistantship</title>
 
   <!-- Bootstrap CSS + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -60,14 +60,21 @@
     </div>
   </div>
 </nav>
+<br><br>
+<div class="d-flex justify-content-start p-4">
+    <!-- Back button -->
+        <a href="{% url 'client_studentAssistantship' %}" class="btn btn-secondary d-flex align-items-center px-4">
+            <i class="bi bi-arrow-left me-2"></i> Back
+        </a>
+    </div>
 
-<div class="container mt-5 mb-5 pt-5">
-
+<div class="container mb-5">
+ 
   <!-- Header -->
   <div class="mb-4">
     <h1 class="mb-3">
       <i class="fas fa-file-signature me-2"></i>
-      <b>Clearance Request Form</b>
+      <b>Student Assistantship Form</b>
     </h1>
     <hr>
     <h6 class="text-muted">Please fill in the required information below to request clearance.</h6>
@@ -87,11 +94,11 @@
     <!-- Personal -->
     <div class="form-section">
       <div class="card-body">
-        <h5 class="fw-bold mb-3">Personal Information</h5>
+        <h5 class="fw-bold mb-3"><i class="bi bi-person-fill"></i> Personal Information</h5><hr>
 
         <div class="row">
           <div class="col-md mb-3">
-            <label class="form-label fw-semibold" for="first_name">First Name:</label>
+            <label class="form-label fw-semibold" for="first_name">Full Name:</label>
             <div class="status-wrap">
               <input type="text" class="form-control" id="first_name" name="first_name"
                      placeholder="Enter First Name" minlength="2" maxlength="50" required
@@ -115,108 +122,10 @@
             <div class="valid-feedback">Looks good.</div>
             <div class="invalid-feedback">First name is required (2–50 characters).</div>
           </div>
-
-          <div class="col-md mb-3">
-            <label class="form-label fw-semibold" for="last_name">Last Name:</label>
-            <div class="status-wrap">
-              <input type="text" class="form-control" id="last_name" name="last_name"
-                     placeholder="Enter Last Name" minlength="2" maxlength="50" required
-                      inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols."
-                      oninput="{
-                        let v = this.value.normalize('NFC')
-                          .replace(/[\p{Zs}]+/gu, ' ')                       /* any Unicode space → ASCII space */
-                          .replace(/[^\p{L}\p{M} \-'\u2010\u2019]/gu, '')     /* keep letters/marks/space/-/'/’ */
-                          .replace(/([\-'\u2010\u2019])\1+/gu, '$1')          /* collapse --- or '' */
-                          .replace(/^[ \-'\u2010\u2019]+/u, '');              /* trim LEFT only while typing */
-                        if (v !== this.value) {
-                          const p = this.selectionStart; this.value = v; this.setSelectionRange(p, p);
-                        }
-                      }"
-                      onblur="{
-                        this.value = this.value
-                          .replace(/^[ \-'\u2010\u2019]+|[ \-'\u2010\u2019]+$/gu, ''); /* full trim on blur */
-                      }">
-              <i id="last_name_status" class="status-icon bi d-none"></i>
-            </div>
-            <div class="valid-feedback">Looks good.</div>
-            <div class="invalid-feedback">Last name is required (2–50 characters).</div>
-          </div>
-
-          <div class="col-md mb-3">
-            <label class="form-label fw-semibold">Extension:</label>
-            <div class="d-flex align-items-center gap-2">
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="hasExtension" id="extYes" value="yes">
-                <label class="form-check-label" for="extYes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="hasExtension" id="extNo" value="no" checked>
-                <label class="form-check-label" for="extNo">No</label>
-              </div>
-              <div id="extensionField" class="flex-grow-1 d-none">
-                <div class="status-wrap">
-                  <input type="text" class="form-control" id="extension" name="extension"
-                         placeholder="e.g., Jr., III" minlength="2" maxlength="15">
-                  <i id="extension_status" class="status-icon bi d-none"></i>
-                </div>
-                <div class="valid-feedback">Looks good.</div>
-                <div class="invalid-feedback">Provide an extension (2–15 chars) or select “No”.</div>
-              </div>
-            </div>
-            <div class="hint mt-1">Select “Yes” only if you use suffixes like Jr., Sr., II, III, etc.</div>
-          </div>
         </div>
 
+
         <div class="row">
-          <div class="col-md mb-3">
-            <label class="form-label fw-semibold" for="email_surrender">Email:</label>
-            <div class="status-wrap">
-              <input type="email" class="form-control" id="email_surrender" name="email"
-                     placeholder="Enter Email" required>
-              <i id="email_surrender_status" class="status-icon bi d-none"></i>
-            </div>
-            <div class="valid-feedback">Looks good.</div>
-            <div class="invalid-feedback">Valid email required.</div>
-          </div>
-
-          <div class="col-md mb-3">
-            <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
-            <div class="status-wrap">
-              <input
-                type="text"
-                class="form-control"
-                id="contact_surrender"
-                name="contact"
-                value="+63 "
-                placeholder="+63 995-241-5114"
-                minlength="16" maxlength="16"
-                pattern="^\+63\s\d{3}-\d{3}-\d{4}$"
-                title="Format: +63 XXX-XXX-XXXX"
-                autocomplete="off"
-                required>
-              <i id="contact_surrender_status" class="status-icon bi d-none"></i>
-            </div>
-            <div class="valid-feedback">Format OK.</div>
-            <div class="invalid-feedback">Use +63 XXX-XXX-XXXX.</div>
-          </div>
-
-          <div class="col-md mb-3">
-            <label class="form-label fw-semibold" for="address">Address:</label>
-            <div class="status-wrap">
-              <input
-                type="text"
-                class="form-control"
-                id="address"
-                name="address"
-                placeholder="House/Street, Barangay, City/Municipality, Province, ZIP"
-                minlength="5"
-                maxlength="255"
-                required>
-              <i id="address_status" class="status-icon bi d-none"></i>
-            </div>
-            <div class="invalid-feedback">Please enter your full address (min 5 characters).</div>
-          </div>
-          <div class="row">
             <div class="col-md mb-3">
               <label class="form-label fw-semibold" for="age">Age:</label>
               <div class="status-wrap">
@@ -228,6 +137,7 @@
               <div class="hint mt-1">Required. Allowed: 16–120.</div>
               <div class="invalid-feedback">Age must be 16–120.</div>
             </div>
+
             <div class="col-md mb-3">
               <label class="form-label fw-semibold" for="sex">Sex:</label>
               <div class="status-wrap">
@@ -241,136 +151,153 @@
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- ID & Program -->
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="id">ID:</label>
+                <div class="status-wrap">
+                <input type="text" class="form-control" id="id" name="id"
+                        placeholder="TUPC-XX-XXXXXXXX" required>
+                <i id="id_status" class="status-icon bi d-none"></i>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="program">Program:</label>
+                <div class="status-wrap">
+                <input type="text" class="form-control" id="program" name="program"
+                        placeholder="Enter your Program" required>
+                <i id="program_status" class="status-icon bi d-none"></i>
+                </div>
+            </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+            <!-- Contact -->
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
+                <div class="status-wrap">
+                <input type="text" class="form-control" id="contact_surrender" name="contact"
+                        value="+63 " placeholder="+63 995-241-5114"
+                        minlength="16" maxlength="16"
+                        pattern="^\+63\s\d{3}-\d{3}-\d{4}$"
+                        title="Format: +63 XXX-XXX-XXXX"
+                        autocomplete="off" required>
+                <i id="contact_surrender_status" class="status-icon bi d-none"></i>
+                </div>
+                <div class="valid-feedback">Format OK.</div>
+                <div class="invalid-feedback">Use +63 XXX-XXX-XXXX.</div>
+            </div>
+
+            <!-- Address -->
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="address">Address:</label>
+                <div class="status-wrap">
+                <input type="text" class="form-control" id="address" name="address"
+                        placeholder="House/Street, Barangay, City/Municipality, Province, ZIP"
+                        minlength="5" maxlength="255" required>
+                <i id="address_status" class="status-icon bi d-none"></i>
+                </div>
+                <div class="invalid-feedback">Please enter your full address (min 5 characters).</div>
+            
+        
+
+            </div>
+        </div>  
     </div>
 
-    <!-- Academic -->
-    <div class="form-section">
-      <h5><i class="bi bi-mortarboard-fill"></i> Academic Information</h5>
-      <hr>
-      <div class="row mb-3">
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="student_number">TUPC Student Number:</label>
-          <div class="status-wrap">
-            <input
-              type="text"
-              class="form-control"
-              id="student_number"
-              name="student_number"
-              placeholder="TUPC-XX-XXXX or TUPC-XX-XXXXXXXXXXXX"
-              minlength="12"
-              maxlength="23"
-              pattern="^TUPC-\d{2}-[A-Z0-9]{4,15}$"
-              title="Use TUPC-<2 digits>-<letters/digits 4–15> (e.g., TUPC-22-1234, TUPC-14-1234567891012MC)."
-              autocomplete="off"
-              required>
-            <i id="student_number_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="valid-feedback">Looks good.</div>
-          <div class="invalid-feedback">
-            Format: <b>TUPC-XX-YYYY</b> where <b>XX</b> = two digits and <b>YYYY</b> = 4–15 letters/digits.
-          </div>
-          <div id="student_number_hint" class="hint mt-1">
-            Examples: <code>TUPC-22-1234</code> • <code>TUPC-14-1234567891012MC</code>
-          </div>
+    <!-- CLIENT TYPE SECTION -->
+    <div class="form-section mt-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><i class="bi bi-person-fill"></i> Client Type</h5><hr>
 
+            <!-- Client Type Row -->
+            <div class="row mb-3">
+            <div class="col-md-12">
+                <label class="form-label fw-semibold">Client Type:</label>
+                <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="citizen" name="client_type[]" value="Citizen">
+                    <label class="form-check-label" for="citizen">Citizen</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="business" name="client_type[]" value="Business">
+                    <label class="form-check-label" for="business">Business</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="government" name="client_type[]" value="Government">
+                    <label class="form-check-label" for="government">Government (Employee or another agency)</label>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Are you a/an Section -->
+            <div class="row">
+            <div class="col-md-12">
+                <label class="form-label fw-semibold">
+                Are you a/an <span class="fst-italic">(Ikaw ba ay isang?):</span>
+                </label>
+
+                <div class="row mt-2 gy-2">
+                <div class="col-md-6">
+                    <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="tupc_student" name="client_category[]" value="TUPC Student">
+                    <label class="form-check-label" for="tupc_student">
+                        TUPC Student (Estudyante) — Year level (antas ng taon)
+                    </label>
+                    <input type="text" class="form-control mt-1" id="year_level" name="year_level" placeholder="Enter Year Level">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="external_client" name="client_category[]" value="External Client">
+                    <label class="form-check-label" for="external_client">External client (Panlabas na kliyente)</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="alumnus" name="client_category[]" value="Alumnus">
+                    <label class="form-check-label" for="alumnus">Alumnus (Nagtapos sa TUPC)</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="parent_guardian" name="client_category[]" value="Parent/Guardian">
+                    <label class="form-check-label" for="parent_guardian">Parent/Guardian (Magulang/Tagapag-alaga)</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="student_other" name="client_category[]" value="Student from other school">
+                    <label class="form-check-label" for="student_other">
+                        Student from other school (Estudyante mula sa ibang paaralan)
+                    </label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="tupc_employee" name="client_category[]" value="TUPC Employee">
+                    <label class="form-check-label" for="tupc_employee">TUPC Employee (Empleyado ng TUPC)</label>
+                    </div>
+                </div>
+                </div>
+            </div>
         </div>
 
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="program">Program:</label>
-          <div class="status-wrap">
-            <select class="form-select" id="program" name="program" required>
-              <option value="" selected disabled>-- Select Program --</option>
-            </select>
-            <i id="program_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="invalid-feedback">Please select your program.</div>
-        </div>
-
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="year_level">Year Level:</label>
-          <div class="status-wrap">
-            <select class="form-select" id="year_level" name="year_level" required>
-              <option value="" selected disabled>-- Select --</option>
-              <option>First Year</option><option>Second Year</option><option>Third Year</option>
-              <option>Fourth Year</option><option>Fifth Year</option>
-            </select>
-            <i id="year_level_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="valid-feedback">Looks good.</div>
-          <div class="invalid-feedback">Please select a year level.</div>
-        </div>
-
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="last_year_in_tupc">Last year in TUPC:</label>
-          <div class="status-wrap">
-            <input
-              type="number"
-              class="form-control"
-              id="last_year_in_tupc"
-              name="last_year_in_tupc"
-              placeholder="YYYY"
-              inputmode="numeric"
-              step="1"
-              min="1979"
-              max="" 
-              required>
-            <i id="last_year_in_tupc_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="hint mt-1">Optional. Pick a year between 1979 and the current year.</div>
-          <div class="invalid-feedback">Enter a valid year (1979–current).</div>
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="client_type">Client Type:</label>
-          <div class="status-wrap">
-            <select class="form-select" id="client_type" name="client_type" required>
-              <option value="" selected disabled>-- Select --</option>
-              <option>Citizen</option><option>Business</option><option>Government (Employee/Agency)</option>
-            </select>
-            <i id="client_type_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="valid-feedback">Looks good.</div>
-          <div class="invalid-feedback">Please select a client type.</div>
-        </div>
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="stakeholder">Stakeholder:</label>
-          <div class="status-wrap">
-            <select class="form-select" id="stakeholder" name="stakeholder" required>
-              <option value="" selected disabled>-- Select --</option>
-              <option>TUPC Student</option><option>Alumnus</option><option>Student from other School</option>
-              <option>External Client</option><option>Parent/Guardian</option><option>TUPC Employee</option>
-            </select>
-            <i id="stakeholder_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="valid-feedback">Looks good.</div>
-          <div class="invalid-feedback">Please select a stakeholder.</div>
-        </div>
-      </div>
     </div>
-
-    <!-- Purpose -->
-    <div class="form-section">
-      <h5><i class="bi bi-briefcase-fill fw-semibold"></i> Purpose</h5>
-      <hr>
-      <div class="mb-3">
-        <div class="status-wrap">
-          <select class="form-select" id="purpose" name="purpose" required>
-            <option value="" selected disabled>-- Select Purpose --</option>
-            <option>Credentials</option><option>Application of Graduation</option><option>Employment</option>
-            <option>Continuing Education</option><option>Transfer</option><option>Dismissal</option>
-          </select>
-          <i id="purpose_status" class="status-icon bi d-none"></i>
-        </div>
-        <div class="valid-feedback">Looks good.</div>
-        <div class="invalid-feedback">Please select a purpose.</div>
-      </div>
-    </div>
+  </div>
 
     <!-- Submit -->
-    <div class="d-flex justify-content-end mt-4">
+    <div class="d-flex justify-content-end mt-4 ">
+  
       <button type="button"
               id="openConfirmModal"
               class="btn btn-submit d-flex align-items-center px-4"
@@ -428,7 +355,7 @@
     const ten  = rest.slice(0,10);
     if (!ten) return "+63 ";
     const a = ten.slice(0,3), b = ten.slice(3,6), c = ten.slice(6,10);
-    return `+63 ${a}${b?'-'+b:''}${c?'-'+c:''}`;
+    return +63 ${a}${b?'-'+b:''}${c?'-'+c:''};
   }
   // ===== Utilities =====
   function rtrimInput(el) {
@@ -489,7 +416,7 @@
         program.appendChild(opt);
       }
       const otherOpt = document.createElement('option');
-      otherOpt.value = '__OTHER__';
+      otherOpt.value = '_OTHER_';
       otherOpt.textContent = 'Other';
       program.appendChild(otherOpt);
 
@@ -522,7 +449,7 @@
 
   function handleProgramChange() {
     if (!programOtherInput) return;
-    if (program.value === '__OTHER__') {
+    if (program.value === '_OTHER_') {
       programOtherInput.classList.remove('d-none');
       programOtherInput.required = true;
       programOtherInput.focus();
@@ -539,7 +466,7 @@
 
   function validateProgramOther() {
     if (!programOtherInput) return true;
-    if (program.value !== '__OTHER__') return true;
+    if (program.value !== '_OTHER_') return true;
     programOtherInput.value = programOtherInput.value.replace(/\s+$/, '');
     const len = programOtherInput.value.length;
     const ok = len >= 2 && len <= 100;
@@ -604,7 +531,7 @@
 
       const n = Number(v);
       const ok = Number.isInteger(n) && n >= MIN_YEAR && n <= CURRENT_YEAR;
-      el.setCustomValidity(ok ? "" : `Enter a valid year (${MIN_YEAR}–${CURRENT_YEAR}).`);
+      el.setCustomValidity(ok ? "" : Enter a valid year (${MIN_YEAR}–${CURRENT_YEAR}).);
       return mark(el, ok);
     }
 
@@ -624,7 +551,7 @@
       return mark(el, ok);
     }
     if (el === program) {
-      const ok = (program.value === '__OTHER__') ? validateProgramOther() : !!program.value;
+      const ok = (program.value === '_OTHER_') ? validateProgramOther() : !!program.value;
       return mark(program, ok);
     }
 
@@ -749,10 +676,10 @@
     return inp ? inp.value : '';
   }
   function applyServerErrors(errors) {
-    // errors: { field_name: ["msg",...], "__all__": [...] }
+    // errors: { field_name: ["msg",...], "_all_": [...] }
     let any = false;
     for (const [name, msgs] of Object.entries(errors || {})) {
-      const el = form.querySelector(`[name="${name}"]`);
+      const el = form.querySelector([name="${name}"]);
       if (el) {
         el.classList.add('is-invalid');
         any = true;
@@ -781,7 +708,7 @@
     confirmModal.hide();
     redirectModal.show();
     const fd = new FormData(form);
-    if (program && program.value === '__OTHER__' && programOtherInput) {
+    if (program && program.value === '_OTHER_' && programOtherInput) {
       fd.set('program', programOtherInput.value.replace(/\s+$/, ''));
     }
     Array.from(form.elements).forEach(el => el.disabled = true);

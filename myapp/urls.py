@@ -103,11 +103,27 @@ urlpatterns = [
     path('admin_old_violation/', views.admin_old_violation_view, name='admin_old_violation'),
     
     
-    path('admin_student/', views.admin_student_view, name='admin_student'),
     
-
+    ###------------------- added by jochelle - admin
+    path('admin_student/', views.admin_student_view, name='admin_student'),
     path('admin_insurance/', views.admin_insurance_view, name='admin_insurance'),
+    path('admin_assistantship_logs/', views.admin_assistantship_logs_view, name='admin_assistantship_logs'),
+    path('admin_view_assistantship_logs/', views.admin_view_assistantship_logs_view, name='admin_view_assistantship_logs'),
+    path('admin_ACSO_logs/', views.admin_ACSO_logs_view, name='admin_ACSO_logs'),
 
+
+
+
+
+
+    ###------------------- added by jochelle - client
+    path('client_studentAssistantship_form/', views.client_studentAssistantship_form_view, name='client_studentAssistantship_form'),
+    path('client_ACSO_form/', views.client_ACSO_form_view, name='client_ACSO_form'),
+    
+    
+    
+    
+    
     
     ###-------------------ELECTION - admin
     path('admin_election/', views.admin_election_view, name='admin_election'),

@@ -1,0 +1,398 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OSA - ACSO Accreditation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'myapp/css/admin_report.css' %}">
+</head>
+
+<body>
+  <button class="btn btn-primary toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+  {% include "partials/sidebar.html" %}
+  {% include "partials/logout_modal.html" %}
+
+  <style>
+    /* Highlight on focus */
+    .input-group-sm .form-control:focus {
+      border: 2px solid #440207;
+      box-shadow: 0 0 0 0.15rem rgba(68, 2, 7, 0.1);
+    }
+
+    .input-group-sm .form-control:hover {
+      border: 1px solid #440207;
+    }
+
+    .input-group-sm:focus-within .input-group-text {
+      background-color: #f8f0f0;
+      border-color: #440207;
+      color: #440207;
+    }
+
+    .btn.text-light {
+      background-color: #440207 !important;
+      padding: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .btn.text-light:hover {
+      background-color: #5e0000 !important; 
+    }
+
+    .form-control {
+      border-radius: 6px;
+      box-shadow: none;
+    }
+
+    .form-control:focus {
+      border: 1px solid #440207 !important;
+      box-shadow: 0 0 4px rgba(68, 2, 7, 0.3);
+    }
+  </style>
+
+<!-- Main Content Area -->
+<div class="main-content" style="margin-left: 250px; min-height: 100vh; background-color: #f8f9fa;">
+
+  <!-- Dashboard Header -->
+  <div class="container-fluid py-4 px-4">
+    <div class="election-header text-white mt-4"
+      style="background: linear-gradient(to right bottom, #000000, #440207, rgb(104, 3, 12));
+            padding: 50px;
+            min-height: 100px;
+            border-radius: 20px;">
+      <h2 class="fw-bold mb-0">
+        <i class="bi bi-person-badge-fill me-2"></i>
+        ACSO Accreditation Dashboard
+      </h2>
+      <p class="mb-0">Monitor, manage, and update ACSO Accreditation records</p>
+    </div>
+  </div>
+
+  <div class="container-fluid px-4">
+    <div class="bg-white p-2 rounded shadow-sm border">
+
+      <!-- ACSO Accreditation Section -->
+      <div class="container-fluid pt-4 pb-5">
+        <div class="bg-white p-4 rounded shadow-sm border">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <h5 class="fw-bold mb-1">
+                <i class="bi bi-bar-chart-line-fill me-2" style="color: #440207;"></i>
+                ACSO Accreditation
+              </h5>
+              <small class="text-muted">Handle ACSO Accreditation, monitor progress, and maintain records.</small>
+            </div>
+          </div>
+          <hr class="border-dark">
+
+          <!-- Search Bar -->
+          <div class="d-flex justify-content-end mb-3">
+            <form method="get" class="input-group input-group-sm" style="max-width: 480px;" onsubmit="return false">
+              <input id="sa_search" name="q" type="text" class="form-control" autocomplete="off"
+                    placeholder="Search by Name, Student No., or Position"
+                    value="{{ q }}">
+              <button class="input-group-text bg-white border" type="button" title="Search">
+                <i class="bi bi-search text-muted"></i>
+              </button>
+            </form>
+          </div>
+
+          <!-- Table of ACSO AccreditationRecords -->
+          <div class="card shadow-sm border">
+            <div class="card-header text-white" style="background-color: #440207;">
+              <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>ACSO Accreditation Record</h6>
+            </div>
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
+              <table class="table table-hover table-bordered align-middle text-center mb-0 sa-table">
+                <thead class="table-secondary sticky-top border">
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Program</th>
+                    <th>Date</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="sa_tbody"
+                      hx-select="#sa_tbody > *"
+                      hx-target="#sa_tbody"
+                      hx-swap="innerHTML"
+                      hx-vals='js:{"q": document.getElementById("sa_search")?.value?.trim() || ""}'
+                      hx-trigger="load, every 4s, keyup changed delay:300ms from:#sa_search"
+                      hx-on="htmx:beforeRequest: if ((document.activeElement && document.activeElement.id === 'sa_search') || document.body.classList.contains('modal-open')) event.preventDefault()">
+                  {% if records %}
+                    {% for sa in records %}
+                      <tr>
+                        <td>{{ sa.student_number }}</td>
+                        <td>{{ sa.last_name }}, {{ sa.first_name }}</td>
+                        <td>{{ sa.program }}</td>
+                        <td>{{ sa.created_at|date:"M d, Y h:i A" }}</td>
+                        <td>
+                          <a 
+                            class="btn btn-sm"
+                            style="color:#440207; border-color:#440207;"
+                            onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                            onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
+                            View More
+                          </a>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="6" class="text-center text-muted">No ACSO Accreditation found.</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div> <!-- End white content box -->
+  </div> <!-- End container -->
+</div> <!-- End main-content -->
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+<script>
+/* Sidebar Functions */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('show');
+}
+
+function handleDropdown(id) {
+  const icon = document.getElementById('icon-' + id);
+  const target = document.getElementById(id);
+  const bsTarget = bootstrap.Collapse.getOrCreateInstance(target);
+
+  if (target.classList.contains('show')) {
+    bsTarget.hide();
+    icon.classList.remove('rotate');
+  } else {
+    bsTarget.show();
+    icon.classList.add('rotate');
+  }
+
+  const allMenus = ['violationMenu', 'documentsMenu', 'postingsMenu'];
+  allMenus.forEach(menu => {
+    if (menu !== id) {
+      const el = document.getElementById(menu);
+      const ic = document.getElementById('icon-' + menu);
+      const bs = bootstrap.Collapse.getInstance(el);
+      if (bs) bs.hide();
+      if (ic) ic.classList.remove('rotate');
+    }
+  });
+}
+
+// Smooth Highlighting Active Link
+document.addEventListener("DOMContentLoaded", function () {
+  const currentUrl = window.location.href;
+  const navLinks = document.querySelectorAll(".nav-link");
+
+  navLinks.forEach(link => {
+    if (link.href && currentUrl.includes(link.href)) {
+      link.classList.add("active");
+    }
+  });
+});
+</script>
+
+<script>
+(function () {
+  const input = document.getElementById('sa_search');
+  const form  = input ? input.closest('form') : null;
+  const table = document.querySelector('.sa-table');
+  const tbody = table ? table.querySelector('tbody') : null;
+  if (!input || !tbody) return;
+
+  if (form) form.addEventListener('submit', (e) => e.preventDefault());
+
+  function filterRows() {
+    const q = input.value.trim().toLowerCase();
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.forEach(tr => {
+      const cells = tr.children;
+      const student = (cells[0]?.textContent || '').toLowerCase();
+      const name    = (cells[1]?.textContent || '').toLowerCase();
+      const position = (cells[3]?.textContent || '').toLowerCase();
+      const match   = !q || student.includes(q) || name.includes(q) || position.includes(q);
+      tr.style.display = match ? '' : 'none';
+    });
+  }
+
+  input.addEventListener('input', filterRows);
+  document.addEventListener('DOMContentLoaded', filterRows);
+})();
+</script>
+
+<script>
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+</script>
+
+
+
+
+<script>
+
+(function () {
+  // where to send users if the session is gone
+  var loginUrl = "{% url 'login' %}";
+  function goLogin() {
+    var next = encodeURIComponent(location.pathname + location.search + location.hash);
+    location.replace(loginUrl + "?next=" + next);
+  }
+
+  // --- 1) HTMX: if any background request gets 401, bounce to login
+  document.body.addEventListener('htmx:responseError', function (e) {
+    var xhr = e.detail && e.detail.xhr;
+    if (!xhr) return;
+
+    // 401 = unauthenticated; (optionally also 440 if you ever use it)
+    if (xhr.status === 401 || xhr.status === 440) {
+      goLogin();
+    }
+  });
+
+  // Optional: pause HTMX polling while tab hidden (saves requests, doesn’t affect auth)
+  if (window.htmx) {
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        // disable all polling elements
+        document.querySelectorAll('[hx-trigger*="every"]').forEach(function (el) {
+          el.setAttribute('data-poll-disabled', '1');
+          el.setAttribute('hx-trigger', el.getAttribute('hx-trigger') + ' consume');
+        });
+      } else {
+        // re-enable by forcing a refresh of attributes
+        document.querySelectorAll('[data-poll-disabled="1"]').forEach(function (el) {
+          el.removeAttribute('data-poll-disabled');
+          var trig = el.getAttribute('hx-trigger') || '';
+          el.setAttribute('hx-trigger', trig.replace(/\s*consume\b/, ''));
+          // optional: kick one refresh
+          if (el.matches('[hx-get], [hx-post], [hx-patch], [hx-put]')) {
+            htmx.trigger(el, 'refresh');
+          }
+        });
+      }
+    });
+  }
+
+  // --- 2) fetch(): wrap to catch 401s from non-HTMX AJAX
+  if (!window.__fetchWrapped) {
+    var _fetch = window.fetch;
+    window.fetch = function () {
+      return _fetch.apply(this, arguments).then(function (res) {
+        if (res && (res.status === 401 || res.status === 440)) {
+          goLogin();
+          // return a never-resolving promise to stop downstream handlers
+          return new Promise(function () {});
+        }
+        return res;
+      }).catch(function (err) {
+        // network errors stay as-is
+        throw err;
+      });
+    };
+    window.__fetchWrapped = true;
+  }
+
+  // --- 3) (Optional nicety) if the page was restored from bfcache, hard-reload
+  // so we don’t show a stale “logged-in” view after logout in another tab.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+
+})();
+
+</script>
+
+
+
+<script>
+
+(function () {
+  // where to send users if the session is gone
+  var loginUrl = "{% url 'login' %}";
+  function goLogin() {
+    var next = encodeURIComponent(location.pathname + location.search + location.hash);
+    location.replace(loginUrl + "?next=" + next);
+  }
+
+  // --- 1) HTMX: if any background request gets 401, bounce to login
+  document.body.addEventListener('htmx:responseError', function (e) {
+    var xhr = e.detail && e.detail.xhr;
+    if (!xhr) return;
+
+    // 401 = unauthenticated; (optionally also 440 if you ever use it)
+    if (xhr.status === 401 || xhr.status === 440) {
+      goLogin();
+    }
+  });
+
+  // Optional: pause HTMX polling while tab hidden (saves requests, doesn’t affect auth)
+  if (window.htmx) {
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        // disable all polling elements
+        document.querySelectorAll('[hx-trigger*="every"]').forEach(function (el) {
+          el.setAttribute('data-poll-disabled', '1');
+          el.setAttribute('hx-trigger', el.getAttribute('hx-trigger') + ' consume');
+        });
+      } else {
+        // re-enable by forcing a refresh of attributes
+        document.querySelectorAll('[data-poll-disabled="1"]').forEach(function (el) {
+          el.removeAttribute('data-poll-disabled');
+          var trig = el.getAttribute('hx-trigger') || '';
+          el.setAttribute('hx-trigger', trig.replace(/\s*consume\b/, ''));
+          // optional: kick one refresh
+          if (el.matches('[hx-get], [hx-post], [hx-patch], [hx-put]')) {
+            htmx.trigger(el, 'refresh');
+          }
+        });
+      }
+    });
+  }
+
+  // --- 2) fetch(): wrap to catch 401s from non-HTMX AJAX
+  if (!window.__fetchWrapped) {
+    var _fetch = window.fetch;
+    window.fetch = function () {
+      return _fetch.apply(this, arguments).then(function (res) {
+        if (res && (res.status === 401 || res.status === 440)) {
+          goLogin();
+          // return a never-resolving promise to stop downstream handlers
+          return new Promise(function () {});
+        }
+        return res;
+      }).catch(function (err) {
+        // network errors stay as-is
+        throw err;
+      });
+    };
+    window.__fetchWrapped = true;
+  }
+
+  // --- 3) (Optional nicety) if the page was restored from bfcache, hard-reload
+  // so we don’t show a stale “logged-in” view after logout in another tab.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
+  });
+
+})();
+
+</script>
+
+
+</body>
+</html>
