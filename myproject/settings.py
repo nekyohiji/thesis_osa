@@ -59,6 +59,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "myapp.middleware.IdleTimeoutMiddleware",
 ]
 
 ROOT_URLCONF = "myproject.urls"
@@ -249,4 +250,16 @@ else:
         }
     }
     
-##### ahh try
+#####
+SUPERADMIN_VIEWERS = [
+    "beverly.devega@tup.edu.ph",  
+]
+
+IDLE_TIMEOUT_SECONDS = 15 * 60
+SESSION_SAVE_EVERY_REQUEST = False 
+
+SESSION_COOKIE_SECURE = True            
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"        
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "Lax"

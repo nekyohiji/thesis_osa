@@ -245,6 +245,68 @@
     if (e.persisted) location.reload();
   });
 </script>
+<script>
+(function () {
+  var loginUrl = "{% url 'login' %}";
+  function goLogin() {
+    var next = encodeURIComponent(location.pathname + location.search + location.hash);
+    location.replace(loginUrl + "?next=" + next);
+  }
+
+  if (window.htmx) {
+    document.body.addEventListener("htmx:configRequest", function (e) {
+      var evt = e.detail.triggeringEvent;
+      var el = e.target;
+      var trig = (el.getAttribute("hx-trigger") || "");
+      var isPolling = trig.indexOf("every") !== -1;
+      if (evt && !isPolling) e.detail.headers["X-User-Activity"] = "1";
+    });
+
+    document.body.addEventListener("htmx:responseError", function (e) {
+      var s = e.detail && e.detail.xhr && e.detail.xhr.status;
+      if (s === 401 || s === 440) goLogin();
+    });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        document.querySelectorAll('[hx-trigger*="every"]').forEach(function (el) {
+          el.setAttribute("data-poll-off", "1");
+          el.setAttribute("hx-trigger", (el.getAttribute("hx-trigger") || "") + " consume");
+        });
+      } else {
+        document.querySelectorAll('[data-poll-off="1"]').forEach(function (el) {
+          el.removeAttribute("data-poll-off");
+          el.setAttribute("hx-trigger", (el.getAttribute("hx-trigger") || "").replace(/\s*consume\b/, ""));
+          if (el.matches("[hx-get],[hx-post],[hx-put],[hx-patch]")) htmx.trigger(el, "refresh");
+        });
+      }
+    });
+  }
+
+  if (!window.__fetchAuthWrapped) {
+    var _fetch = window.fetch;
+    window.fetch = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var req = args[0];
+      var init = args[1] || {};
+      var method = (init.method || (req && req.method) || "GET").toUpperCase();
+      var isWrite = method !== "GET";
+      init.headers = new Headers(init.headers || (req && req.headers) || {});
+      if (isWrite) init.headers.set("X-User-Activity", "1");
+      args[1] = init;
+      return _fetch.apply(this, args).then(function (res) {
+        if (res && (res.status === 401 || res.status === 440)) { goLogin(); return new Promise(function () {}); }
+        return res;
+      });
+    };
+    window.__fetchAuthWrapped = true;
+  }
+
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) location.reload();
+  });
+})();
+</script>
 
 </body>
 </html>

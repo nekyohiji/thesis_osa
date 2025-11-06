@@ -308,25 +308,35 @@
       </div>
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn text-light" style="background:#440207;">Yes</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+          onclick="window.open('{% url 'admin_cs_agreement_pdf' case.id %}', '_blank')">Yes, generate
+        </button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Completion Certificate Modal -->
-<div class="modal fade" id="completionModal" tabindex="-1" aria-labelledby="completionModalLabel" aria-hidden="true">
+
+<div class="modal fade" id="completionModal" tabindex="-1"
+     aria-labelledby="completionModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="completionModalLabel"></h5>
+        <h5 class="modal-title" id="completionModalLabel">Generate Completion Certificate</h5>
       </div>
       <div class="modal-body text-center">
         Are you sure you want to generate the <strong>Completion Certificate</strong>?
       </div>
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn text-light" style="background:#440207;">Yes</button>
+
+        <!-- Open PDF in a new tab AND dismiss modal -->
+        <button type="button" class="btn btn-primary"
+                data-bs-dismiss="modal"
+                onclick="window.open('{% url 'admin_cs_completion_pdf' case.id %}', '_blank')">
+          Yes, generate
+        </button>
       </div>
     </div>
   </div>

@@ -43,7 +43,7 @@
       <a href="{% url 'admin_violation' %}" class="btn text-white" style="background:#440207;">
         <i class="bi bi-file-earmark-spreadsheet"></i> Search for Violation Records
       </a>
-      <a a href="https://docs.google.com/spreadsheets/d/1P1C6cWrPNtBScadnVMgmmpGzmeirz4SW/edit?usp=sharing" class="btn text-white" style="background:#440207;">
+      <a href="https://docs.google.com/spreadsheets/d/1P1C6cWrPNtBScadnVMgmmpGzmeirz4SW/edit?usp=sharing" class="btn text-white" style="background:#440207;">
         <i class="bi bi-archive"></i> Search for Old Violation Records
       </a>
     </div>
@@ -75,6 +75,22 @@
           <div class="col-md-1">
             <label class="form-label">Sex:</label>
             <input class="form-control" value="{{ r.sex }}" disabled>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label">Age:</label>
+            <input class="form-control" value="{{ r.age }}" disabled>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Address:</label>
+            <input class="form-control" value="{{ r.address }}" disabled>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label">Client Type:</label>
+            <input class="form-control" value="{{ r.client_type }}" disabled>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label">Stakeholder:</label>
+            <input class="form-control" value="{{ r.stakeholder }}" disabled>
           </div>
         </div>
       </div>
@@ -128,11 +144,11 @@
           </div>
           <div class="col-md-4">
             <label class="form-label">Date & Time Requested:</label>
-            <input class="form-control" value="{{ r.submitted_at }}" disabled></input>
+            <input class="form-control" value="{{ r.submitted_at }}" disabled>
           </div>
           <div class="col-md-4">
             <label class="form-label">Action Taken at:</label>
-            <input class="form-control" value="{{ r.updated_at }}" disabled></input>
+            <input class="form-control" value="{{ r.updated_at }}" disabled>
           </div>
           <div class="col-md-4">
             <label class="form-label">Name of Requester:</label>
@@ -158,20 +174,72 @@
       <!-- Uploaded Document -->
       <div class="card mb-6 p-3 border-dark">
         <div class="card-header bg-white text-dark fw-bold">
-          <i class="bi bi-upload"></i> Uploaded Documents
+          <i class="bi bi-upload"></i>
+          Uploaded Documents:
+          {% with dt=r.document_type %}
+            {% if dt == 'upload_id' %}
+              Valid Student ID (Front / Back)
+            {% elif dt == 'upload_ack_receipt' %}
+              Acknowledgment Receipt
+            {% elif dt == 'upload_diploma' %}
+              Diploma
+            {% elif dt == 'upload_government_id' %}
+              Government Issued ID (Front / Back)
+            {% else %}
+              —
+            {% endif %}
+          {% endwith %}
         </div>
+
         <div class="card-body d-flex flex-wrap gap-2">
-          {% if r.uploaded_file %}
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              id="btnPreviewUpload"
-              data-file-name="{{ r.uploaded_file.name }}"
-              data-file-url="{{ r.uploaded_file.url }}"
-              data-bs-toggle="modal"
-              data-bs-target="#filePreviewModal">
-              <i class="bi bi-eye"></i> View Uploaded File
-            </button>
+          {% if r.uploaded_file or r.uploaded_file_2 %}
+            {% with dt=r.document_type %}
+
+              {# Button for first file #}
+              {% if r.uploaded_file %}
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm btnPreviewUpload"
+                  data-file-name="{{ r.uploaded_file.name }}"
+                  data-file-url="{{ r.uploaded_file.url }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#filePreviewModal">
+                  <i class="bi bi-eye"></i>
+                  {% if dt == 'upload_id' or dt == 'upload_government_id' %}
+                    View ID (Front)
+                  {% elif dt == 'upload_diploma' %}
+                    View Diploma
+                  {% elif dt == 'upload_ack_receipt' %}
+                    View Acknowledgment Receipt
+                  {% else %}
+                    View Uploaded File
+                  {% endif %}
+                </button>
+              {% endif %}
+
+              {# Button for second file #}
+              {% if r.uploaded_file_2 %}
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm btnPreviewUpload"
+                  data-file-name="{{ r.uploaded_file_2.name }}"
+                  data-file-url="{{ r.uploaded_file_2.url }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#filePreviewModal">
+                  <i class="bi bi-eye"></i>
+                  {% if dt == 'upload_id' or dt == 'upload_government_id' %}
+                    View ID (Back)
+                  {% elif dt == 'upload_diploma' %}
+                    View Extra File
+                  {% elif dt == 'upload_ack_receipt' %}
+                    View Extra File
+                  {% else %}
+                    View Additional File
+                  {% endif %}
+                </button>
+              {% endif %}
+
+            {% endwith %}
           {% else %}
             <span class="text-muted">No file uploaded.</span>
           {% endif %}
@@ -179,24 +247,42 @@
       </div>
 
 
+
       <!-- ACTION BUTTONS -->
       <div class="d-flex justify-content-between mt-4 flex-wrap gap-3">
         <!-- Safe Actions -->
         <div class="d-flex gap-2">
-          <button class="btn text-light" type="button"
-                  style="background-color: #440207; border-color: #440207;"
-                  onmouseover="this.style.backgroundColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207';"
-                  data-bs-toggle="modal" data-bs-target="#generateModal">
-            <i class="bi bi-printer"></i> Generate Certificate
-          </button>
-          <button class="btn text-light" type="button"
-                  style="background-color: #440207; border-color: #440207;"
-                  onmouseover="this.style.backgroundColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207';"
-                  data-bs-toggle="modal" data-bs-target="#generateRequestFormModal">
-            <i class="bi bi-printer"></i> Generate Request Form
-          </button>
+          {% if r.is_approved %}
+            <!-- NOTE: id="btnGenCert" is required by the gating script -->
+            <button id="btnGenCert" class="btn text-light" type="button"
+                    style="background-color: #440207; border-color: #440207;"
+                    onmouseover="this.style.backgroundColor='#5e0000';"
+                    onmouseout="this.style.backgroundColor='#440207';"
+                    data-bs-toggle="modal" data-bs-target="#generateModal">
+              <i class="bi bi-printer"></i> Generate Certificate
+            </button>
+
+            <button class="btn text-light" type="button"
+                    style="background-color: #440207; border-color: #440207;"
+                    onmouseover="this.style.backgroundColor='#5e0000';"
+                    onmouseout="this.style.backgroundColor='#440207';"
+                    data-bs-toggle="modal" data-bs-target="#generateRequestFormModal">
+              <i class="bi bi-printer"></i> Generate Request Form
+            </button>
+          {% else %}
+            {# Pending or Rejected -> disabled, no modal trigger #}
+            <button class="btn text-light" type="button" disabled
+                    title="Available after approval"
+                    style="background-color: #440207; border-color: #440207; opacity:.65; cursor:not-allowed;">
+              <i class="bi bi-printer"></i> Generate Certificate
+            </button>
+
+            <button class="btn text-light" type="button" disabled
+                    title="Available after approval"
+                    style="background-color: #440207; border-color: #440207; opacity:.65; cursor:not-allowed;">
+              <i class="bi bi-printer"></i> Generate Request Form
+            </button>
+          {% endif %}
         </div>
 
         <!-- Critical Actions -->
@@ -224,12 +310,6 @@
   </div>
 </div>
 
-
-  </div>
-</div>
-
-
-
 <!-- ================= MODALS ================= -->
 <!-- Generate Request Form -->
 <div class="modal fade" id="generateRequestFormModal" tabindex="-1" aria-hidden="true">
@@ -240,7 +320,10 @@
       </div>
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a class="btn btn-dark navigate-after-close" href="{% url 'goodmoral_request_form_pdf' r.pk %}" >Generate</a>
+        <!-- NOTE: data-gm-role="gen-form" is required by the gating script -->
+        <a class="btn btn-dark navigate-after-close"
+           data-gm-role="gen-form"
+           href="{% url 'goodmoral_request_form_pdf' r.pk %}">Generate</a>
       </div>
     </div>
   </div>
@@ -411,38 +494,33 @@
     document.querySelectorAll('.modal-backdrop').forEach(function (bd) { bd.remove(); });
   });
 
-  /* ---------------------------
+   /* ---------------------------
      File preview (image / PDF)
      --------------------------- */
-
   function ensureAbsoluteMediaUrl(url) {
     if (!url) return '';
-    // already absolute
     if (/^https?:\/\//i.test(url)) return url;
     if (url.startsWith('//')) return window.location.protocol + url;
-    // "/media/..." -> "https://host/media/..."
     if (url.startsWith('/')) return window.location.origin + url;
-    // "media/..." (missing leading slash) -> add it
     if (url.startsWith('media/')) return window.location.origin + '/' + url;
-    // anything else, leave as-is
     return url;
   }
 
   (function () {
     const modalEl   = document.getElementById('filePreviewModal');
     const container = document.getElementById('previewContainer');
-    const trigger   = document.getElementById('btnPreviewUpload');
-    if (!modalEl || !container || !trigger) return;
+    if (!modalEl || !container) return;
 
     function isImage(url) {
-      return /\.(png|jpe?g)$/i.test(url.split('?')[0]);
+      return /\.(png|jpe?g|gif|webp)$/i.test(url.split('?')[0]);
     }
     function isPdf(url) {
       return /\.pdf$/i.test(url.split('?')[0]);
     }
 
+    // Use relatedTarget from the button that opened the modal
     modalEl.addEventListener('show.bs.modal', function (ev) {
-      const btn  = ev.relatedTarget || trigger;
+      const btn  = ev.relatedTarget;
       const raw  = btn?.getAttribute('data-file-url') || '';
       const name = btn?.getAttribute('data-file-name') || 'file';
       const url  = ensureAbsoluteMediaUrl(raw);
@@ -608,5 +686,61 @@
   });
 })();
 </script>
+
+<!-- ▼ NEW: gating script must be inside its own <script> tag -->
+<script>
+(function () {
+  const REQUEST_ID = "{{ r.pk }}";
+  const KEY = `gm:formFirst:${REQUEST_ID}`;
+
+  const certBtn = document.getElementById('btnGenCert');
+  const formGenerateLink = document.querySelector('[data-gm-role="gen-form"]');
+
+  // Only applies when Approved (btnGenCert exists)
+  if (!certBtn) return;
+
+  function setCertEnabled(enabled) {
+    if (enabled) {
+      certBtn.disabled = false;
+      certBtn.style.opacity = '';
+      certBtn.style.cursor = '';
+      certBtn.setAttribute('data-bs-toggle', 'modal');
+      certBtn.setAttribute('data-bs-target', '#generateModal');
+      certBtn.title = '';
+    } else {
+      certBtn.disabled = true;
+      certBtn.style.opacity = '.65';
+      certBtn.style.cursor = 'not-allowed';
+      certBtn.removeAttribute('data-bs-toggle');
+      certBtn.removeAttribute('data-bs-target');
+      certBtn.title = 'Please generate the Request Form first.';
+    }
+  }
+
+  // Init from localStorage
+  const alreadyDone = localStorage.getItem(KEY) === '1';
+  setCertEnabled(alreadyDone);
+
+  // When the Request Form "Generate" is clicked, mark done and enable Certificate
+  formGenerateLink?.addEventListener('click', () => {
+    localStorage.setItem(KEY, '1');
+    setCertEnabled(true);
+  });
+
+  // Optional: small toast if user clicks disabled cert button
+  certBtn.addEventListener('click', (e) => {
+    if (certBtn.disabled) {
+      e.preventDefault();
+      const tip = document.createElement('div');
+      tip.className = 'position-fixed bottom-0 start-50 translate-middle-x bg-dark text-white px-3 py-2 rounded shadow';
+      tip.style.zIndex = 1080;
+      tip.textContent = 'Generate the Request Form first.';
+      document.body.appendChild(tip);
+      setTimeout(() => tip.remove(), 1400);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

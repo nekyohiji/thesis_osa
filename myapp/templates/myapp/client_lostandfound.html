@@ -35,6 +35,37 @@
     </div>
 </nav>
 
+
+<style>
+    .item-thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    }
+
+    .item-thumbnail:hover {
+    transform: scale(1.05);
+    }
+
+
+    
+    #imageModal .modal-dialog {
+        max-width: 1000px; 
+        }
+
+    #imageModal .modal-body img {
+        width: 150%;
+        height: auto;
+        max-height: 80vh; /* Keeps it responsive and prevents overflow */
+        object-fit: contain;
+        }
+
+
+</style>
+
+
 <main class="container mt-5 pt-5">
 <section class="py-4">
     <h1 class="text-center fw-bold mb-5">
@@ -52,7 +83,12 @@
 
                 {% if item.image %}
                 <div class="item-image-display mb-3 text-center">
-                    <img src="{{ item.image.url }}" alt="Lost/Found Item" class="img-fluid rounded shadow-sm">
+                    <img src="{{ item.image.url }}" 
+                        alt="Lost/Found Item" 
+                        class="img-thumbnail shadow-sm item-thumbnail"
+                        data-bs-toggle="modal"
+                        data-bs-target="#imageModal"
+                        data-description="{{ item.description|escapejs }}">
                 </div>
                 {% endif %}
 
@@ -68,6 +104,31 @@
     </div>
 </section>
 </main>
+
+
+</main>
+
+<!-- Image Modal (moved to end of main container) -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="imageModalLabel">Item Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" alt="Item Image" class="img-fluid rounded mb-3">
+        <p id="modalDescription" class="text-muted"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -110,6 +171,24 @@ function pollLostAndFound() {
 // Run immediately and then every 10 seconds
 pollLostAndFound();
 setInterval(pollLostAndFound, 10000);
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const imageModal = document.getElementById("imageModal");
+    const modalImage = document.getElementById("modalImage");
+    const modalDescription = document.getElementById("modalDescription");
+
+    imageModal.addEventListener("show.bs.modal", function (event) {
+        const thumbnail = event.relatedTarget;
+        const imgSrc = thumbnail.getAttribute("src");
+        const description = thumbnail.getAttribute("data-description");
+
+        modalImage.src = imgSrc;
+        modalDescription.textContent = description;
+    });
+});
 </script>
 
 </body>

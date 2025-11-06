@@ -4,7 +4,7 @@ surrendering id
 <html>
 <head>
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-    <title>OSA - Surrendering of ID</title>
+    <title>OSA - Return of ID</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Bootstrap Icons -->
@@ -43,7 +43,7 @@ surrendering id
 <!-- MAIN CONTAINER -->
 <div class="container mt-3 mb-3">
   
-    <h1 class="mb-3"><i class="bi bi-card-text"></i> <b>Surrendering of ID Form</b></h1>
+    <h1 class="mb-3"><i class="bi bi-card-text"></i> <b>Return ID Form</b></h1>
     <hr>
     <h6 class="mb-3">Please fill in the required information below.</h6>
     <!-- Form -->
@@ -119,13 +119,99 @@ surrendering id
 
                     <!-- Email -->
                     <div class="col-md-6 mb-3">
-                    <label class="form-label fw-semibold">Email:</label>
-                    <input type="email" class="form-control" id="email_surrender" name="contact_email" placeholder="you@gmail.com" required>
+                      <label class="form-label fw-semibold">Email:</label>
+                      <input type="email" class="form-control" id="email_surrender" name="contact_email" placeholder="you@gmail.com" required>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="row">
+                      <div class="col-md-12 mb-3">
+                        <label class="form-label fw-semibold">Address:</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="address_surrender"
+                          name="address"
+                          placeholder="Home address"
+                          minlength="5"
+                          maxlength="255"
+                          required
+                        >
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <!-- Age -->
+                      <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Age:</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="age_surrender"
+                          name="age"
+                          placeholder="Age"
+                          min="16"
+                          max="121"
+                          step="1"
+                          required
+                        >
+                      </div>
+
+                      <!-- Sex -->
+                      <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Sex:</label>
+                        <select class="form-select" id="sex_surrender" name="sex" required>
+                          <option value="">-- Select Sex --</option>
+                          <!-- If your project has fixed choices, align these values to your SEX_CHOICES -->
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </select>
+                      </div>
+
+                      <!-- Contact Number -->
+                      <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Contact Number:</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="contact_surrender"
+                          name="contact_number"
+                          placeholder="+63-912-345-6789"
+                          pattern="^\+63-\d{3}-\d{3}-\d{4}$"
+                          title="Use +63-XXX-XXX-XXXX (e.g., +63-912-345-6789)"
+                          maxlength="17"
+                          required>
+                      </div>
+                      <div class="row">
+                        <!-- Client Type -->
+                        <div class="col-md-6 mb-3">
+                          <label class="form-label fw-semibold">Client Type:</label>
+                          <select class="form-select" id="client_type_surrender" name="client_type" required>
+                            <option value="">-- Select Client Type --</option>
+                            <option value="Citizen">Citizen</option>
+                            <option value="Business">Business</option>
+                            <option value="Government (Employee/Agency)">Government (Employee/Agency)</option>
+                          </select>
+                        </div>
+
+                        <!-- Stakeholder -->
+                        <div class="col-md-6 mb-3">
+                          <label class="form-label fw-semibold">Stakeholder:</label>
+                          <select class="form-select" id="stakeholder_surrender" name="stakeholder" required>
+                            <option value="">-- Select Stakeholder --</option>
+                            <option value="TUPC Student">TUPC Student</option>
+                            <option value="Alumnus">Alumnus</option>
+                            <option value="Student from other School">Student from other School</option>
+                            <option value="External Client">External Client</option>
+                            <option value="Parent/Guardian">Parent/Guardian</option>
+                            <option value="TUPC Employee">TUPC Employee</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                 </div>
             </div>
         </div>
-
 
         <!-- STEP 2: Academic Information -->
         <div class="card mb-3 card-surrender-academic shadow-sm">
@@ -274,7 +360,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const FIELD_IDS = [
     'doc_type',
     'fn_surrender','sn_surrender','program_surrender','email_surrender',
-    'reason_surrender','studentID_surrender','yearlevel_surrender',
+    'address_surrender','age_surrender','sex_surrender','contact_surrender',
+    'client_type_surrender','stakeholder_surrender',   
+    'reason_surrender','studentID_surrender','yearlevel_surrender', 
     'stay_surrender','front_surrender','back_surrender'
   ];
   const MB = 1024 * 1024, LIMIT_MB = 10, ALLOWED_EXT = ['jpg','jpeg','png','pdf'];
@@ -472,6 +560,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  const contactEl = document.getElementById('contact_surrender');
+  if (contactEl) {
+    contactEl.addEventListener('input', () => {
+      // Keep +63-XXX-XXX-XXXX shape without forcing cursor jumps
+      let v = contactEl.value.replace(/[^\d+]/g, '');
+      if (!v.startsWith('+63')) v = '+63' + v.replace(/^\+?63?/, '');
+      v = v.replace(/^\+63/, '+63');
+      // Strip +63, format the rest as XXX-XXX-XXXX if possible
+      let rest = v.replace(/^\+63/, '');
+      rest = rest.replace(/^(\d{0,3})(\d{0,3})(\d{0,4}).*$/, (_, a, b, c) =>
+        [a, b, c].filter(Boolean).join('-')
+      );
+      const formatted = '+63' + (rest ? '-' + rest : '');
+      if (contactEl.value !== formatted) contactEl.value = formatted;
+      updateSubmitState(true);
+    });
+  }
   updateSubmitState(false);
 
   // ----- SUBMIT -----

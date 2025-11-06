@@ -1,6 +1,7 @@
 from django.db import models
 import random
 import string
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.validators import RegexValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
@@ -11,6 +12,31 @@ from django.db import transaction
 from django.conf import settings
 from django.db.models import Q
 from django.utils.timezone import now
+from django.core.validators import RegexValidator
+
+CLIENT_TYPE_CHOICES = [
+    ("Citizen", "Citizen"),
+    ("Business", "Business"),
+    ("Government (Employee/Agency)", "Government (Employee/Agency)"),
+]
+STAKEHOLDER_CHOICES = [
+    ("TUPC Student", "TUPC Student"),
+    ("Alumnus", "Alumnus"),
+    ("Student from other School", "Student from other School"),
+    ("External Client", "External Client"),
+    ("Parent/Guardian", "Parent/Guardian"),
+    ("TUPC Employee", "TUPC Employee"),
+]
+
+SEX_CHOICES = [
+    ("Male", "Male"),
+    ("Female", "Female"),
+]
+
+PH_PHONE_RE = RegexValidator(
+    regex=r'^\+63\s(?:\d{3}-\d{3}-\d{4}|\d{10})$',
+    message='Use +63 XXX-XXX-XXXX.'
+)   
 
 class Student(models.Model):
     tupc_id = models.CharField(max_length=50, unique=True)
@@ -35,6 +61,8 @@ class UserAccount(models.Model):
         ('staff', 'Staff'),
         ('studasst', 'Student Assistant'),
         ('comselec', 'Comselec'),
+        ('studlife', 'Student Life Development Coordinator'),
+        ('superadmin', 'Adviser-Superadmin'),
     ]
 
     full_name = models.CharField(max_length=128)
@@ -81,10 +109,10 @@ class Archived_Account(models.Model):
 class Violation(models.Model):
     # --- constants/choices
     VIOLATION_TYPES = [
-        ("Disturbance", "Causing Disturbance During Class Hours"),
-        ("Proper Uniform", "Not Wearing Proper Uniform and ID"),
+        ("Disturbance", "Loitering or Causing Disturbance During Class Hours"),
+        ("Proper Uniform", "Not Wearing Proper Uniform and ID / Haircut / Haircolor"),
         ("Cross Dressing", "Cross Dressing in Uniform and Wash Days"),
-        ("Facial Hair", "Unwanted Facial Hair / Long Haircut / Haircolor"),
+        ("Facial Hair", "Unwanted Facial Hair"),
         ("Earrings", "Wearing of Earrings or Multiple Earrings"),
         ("Caps", "Wearing of Caps or Hats inside Covered Facilities"),
         ("Entering Classroom", "Entering Classrooms without Permission from Instructor"),
@@ -231,7 +259,19 @@ class GoodMoralRequest(models.Model):
     middle_name = models.CharField(max_length=50, blank=True)
     surname = models.CharField(max_length=50)
     ext = models.CharField(max_length=10, blank=True)
-    sex = models.CharField(max_length=10)
+    sex = models.CharField(max_length=25, choices=SEX_CHOICES, null=True, blank=True)
+    age = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(16), MaxValueValidator(121)]
+    )
+    address = models.TextField(null=True, blank=True)
+    client_type = models.CharField(
+        max_length=40, choices=CLIENT_TYPE_CHOICES, null=True, blank=True
+    )
+    stakeholder = models.CharField(
+        max_length=40, choices=STAKEHOLDER_CHOICES, null=True, blank=True
+    )
+
     student_id = models.CharField(max_length=23)
     program = models.CharField(max_length=100)
     status = models.CharField(max_length=20)
@@ -242,10 +282,12 @@ class GoodMoralRequest(models.Model):
     requester_name = models.CharField(max_length=100)
     requester_email = models.EmailField()
     requester_contact = models.CharField(max_length=20)
+
     relationship = models.CharField(max_length=50)
     other_purpose = models.CharField(max_length=100, blank=True, null=True)
-    document_type = models.CharField(max_length=30, default='unknown')
-    uploaded_file = models.FileField(upload_to='uploads/goodmoral/', blank=False, null=False)  
+    document_type = models.CharField(max_length=32)
+    uploaded_file = models.FileField(upload_to='uploads/goodmoral/', blank=False, null=False)
+    uploaded_file_2 = models.FileField(upload_to='uploads/goodmoral/', blank=True, null=True)
     is_approved = models.BooleanField(default=False)
     is_rejected = models.BooleanField(default=False)
     rejection_reason = models.TextField(blank=True)
@@ -255,7 +297,7 @@ class GoodMoralRequest(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.surname} - {self.student_id}"
-    
+
     class Meta:
         db_table = 'goodmoral'
         indexes = [
@@ -298,7 +340,7 @@ class IDSurrenderRequest(models.Model):
         max_length=16,
         choices=DOCUMENT_TYPE_CHOICES,
         db_index=True,
-        default=DOC_ID,  
+        default=DOC_ID,
     )
 
     STATUS_PENDING   = "pending"
@@ -328,25 +370,70 @@ class IDSurrenderRequest(models.Model):
         ("Graduate", "Graduate"),
     ]
 
-    # --- Personal Information ---
+    # --- Identity / Contact ---
     first_name   = models.CharField(max_length=50)
     middle_name  = models.CharField(max_length=50, blank=True)
     surname      = models.CharField(max_length=50)
-    extension    = models.CharField(max_length=10, blank=True)  # Jr., Sr., etc.
+    extension    = models.CharField(max_length=10, blank=True)
     program      = models.CharField(max_length=100)
     contact_email = models.EmailField(max_length=254, blank=True, null=True, db_index=True)
 
+    address = models.CharField(
+        max_length=255,
+        blank=True, null=True,
+        help_text="Home address (required on new submissions)."
+    )
+    age = models.PositiveSmallIntegerField(
+        blank=True, null=True,
+        validators=[MinValueValidator(16), MaxValueValidator(121)],
+        help_text="Age in years (16–121)."
+    )
+    sex = models.CharField(
+        max_length=20,
+        choices=SEX_CHOICES, 
+        blank=True, null=True,
+        db_index=True
+    )
+    client_type = models.CharField(
+        max_length=40,
+        choices=CLIENT_TYPE_CHOICES, 
+        blank=True, null=True,
+        db_index=True,
+        help_text="Required on new submissions."
+    )
+    stakeholder = models.CharField(
+        max_length=40,
+        choices=STAKEHOLDER_CHOICES, 
+        blank=True, null=True,
+        db_index=True,
+        help_text="Required on new submissions."
+    )
+    contact_number = models.CharField(
+        max_length=17,
+        blank=True, null=True,
+        validators=[RegexValidator(
+            r"^\+63-\d{3}-\d{3}-\d{4}$",
+            message="Use +63-XXX-XXX-XXXX (e.g., +63-912-345-6789)."
+        )],
+        help_text="Format: +63-XXX-XXX-XXXX"
+    )
     # --- Academic Information ---
     reason = models.CharField(max_length=30, choices=REASON_CHOICES)
     student_number = models.CharField(
         max_length=23,
-        validators=[RegexValidator(r"^TUPC-\d{2}-[A-Za-z0-9]{4,15}$", message="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX.")],
-        db_index=True,  
+        validators=[RegexValidator(
+            r"^TUPC-\d{2}-[A-Za-z0-9]{4,15}$",
+            message="Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX."
+        )],
+        db_index=True,
     )
     year_level = models.CharField(max_length=12, choices=YEAR_LEVEL_CHOICES)
     inclusive_years = models.CharField(
         max_length=9,
-        validators=[RegexValidator(r"^\d{4}-\d{4}$", message="Use YYYY-YYYY (e.g., 2019-2023).")]
+        validators=[RegexValidator(
+            r"^\d{4}-\d{4}$",
+            message="Use YYYY-YYYY (e.g., 2019-2023)."
+        )]
     )
 
     # --- Uploads ---
@@ -362,25 +449,28 @@ class IDSurrenderRequest(models.Model):
     )
 
     status   = models.CharField(max_length=8, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
-    message  = models.TextField(blank=True) 
+    message  = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True, db_index=True)
     status_updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
     acknowledgement_receipt = models.FileField(
-    upload_to="surrender_ids/receipts/%Y/%m/%d/",
-    validators=[FileExtensionValidator(["pdf"]), validate_file_size],
-    null=True, blank=True,)
+        upload_to="surrender_ids/receipts/%Y/%m/%d/",
+        validators=[FileExtensionValidator(["pdf"]), validate_file_size],
+        null=True, blank=True,
+    )
 
     class Meta:
         ordering = ["-submitted_at"]
         indexes = [
             models.Index(fields=["status", "submitted_at"]),
+            models.Index(fields=["sex"]),
+            models.Index(fields=["client_type"]),
+            models.Index(fields=["stakeholder"]),
         ]
         verbose_name = "ID Surrender Request"
         verbose_name_plural = "ID Surrender Requests"
         db_table = 'Surrender_ID'
-        
+
     def clean(self):
-        from django.core.exceptions import ValidationError
         if self.document_type == self.DOC_ID:
             if not self.upload_id_front:
                 raise ValidationError({"upload_id_front": "Front ID is required."})
@@ -389,17 +479,17 @@ class IDSurrenderRequest(models.Model):
         elif self.document_type == self.DOC_AFFIDAVIT:
             if not self.upload_id_front:
                 raise ValidationError({"upload_id_front": "Affidavit first page is required."})
-            
+
     def save(self, *args, **kwargs):
-        if self.pk:  # record already exists
+        # Track status change timestamp
+        if self.pk:
             old = IDSurrenderRequest.objects.filter(pk=self.pk).values("status").first()
             if old and old["status"] != self.status:
                 self.status_updated_at = now()
         else:
-            # On creation, set status_updated_at same as submitted_at
             self.status_updated_at = now()
         super().save(*args, **kwargs)
-        
+
     def __str__(self):
         return f"{self.student_number} — {self.surname}, {self.first_name} ({self.status})"
 
@@ -723,11 +813,6 @@ class CommunityServiceAdjustment(models.Model):
             models.Index(fields=["case"]),
         ]
         
-PH_PHONE_RE = RegexValidator(
-    regex=r'^\+63\s\d{10}$',
-    message="Contact number must be exactly in the format: +63 XXXXXXXXXX (10 digits after a space)."
-)
-
 STUDENT_NO_RE = RegexValidator(
     regex=r'^TUPC-\d{2}-[A-Za-z0-9]{4,15}$',
     message="Student number must match TUPC-XX-XXXXXXXX (4–15 digits at the end)."
@@ -740,19 +825,7 @@ YEAR_LEVEL_CHOICES = [
     ("Fourth Year", "Fourth Year"),
     ("Fifth Year", "Fifth Year"),
 ]
-CLIENT_TYPE_CHOICES = [
-    ("Citizen", "Citizen"),
-    ("Business", "Business"),
-    ("Government (Employee/Agency)", "Government (Employee/Agency)"),
-]
-STAKEHOLDER_CHOICES = [
-    ("TUPC Student", "TUPC Student"),
-    ("Alumnus", "Alumnus"),
-    ("Student from other School", "Student from other School"),
-    ("External Client", "External Client"),
-    ("Parent/Guardian", "Parent/Guardian"),
-    ("TUPC Employee", "TUPC Employee"),
-]
+
 PURPOSE_CHOICES = [
     ("Credentials", "Credentials"),
     ("Application of Graduation", "Application of Graduation"),
@@ -764,19 +837,41 @@ PURPOSE_CHOICES = [
 
 class ClearanceRequest(models.Model):
     # Personal
-    first_name = models.CharField(max_length=50)
-    last_name  = models.CharField(max_length=50)
-    middle_name = models.CharField(max_length=50, blank=True, null=True)  # ← NEW (optional)
-    extension  = models.CharField(max_length=15, blank=True, null=True)
-    email      = models.EmailField()
-    contact    = models.CharField(max_length=14, validators=[PH_PHONE_RE])
+    first_name   = models.CharField(max_length=50)
+    last_name    = models.CharField(max_length=50)
+    middle_name  = models.CharField(max_length=50, blank=True, null=True)
+    extension    = models.CharField(max_length=15, blank=True, null=True)
+    email        = models.EmailField()
+    contact      = models.CharField(max_length=20, validators=[PH_PHONE_RE])
+    age = models.PositiveSmallIntegerField(
+        blank=True, null=True,
+        validators=[MinValueValidator(10), MaxValueValidator(100)],
+        help_text="Age in years (10–100)."
+    )
+    sex = models.CharField(
+        max_length=20,
+        choices=SEX_CHOICES,  
+        blank=True, null=True
+    )
+    address = models.CharField(          
+        max_length=255,
+        blank=True, null=True,             
+        help_text="Current residential address."
+    )
 
     # Academic
     student_number = models.CharField(max_length=23, validators=[STUDENT_NO_RE])
-    program    = models.CharField(max_length=100)  # free text OK (CSV-guided on the UI)
+    program    = models.CharField(max_length=100)
     year_level = models.CharField(max_length=20, choices=YEAR_LEVEL_CHOICES)
     client_type= models.CharField(max_length=50, choices=CLIENT_TYPE_CHOICES)
     stakeholder= models.CharField(max_length=50, choices=STAKEHOLDER_CHOICES)
+
+    # NEW academic-ish field
+    last_year_in_tupc = models.PositiveSmallIntegerField(
+        blank=True, null=True,
+        validators=[MinValueValidator(1979)],
+        help_text="Last calendar year you attended TUPC (e.g., 2025)."
+    )
 
     # Visit
     purpose    = models.CharField(max_length=50, choices=PURPOSE_CHOICES)
@@ -787,6 +882,8 @@ class ClearanceRequest(models.Model):
         indexes = [
             models.Index(fields=["student_number"]),
             models.Index(fields=["created_at"]),
+            models.Index(fields=["last_name", "first_name"]),
+            models.Index(fields=["last_year_in_tupc"]),
         ]
         verbose_name = "Clearance"
         verbose_name_plural = "Clearance Requests"

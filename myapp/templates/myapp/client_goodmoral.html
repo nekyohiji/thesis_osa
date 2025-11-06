@@ -60,977 +60,1846 @@
 
 
 
-<div class="container mt-5 mb-5">
-    <br>
-    <h1  class="mb-4"> <i class="bi bi-file-earmark-text-fill"></i><b>  Good Moral Certificate Request Form</b></h1><hr>
-    <h6 class="mb-4"> Please fill in the required information below.</h6>
-    <div id="formAlert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
-        <strong>Please fill out all required fields before proceeding.</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    <div class="container mt-5 mb-5">
+        <br>
+        <h1 class="mb-4">
+            <i class="bi bi-file-earmark-text-fill"></i>
+            <b>Good Moral Certificate Request Form</b>
+        </h1>
+        <hr>
+        
+        <h6 class="mb-4">Please fill in the required information below.</h6>
+        <h6 class="mb-4 text-danger">
+            <b>INCORRECT INFORMATION WILL RESULT IN DELAY OR NON-ISSUANCE OF THE REQUESTED DOCUMENT.</b>
+        </h6>
 
-    {# Only show client-scoped messages on this page #}
-    {% if messages %}
-    {% for message in messages %}
-        {% if 'gm-client' in message.tags %}
-        <div class="alert alert-danger" role="alert">{{ message }}</div>
+        <!-- Form Alert (for validation errors) -->
+        <div id="formAlert" 
+             class="alert alert-danger alert-dismissible fade show d-none" 
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true">
+            <strong>Please fill out all required fields before proceeding.</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Django Messages (server-side errors) -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if 'gm-client' in message.tags %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
         {% endif %}
-    {% endfor %}
-    {% endif %}
 
-    <!-- Step Indicator -->
-    <div class="step-indicator mb-4" id="stepIndicator">
-        <div class="active" data-step="1"><i class="bi bi-person-fill"></i>  Personal</div>
-        <div data-step="2"><i class="bi bi-mortarboard-fill"></i>  Academic</div>
-        <div data-step="3"><i class="bi bi-journal-text"></i>  Request</div>
-        <div data-step="4"><i class="bi bi-upload"></i>  Verification</div>
-
-    </div>
-
-
-
-    <!-- Form -->
-    <form id="gmfForm" method="post" action="{% url 'goodmoral_request' %}" enctype="multipart/form-data">
-        {% csrf_token %}
-
-
-
-        <!-- STEP 1, PERSONAL INFORMATION-->
-        <div class="step active card mb-4">
-            <div class="card-body">
-                <div class="section-title"><i class="bi bi-person-fill"></i>Personal Information</div>
-                <hr><br>
-
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">First Name:</label>
-                        <input type="text" id="fn_goodmoral" class="form-control" name="first_name" maxlength="50" placeholder="Enter Your First Name" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Middle Name:</label>
-                        <input type="text" id="mn_goodmoral" class="form-control" name="middle_name" maxlength="50" placeholder="Enter Your Middle Name" >
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Surname:</label>
-                        <input type="text" id="sn_goodmoral" class="form-control" name="surname" maxlength="50" placeholder="Enter Your Last Name" required>
-                    </div>
-                </div>
-
-
-
-
-
-
-                
-                <div class="mb-3 d-flex align-items-center">
-                    <label class="form-label me-3 mb-0">Do you have an extension name?</label>
-                    <div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="hasExtension" id="extYes" value="yes">
-                            <label class="form-check-label" for="extYes">Yes</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="hasExtension" id="extNo" value="no" checked>
-                            <label class="form-check-label" for="extNo">No</label>
-                        </div>
-                    </div>
-                </div>
-
-
-
-
-                <div class="row">
-                    <div class="col-md-6 mb-3" id="extensionRow" style="display: none;">
-                        <label class="form-label">Extension (Jr., Sr.): OPTIONAL</label>
-                        <input type="text" id="ex_goodmoral" class="form-control" name="ext" maxlength="10" placeholder="Enter Your Extension Name">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Sex:</label>
-                        <select class="form-select" id="sex_goodmoral" name="sex" required>
-                            <option value="">-- Select --</option>
-                            <option>Male</option>
-                            <option>Female</option>
-                        </select>
-                    </div>
-                </div>
+        <!-- Step Indicator -->
+        <div class="step-indicator mb-4" id="stepIndicator" role="tablist" aria-label="Form progress">
+            <div class="active" data-step="1" role="tab" aria-selected="true" aria-label="Step 1: Personal Information">
+                <i class="bi bi-person-fill"></i> Personal
+            </div>
+            <div data-step="2" role="tab" aria-selected="false" aria-label="Step 2: Academic Information">
+                <i class="bi bi-mortarboard-fill"></i> Academic
+            </div>
+            <div data-step="3" role="tab" aria-selected="false" aria-label="Step 3: Request Information">
+                <i class="bi bi-journal-text"></i> Request
+            </div>
+            <div data-step="4" role="tab" aria-selected="false" aria-label="Step 4: Document Upload">
+                <i class="bi bi-upload"></i> Verification
             </div>
         </div>
 
+        <!-- FORM -->
+        <form id="gmfForm" method="post" action="{% url 'goodmoral_request' %}" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
 
-                <!-- STEP 2, ACADEMIC INFORMATION -->
-            <div class="step card mb-4">
+            <!-- ============================================ -->
+            <!-- STEP 1: PERSONAL INFORMATION -->
+            <!-- ============================================ -->
+            <div class="step active card mb-4" role="tabpanel" aria-labelledby="step1">
                 <div class="card-body">
-                    <div class="section-title"><i class="bi bi-mortarboard-fill"></i> Academic Information</div>
-                    <hr><br>
+                    <h2 id="step1" class="section-title">
+                        <i class="bi bi-person-fill"></i> Personal Information
+                    </h2>
+                    <hr class="my-3">
 
-                    <!-- STUDENT ID NUMBER & PROGRAM/COURSE -->
+                    <!-- Name Fields -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="fn_goodmoral" class="form-label">
+                                First Name: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="fn_goodmoral" 
+                                   class="form-control" 
+                                   name="first_name" 
+                                   maxlength="50" 
+                                   placeholder="e.g., Juan"
+                                   pattern="^[A-Za-z\s'-]+$"
+                                   required
+                                   aria-required="true">
+                            <div class="invalid-feedback">Please enter your first name (letters, apostrophes, and hyphens only).</div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="mn_goodmoral" class="form-label">
+                                Middle Name: <small class="text-muted">(Optional)</small>
+                            </label>
+                            <input type="text" 
+                                   id="mn_goodmoral" 
+                                   class="form-control" 
+                                   name="middle_name" 
+                                   pattern="^[A-Za-z\s'-]+$"
+                                   maxlength="50" 
+                                   placeholder="e.g., Santos">
+                                <div class="invalid-feedback">Please enter a valid middle name (letters, apostrophes, and hyphens only).</div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="sn_goodmoral" class="form-label">
+                                Surname: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="sn_goodmoral" 
+                                   class="form-control" 
+                                   name="surname" 
+                                   maxlength="50" 
+                                   placeholder="e.g., Dela Cruz"
+                                   pattern="^[A-Za-z\s'-]+$"
+                                   required
+                                   aria-required="true">
+                            <div class="invalid-feedback">Please enter a valid surname (letters, apostrophes, and hyphens only).</div>
+                        </div>
+                    </div>
+
+                    <!-- Extension Name Toggle -->
+                    <fieldset class="mb-3">
+                        <legend class="form-label">Do you have an extension name?</legend>
+                        <div class="d-flex align-items-center">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="hasExtension" 
+                                       id="extYes" 
+                                       value="yes">
+                                <label class="form-check-label" for="extYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="hasExtension" 
+                                       id="extNo" 
+                                       value="no" 
+                                       checked>
+                                <label class="form-check-label" for="extNo">No</label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Extension Name Field (conditionally shown) -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3" id="extensionRow" style="display: none;">
+                            <label for="ex_goodmoral" class="form-label">
+                                Extension Name <small class="text-muted">(Jr., Sr., III, etc.)</small>
+                            </label>
+                            <input type="text" 
+                                   id="ex_goodmoral" 
+                                   class="form-control" 
+                                   name="ext" 
+                                   maxlength="10" 
+                                   placeholder="e.g., Jr.">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="sex_goodmoral" class="form-label">
+                                Sex: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <select class="form-select" 
+                                    id="sex_goodmoral" 
+                                    name="sex" 
+                                    required
+                                    aria-required="true">
+                                <option value="" disabled selected>-- Select --</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                            <div class="invalid-feedback">Please select your sex.</div>
+                        </div>
+                    </div>
+
+                    <!-- Age and Address -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="age_goodmoral" class="form-label">
+                                Age: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   name="age" 
+                                   id="age_goodmoral"
+                                   min="16" 
+                                   max="121" 
+                                   step="1" 
+                                   inputmode="numeric" 
+                                   placeholder="e.g., 21"
+                                   required
+                                   aria-required="true"
+                                   aria-describedby="ageHelp">
+                            <small id="ageHelp" class="form-text text-muted">Must be between 16 and 121</small>
+                            <div class="invalid-feedback">Please enter a valid age.</div>
+                        </div>
+
+                        <div class="col-md-8 mb-3">
+                            <label for="address_goodmoral" class="form-label">
+                                Address: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="address" 
+                                   id="address_goodmoral"
+                                   maxlength="255" 
+                                   placeholder="House/Street/Barangay, City/Municipality, Province"
+                                   required
+                                   aria-required="true">
+                            <div class="invalid-feedback">Please enter your complete address.</div>
+                        </div>
+                    </div>
+
+                    <!-- Client Type and Stakeholder -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Student ID Number:</label>
-                            <input type="text" id="studentID_goodmoral" class="form-control" name="student_id" minlength="12" maxlength="23" pattern="^TUPC-\d{2}-[A-Z0-9]{4,15}$" placeholder="TUPC-XX-XXXX" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                        <label class="form-label">Program/Course:</label>
-                            <select id="program_goodmoral" class="form-select" name="program" required>
-                                <option value="">-- Select Program --</option>
+                            <label for="client_type_goodmoral" class="form-label">
+                                Client Type: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <select class="form-select" 
+                                    name="client_type" 
+                                    id="client_type_goodmoral"
+                                    required
+                                    aria-required="true">
+                                <option value="" disabled selected>-- Select --</option>
+                                <option value="Citizen">Citizen</option>
+                                <option value="Business">Business</option>
+                                <option value="Government (Employee/Agency)">Government (Employee/Agency)</option>
                             </select>
+                            <div class="invalid-feedback">Please select your client type.</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="stakeholder_goodmoral" class="form-label">
+                                Stakeholder: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <select class="form-select" 
+                                    name="stakeholder" 
+                                    id="stakeholder_goodmoral"
+                                    required
+                                    aria-required="true">
+                                <option value="" disabled selected>-- Select --</option>
+                                <option value="TUPC Student">TUPC Student</option>
+                                <option value="Alumnus">Alumnus</option>
+                                <option value="Student from other School">Student from other School</option>
+                                <option value="External Client">External Client</option>
+                                <option value="Parent/Guardian">Parent/Guardian</option>
+                                <option value="TUPC Employee">TUPC Employee</option>
+                            </select>
+                            <div class="invalid-feedback">Please select your stakeholder type.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- STEP 2: ACADEMIC INFORMATION -->
+            <!-- ============================================ -->
+            <div class="step card mb-4" role="tabpanel" aria-labelledby="step2">
+                <div class="card-body">
+                    <h2 id="step2" class="section-title">
+                        <i class="bi bi-mortarboard-fill"></i> Academic Information
+                    </h2>
+                    <hr class="my-3">
+
+                    <!-- Student ID and Program -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="studentID_goodmoral" class="form-label">
+                                Student ID Number: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="studentID_goodmoral" 
+                                   class="form-control" 
+                                   name="student_id" 
+                                   minlength="12" 
+                                   maxlength="23" 
+                                   pattern="^TUPC-\d{2}-[A-Z0-9]{4,15}$" 
+                                   placeholder="TUPC-XX-XXXX"
+                                   required
+                                   aria-required="true"
+                                   aria-describedby="studentIdHelp">
+                            <small id="studentIdHelp" class="form-text text-muted">
+                                Format: TUPC-YY-XXXX (e.g., TUPC-21-1234)
+                            </small>
+                            <div class="invalid-feedback">Please enter a valid Student ID.</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="program_goodmoral" class="form-label">
+                                Program/Course: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <select id="program_goodmoral" 
+                                    class="form-select" 
+                                    name="program"
+                                    data-csv-path="{% static 'myapp/data/programs.csv' %}"
+                                    required
+                                    aria-required="true">
+                                <option value="" disabled selected hidden>-- Select Program --</option>
+                            </select>
+                            <div class="invalid-feedback">Please select your program.</div>
+                        </div>
+
+                        <div class="col-md-12 mb-3" id="program_other_wrap" style="display:none;">
+                            <label for="program_other_input" class="form-label">
+                                Specify COMPLETE Program (if not listed): <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text"
+                                    id="program_other_input"
+                                    class="form-control"
+                                    maxlength="100"
+                                    placeholder="Type your program name">
+                            <div class="invalid-feedback">Please specify your program.</div>
                         </div>
                     </div>
 
-                    <!-- STATUS & DATE GRADUATED -->
-                    <div class="col-md-6 mb-3">
-                    <label class="form-label">Status:</label>
+                    <!-- Status Selection -->
+                    <fieldset class="col-md-12 mb-3">
+                        <legend class="form-label">
+                            Status: <span class="text-danger" aria-label="required">*</span>
+                        </legend>
 
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="status" id="status_graduated" value="Graduated" required onclick="toggleStatusFields()">
-                        <label class="form-check-label" for="status_graduated">Alum/Graduated</label>
-                    </div>
-                    <div class="mt-2" id="graduated_date_field" style="display: none;">
-                        <label class="form-label">Year Graduated:</label>
-                        <input type="number" class="form-control" name="date_graduated" id="year_graduated_goodmoral" min="1979" step="1" inputmode="numeric" placeholder="e.g., 2024">
+                        <!-- Graduated -->
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="status" 
+                                   id="status_graduated" 
+                                   value="Graduated"
+                                   required
+                                   aria-required="true">
+                            <label class="form-check-label" for="status_graduated">
+                                Alum/Graduated
+                            </label>
+                        </div>
+
+                        <div class="mt-2 ms-4" id="graduated_date_field" style="display:none;">
+                            <label for="year_graduated_goodmoral" class="form-label">
+                                Year Graduated: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="date_graduated" 
+                                   id="year_graduated_goodmoral"
+                                   inputmode="numeric" 
+                                   placeholder="e.g., 2024"
+                                   maxlength="4" 
+                                   pattern="^\d{4}$"
+                                   aria-describedby="gradYearHelp">
+                            <small id="gradYearHelp" class="form-text text-muted">
+                                Enter 4-digit year (1979-Present)
+                            </small>
+                        </div>
+
+                        <!-- Former Student -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="status" 
+                                   id="status_former" 
+                                   value="Former Student">
+                            <label class="form-check-label" for="status_former">
+                                Former Student
+                            </label>
+                        </div>
+
+                        <div class="mt-2 ms-4" id="inclusive_years_field" style="display:none;">
+                            <label for="stay_goodmoral" class="form-label">
+                                Inclusive Years of Stay: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control"
+                                   name="inclusive_years" 
+                                   id="stay_goodmoral"
+                                   placeholder="e.g., 2018-2022" 
+                                   maxlength="9"
+                                   pattern="^\d{4}-\d{4}$"
+                                   aria-describedby="stayYearsHelp">
+                            <small id="stayYearsHelp" class="form-text text-muted">
+                                Format: YYYY-YYYY (start year - end year)
+                            </small>
+                        </div>
+
+                        <!-- Current Student -->
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="status" 
+                                   id="status_current" 
+                                   value="Current Student">
+                            <label class="form-check-label" for="status_current">
+                                Current Student
+                            </label>
+                        </div>
+
+                        <div class="mt-2 ms-4" id="admission_date_field" style="display:none;">
+                            <label for="year_admission_goodmoral" class="form-label">
+                                Year of Admission: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control"
+                                   name="date_admission" 
+                                   id="year_admission_goodmoral"
+                                   inputmode="numeric" 
+                                   placeholder="e.g., 2021"
+                                   maxlength="4" 
+                                   pattern="^\d{4}$"
+                                   aria-describedby="admYearHelp">
+                            <small id="admYearHelp" class="form-text text-muted">
+                                Enter 4-digit year (1979-Present)
+                            </small>
+                        </div>
+
+                        <div class="invalid-feedback d-block" style="display: none !important;">
+                            Please select your status.
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- STEP 3: REQUEST & REQUESTER INFORMATION -->
+            <!-- ============================================ -->
+            <div class="step card mb-4" role="tabpanel" aria-labelledby="step3">
+                <div class="card-body">
+                    <h2 id="step3" class="section-title">
+                        <i class="bi bi-journal-text"></i> Purpose and Requester's Information
+                    </h2>
+                    <hr class="my-3">
+
+                    <!-- Purpose -->
+                    <div class="mb-3">
+                        <label for="purpose_goodmoral" class="form-label">
+                            Purpose of Request: <span class="text-danger" aria-label="required">*</span>
+                        </label>
+                        <select class="form-select" 
+                                name="purpose" 
+                                id="purpose_goodmoral"
+                                required
+                                aria-required="true">
+                            <option value="" disabled selected>-- Select Purpose of Request --</option>
+                            <option value="Employment">Employment</option>
+                            <option value="Transfer to Another School">Transfer to Another School</option>
+                            <option value="Continuing Education">Continuing Education</option>
+                            <option value="Supervised Industrial Training (SIT)">Supervised Industrial Training (SIT)</option>
+                            <option value="In-Campus Practice Teaching (IPT)">In-Campus Practice Teaching (IPT)</option>
+                            <option value="Off-Campus Practice Teaching (OPT)">Off-Campus Practice Teaching (OPT)</option>
+                            <option value="Student Development">Student Development (COMELEC, USG, Awards, etc.)</option>
+                            <option value="Scholarship">Scholarship</option>
+                            <option value="Others">Others (Please specify)</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a purpose.</div>
                     </div>
 
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="radio" name="status" id="status_former" value="Former Student" onclick="toggleStatusFields()">
-                        <label class="form-check-label" for="status_former">Former Student</label>
-                    </div>
-                    <div class="mt-2" id="inclusive_years_field" style="display: none;">
-                        <label class="form-label">Inclusive Years of Stay:</label>
-                        <input type="text" class="form-control" name="inclusive_years" id="stay_goodmoral" placeholder="e.g. 2018-2022">
+                    <!-- Other Purpose Specification (conditionally shown) -->
+                    <div class="mb-3" id="otherPurposeContainer" style="display: none;">
+                        <label for="other_purpose" class="form-label">
+                            Please specify: <span class="text-danger" aria-label="required">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="other_purpose" 
+                               id="other_purpose"
+                               maxlength="100">
+                        <div class="invalid-feedback">Please specify the purpose.</div>
                     </div>
 
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="radio" name="status" id="status_current" value="Current Student" onclick="toggleStatusFields()">
-                        <label class="form-check-label" for="status_current">Current Student</label>
+                    <hr class="my-4">
+
+                    <!-- Requester Information -->
+                    <h5 class="mb-3">Requester Information</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="requester_goodmoral" class="form-label">
+                                Name of Requester: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="requester_goodmoral" 
+                                   name="requester_name" 
+                                   maxlength="100" 
+                                   placeholder="Enter your name"
+                                   required
+                                   aria-required="true">
+                            <div class="invalid-feedback">Please enter a valid requester's name (letters, apostrophes, and hyphens only).</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email_req_goodmoral" class="form-label">
+                                Email of Requester: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email_req_goodmoral" 
+                                   name="requester_email" 
+                                   maxlength="100" 
+                                   placeholder="email@example.com"
+                                   required
+                                   aria-required="true">
+                            <div class="invalid-feedback">Please enter a valid email address.</div>
+                        </div>
                     </div>
-                    <div class="mt-2" id="admission_date_field" style="display: none;">
-                        <label class="form-label">Year of Admission:</label>
-                        <input type="number" class="form-control" name="date_admission" id="year_admission_goodmoral" min="1979" step="1" inputmode="numeric" placeholder="e.g., 2021">
-                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_req_goodmoral" class="form-label">
+                                Contact No. of Requester: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="tel"
+                                   class="form-control"
+                                   id="contact_req_goodmoral"
+                                   name="requester_contact"
+                                   maxlength="16"
+                                   placeholder="+63-XXX-XXX-XXXX"
+                                   pattern="^\+63-\d{3}-\d{3}-\d{4}$"
+                                   required
+                                   aria-required="true"
+                                   aria-describedby="contactHelp">
+                            <small id="contactHelp" class="form-text text-muted">
+                                Format: +63-XXX-XXX-XXXX (e.g., +63-912-345-6789)
+                            </small>
+                            <div class="invalid-feedback">Please enter a valid contact number.</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="relationship_goodmoral" class="form-label">
+                                Relationship to Alum/Student: <span class="text-danger" aria-label="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="relationship_goodmoral" 
+                                   name="relationship" 
+                                   maxlength="50" 
+                                   placeholder="e.g., self, parent, guardian"
+                                   required
+                                   aria-required="true">
+                            <div class="invalid-feedback">Please enter your relationship.</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- ============================================ -->
+            <!-- STEP 4: DOCUMENT UPLOAD -->
+            <!-- ============================================ -->
+            <div class="step card mb-4" role="tabpanel" aria-labelledby="step4">
+                <div class="card-body">
+                    <h2 id="step4" class="section-title">
+                        <i class="bi bi-upload"></i> Verification
+                    </h2>
+                    <hr class="my-3">
 
-
-        <!-- STEP 3, REQUEST -->
-        <div class="step card mb-4">
-            <div class="card-body">
-                <div class="section-title"><i class="bi bi-journal-text"></i> Request & Requester Information</div><hr><br>
-
-                <!-- PURPOSE -->
-                <div class="mb-3">
-                    <label class="form-label">Purpose of Request:</label>
-                    <select class="form-select" name="purpose" id="purpose_goodmoral" required onchange="toggleOtherInput()">
-                        <option value="">-- Select Purpose of Request --</option>
-                        <option value="Employment">Employment</option>
-                        <option value="Transfer to Another School">Transfer to Another School</option>
-                        <option value="continuing education">Continuing Education</option>
-                        <option value="Supervised Industrial Training (SIT)"> Supervised Industrial Training (SIT)</option>
-                        <option value="In-Campus Practice Teaching (IPT)">In-Campus Practice Teaching (IPT)</option>
-                        <option value="Off-Campus Practice Teaching (OPT)">Off-Campus Practice Teaching (OPT)</option>
-                        <option value="Student Development">Student Development ( COMSELEC, USG, Awards. etc.)</option>
-                        <option value="Scholarship">Scholarship</option>
-                    </select>
-                </div>
-
-                <!-- Shown only if Others, Transfer, or Scholarship is selected -->
-                <div class="mb-3" id="otherPurposeContainer" style="display: none;">
-                    <label class="form-label">Please specify:</label>
-                    <input type="text" class="form-control" name="other_purpose" id="other_purpose">
-                </div>
-
-
-                <hr class="m"><br>
-
-                <!-- NAME & EMAIL OF REQUESTER -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Name of Requester:</label>
-                        <input type="text" class="form-control" id="requester_goodmoral" name="requester_name" maxlength="100" placeholder="Enter your Name" required>
+                    <!-- Document Type Selection -->
+                    <div class="mb-3">
+                        <label for="documentTypeSelect" class="form-label">
+                            Select Document Type: <span class="text-danger" aria-label="required">*</span>
+                        </label>
+                        <select class="form-select" 
+                                id="documentTypeSelect" 
+                                name="document_type"
+                                required
+                                aria-required="true"
+                                aria-describedby="docTypeHelp">
+                            <option value="" disabled selected>-- Select Document Type --</option>
+                            <option value="upload_id">Valid Student ID (Front / Back)</option>
+                            <option value="upload_ack_receipt">Acknowledgment Receipt</option>
+                            <option value="upload_diploma">Diploma</option>
+                            <option value="upload_government_id">Government Issued ID (Front / Back)</option>
+                        </select>
+                        <small id="docTypeHelp" class="form-text text-muted">
+                            Note: Student ID and Government ID require front and back photos (2 files)
+                        </small>
+                        <div class="invalid-feedback">Please select a document type.</div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Email of Requester:</label>
-                        <input type="email" class="form-control" id="email_req_goodmoral" name="requester_email" maxlength="100" placeholder="@gmail.com" required>
-                    </div>
-                </div>
 
-                <!-- CONTACT & RELATIONSHIP -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Contact No. of Requester:</label>
-                        <input type="tel" class="form-control" id="contact_req_goodmoral" name="requester_contact" maxlength="20" placeholder="+63 9XXXXXXXXX" required>
+                    <!-- File Upload 1 -->
+                    <div class="mb-3" id="fileGroup1" style="display: none;">
+                        <label id="fileLabel1" for="uploadedFile1" class="form-label">
+                            Upload File 1: <span class="text-danger" aria-label="required">*</span>
+                        </label>
+                        <input type="file"
+                               class="form-control"
+                               name="uploaded_file"
+                               id="uploadedFile1"
+                               accept="application/pdf,image/jpeg,image/png"
+                               aria-describedby="file1Help">
+                        <small id="file1Help" class="form-text text-muted">
+                            Accepted formats: PDF, JPG, PNG. Maximum size: 10MB
+                        </small>
+                        <div class="invalid-feedback">Please upload a valid file.</div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Relationship to Alum/Student:</label>
-                        <input type="text" class="form-control" id="relationship_goodmoral" name="relationship" maxlength="50" placeholder="e.g., self" required>
+
+                    <!-- File Upload 2 (for ID cards) -->
+                    <div class="mb-3" id="fileGroup2" style="display: none;">
+                        <label id="fileLabel2" for="uploadedFile2" class="form-label">
+                            Upload File 2: <span class="text-danger" aria-label="required">*</span>
+                        </label>
+                        <input type="file"
+                               class="form-control"
+                               name="uploaded_file_2"
+                               id="uploadedFile2"
+                               accept="application/pdf,image/jpeg,image/png"
+                               aria-describedby="file2Help">
+                        <small id="file2Help" class="form-text text-muted">
+                            Accepted formats: PDF, JPG, PNG. Maximum size: 10MB
+                        </small>
+                        <div class="invalid-feedback">Please upload a valid file.</div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Submit Button -->
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send-fill"></i> Submit Request
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
 
-
-        <!-- STEP 4 UPLOAD -->
-        <div class="step card mb-4">
-            <div class="card-body">
-                <div class="section-title"><i class="bi bi-upload"></i>Verification</div> <hr><br>
-
-                <!-- Select Document Type -->
-                <div class="mb-3">
-                    <label class="form-label">Select Document Type:</label>
-                    <select class="form-select" id="documentTypeSelect" name="document_type" required>
-                        <option value="">-- Select Document Type --</option>
-                        <option value="upload_id">Valid Student ID</option>
-                        <option value="upload_ack_receipt">Acknowledgment Receipt</option>
-                        <option value="upload_diploma">Diploma</option>
-                    </select>
-                </div>
-
-                <!-- Upload Field -->
-                <div class="mb-3" id="fileInputContainer" style="display: none;">
-                    <label id="fileInputLabel" class="form-label">Upload File:</label>
-                    <input type="file" class="form-control" name="uploaded_file" id="uploadedFileInput" accept="application/pdf,image/jpeg,image/png">
-                </div>
-
-                <hr>
-
-                <!-- Submit Button -->
-                <div class="text-end mt-3">
-                    <button type="submit" class="btn text-light" style="background-color: #440207; border-color: #440207;"
-                  onmouseover="this.style.backgroundColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207';">
-                        <i class="bi bi-send-fill"></i> Submit Request
-                    </button>
-                </div>
-            </div>
-        </div>
-
-            <!-- Navigation Buttons (Fixed at Bottom of Form) -->
-        <div class="fixed-nav mt-4 py-3 d-flex justify-content-between align-items-center px-5">
-                <button type="button" class="btn btn-secondary btn-lg" id="prevBtn" onclick="changeStep(-1)">
+            <!-- Navigation Buttons (Fixed at Bottom) -->
+            <div class="fixed-nav mt-4 py-3 d-flex justify-content-end align-items-center px-5">
+                <button type="button" class="btn btn-secondary btn-lg" id="prevBtn">
                     <i class="bi bi-arrow-left-circle-fill"></i> Previous
                 </button>
-                <button type="button" class="btn btn-primary btn-lg" id="nextBtn" onclick="changeStep(1)">
-                    Next <i class="bi bi-arrow-right-circle-fill"></i>
+                <button type="button" class="btn btn-primary btn-lg" id="nextBtn">
+                    Next <i class="bi bi-arrow-right-circle-fill ms-2"></i>
                 </button>
-        </div>
+            </div>
+        </form>
 
-        <!-- Submission Modal -->
-        <div class="modal fade" id="submissionModal" tabindex="-1"
-            aria-labelledby="submissionModalLabel" aria-hidden="true"
-            data-bs-backdrop="static" data-bs-keyboard="false">
+        <!-- Bottom Spacer -->
+        <div class="mb-5"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SUBMISSION SUCCESS MODAL -->
+    <!-- ============================================ -->
+    <div class="modal fade" 
+         id="submissionModal" 
+         tabindex="-1"
+         aria-labelledby="submissionModalLabel" 
+         aria-hidden="true"
+         data-bs-backdrop="static" 
+         data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="submissionModalLabel">Request Submitted</h5>
-            </div>
-            <div class="modal-body" id="submissionModalBody">
-                Your request is being submitted and is subject to approval. You’ll receive an email update. Redirecting to home in ...
-                <span id="submitCountdown">5</span> seconds…
-            </div>
-            <div class="modal-footer">
-                <a id="modalHomeBtn" class="btn text-light" style="background-color: #440207; border-color: #440207;"
-                  onmouseover="this.style.backgroundColor='#5e0000';"
-                  onmouseout="this.style.backgroundColor='#440207';" href="{% url 'client_home' %}">Back to Home now</a>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="submissionModalLabel">
+                        <i class="bi bi-check-circle-fill text-success"></i> Request Submitted
+                    </h5>
+                </div>
+                <div class="modal-body" id="submissionModalBody">
+                    <p>Your request is being submitted and is subject to approval.</p>
+                    <p>You'll receive an email update regarding your request.</p>
+                    <p>
+                        Redirecting to home in 
+                        <strong><span id="submitCountdown">5</span></strong> seconds…
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <a id="modalHomeBtn" 
+                       class="btn btn-tupc-primary" 
+                       href="{% url 'client_home' %}">
+                        <i class="bi bi-house-fill"></i> Back to Home Now
+                    </a>
+                </div>
             </div>
         </div>
-        </div>
+    </div>
 
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-{% load static %}
 <script>
-    (() => {
-    /* =========================
-        Helpers & initial wiring
-        ========================= */
+{% load static %}
+/**
+ * Good Moral Certificate Request Form - Refactored JavaScript
+ * Organized into modular components with clear separation of concerns
+ */
 
-    // Ensure Purpose has "Others" (backend expects it)
-    function ensureOthersPurpose() {
-        const sel = document.getElementById('purpose_goodmoral');
-        if (!sel) return;
-        const hasOthers = Array.from(sel.options).some(o => o.value === 'Others');
-        if (!hasOthers) {
+// ============================================================================
+// CONFIGURATION & CONSTANTS
+// ============================================================================
+const CONFIG = {
+  FILE_MAX_SIZE: 10 * 1024 * 1024, // 10MB
+  AGE_MIN: 16,
+  AGE_MAX: 121,
+  YEAR_MIN: 1979,
+  YEAR_MAX: new Date().getFullYear(),
+  COUNTDOWN_SECONDS: 5,
+  
+  PATTERNS: {
+    EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    PHONE: /^\+63-\d{3}-\d{3}-\d{4}$/,
+    STUDENT_ID: /^TUPC-\d{2}-[A-Z0-9]{4,15}$/,
+    YEAR: /^\d{4}$/,
+    YEAR_RANGE: /^\d{4}-\d{4}$/
+  },
+  
+  SELECTORS: {
+    FORM: '#gmfForm',
+    ALERT: '#formAlert',
+    STEPS: '.step',
+    STEP_INDICATOR: '#stepIndicator',
+    PREV_BTN: '#prevBtn',
+    NEXT_BTN: '#nextBtn',
+    FIXED_NAV: '.fixed-nav'
+  },
+  
+  DOCUMENT_TYPES_REQUIRING_TWO_FILES: ['upload_id', 'upload_government_id']
+};
+
+CONFIG.DOC_LABELS = {
+  default: { one: 'Upload File', help: 'Accepted: PDF, JPG, PNG. Max 10MB.' },
+  upload_id: {
+    one: 'Upload Student ID (Front)',
+    two: 'Upload Student ID (Back)',
+    help: 'Upload clear photos of the FRONT and BACK of your Student ID (JPG/PNG). Max 10MB each.'
+  },
+  upload_government_id: {
+    one: 'Upload Government ID (Front)',
+    two: 'Upload Government ID (Back)',
+    help: 'Upload clear photos of the FRONT and BACK of your Government ID (JPG/PNG). Max 10MB each.'
+  }
+};
+// ============================================================================
+// ERROR HANDLER - Centralized error message management
+// ============================================================================
+const ErrorHandler = {
+  alertDiv: null,
+  
+  init() {
+    this.alertDiv = document.querySelector(CONFIG.SELECTORS.ALERT);
+  },
+  
+  show(message, fieldId = null) {
+    if (!this.alertDiv) return;
+    
+    this.alertDiv.textContent = message;
+    this.alertDiv.classList.remove('d-none');
+    
+    if (fieldId) {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus({ preventScroll: true });
+      }
+    } else {
+      this.alertDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+  },
+  
+  clear() {
+    if (!this.alertDiv) return;
+    this.alertDiv.classList.add('d-none');
+    this.alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
+  }
+};
+
+// ============================================================================
+// FORM VALIDATION - All validation logic
+// ============================================================================
+const FormValidator = {
+  
+  /**
+   * Validate all fields in a given step
+   */
+  validateStep(stepElement, stepNumber) {
+    ErrorHandler.clear();
+    
+    const fields = stepElement.querySelectorAll('input, select, textarea');
+    let isValid = true;
+    
+    // Basic HTML5 validation
+    fields.forEach(field => {
+    // ✅ always clear any prior custom errors first
+        field.setCustomValidity('');
+        field.classList.remove('is-invalid');
+
+        // Optional middle name: allow blank, but validate if not blank
+        const isNameField = ['first_name','middle_name','surname','requester_name'].includes(field.name);
+
+        // Let built-in constraints run first
+        if (!field.checkValidity()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+            return;
+        }
+
+        // Extra guard: no digits in names (only if something is typed)
+        if (isNameField && field.value.trim() !== '' && /\d/.test(field.value)) {
+            field.setCustomValidity('Numbers are not allowed in this field.');
+            field.classList.add('is-invalid');
+            isValid = false;
+            return;
+        }
+    });
+    
+    // Step-specific validation
+    if (!isValid) return false;
+    
+    switch(stepNumber) {
+      case 1:
+        return this.validateStep1();
+      case 2:
+        return this.validateStep2();
+      case 3:
+        return this.validateStep3();
+      case 4:
+        return this.validateStep4();
+      default:
+        return true;
+    }
+  },
+  
+  /**
+   * Step 1: Personal Information
+   */
+  validateStep1() {
+    const ageEl = document.getElementById('age_goodmoral');
+    const ageVal = Number((ageEl?.value || '').trim());
+    
+    if (!Number.isInteger(ageVal) || ageVal < CONFIG.AGE_MIN || ageVal > CONFIG.AGE_MAX) {
+      if (ageEl) {
+        ageEl.classList.add('is-invalid');
+        ageEl.setCustomValidity(`Age must be between ${CONFIG.AGE_MIN} and ${CONFIG.AGE_MAX}.`);
+        ageEl.reportValidity();
+      }
+      ErrorHandler.show(`Please enter a valid age (${CONFIG.AGE_MIN}–${CONFIG.AGE_MAX}).`);
+      return false;
+    }
+    
+    if (ageEl) {
+      ageEl.classList.remove('is-invalid');
+      ageEl.setCustomValidity('');
+    }
+    
+    return true;
+  },
+  
+  /**
+   * Step 2: Academic Information
+   */
+  validateStep2() {
+    // Check if status is selected
+    const statusRadios = document.querySelectorAll('input[name="status"]');
+    const statusSelected = Array.from(statusRadios).some(r => r.checked);
+    
+    if (!statusSelected) {
+      ErrorHandler.show('Please select your status (Current, Former, or Alum/Graduated).');
+      return false;
+    }
+    
+    // Validate Student ID
+    const studentID = document.getElementById('studentID_goodmoral');
+    if (studentID && !CONFIG.PATTERNS.STUDENT_ID.test(studentID.value.trim())) {
+      studentID.classList.add('is-invalid');
+      ErrorHandler.show('Student ID must match the format: TUPC-XX-XXXX (last block 4-15 chars)');
+      return false;
+    }
+    if (studentID) studentID.classList.remove('is-invalid');
+    
+    // Validate status-specific fields
+    const graduated = document.getElementById('status_graduated')?.checked;
+    const former = document.getElementById('status_former')?.checked;
+    const current = document.getElementById('status_current')?.checked;
+    
+    if (former) {
+      if (!this.validateInclusiveYears()) return false;
+    }
+    
+    if (current) {
+      if (!this.validateAdmissionYear()) return false;
+    }
+    
+    if (graduated) {
+      if (!this.validateGraduationYear()) return false;
+    }
+    const programSel = document.getElementById('program_goodmoral');
+        if (programSel && programSel.value === 'Others') {
+        const pOther = document.getElementById('program_other_input');
+        if (!pOther || !pOther.value.trim()) {
+            if (pOther) {
+            pOther.classList.add('is-invalid');
+            pOther.setCustomValidity('Please specify your program.');
+            pOther.reportValidity?.();
+            }
+            ErrorHandler.show('Please specify your program.');
+            return false;
+        }
+        pOther.classList.remove('is-invalid');
+        pOther.setCustomValidity('');
+    }
+    return true;
+  },
+  
+  /**
+   * Validate inclusive years (Former students)
+   */
+  validateInclusiveYears() {
+    const stayYears = document.getElementById('stay_goodmoral');
+    if (!stayYears) return true;
+    
+    const value = stayYears.value.trim();
+    
+    if (!CONFIG.PATTERNS.YEAR_RANGE.test(value)) {
+      stayYears.classList.add('is-invalid');
+      ErrorHandler.show('Inclusive Years of Stay must match the format: YYYY-YYYY');
+      return false;
+    }
+    
+    const [startYear, endYear] = value.split('-').map(Number);
+    
+    if (startYear < CONFIG.YEAR_MIN || endYear > CONFIG.YEAR_MAX || endYear < startYear) {
+      stayYears.classList.add('is-invalid');
+      ErrorHandler.show(`Inclusive Years must be ${CONFIG.YEAR_MIN}–${CONFIG.YEAR_MAX} and in order (e.g., 2018-2022).`);
+      return false;
+    }
+    
+    stayYears.classList.remove('is-invalid');
+    return true;
+  },
+  
+  /**
+   * Validate admission year (Current students)
+   */
+  validateAdmissionYear() {
+    const yearAdmission = document.getElementById('year_admission_goodmoral');
+    if (!yearAdmission) return true;
+    
+    const year = yearAdmission.value.trim();
+    
+    if (!CONFIG.PATTERNS.YEAR.test(year) || +year < CONFIG.YEAR_MIN || +year > CONFIG.YEAR_MAX) {
+      yearAdmission.classList.add('is-invalid');
+      ErrorHandler.show(`Please enter a valid admission year (${CONFIG.YEAR_MIN}–${CONFIG.YEAR_MAX}).`);
+      return false;
+    }
+    
+    yearAdmission.classList.remove('is-invalid');
+    return true;
+  },
+  
+  /**
+   * Validate graduation year (Graduated students)
+   */
+  validateGraduationYear() {
+    const yearGraduated = document.getElementById('year_graduated_goodmoral');
+    if (!yearGraduated) return true;
+    
+    const year = yearGraduated.value.trim();
+    
+    if (!CONFIG.PATTERNS.YEAR.test(year) || +year < CONFIG.YEAR_MIN || +year > CONFIG.YEAR_MAX) {
+      yearGraduated.classList.add('is-invalid');
+      ErrorHandler.show(`Please enter a valid graduation year (${CONFIG.YEAR_MIN}–${CONFIG.YEAR_MAX}).`);
+      return false;
+    }
+    
+    yearGraduated.classList.remove('is-invalid');
+    return true;
+  },
+  
+  /**
+   * Step 3: Request Information
+   */
+  validateStep3() {
+    const email = document.getElementById('email_req_goodmoral');
+    const contact = document.getElementById('contact_req_goodmoral');
+    
+    // Validate email
+    if (email && !CONFIG.PATTERNS.EMAIL.test(email.value.trim())) {
+      email.classList.add('is-invalid');
+      ErrorHandler.show('Please enter a valid email address.');
+      return false;
+    }
+    if (email) email.classList.remove('is-invalid');
+    
+    // Validate contact number
+    if (contact && !CONFIG.PATTERNS.PHONE.test(contact.value.trim())) {
+      contact.classList.add('is-invalid');
+      ErrorHandler.show('Contact number must match format: +63-XXX-XXX-XXXX');
+      return false;
+    }
+    if (contact) contact.classList.remove('is-invalid');
+    
+    return true;
+  },
+  
+  /**
+   * Step 4: File Upload
+   */
+  validateStep4() {
+    const documentType = document.getElementById('documentTypeSelect');
+    const file1 = document.getElementById('uploadedFile1');
+    const file2 = document.getElementById('uploadedFile2');
+    
+    // Check document type selection
+    if (!documentType?.value) {
+      documentType?.classList.add('is-invalid');
+      ErrorHandler.show('Please select a document type.');
+      return false;
+    }
+    documentType?.classList.remove('is-invalid');
+    
+    const needsTwoFiles = CONFIG.DOCUMENT_TYPES_REQUIRING_TWO_FILES.includes(documentType.value);
+    
+    // Validate first file
+    if (!this.validateFile(file1, 'File 1')) {
+      return false;
+    }
+    
+    // Validate second file if required
+    if (needsTwoFiles && !this.validateFile(file2, 'File 2')) {
+      return false;
+    }
+    
+    return true;
+  },
+  
+  /**
+   * Validate individual file
+   */
+  validateFile(fileInput, label = 'File') {
+    if (!fileInput) return true;
+    
+    if (!fileInput.value) {
+      fileInput.classList.add('is-invalid');
+      ErrorHandler.show(`Please upload ${label}.`);
+      return false;
+    }
+    
+    const file = fileInput.files?.[0];
+    if (file && file.size > CONFIG.FILE_MAX_SIZE) {
+      fileInput.classList.add('is-invalid');
+      ErrorHandler.show(`${label} size must not exceed 10MB.`);
+      return false;
+    }
+    
+    fileInput.classList.remove('is-invalid');
+    return true;
+  }
+};
+
+// ============================================================================
+// FORM NAVIGATION - Step management
+// ============================================================================
+const FormNavigation = {
+  currentStep: 1,
+  
+  init() {
+    this.showStep(this.currentStep);
+    this.attachButtonListeners();
+  },
+  
+  attachButtonListeners() {
+    const prevBtn = document.querySelector(CONFIG.SELECTORS.PREV_BTN);
+    const nextBtn = document.querySelector(CONFIG.SELECTORS.NEXT_BTN);
+    
+    prevBtn?.addEventListener('click', () => this.changeStep(-1));
+    nextBtn?.addEventListener('click', () => this.changeStep(1));
+  },
+  
+  showStep(stepNumber) {
+    const steps = document.querySelectorAll(CONFIG.SELECTORS.STEPS);
+    const indicators = document.querySelectorAll(`${CONFIG.SELECTORS.STEP_INDICATOR} > *`);
+    
+    // Update step visibility
+    steps.forEach((step, index) => {
+      if (index === stepNumber - 1) {
+        step.classList.add('active');
+      } else {
+        step.classList.remove('active');
+      }
+    });
+    
+    // Update step indicators
+    indicators.forEach((indicator, index) => {
+      indicator.classList.remove('active', 'done');
+      if (index < stepNumber - 1) {
+        indicator.classList.add('done');
+      } else if (index === stepNumber - 1) {
+        indicator.classList.add('active');
+      }
+    });
+    
+    // Update button visibility and layout
+    this.updateButtonVisibility(stepNumber, steps.length);
+    
+    // Focus first input in new step
+    this.focusFirstInput(steps[stepNumber - 1]);
+  },
+  
+    updateButtonVisibility(stepNumber, totalSteps) {
+    const prevBtn  = document.querySelector(CONFIG.SELECTORS.PREV_BTN);
+    const nextBtn  = document.querySelector(CONFIG.SELECTORS.NEXT_BTN);
+    const fixedNav = document.querySelector(CONFIG.SELECTORS.FIXED_NAV);
+    if (!prevBtn || !nextBtn || !fixedNav) return;
+
+    const isFirst = stepNumber === 1;
+    const isLast  = stepNumber === totalSteps;
+
+    // Hide/show the buttons
+    prevBtn.classList.toggle('d-none', isFirst); // hide on step 1
+    nextBtn.classList.toggle('d-none', isLast);  // hide on last step
+
+    // Accessibility + click safety
+    prevBtn.disabled = isFirst;
+    nextBtn.disabled = isLast;
+    prevBtn.setAttribute('aria-hidden', String(isFirst));
+    nextBtn.setAttribute('aria-hidden', String(isLast));
+
+    // Tidy alignment of the fixed footer when a button is missing
+    fixedNav.classList.remove('justify-content-between','justify-content-end','justify-content-start');
+    if (isFirst) {
+        // Only “Next” visible
+        fixedNav.classList.add('justify-content-end');
+    } else if (isLast) {
+        // Only “Previous” visible
+        fixedNav.classList.add('justify-content-start');
+    } else {
+        // Both visible
+        fixedNav.classList.add('justify-content-between');
+    }
+    },
+  
+  focusFirstInput(stepElement) {
+    if (!stepElement) return;
+    const firstInput = stepElement.querySelector('input:not([type="hidden"]), select, textarea');
+    firstInput?.focus({ preventScroll: true });
+  },
+  
+  changeStep(direction) {
+    const steps = document.querySelectorAll(CONFIG.SELECTORS.STEPS);
+    const currentStepElement = Array.from(steps).find(s => s.classList.contains('active'));
+    const currentIndex = Array.from(steps).indexOf(currentStepElement);
+    
+    // Validate current step before moving forward
+    if (direction > 0) {
+      const isValid = FormValidator.validateStep(currentStepElement, currentIndex + 1);
+      if (!isValid) return;
+    }
+    
+    const targetStep = currentIndex + 1 + direction;
+    
+    // Check bounds
+    if (targetStep < 1 || targetStep > steps.length) return;
+    
+    this.currentStep = targetStep;
+    this.showStep(targetStep);
+  }
+};
+
+// ============================================================================
+// INPUT FORMATTERS - Handle special input formatting
+// ============================================================================
+const InputFormatter = {
+  
+  init() {
+    this.setupPhoneFormatter();
+    this.setupYearInputs();
+    this.setupNameFields();
+    this.setupAgeInput();
+  },
+  
+  /**
+   * Format phone number as +63-XXX-XXX-XXXX
+   */
+   setupPhoneFormatter() {
+    const input = document.getElementById('contact_req_goodmoral');
+    if (!input) return;
+
+    input.type = 'tel';
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('pattern', '^\\+63-\\d{3}-\\d{3}-\\d{4}$');
+    input.setAttribute('maxlength', '16');
+
+    const digitsOnly = v => (v || '').replace(/\D+/g, '');
+    const normalizeDigits = d => {
+      if (d.startsWith('0')) d = d.slice(1);
+      if (d.startsWith('63')) d = d.slice(2);
+      return d.slice(0, 10);
+    };
+    const toDisplay = d => {
+      let out = '+63';
+      if (d.length > 0) out += '-' + d.slice(0, Math.min(3, d.length));
+      if (d.length > 3) out += '-' + d.slice(3, Math.min(6, d.length));
+      if (d.length > 6) out += '-' + d.slice(6, Math.min(10, d.length));
+      return out;
+    };
+
+    input.addEventListener('input', e => {
+      const d = normalizeDigits(digitsOnly(e.target.value));
+      e.target.value = d;
+      e.target.setCustomValidity('');
+      e.target.classList.remove('is-invalid');
+    });
+
+    input.addEventListener('blur', e => {
+      const d = normalizeDigits(digitsOnly(e.target.value));
+      e.target.value = d ? toDisplay(d) : '';
+    });
+
+    input.addEventListener('paste', e => {
+      e.preventDefault();
+      const txt = (e.clipboardData || window.clipboardData).getData('text') || '';
+      const d = normalizeDigits(digitsOnly(txt));
+      document.execCommand('insertText', false, d);
+    });
+  },
+  
+  /**
+   * Setup year inputs with validation
+   */
+  setupYearInputs() {
+    const yearGraduated = document.getElementById('year_graduated_goodmoral');
+    const yearAdmission = document.getElementById('year_admission_goodmoral');
+    const inclusiveYears = document.getElementById('stay_goodmoral');
+    
+    // Single year inputs
+    [yearGraduated, yearAdmission].forEach(input => {
+      if (!input) return;
+      
+      input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+      });
+      
+      input.addEventListener('blur', (e) => {
+        const value = e.target.value.trim();
+        if (value && CONFIG.PATTERNS.YEAR.test(value)) {
+          const year = +value;
+          if (year < CONFIG.YEAR_MIN || year > CONFIG.YEAR_MAX) {
+            e.target.setCustomValidity(`Year must be between ${CONFIG.YEAR_MIN} and ${CONFIG.YEAR_MAX}.`);
+          } else {
+            e.target.setCustomValidity('');
+          }
+        }
+      });
+    });
+    
+    // Year range input
+    if (inclusiveYears) {
+      inclusiveYears.addEventListener('input', (e) => {
+        let digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+        e.target.value = digits.length <= 4 ? digits : digits.slice(0, 4) + '-' + digits.slice(4);
+      });
+      
+      inclusiveYears.addEventListener('blur', (e) => {
+        const value = e.target.value.trim();
+        if (value && CONFIG.PATTERNS.YEAR_RANGE.test(value)) {
+          const [start, end] = value.split('-').map(Number);
+          if (start < CONFIG.YEAR_MIN || end > CONFIG.YEAR_MAX || end < start) {
+            e.target.setCustomValidity(`Years must be ${CONFIG.YEAR_MIN}–${CONFIG.YEAR_MAX} and in order.`);
+          } else {
+            e.target.setCustomValidity('');
+          }
+        }
+      });
+    }
+  },
+  
+  /**
+   * Setup name fields to prevent numbers
+   */
+    setupNameFields() {
+    const ids = ['fn_goodmoral','mn_goodmoral','sn_goodmoral','requester_goodmoral'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        // live clean-up
+        el.addEventListener('input', () => {
+        el.setCustomValidity('');
+        el.classList.remove('is-invalid');
+        });
+
+        // keep your trim on blur
+        el.addEventListener('blur', () => {
+        el.value = el.value.replace(/\s+$/, '');
+        });
+    });
+    },
+    
+  /**
+   * Setup age input validation
+   */
+  setupAgeInput() {
+    const ageInput = document.getElementById('age_goodmoral');
+    if (!ageInput) return;
+    
+    const validateAge = () => {
+      const value = Number((ageInput.value || '').trim());
+      if (!Number.isInteger(value) || value < CONFIG.AGE_MIN || value > CONFIG.AGE_MAX) {
+        ageInput.setCustomValidity(`Age must be between ${CONFIG.AGE_MIN} and ${CONFIG.AGE_MAX}.`);
+        ageInput.classList.add('is-invalid');
+      } else {
+        ageInput.setCustomValidity('');
+        ageInput.classList.remove('is-invalid');
+      }
+    };
+    
+    ageInput.addEventListener('input', validateAge);
+    ageInput.addEventListener('blur', validateAge);
+  },
+  
+  /**
+   * Prevent spaces in email and relationship fields
+   */
+  setupNoSpaceFields() {
+    const noSpaceFields = ['email_req_goodmoral', 'relationship_goodmoral'];
+    
+    noSpaceFields.forEach(id => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      
+      input.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.code === 'Space') e.preventDefault();
+      });
+      
+      input.addEventListener('input', (e) => {
+        const cleaned = e.target.value.replace(/\s+/g, '');
+        if (e.target.value !== cleaned) e.target.value = cleaned;
+      });
+      
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        document.execCommand('insertText', false, text.replace(/\s+/g, ''));
+      });
+    });
+  }
+};
+
+// ============================================================================
+// FIELD TOGGLES - Show/hide conditional fields
+// ============================================================================
+const FieldToggles = {
+  
+  init() {
+    this.setupExtensionToggle();
+    this.setupStatusToggle();
+    this.setupPurposeToggle();
+    this.setupDocumentTypeToggle();
+    this.setupProgramOtherToggle();
+  },
+  
+  /**
+   * Toggle extension name field
+   */
+  setupExtensionToggle() {
+    const extensionRow = document.getElementById('extensionRow');
+    const yesRadio = document.getElementById('extYes');
+    const noRadio = document.getElementById('extNo');
+    const extensionInput = document.getElementById('ex_goodmoral');
+    
+    if (!extensionRow || !yesRadio || !noRadio || !extensionInput) return;
+    
+    yesRadio.addEventListener('change', () => {
+      if (yesRadio.checked) {
+        extensionRow.style.display = 'block';
+        extensionInput.focus();
+      }
+    });
+    
+    noRadio.addEventListener('change', () => {
+      if (noRadio.checked) {
+        extensionRow.style.display = 'none';
+        extensionInput.value = '';
+      }
+    });
+  },
+  
+  /**
+   * Toggle status-specific fields
+   */
+  setupStatusToggle() {
+    const statusRadios = document.querySelectorAll('input[name="status"]');
+    
+    statusRadios.forEach(radio => {
+      radio.addEventListener('change', () => this.updateStatusFields());
+    });
+    
+    // Initial state
+    this.updateStatusFields();
+  },
+  
+  updateStatusFields() {
+    const graduated = document.getElementById('status_graduated')?.checked;
+    const former = document.getElementById('status_former')?.checked;
+    const current = document.getElementById('status_current')?.checked;
+    
+    const yearGraduated = document.getElementById('year_graduated_goodmoral');
+    const stayYears = document.getElementById('stay_goodmoral');
+    const yearAdmission = document.getElementById('year_admission_goodmoral');
+    
+    const gradWrap = document.getElementById('graduated_date_field');
+    const stayWrap = document.getElementById('inclusive_years_field');
+    const admWrap = document.getElementById('admission_date_field');
+    
+    // Toggle visibility
+    if (gradWrap) gradWrap.style.display = graduated ? 'block' : 'none';
+    if (stayWrap) stayWrap.style.display = former ? 'block' : 'none';
+    if (admWrap) admWrap.style.display = current ? 'block' : 'none';
+    
+    // Toggle required attribute
+    if (yearGraduated) yearGraduated.required = !!graduated;
+    if (stayYears) stayYears.required = !!former;
+    if (yearAdmission) yearAdmission.required = !!current;
+  },
+  
+  /**
+   * Toggle purpose specification field
+   */
+  setupPurposeToggle() {
+    const purposeSelect = document.getElementById('purpose_goodmoral');
+    const otherContainer = document.getElementById('otherPurposeContainer');
+    const otherInput = document.getElementById('other_purpose');
+    
+    if (!purposeSelect || !otherContainer || !otherInput) return;
+    
+    purposeSelect.addEventListener('change', () => {
+      const value = purposeSelect.value;
+      const needsSpecification = [
+        'Others',
+        'Transfer to Another School',
+        'Scholarship',
+        'Continuing Education',
+        'Student Development'
+      ].includes(value);
+      
+      if (needsSpecification) {
+        otherContainer.style.display = 'block';
+        otherInput.required = true;
+        
+        // Set appropriate placeholder
+        const placeholders = {
+          'Others': 'Please specify your purpose',
+          'Transfer to Another School': 'Enter the School Name',
+          'Scholarship': 'Specify Scholarship Grant',
+          'Continuing Education': 'Specify Continuing Education Program',
+          'Student Development': 'Specify Student Development Purpose'
+        };
+        
+        otherInput.placeholder = placeholders[value] || 'Please specify';
+      } else {
+        otherContainer.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+      }
+    });
+  },
+  
+  /**
+   * Toggle file upload fields based on document type
+   */
+  setupDocumentTypeToggle() {
+    const documentTypeSelect = document.getElementById('documentTypeSelect');
+    
+    if (!documentTypeSelect) return;
+    
+    documentTypeSelect.addEventListener('change', () => {
+      this.updateFileUploadFields();
+    });
+    
+    // Initial state
+    this.updateFileUploadFields();
+  },
+
+  setupProgramOtherToggle() {
+    const select = document.getElementById('program_goodmoral');
+    const wrap   = document.getElementById('program_other_wrap');
+    const input  = document.getElementById('program_other_input');
+    if (!select || !wrap || !input) return;
+
+    const update = () => {
+        const show = select.value === 'Others';
+        wrap.style.display = show ? 'block' : 'none';
+        input.required = show;         // client-side only
+        if (!show) {
+        input.value = '';
+        input.classList.remove('is-invalid');
+        input.setCustomValidity('');
+        }
+    };
+
+    select.addEventListener('change', update);
+    update(); // set initial state
+    },
+  
+    updateFileUploadFields() {
+    const documentTypeSelect = document.getElementById('documentTypeSelect');
+    const group1 = document.getElementById('fileGroup1');
+    const group2 = document.getElementById('fileGroup2');
+    const label1 = document.getElementById('fileLabel1');
+    const label2 = document.getElementById('fileLabel2');
+    const file1  = document.getElementById('uploadedFile1');
+    const file2  = document.getElementById('uploadedFile2');
+    const help1  = document.getElementById('file1Help');
+    const help2  = document.getElementById('file2Help');
+
+    if (!documentTypeSelect || !group1 || !group2) return;
+
+    const idx  = documentTypeSelect.selectedIndex ?? -1;
+    const opt  = idx >= 0 ? documentTypeSelect.options[idx] : null;
+    const val  = documentTypeSelect.value || '';
+    const text = (opt && opt.text) ? opt.text : 'File';
+    const needsTwo = CONFIG.DOCUMENT_TYPES_REQUIRING_TWO_FILES.includes(val);
+
+    const L = CONFIG.DOC_LABELS[val] || {
+        one: `Upload ${text}`,
+        two: `Upload ${text} (File 2)`,
+        help: CONFIG.DOC_LABELS['default'].help
+    };
+
+    const hide = (group, input) => {
+        group.style.display = 'none';
+        if (input) {
+        input.required = false;
+        input.value = '';
+        input.classList.remove('is-invalid');
+        input.setAttribute('accept', 'application/pdf,image/jpeg,image/png');
+        }
+    };
+
+    hide(group1, file1);
+    hide(group2, file2);
+    if (!val) return;
+
+    group1.style.display = 'block';
+    label1.textContent = L.one || `Upload ${text}`;
+    file1.required = true;
+    if (help1) help1.textContent = L.help || CONFIG.DOC_LABELS['default'].help;
+
+    if (needsTwo) {
+        group2.style.display = 'block';
+        label2.textContent = L.two || `Upload ${text} (File 2)`;
+        file2.required = true;
+
+        if (['upload_id', 'upload_government_id'].includes(val)) {
+        file1.setAttribute('accept', 'image/jpeg,image/png');
+        file2.setAttribute('accept', 'image/jpeg,image/png');
+        if (help2) help2.textContent = L.help;
+        } else {
+        if (help2) help2.textContent = CONFIG.DOC_LABELS['default'].help;
+        }
+    } else {
+        if (help2) help2.textContent = ''; // clear secondary help when hidden
+    }
+    },
+
+};
+
+// ============================================================================
+// DATA LOADER - Load external data (CSV)
+// ============================================================================
+const DataLoader = {
+  async loadPrograms() {
+    const select = document.getElementById('program_goodmoral');
+    if (!select) return;
+
+    const staticPath = select.dataset.csvPath || '/static/myapp/data/programs.csv';
+
+    // Remember current selection (so we can reselect it after rebuild)
+    const currentValue = select.value;
+
+    try {
+      const resp = await fetch(staticPath, {
+        cache: 'no-store',
+        headers: { 'Accept': 'text/csv, text/plain, */*' }
+      });
+      if (!resp.ok) throw new Error(`Failed to load programs: ${resp.status}`);
+
+      const text = (await resp.text()).replace(/^\uFEFF/, '');
+      const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+      // Rebuild options
+      const placeholder = select.querySelector('option[value=""]');
+      select.innerHTML = '';
+      if (placeholder) select.appendChild(placeholder);
+
+      const seen = new Set();
+      for (const program of lines) {
+        if (seen.has(program)) continue;
+        seen.add(program);
+        const opt = document.createElement('option');
+        opt.value = program;
+        opt.textContent = program;
+        select.appendChild(opt);
+      }
+
+      // Always add "Others" at the end (after rebuild)
+      const hasOthers = Array.from(select.options).some(o => o.value === 'Others');
+      if (!hasOthers) {
         const opt = document.createElement('option');
         opt.value = 'Others';
-        opt.textContent = 'Others';
-        sel.appendChild(opt);
+        opt.textContent = 'Others (type manually)';
+        select.appendChild(opt);
+      }
+
+      // Restore selection if possible
+      if (currentValue) {
+        const toSelect = Array.from(select.options).find(o => o.value === currentValue);
+        if (toSelect) toSelect.selected = true;
+      }
+    } catch (err) {
+      console.warn('Programs CSV not loaded; leaving field as-is.', err);
+
+      // Even if CSV failed, ensure "Others" exists
+      const hasOthers = Array.from(select.options).some(o => o.value === 'Others');
+      if (!hasOthers) {
+        const opt = document.createElement('option');
+        opt.value = 'Others';
+        opt.textContent = 'Others (type manually)';
+        select.appendChild(opt);
+      }
+    }
+  },
+
+  ensureOthersPurpose() {
+    const select = document.getElementById('purpose_goodmoral');
+    if (!select) return;
+    const hasOthers = Array.from(select.options).some(opt => opt.value === 'Others');
+    if (!hasOthers) {
+      const option = document.createElement('option');
+      option.value = 'Others';
+      option.textContent = 'Others';
+      select.appendChild(option);
+    }
+  }
+};
+
+// ============================================================================
+// FORM SUBMISSION - Handle form submission and modal
+// ============================================================================
+const FormSubmission = {
+  form: null,
+  modal: null,
+  submitted: false,
+
+  init() {
+    this.form = document.querySelector(CONFIG.SELECTORS.FORM);
+    if (!this.form) { console.error('[FormSubmission] Form not found'); return; }
+
+    const el = document.getElementById('submissionModal');
+    if (el && window.bootstrap?.Modal) {
+      this.modal = bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false });
+    }
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+  },
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    if (this.submitted) return; // guard double-clicks
+
+    // HTML5 validity + step focusing
+    if (!this.form.checkValidity()) {
+      this.form.classList.add('was-validated');
+      ErrorHandler.show('Please fill out all required fields correctly before submitting.');
+      const firstInvalid = this.form.querySelector(':invalid');
+      if (firstInvalid) {
+        const stepElement = firstInvalid.closest('.step');
+        const steps = Array.from(document.querySelectorAll(CONFIG.SELECTORS.STEPS));
+        const stepIndex = steps.indexOf(stepElement);
+        if (stepIndex >= 0) {
+          FormNavigation.currentStep = stepIndex + 1;
+          FormNavigation.showStep(stepIndex + 1);
         }
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalid.focus({ preventScroll: true });
+      }
+      return;
     }
 
-    // Populate Program/Course from CSV (or replace text input with <select>)
-    function populateProgramsFromCSV() {
-        const csvUrl = "{% static 'myapp/data/programs.csv' %}";
+    // extra file checks
+    if (!FormValidator.validateStep4()) return;
 
-        // Prefer an existing <select>; otherwise, replace an <input name="program">
-        let select = document.querySelector('#program_goodmoral, select[name="program"]');
-        const input = select ? null : document.querySelector('input[name="program"]');
-        if (!select && !input) return;
+    // 🔒 lock immediately
+    this.submitted = true;
+    this.disableSubmitButtons();
 
-        // If only an input exists, swap it for a select (keeping name/id/required)
-        if (!select) {
-        select = document.createElement('select');
-        select.id = input.id || 'program_goodmoral';
-        select.name = input.name || 'program';
-        select.className = 'form-select';
-        if (input.required) select.required = true;
-        input.replaceWith(select);
-        }
-
-        const keepPlaceholder = () => {
-        const first = select.querySelector('option');
-        select.innerHTML = '';
-        if (first && first.value === '') {
-            select.appendChild(first);
-        } else {
-            const ph = document.createElement('option');
-            ph.value = '';
-            ph.textContent = '-- Select Program --';
-            ph.disabled = true; ph.selected = true; ph.hidden = true;
-            select.appendChild(ph);
-        }
-        };
-
-        fetch(csvUrl, { cache: 'no-store' })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-        .then(text => {
-            const current = (select.value || '').trim();
-            text = text.replace(/^\uFEFF/, ''); // strip BOM
-            const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-            const seen = new Set();
-            keepPlaceholder();
-            for (const p of lines) {
-            if (seen.has(p)) continue;
-            seen.add(p);
-            const opt = document.createElement('option');
-            opt.value = p;
-            opt.textContent = p;
-            if (p === current) opt.selected = true; // preserve prefilled
-            select.appendChild(opt);
-            }
-        })
-        .catch(err => console.warn('Programs CSV not loaded; leaving field as-is.', err));
+    // show modal
+    if (!this.modal) {
+      const el = document.getElementById('submissionModal');
+      if (el && window.bootstrap?.Modal) {
+        this.modal = bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false });
+      }
     }
-
-    // Show/hide status-dependent fields
-    function toggleStatusFields() {
-        const graduated = document.getElementById('status_graduated')?.checked;
-        const former    = document.getElementById('status_former')?.checked;
-        const current   = document.getElementById('status_current')?.checked;
-
-        const yearGraduated = document.getElementById('year_graduated_goodmoral');
-        const stayYears     = document.getElementById('stay_goodmoral');
-        const yearAdmission = document.getElementById('year_admission_goodmoral');
-
-        // Show/hide wrappers
-        const gradWrap  = document.getElementById('graduated_date_field');
-        const stayWrap  = document.getElementById('inclusive_years_field');
-        const admWrap   = document.getElementById('admission_date_field');
-
-        if (gradWrap) gradWrap.style.display = graduated ? 'block' : 'none';
-        if (stayWrap) stayWrap.style.display = former ? 'block' : 'none';
-        if (admWrap)  admWrap.style.display  = current ? 'block' : 'none';
-
-        // Required flags
-        if (yearGraduated) yearGraduated.required = !!graduated;
-        if (stayYears)     stayYears.required     = !!former;
-        if (yearAdmission) yearAdmission.required = !!current;
-    }
-
-    // Purpose “Others / Scholarship / Transfer” → reveal text box
-    function toggleOtherInput() {
-        const purposeSelect       = document.getElementById("purpose_goodmoral");
-        const otherInputContainer = document.getElementById("otherPurposeContainer");
-        const otherInput          = document.getElementById("other_purpose");
-        if (!purposeSelect || !otherInputContainer || !otherInput) return;
-
-        const selected = purposeSelect.value;
-        let placeholderText = "";
-
-        switch (selected) {
-        case "Others":                        placeholderText = "Please specify your purpose"; break;
-        case "Transfer to Another School":    placeholderText = "Enter the School Name";       break;
-        case "Scholarship":                   placeholderText = "Specify Scholarship";          break;
-        }
-
-        if (placeholderText) {
-        otherInputContainer.style.display = "block";
-        otherInput.required = true;
-        otherInput.placeholder = placeholderText;
-        } else {
-        otherInputContainer.style.display = "none";
-        otherInput.required = false;
-        otherInput.value = "";
-        otherInput.placeholder = "";
-        }
-    }
-
-    // Verification: document type → file input visible + required
-    function updateUploadRequired() {
-        const documentTypeSelect = document.getElementById('documentTypeSelect');
-        const fileInputContainer = document.getElementById('fileInputContainer');
-        const fileInputLabel     = document.getElementById('fileInputLabel');
-        const uploadedFileInput  = document.getElementById('uploadedFileInput');
-        if (!documentTypeSelect || !fileInputContainer || !fileInputLabel || !uploadedFileInput) return;
-
-        const selectedText = documentTypeSelect.options[documentTypeSelect.selectedIndex]?.text || 'File';
-        if (documentTypeSelect.value) {
-        fileInputContainer.style.display = 'block';
-        fileInputLabel.textContent = `Upload ${selectedText}:`;
-        uploadedFileInput.required = true;
-        } else {
-        fileInputContainer.style.display = 'none';
-        uploadedFileInput.required = false;
-        uploadedFileInput.value = '';
-        uploadedFileInput.classList.remove('is-invalid');
-        }
-    }
-
-    // Run your togglers on load so prefilled values render correctly
-    function initTogglesOnLoad() {
-        try { toggleStatusFields(); } catch(_) {}
-        try { toggleOtherInput();   } catch(_) {}
-        try { updateUploadRequired(); } catch(_) {}
-    }
-
-    /* ===============
-        Stepper logic
-        =============== */
-    let currentStep = 1;
-    const steps = () => document.getElementsByClassName('step');
-    const indicators = () => document.getElementById('stepIndicator')?.children || [];
-
-    function showStep(step) {
-        const S = steps();
-        for (let i = 0; i < S.length; i++) S[i].classList.remove('active');
-        if (S[step - 1]) S[step - 1].classList.add('active');
-
-        const I = indicators();
-        for (let i = 0; i < I.length; i++) {
-        I[i].classList.remove('active', 'done');
-        if (i < step - 1) I[i].classList.add('done');
-        else if (i === step - 1) I[i].classList.add('active');
-        }
-
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const fixedNav = document.querySelector('.fixed-nav');
-        if (!prevBtn || !nextBtn || !fixedNav) return;
-
-        if (step === 1) {
-        prevBtn.style.display = 'none';
-        nextBtn.style.display = 'inline-block';
-        fixedNav.classList.remove('justify-content-between');
-        fixedNav.classList.add('justify-content-end');
-        } else if (step === S.length) {
-        prevBtn.style.display = 'inline-block';
-        nextBtn.style.display = 'none';
-        fixedNav.classList.remove('justify-content-end');
-        fixedNav.classList.add('justify-content-between');
-        } else {
-        prevBtn.style.display = 'inline-block';
-        nextBtn.style.display = 'inline-block';
-        fixedNav.classList.remove('justify-content-end');
-        fixedNav.classList.add('justify-content-between');
-        }
-    }
-
-    function changeStep(n) {
-        const alertDiv = document.getElementById('formAlert');
-        if (alertDiv) {
-        alertDiv.classList.add('d-none');
-        alertDiv.textContent = 'Please fill out all required fields correctly before proceeding.';
-        }
-
-        if (n > 0) {
-        const S = steps();
-        const stepIndex = Array.from(S).findIndex(s => s.classList.contains('active'));
-        const curStep = stepIndex + 1;
-        const currentFields = S[stepIndex]?.querySelectorAll('input, select, textarea') || [];
-        let valid = true;
-
-        // General required field validation (middle_name not required)
-        currentFields.forEach(field => {
-            // Required field check (skip middle_name)
-            if (field.hasAttribute('required') && !field.value.trim() && field.name !== 'middle_name') {
-                valid = false;
-                field.classList.add('is-invalid');
-                field.setCustomValidity("This field is required.");
-                field.reportValidity();
-            } 
-            // No numbers allowed: first, middle, surname
-            else if (
-                (field.name === 'first_name' || field.name === 'middle_name' || field.name === 'surname') 
-                && field.value.trim() !== "" 
-                && /\d/.test(field.value)
-            ) {
-                valid = false;
-                field.classList.add('is-invalid');
-                field.setCustomValidity("Numbers are not allowed in this field.");
-                field.reportValidity();
-            } 
-            else {
-                field.classList.remove('is-invalid');
-                field.setCustomValidity(""); // clear error state
-            }
-        });
-
-        // Step 2: Academic Info validation
-        if (valid && curStep === 2) {
-            const statusRadios = document.querySelectorAll('input[name="status"]');
-            const oneSelected = Array.from(statusRadios).some(r => r.checked);
-            if (!oneSelected) {
-            valid = false;
-            if (alertDiv) alertDiv.textContent = 'Please select your status (Current, Former, or Alum/Graduated).';
-            }
-
-            const studentID     = document.getElementById('studentID_goodmoral');
-            const stayYears     = document.getElementById('stay_goodmoral');
-            const yearAdmission = document.getElementById('year_admission_goodmoral');
-            const yearGraduated = document.getElementById('year_graduated_goodmoral');
-
-            const graduated = document.getElementById('status_graduated')?.checked;
-            const former    = document.getElementById('status_former')?.checked;
-            const current   = document.getElementById('status_current')?.checked;
-
-            const idPattern   = /^TUPC-\d{2}-[A-Z0-9]{4,15}$/;
-            const stayPattern = /^\d{4}-\d{4}$/;
-            const yearPattern = /^\d{4}$/;
-            const CURRENT_YEAR = new Date().getFullYear();
-
-            if (studentID && !idPattern.test(studentID.value.trim())) {
-            valid = false;
-            studentID.classList.add('is-invalid');
-            if (alertDiv) alertDiv.textContent = 'Student ID must match the format: TUPC-XX-XXXX (last block 4-15 digits)';
-            } else if (studentID) studentID.classList.remove('is-invalid');
-
-            if (former) {
-            if (!stayYears || !stayPattern.test(stayYears.value.trim())) {
-                valid = false;
-                if (stayYears) stayYears.classList.add('is-invalid');
-                if (alertDiv) alertDiv.textContent = 'Inclusive Years of Stay must match the format: YYYY-YYYY';
-            } else {
-                // Extra ordering/range guard
-                const [a,b] = stayYears.value.split('-').map(Number);
-                if (a < 1979 || b < a || b > CURRENT_YEAR) {
-                valid = false;
-                stayYears.classList.add('is-invalid');
-                if (alertDiv) alertDiv.textContent = `Inclusive Years must be 1979–${CURRENT_YEAR} and in order (e.g., 2018-2022).`;
-                } else {
-                stayYears.classList.remove('is-invalid');
-                }
-            }
-            } else if (stayYears) stayYears.classList.remove('is-invalid');
-
-            if (current) {
-            const y = yearAdmission?.value.trim() || '';
-            if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
-                valid = false;
-                if (yearAdmission) yearAdmission.classList.add('is-invalid');
-                if (alertDiv) alertDiv.textContent = `Please enter a valid admission year (1979–${CURRENT_YEAR}).`;
-            } else if (yearAdmission) yearAdmission.classList.remove('is-invalid');
-            }
-
-            if (graduated) {
-            const y = yearGraduated?.value.trim() || '';
-            if (!(yearPattern.test(y) && +y >= 1979 && +y <= CURRENT_YEAR)) {
-                valid = false;
-                if (yearGraduated) yearGraduated.classList.add('is-invalid');
-                if (alertDiv) alertDiv.textContent = `Please enter a valid graduation year (1979–${CURRENT_YEAR}).`;
-            } else if (yearGraduated) yearGraduated.classList.remove('is-invalid');
-            }
-        }
-
-        // Step 3: Requester Info
-        if (valid && curStep === 3) {
-            const email   = document.getElementById('email_req_goodmoral');
-            const contact = document.getElementById('contact_req_goodmoral');
-
-            const emailPattern   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const contactPattern = /^\+63 9\d{9}$/;
-
-            if (email && !emailPattern.test(email.value.trim())) {
-            valid = false;
-            email.classList.add('is-invalid');
-            if (alertDiv) alertDiv.textContent = 'Please enter a valid email address.';
-            } else if (email) email.classList.remove('is-invalid');
-
-            if (contact && !contactPattern.test(contact.value.trim())) {
-            valid = false;
-            contact.classList.add('is-invalid');
-            if (alertDiv) alertDiv.textContent = 'Contact number must match format: +63 9XXXXXXXXX';
-            } else if (contact) contact.classList.remove('is-invalid');
-        }
-
-        // Step 4: File Upload step validation
-        if (valid && curStep === 4) {
-            const documentType = document.getElementById('documentTypeSelect');
-            const uploadedFile = document.getElementById('uploadedFileInput');
-            const maxSize = 10 * 1024 * 1024; // 10MB
-
-            if (!documentType?.value) {
-            valid = false;
-            if (documentType) documentType.classList.add('is-invalid');
-            if (alertDiv) alertDiv.textContent = 'Please select a document type.';
-            } else if (documentType) documentType.classList.remove('is-invalid');
-
-            if (!uploadedFile?.value) {
-            valid = false;
-            if (uploadedFile) uploadedFile.classList.add('is-invalid');
-            if (alertDiv) alertDiv.textContent = 'Please upload a document file.';
-            } else {
-            const file = uploadedFile.files?.[0];
-            if (file && file.size > maxSize) {
-                valid = false;
-                uploadedFile.classList.add('is-invalid');
-                if (alertDiv) alertDiv.textContent = 'File size must not exceed 10MB.';
-            } else {
-                uploadedFile.classList.remove('is-invalid');
-            }
-            }
-        }
-
-        if (!valid) {
-            if (alertDiv) {
-            alertDiv.classList.remove('d-none');
-            alertDiv.scrollIntoView({ behavior: 'smooth' });
-            }
-            return;
-        }
-        }
-
-        // Advance or retreat steps
-        const S = steps();
-        let stepIndex = Array.from(S).findIndex(s => s.classList.contains('active'));
-        const target = stepIndex + 1 + n;
-        if (target >= 1 && target <= S.length) {
-        S[stepIndex].classList.remove('active');
-        S[target - 1].classList.add('active');
-
-        const I = indicators();
-        for (let i = 0; i < I.length; i++) {
-            I[i].classList.remove('active', 'done');
-            if (i < target - 1) I[i].classList.add('done');
-            else if (i === target - 1) I[i].classList.add('active');
-        }
-
-        currentStep = target;
-
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const fixedNav = document.querySelector('.fixed-nav');
-        if (currentStep === 1) {
-            prevBtn.style.display = 'none';
-            nextBtn.style.display = 'inline-block';
-            fixedNav.classList.remove('justify-content-between');
-            fixedNav.classList.add('justify-content-end');
-        } else if (currentStep === S.length) {
-            prevBtn.style.display = 'inline-block';
-            nextBtn.style.display = 'none';
-            fixedNav.classList.remove('justify-content-end');
-            fixedNav.classList.add('justify-content-between');
-        } else {
-            prevBtn.style.display = 'inline-block';
-            nextBtn.style.display = 'inline-block';
-            fixedNav.classList.remove('justify-content-end');
-            fixedNav.classList.add('justify-content-between');
-        }
-        }
-    }
-
-    // Expose these for your HTML onclick handlers
-    window.showStep = showStep;
-    window.changeStep = changeStep;
-    window.toggleStatusFields = toggleStatusFields;
-    window.toggleOtherInput = toggleOtherInput;
-
-    /* =======================================
-        Submit: enforce required upload + size
-        ======================================= */
-    function wireSubmit() {
-        const form     = document.getElementById('gmfForm');
-        const alertDiv = document.getElementById('formAlert');
-        const modalEl  = document.getElementById('submissionModal');
-        if (!form) return;
-
-        const modal       = modalEl ? new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false }) : null;
-        const countdownEl = document.getElementById('submitCountdown');
-        const bodyEl      = document.getElementById('submissionModalBody');
-        const homeUrl     = "{% url 'client_home' %}";
-        const getCSRF     = () => (form.querySelector('input[name="csrfmiddlewaretoken"]') || {}).value || '';
-
-        form.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        // 1) Native HTML5 validation first
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
-            if (alertDiv) {
-            alertDiv.textContent = 'Please fill out all required fields correctly before submitting.';
-            alertDiv.classList.remove('d-none');
-            }
-            const firstInvalid = form.querySelector(':invalid');
-            if (firstInvalid) {
-            // Jump to the step containing the first invalid field
-            const stepEl = firstInvalid.closest('.step');
-            const S = Array.from(steps());
-            const idx = S.indexOf(stepEl);
-            if (idx >= 0) showStep(idx + 1);
-            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            firstInvalid.focus({ preventScroll: true });
-            }
-            return;
-        }
-
-        // 2) Extra guards for Verification step
-        const documentTypeSelect = document.getElementById('documentTypeSelect');
-        const uploadedFileInput  = document.getElementById('uploadedFileInput');
-        const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-        let ok = true;
-
-        if (!documentTypeSelect?.value) {
-            ok = false;
-            documentTypeSelect?.classList.add('is-invalid');
-        } else {
-            documentTypeSelect?.classList.remove('is-invalid');
-        }
-
-        const file = uploadedFileInput?.files?.[0];
-        if (!file) {
-            ok = false;
-            uploadedFileInput?.classList.add('is-invalid');
-        } else if (file.size > MAX_SIZE) {
-            ok = false;
-            uploadedFileInput?.classList.add('is-invalid');
-            if (alertDiv) {
-            alertDiv.textContent = 'File size must not exceed 10MB.';
-            alertDiv.classList.remove('d-none');
-            }
-            showStep(4);
-            return;
-        } else {
-            uploadedFileInput?.classList.remove('is-invalid');
-        }
-
-        if (!ok) {
-            if (alertDiv) {
-            alertDiv.textContent = 'Please select a document type and upload the file.';
-            alertDiv.classList.remove('d-none');
-            }
-            showStep(4);
-            uploadedFileInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            uploadedFileInput?.focus({ preventScroll: true });
-            return;
-        }
-
-        // 3) Modal + 5s countdown + AJAX submit
-        modal?.show();
-        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = true);
-
-        let secs = 5;
-        if (countdownEl) countdownEl.textContent = secs;
-        const delay = new Promise(resolve => {
-            const t = setInterval(() => {
-            secs -= 1;
-            if (countdownEl) countdownEl.textContent = secs;
-            if (secs <= 0) { clearInterval(t); resolve(); }
-            }, 1000);
-        });
-
-        const post = fetch(form.action, {
-            method: form.method || 'POST',
-            body: new FormData(form),
-            headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin'
-        }).then(resp => {
-            if (!resp.ok) throw new Error('Submit failed');
-            return resp.text();
-        });
-
-        Promise.all([post, delay]).then(() => {
-            window.location.assign(homeUrl);
-        }).catch(() => {
-            if (bodyEl) bodyEl.innerHTML = '<div class="text-danger">Submission failed. Please check required fields and try again.</div>';
-            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(b => b.disabled = false);
-        });
-        });
-    }
-
-    /* ======================================
-        Field normalizers & year constraints
-        ====================================== */
-
-    // Names: strip trailing spaces; Email/Relationship: no spaces; Contact: normalize + pattern
-    function wireFieldNormalizers() {
-        // Names: allow internal spaces; forbid trailing spaces
-        const rtrimIds = ['fn_goodmoral','mn_goodmoral','sn_goodmoral','requester_goodmoral'];
-        rtrimIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.addEventListener('blur', () => {
-            el.value = (el.value || '').replace(/\s+$/, '');
-        });
-        });
-
-        // Email & Relationship: block/strip spaces
-        const noSpaceIds = ['email_req_goodmoral','relationship_goodmoral'];
-        noSpaceIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.addEventListener('keydown', (e) => { if (e.key === ' ' || e.code === 'Space') e.preventDefault(); });
-        el.addEventListener('beforeinput', (e) => { if (e.data && /\s/.test(e.data)) e.preventDefault(); });
-        const strip = () => {
-            const cleaned = (el.value || '').replace(/\s+/g, '');
-            if (el.value !== cleaned) el.value = cleaned;
-        };
-        el.addEventListener('input', strip);
-        el.addEventListener('blur', strip);
-        el.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const txt = (e.clipboardData || window.clipboardData).getData('text');
-            document.execCommand('insertText', false, (txt || '').replace(/\s+/g, ''));
-        });
-        });
-
-        // Contact: keep "+63 9XXXXXXXXX" shape usable on mobile
-        (function () {
-        const el = document.getElementById('contact_req_goodmoral');
-        if (!el) return;
-        el.setAttribute('pattern', '^\\+63 9\\d{9}$');
-        el.setAttribute('inputmode', 'tel');
-        el.addEventListener('input', () => {
-            let v = el.value || '';
-            v = v.replace(/[^\d +]/g, '');   // allow digits, single spaces, single leading +
-            v = v.replace(/(?!^)\+/g, '');
-            v = v.replace(/ {2,}/g, ' ');
-            v = v.replace(/\s+$/, '');
-            v = v.replace(/^\+63(?!\s|$)/, '+63 ');
-            el.value = v;
-        });
-        el.addEventListener('blur', () => { el.value = (el.value || '').replace(/\s+$/, ''); });
-        el.addEventListener('paste', (e) => {
-            e.preventDefault();
-            let txt = (e.clipboardData || window.clipboardData).getData('text') || '';
-            txt = txt.replace(/[^\d +]/g, '')
-                    .replace(/(?!^)\+/g, '')
-                    .replace(/ {2,}/g, ' ')
-                    .replace(/\s+$/, '');
-            document.execCommand('insertText', false, txt);
-        });
-        })();
-
-        // Normalize again right before submit (defense in depth)
-        const form = document.getElementById('gmfForm');
-        if (form) form.addEventListener('submit', () => {
-        rtrimIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = (el.value || '').replace(/\s+$/, '');
-        });
-        noSpaceIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = (el.value || '').replace(/\s+/g, '');
-        });
-        const c = document.getElementById('contact_req_goodmoral');
-        if (c) c.value = (c.value || '').replace(/\s+$/, '');
-        });
-    }
-
-    // Year inputs: numeric only, clamp visually, mark invalid if out of 1979–current
-    function wireYearFields() {
-        const YEAR_IDS = ['year_graduated_goodmoral', 'year_admission_goodmoral'];
-        const MIN = 1979;
-        const CUR = new Date().getFullYear();
-
-        YEAR_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.setAttribute('inputmode', 'numeric');
-        el.setAttribute('step', '1');
-        el.setAttribute('max', String(CUR));
-
-        el.addEventListener('keydown', (e) => { if (e.key === ' ' || e.code === 'Space') e.preventDefault(); });
-        el.addEventListener('beforeinput', (e) => { if (e.data && /\s/.test(e.data)) e.preventDefault(); });
-
-        el.addEventListener('input', () => {
-            let v = el.value || '';
-            v = v.replace(/\s+/g, '');
-            v = v.replace(/\D+/g, '');
-            if (v.length > 4) v = v.slice(0, 4);
-            el.value = v;
-        });
-
-        el.addEventListener('blur', () => {
-            let v = (el.value || '').replace(/\s+$/, '').replace(/\D+/g, '').slice(0, 4);
-            el.value = v;
-            if (v.length === 4) {
-            const n = +v;
-            if (n < MIN || n > CUR) el.classList.add('is-invalid');
-            else el.classList.remove('is-invalid');
-            } else if (v.length > 0) {
-            el.classList.add('is-invalid');
-            } else {
-            el.classList.remove('is-invalid');
-            }
-        });
-        });
-    }
-
-    /* =================
-        Event listeners
-        ================= */
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initial step render (safe if HTML sets active manually)
-        try { showStep(currentStep); } catch(_) {}
-
-        ensureOthersPurpose();
-        populateProgramsFromCSV();
-        wireFieldNormalizers();
-        wireYearFields();
-        wireSubmit();
-
-        // Upload area
-        document.getElementById('documentTypeSelect')?.addEventListener('change', updateUploadRequired);
+    this.modal?.show();
+
+    // countdown
+    const countdownEl = document.getElementById('submitCountdown');
+    let seconds = CONFIG.COUNTDOWN_SECONDS;
+    if (countdownEl) countdownEl.textContent = seconds;
+
+    await new Promise((resolve) => {
+      const id = setInterval(() => {
+        seconds -= 1;
+        if (countdownEl) countdownEl.textContent = seconds;
+        if (seconds <= 0) { clearInterval(id); resolve(); }
+      }, 1000);
     });
+    this.form.submit();
+  }, 
 
-    window.addEventListener('load', () => {
-        initTogglesOnLoad();
-    });
-    })();
+  disableSubmitButtons() {
+    const buttons = this.form.querySelectorAll('button[type="submit"], input[type="submit"]');
+    buttons.forEach((b) => (b.disabled = true));
+  },
+};
 
-
-
-
-
-
-    document.addEventListener("DOMContentLoaded", function () {
-    const row = document.getElementById("extensionRow");
-    const yes = document.getElementById("extYes");
-    const no = document.getElementById("extNo");
-    const input = document.getElementById("ex_goodmoral");
-
-    yes.addEventListener("change", function () {
-        if (this.checked) {
-            row.style.display = "block";
-            input.focus();
+// ============================================================================
+// FORM PERSISTENCE (Optional) - Save/restore form progress
+// ============================================================================
+const FormPersistence = {
+  STORAGE_KEY: 'gmf_draft',
+  AUTO_SAVE_INTERVAL: 30000, // 30 seconds
+  autoSaveTimer: null,
+  
+  init() {
+    this.restore();
+    this.startAutoSave();
+    this.attachClearOnSubmit();
+  },
+  
+  save() {
+    try {
+      const form = document.querySelector(CONFIG.SELECTORS.FORM);
+      if (!form) return;
+      
+      const formData = new FormData(form);
+      const data = {};
+      
+      // Save text inputs only (not files)
+      for (const [key, value] of formData.entries()) {
+        if (key !== 'uploaded_file' && key !== 'uploaded_file_2') {
+          data[key] = value;
         }
-    });
-
-    no.addEventListener("change", function () {
-        if (this.checked) {
-            row.style.display = "none";
-            input.value = "";
+      }
+      
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('Could not save form progress:', e);
+    }
+  },
+  
+  restore() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (!saved) return;
+      
+      const data = JSON.parse(saved);
+      
+      Object.entries(data).forEach(([name, value]) => {
+        const field = document.querySelector(`[name="${name}"]`);
+        if (!field) return;
+        
+        if (field.type === 'radio' || field.type === 'checkbox') {
+          if (field.value === value) field.checked = true;
+        } else {
+          field.value = value;
         }
+      });
+      
+      // Trigger change events to update dependent fields
+      document.querySelectorAll('input[name="status"], select[name="purpose"], select#documentTypeSelect').forEach(el => {
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      
+    } catch (e) {
+      console.warn('Could not restore form progress:', e);
+    }
+  },
+  
+  clear() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+    } catch (e) {
+      console.warn('Could not clear saved form:', e);
+    }
+  },
+  
+  startAutoSave() {
+    this.autoSaveTimer = setInterval(() => this.save(), this.AUTO_SAVE_INTERVAL);
+  },
+  
+  stopAutoSave() {
+    if (this.autoSaveTimer) {
+      clearInterval(this.autoSaveTimer);
+      this.autoSaveTimer = null;
+    }
+  },
+  
+  attachClearOnSubmit() {
+    const form = document.querySelector(CONFIG.SELECTORS.FORM);
+    if (!form) return;
+    
+    form.addEventListener('submit', () => {
+      this.stopAutoSave();
+      this.clear();
     });
+  }
+};
+
+// ============================================================================
+// MAIN APPLICATION - Initialize everything
+// ============================================================================
+const GoodMoralFormApp = {
+  
+  init() {
+    // Initialize all modules
+    ErrorHandler.init();
+    FormNavigation.init();
+    InputFormatter.init();
+    InputFormatter.setupNoSpaceFields();
+    FieldToggles.init();
+    
+    // Load external data
+    DataLoader.ensureOthersPurpose();
+    DataLoader.loadPrograms();
+    FormSubmission.init();
+    // Optional: Enable form persistence
+    // FormPersistence.init();
+    
+    console.log('Good Moral Certificate Form initialized successfully');
+  }
+};
+
+// ============================================================================
+// INITIALIZE ON DOM READY
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  GoodMoralFormApp.init();
 });
 
-
-
-
+// ============================================================================
+// EXPOSE GLOBAL FUNCTIONS (for inline event handlers - to be removed later)
+// ============================================================================
+window.changeStep = (n) => FormNavigation.changeStep(n);
+window.showStep = (n) => FormNavigation.showStep(n);
+window.toggleStatusFields = () => FieldToggles.updateStatusFields();
+window.toggleOtherInput = () => {
+  const purposeSelect = document.getElementById('purpose_goodmoral');
+  if (purposeSelect) purposeSelect.dispatchEvent(new Event('change'));
+};
 </script>
-
 
 </body>
 </html>

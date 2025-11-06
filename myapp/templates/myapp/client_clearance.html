@@ -71,6 +71,7 @@
     </h1>
     <hr>
     <h6 class="text-muted">Please fill in the required information below to request clearance.</h6>
+    <h6 class="text-muted">INCORRECT INFORMATION WILL RESULT IN DELAY OR NON-ISSUANCE OF THE REQUESTED DOCUMENT.</h6>
   </div>
 
   <!-- Top alert -->
@@ -181,14 +182,63 @@
           <div class="col-md-4 mb-3">
             <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
             <div class="status-wrap">
-              <input type="text" class="form-control" id="contact_surrender" name="contact"
-                    value="+63 "
-                    placeholder="+63 XXXXXXXXXX" minlength="14" maxlength="14"
-                    pattern="^\+63\s\d{10}$" required>
+              <input
+                type="text"
+                class="form-control"
+                id="contact_surrender"
+                name="contact"
+                value="+63 "
+                placeholder="+63 995-241-5114"
+                minlength="16" maxlength="16"
+                pattern="^\+63\s\d{3}-\d{3}-\d{4}$"
+                title="Format: +63 XXX-XXX-XXXX"
+                autocomplete="off"
+                required>
               <i id="contact_surrender_status" class="status-icon bi d-none"></i>
             </div>
             <div class="valid-feedback">Format OK.</div>
-            <div class="invalid-feedback">Format must be exactly: +63 XXXXXXXXXX (10 digits after a space).</div>
+            <div class="invalid-feedback">Use +63 XXX-XXX-XXXX.</div>
+          </div>
+
+          <div class="col-md-8 mb-3">
+            <label class="form-label fw-semibold" for="address">Address:</label>
+            <div class="status-wrap">
+              <input
+                type="text"
+                class="form-control"
+                id="address"
+                name="address"
+                placeholder="House/Street, Barangay, City/Municipality, Province, ZIP"
+                minlength="5"
+                maxlength="255"
+                required>
+              <i id="address_status" class="status-icon bi d-none"></i>
+            </div>
+            <div class="invalid-feedback">Please enter your full address (min 5 characters).</div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold" for="age">Age:</label>
+              <div class="status-wrap">
+                <input type="number" class="form-control" id="age" name="age"
+                      placeholder="e.g., 21"
+                      min="16" max="120" step="1" required>
+                <i id="age_status" class="status-icon bi d-none"></i>
+              </div>
+              <div class="hint mt-1">Required. Allowed: 16–120.</div>
+              <div class="invalid-feedback">Age must be 16–120.</div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-semibold" for="sex">Sex:</label>
+              <div class="status-wrap">
+                <select class="form-select" id="sex" name="sex" required>
+                  <option value="" selected>-- Select --</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                </select>
+                <i id="sex_status" class="status-icon bi d-none"></i>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -212,6 +262,7 @@
               maxlength="23"
               pattern="^TUPC-\d{2}-[A-Z0-9]{4,15}$"
               title="Use TUPC-<2 digits>-<letters/digits 4–15> (e.g., TUPC-22-1234, TUPC-14-1234567891012MC)."
+              autocomplete="off"
               required>
             <i id="student_number_status" class="status-icon bi d-none"></i>
           </div>
@@ -249,6 +300,25 @@
           <div class="valid-feedback">Looks good.</div>
           <div class="invalid-feedback">Please select a year level.</div>
         </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold" for="last_year_in_tupc">Last year in TUPC:</label>
+          <div class="status-wrap">
+            <input
+              type="number"
+              class="form-control"
+              id="last_year_in_tupc"
+              name="last_year_in_tupc"
+              placeholder="YYYY"
+              inputmode="numeric"
+              step="1"
+              min="1979"
+              max="" 
+              required>
+            <i id="last_year_in_tupc_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="hint mt-1">Optional. Pick a year between 1979 and the current year.</div>
+          <div class="invalid-feedback">Enter a valid year (1979–current).</div>
+        </div>
       </div>
 
       <div class="row mb-3">
@@ -282,7 +352,7 @@
 
     <!-- Purpose -->
     <div class="form-section">
-      <h5><i class="bi bi-briefcase-fill fw-semibold"></i> Purpose of Visit</h5>
+      <h5><i class="bi bi-briefcase-fill fw-semibold"></i> Purpose</h5>
       <hr>
       <div class="mb-3">
         <div class="status-wrap">
@@ -346,6 +416,19 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  const RE_PHONE_HYPHEN = /^\+63\s\d{3}-\d{3}-\d{4}$/;
+  const RE_PHONE_PLAIN  = /^\+63\s\d{10}$/;
+
+  function digitsOnly(s){ return (s||"").replace(/\D+/g,""); }
+
+  function formatPhMobileHyphenated(raw){
+    const d = digitsOnly(raw);
+    const rest = d.startsWith("63") ? d.slice(2) : d;
+    const ten  = rest.slice(0,10);
+    if (!ten) return "+63 ";
+    const a = ten.slice(0,3), b = ten.slice(3,6), c = ten.slice(6,10);
+    return `+63 ${a}${b?'-'+b:''}${c?'-'+c:''}`;
+  }
   // ===== Utilities =====
   function rtrimInput(el) {
    el.value = el.value
@@ -380,10 +463,15 @@
   const phone   = document.getElementById("contact_surrender");
   const student = document.getElementById("student_number");
   const program = document.getElementById("program");
+  const ageEl  = document.getElementById("age");
+  const sexEl  = document.getElementById("sex");
+  const lyEl   = document.getElementById("last_year_in_tupc");
+  
 
-  const trimIds   = ["first_name","last_name","extension","email_surrender","student_number"];
-  const selectIds = ["program","year_level","client_type","stakeholder","purpose"];
-  const baseIds   = ["first_name","last_name","email_surrender","contact_surrender","student_number"];
+  const trimIds   = ["first_name","last_name","extension","email_surrender","student_number","address"];
+  const baseIds   = ["first_name","last_name","email_surrender","contact_surrender","student_number","age","address","last_year_in_tupc"];
+  const selectIds = ["program","year_level","client_type","stakeholder","purpose","sex"];
+  
 
   // ===== CSV Programs (now with "Other") =====
   (async function loadPrograms() {
@@ -485,14 +573,8 @@
       rtrimInput(el);
      }
     if (el === phone) {
-      el.value = el.value.replace(/[^\d+\s]/g, '');
-      if (!el.value.startsWith("+63")) {
-        el.value = "+63 " + el.value.replace(/^\+*/, '').replace(/^63\s*/, '');
-      }
-      el.value = el.value.replace(/^\+63\s*/, "+63 ");
-      if (el.value !== "+63 ") el.value = el.value.replace(/\s+$/,'');
-      const ok = /^\+63\s\d{10}$/.test(el.value);
-      el.setCustomValidity(ok ? "" : "Format must be exactly: +63 XXXXXXXXXX (10 digits).");
+      const ok = RE_PHONE_HYPHEN.test(el.value);
+      el.setCustomValidity(ok ? "" : "Use +63 XXX-XXX-XXXX.");
       return mark(el, ok);
     }
 
@@ -502,6 +584,44 @@
       return mark(el, ok);
     }
 
+    if (el && el.id === "sex") {
+      const ok = !!el.value;   
+      el.setCustomValidity(ok ? "" : "Please select sex.");
+      return mark(el, ok);
+    }
+
+    if (el.id === "last_year_in_tupc") {
+      const v = el.value.trim();
+      const MIN_YEAR = 1979;
+      const CURRENT_YEAR = new Date().getFullYear();
+
+      // required
+      if (!v) {
+        el.setCustomValidity("Please enter a year.");
+        return mark(el, false);
+      }
+
+      const n = Number(v);
+      const ok = Number.isInteger(n) && n >= MIN_YEAR && n <= CURRENT_YEAR;
+      el.setCustomValidity(ok ? "" : `Enter a valid year (${MIN_YEAR}–${CURRENT_YEAR}).`);
+      return mark(el, ok);
+    }
+
+    if (el.id === "age") {
+      const v = el.value.trim();
+      const n = Number(v);
+      const ok = v !== "" && Number.isInteger(n) && n >= 16 && n <= 120;
+      el.setCustomValidity(ok ? "" : "Out of allowed range.");
+      return mark(el, ok);
+    }
+
+    if (el.id === "address") {
+      rtrimInput(el);
+      const len = el.value.length;
+      const ok = len >= 5 && len <= 255;
+      el.setCustomValidity(ok ? "" : "Address must be 5–255 characters.");
+      return mark(el, ok);
+    }
     if (el === program) {
       const ok = (program.value === '__OTHER__') ? validateProgramOther() : !!program.value;
       return mark(program, ok);
@@ -530,10 +650,10 @@
     ok = validateField(program) && ok;
     ok = validateField(extInp) && ok;
 
-    for (const id of ["year_level","client_type","stakeholder","purpose"]) {
-      const el = document.getElementById(id);
-      if (el) ok = validateField(el) && ok;
-    }
+  for (const id of selectIds) {
+    const el = document.getElementById(id);
+    if (el) ok = validateField(el) && ok;
+  }
     ok = form.checkValidity() && ok;
     openBtn.disabled = !ok;
     if (ok) formAlert.classList.add('d-none');
@@ -547,21 +667,51 @@
     el.addEventListener("input", () => { validateField(el); validateForm(); });
     el.addEventListener("blur",  () => { validateField(el); validateForm(); });
   });
-  phone.addEventListener("input", () => { validateField(phone); validateForm(); });
-  phone.addEventListener("blur",  () => { validateField(phone); validateForm(); });
+  if (lyEl) {
+    lyEl.addEventListener("input", () => { validateField(lyEl); validateForm(); });
+    lyEl.addEventListener("blur",  () => { validateField(lyEl); validateForm(); });
+  }
+  if (phone) {
+  // initialize pretty mask
+  if (!phone.value.trim() || phone.value.trim() === "+63") phone.value = "+63 ";
+
+  const validateContact = () => {
+    const ok = RE_PHONE_HYPHEN.test(phone.value);
+    phone.setCustomValidity(ok ? "" : "Invalid");
+    validateField(phone);
+    validateForm();
+  };
+
+  phone.addEventListener("input", () => {
+    phone.value = formatPhMobileHyphenated(phone.value);
+    phone.selectionStart = phone.selectionEnd = phone.value.length;
+    validateContact();
+  });
+
+  phone.addEventListener("blur", () => {
+    phone.value = formatPhMobileHyphenated(phone.value);
+    validateContact();
+  });
+
   phone.addEventListener("focus", () => {
-    if (phone.value === "" || phone.value === "+63") phone.value = "+63 ";
+    if (!phone.value.startsWith("+63")) phone.value = "+63 ";
     setTimeout(() => phone.setSelectionRange(phone.value.length, phone.value.length), 0);
   });
+}
   student.addEventListener("input", () => { validateField(student); validateForm(); });
   student.addEventListener("blur",  () => { validateField(student); validateForm(); });
-
-  ["year_level","client_type","stakeholder","purpose"].forEach(id => {
+  if (ageEl) {
+    ageEl.addEventListener("input", () => { validateField(ageEl); validateForm(); });
+    ageEl.addEventListener("blur",  () => { validateField(ageEl); validateForm(); });
+  }
+  selectIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("change", () => { validateField(el); validateForm(); });
   });
 
   document.addEventListener("DOMContentLoaded", () => {
+    const yEl = document.getElementById("last_year_in_tupc");
+    if (yEl) yEl.setAttribute("max", String(new Date().getFullYear()));
     if (phone && (phone.value === "" || phone.value === "+63")) phone.value = "+63 ";
     refreshExtension();
     validateForm();
@@ -673,9 +823,8 @@
       reenableForm();
     }
   });
+
 </script>
-
-
 
 </body>
 </html>

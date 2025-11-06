@@ -70,8 +70,11 @@ urlpatterns = [
     path('admin_ACSO/', views.admin_ACSO_view, name='admin_ACSO'),
     path('admin_assistantship/', views.admin_assistantship_view, name='admin_assistantship'),
     path("gmf/batch-preview", views.batch_view_gmf, name="gmf_batch_preview"),
-
     
+    
+    path("admin_community_service/<int:case_id>/agreement.pdf", views.admin_cs_agreement_pdf,name="admin_cs_agreement_pdf"),
+    path("admin_community_service/<int:case_id>/completion.pdf", views.admin_cs_completion_pdf, name="admin_cs_completion_pdf"),
+        
     path('admin_community_service/', views.admin_community_service, name='admin_community_service'),
     path('admin_community_service/<int:case_id>/', views.admin_view_community_service, name='admin_view_community_service'),
     path('admin_community_service/<int:case_id>/update-total/', views.cs_update_total_required, name='cs_update_total_required'),

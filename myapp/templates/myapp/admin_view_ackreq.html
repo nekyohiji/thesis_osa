@@ -28,12 +28,24 @@
   </style>
 <div class="container-fluid py-4">
   <!-- Top Navigation -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="{% url 'admin_ackreq' %}" class="btn text-light">
-      <i class="bi bi-arrow-left text-light"></i> Back
-    </a>
-    <a></a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <a href="{% url 'admin_ackreq' %}" class="btn text-light">
+    <i class="bi bi-arrow-left text-light"></i> Back
+  </a>
+
+  <!-- Status badge -->
+  <div>
+    {% with s=req.status|default_if_none:"pending"|lower %}
+      {% if s == "approved" or req.is_approved %}
+        <span class="badge text-bg-success text-light" style="margin-right: 50px; font-size: 1.2rem; padding: .5em 1em;">Approved</span>
+      {% elif s == "rejected" or s == "declined" or req.is_rejected %}
+        <span class="badge text-bg-danger text-light" style="margin-right: 50px; font-size: 1.2rem; padding: .5em 1em;">Rejected</span>
+      {% else %}
+        <span class="badge text-bg-warning text-dark" style="margin-right: 50px; font-size: 1.2rem; padding: .5em 1em;">Pending</span>
+      {% endif %}
+    {% endwith %}
   </div>
+</div>
 
   <!-- Main Content Card -->
 <div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
@@ -60,21 +72,57 @@
       <div class="card mb-6 p-3 border-dark">
         <div class="card-header bg-white text-dark fw-bold"><i class="bi bi-person-fill"></i> Personal Information</div><br>
         <div class="card-body row g-3">
+
           <div class="col-md-3"><label class="form-label">First Name:</label>
             <input class="form-control" value="{{ req.first_name }}" disabled>
           </div>
+
           <div class="col-md-3"><label class="form-label">Middle Name:</label>
             <input class="form-control" value="{{ req.middle_name }}" disabled>
           </div>
+
           <div class="col-md-3"><label class="form-label">Surname:</label>
             <input class="form-control" value="{{ req.surname }}" disabled>
           </div>
+
           <div class="col-md-2"><label class="form-label">Extension:</label>
             <input class="form-control" value="{{ req.extension }}" disabled>
           </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Address:</label>
+            <input class="form-control" value="{{ req.address|default:'—' }}" disabled>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Age:</label>
+            <input class="form-control" value="{{ req.age|default:'—' }}" disabled>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Sex:</label>
+            <input class="form-control"
+                  value="{% if req.get_sex_display %}{{ req.get_sex_display|default:'—' }}{% else %}{{ req.sex|default:'—' }}{% endif %}"
+                  disabled>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Contact Number:</label>
+            <input class="form-control" value="{{ req.contact_number|default:'—' }}" disabled>
+          </div>
+          
           <div class="col-md-4">
             <label class="form-label">Email:</label>
             <input class="form-control" value="{{ req.contact_email }}" disabled>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Client Type:</label>
+            <input class="form-control" value="{{ req.client_type }}" disabled>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Stakeholder:</label>
+            <input class="form-control" value="{{ req.stakeholder }}" disabled>
           </div>
         </div>
       </div>
@@ -148,15 +196,25 @@
       <!-- ACTION BUTTONS -->
       <div class="d-flex justify-content-between mt-4 flex-wrap gap-3">
         <!-- Safe Actions -->
-        <div class="d-flex gap-2">
-          <button class="btn text-light" type="button"
+      <div class="d-flex gap-2">
+        {% if req.status == 'approved' %}
+          <!-- Enabled only when approved -->
+          <button id="btnGenCertAck" class="btn text-light" type="button"
                   style="background-color: #440207; border-color: #440207;"
                   onmouseover="this.style.backgroundColor='#5e0000';"
                   onmouseout="this.style.backgroundColor='#440207';"
                   data-bs-toggle="modal" data-bs-target="#generateModal">
             <i class="bi bi-printer"></i> Generate Certificate
           </button>
-        </div>
+        {% else %}
+          <!-- Pending / Rejected -> disabled -->
+          <button class="btn text-light" type="button" disabled
+                  title="Available after approval"
+                  style="background-color: #440207; border-color: #440207; opacity:.65; cursor:not-allowed;">
+            <i class="bi bi-printer"></i> Generate Certificate
+          </button>
+        {% endif %}
+      </div>
 
         <!-- Critical Actions -->
         <div class="d-flex gap-2">

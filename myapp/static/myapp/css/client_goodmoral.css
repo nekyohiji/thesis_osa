@@ -1,17 +1,20 @@
+/**
+ * Good Moral Certificate Form - Updated CSS
+ * Cleaned up and enhanced with new refactored features
+ */
+
+/* ============================================ */
+/* BODY & BASE STYLES */
+/* ============================================ */
 body {
     font-family: 'Roboto', sans-serif;
-    background-color: #f0f0f0;
-
-
-    body {
-    font-family: 'Roboto', sans-serif;
     background: linear-gradient(to right, #00000013, #f0f0f0, #000000);
-    color: #fff; /* Optional: adjust text color */
-}
-    
+    color: #333;
 }
 
+/* ============================================ */
 /* NAVIGATION BAR */
+/* ============================================ */
 #TUPC {
     display: flex;
     align-items: center;
@@ -93,30 +96,38 @@ body {
     background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
 }
 
-
-#pageOverlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.18);   /* transparent layer */
-  z-index: 2000;                 /* above navbar & modals */
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: progress;
-  user-select: none;
-  pointer-events: all;           /* actively captures clicks */
+/* ============================================ */
+/* PAGE OVERLAY (Loading State) */
+/* ============================================ */
+#pageOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.18);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: progress;
+    user-select: none;
+    pointer-events: all;
 }
-#pageOverlay.show{ display: flex; }
 
+#pageOverlay.show {
+    display: flex;
+}
 
-
-/*GOOD MORAL CERTIFICATE */
-
+/* ============================================ */
+/* GOOD MORAL CERTIFICATE FORM */
+/* ============================================ */
 .container h1 {
-  text-decoration: none;
+    text-decoration: none;
+    color: #440207;
+    margin-top: 2rem;
 }
 
-/* Step Indicator */
+/* ============================================ */
+/* STEP INDICATOR */
+/* ============================================ */
 .step-indicator {
     display: flex;
     justify-content: space-between;
@@ -128,11 +139,11 @@ body {
 .step-indicator::before {
     content: '';
     position: absolute;
-    top: 40px; /* adjust this to align with center of circles */
+    top: 40px;
     left: 0px;
     right: 0px;
     height: 2px;
-    background-color:#7b000a;
+    background-color: #7b000a;
     z-index: 0;
 }
 
@@ -141,6 +152,8 @@ body {
     text-align: center;
     position: relative;
     z-index: 1;
+    cursor: default;
+    transition: all 0.3s ease;
 }
 
 .step-indicator div::before {
@@ -157,78 +170,145 @@ body {
     margin-bottom: 5px;
     position: relative;
     z-index: 2;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.3s ease;
     font-size: 16px;
 }
 
 .step-indicator div.active::before {
-    background-color:  #c20d0d;
+    background-color: #c20d0d;
+    transform: scale(1.1);
 }
 
 .step-indicator div.done::before {
     background-color: #7b000a;
+    content: '✓';
+}
+
+.step-indicator div.done:hover {
+    cursor: pointer;
+    opacity: 0.8;
 }
 
 .step-indicator div::after {
     content: none;
 }
 
-/* Step Visibility */
+/* ============================================ */
+/* STEP VISIBILITY & ANIMATION */
+/* ============================================ */
 .step {
     display: none;
 }
 
 .step.active {
     display: block;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Section Titles */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================ */
+/* SECTION TITLES */
+/* ============================================ */
 .section-title {
-    font-size: 1.25rem;
-    font-weight: bold;
+    font-size: 1.5rem;
+    font-weight: 600;
     margin-bottom: 15px;
     display: flex;
     align-items: center;
+    color: #440207;
 }
 
 .section-title i {
     margin-right: 8px;
 }
 
-/* Fixed Navigation Buttons */
+/* ============================================ */
+/* STEP CARDS */
+/* ============================================ */
+.step.card {
+    background-color: white;
+    color: #000;
+    padding: 2rem;
+    border: 1px solid #75000e;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.step.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================ */
+/* FIXED NAVIGATION BAR */
+/* ============================================ */
 .fixed-nav {
     position: sticky;
     bottom: 0;
-    z-index: 999;
-    background-color: #fff; /* to avoid transparent overlap */
+    z-index: 2200 !important;
+    background-color: #fff;
     padding: 10px 20px;
-    border-top: 1px solid #dee2e6;
+    border-top: 2px solid #dee2e6;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .fixed-nav button {
-    min-width: 100px;
+    min-width: 120px;
     min-height: 50px;
 }
 
-/* Step Card Colors */
-.step.card {
-  background-color: white;
-  color: rgb(0, 0, 0);
-  padding: 50px;
-  border: 1px solid #75000e;
+/* ============================================ */
+/* CUSTOM BUTTONS */
+/* ============================================ */
+
+/* Primary TUPC Button */
+.btn-tupc-primary{
+  background-color:#8a0303;
+  border-color:#8a0303;
+  color:#fff;
 }
 
-
-
-/* /////////BUTTONS */
-
-
-.fixed-nav {
-    background-color: transparent !important;
-    border-top: none; /* Optional, if you want to remove the border */
+.btn-tupc-primary:hover{
+  background-color:#6e0202;
+  border-color:#6e0202;
+  color:#fff;
 }
 
+.btn-tupc-primary:focus {
+    background-color: #5e0000;
+    border-color: #5e0000;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(68, 2, 7, 0.3);
+}
 
+.btn-tupc-primary:active {
+    background-color: #3a0105;
+    border-color: #3a0105;
+    transform: translateY(0);
+}
+
+.btn-tupc-primary:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Navigation Buttons */
 .fixed-nav .btn-primary {
     background-color: #75000e;
     border-color: #75000e;
@@ -253,13 +333,282 @@ body {
     color: white;
 }
 
+#nextBtn {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 2210 !important;
+}
 
+/* ============================================ */
+/* FORM INPUTS */
+/* ============================================ */
 
-/* Solid border on focus for text inputs, selects, textareas */
+/* Focus states */
 input.form-control:focus,
 select.form-select:focus,
 textarea.form-control:focus {
-    border: 1px solid #49040c;
-    box-shadow: none; 
-    outline: none; 
+    border: 2px solid #49040c;
+    box-shadow: 0 0 0 0.2rem rgba(73, 4, 12, 0.25);
+    outline: none;
+}
+
+/* Form labels with icons */
+.form-label i {
+    margin-right: 5px;
+    color: #440207;
+}
+
+/* Required asterisk */
+.text-danger[aria-label="required"] {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Help text */
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.form-text i {
+    margin-right: 4px;
+}
+
+/* ============================================ */
+/* FORM VALIDATION STYLES */
+/* ============================================ */
+.was-validated .form-control:valid,
+.form-control.is-valid {
+    border-color: #198754;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.was-validated .form-control:invalid,
+.form-control.is-invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+
+.was-validated .form-control:invalid ~ .invalid-feedback,
+.form-control.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* ============================================ */
+/* FILE INPUT STYLING */
+/* ============================================ */
+.form-control[type="file"] {
+    padding: 0.375rem 0.75rem;
+}
+
+.form-control[type="file"]::file-selector-button {
+    padding: 0.375rem 0.75rem;
+    margin-right: 0.75rem;
+    color: #fff;
+    background-color: #440207;
+    border: 0;
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.form-control[type="file"]::file-selector-button:hover {
+    background-color: #5e0000;
+    cursor: pointer;
+}
+
+/* ============================================ */
+/* MODAL ENHANCEMENTS */
+/* ============================================ */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.modal-title i {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.modal-body p {
+    margin-bottom: 0.75rem;
+    color: #333;
+}
+
+.modal-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================ */
+/* ACCESSIBILITY ENHANCEMENTS */
+/* ============================================ */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.btn:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.5);
+}
+
+.btn-tupc-primary:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(68, 2, 7, 0.5);
+}
+
+/* Screen reader only text */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================ */
+/* RESPONSIVE ADJUSTMENTS */
+/* ============================================ */
+@media (max-width: 768px) {
+    .step-indicator div {
+        font-size: 0.875rem;
+        padding: 8px 4px;
+    }
+    
+    .step-indicator div::before {
+        width: 35px;
+        height: 35px;
+        font-size: 0.875rem;
+    }
+    
+    .step-indicator::before {
+        top: 35px;
+    }
+    
+    .step-indicator div i {
+        display: none;
+    }
+    
+    .fixed-nav {
+        padding: 10px 15px !important;
+    }
+    
+    .fixed-nav button {
+        min-width: auto;
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .step.card {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .step-indicator {
+        flex-wrap: wrap;
+    }
+    
+    .step-indicator div {
+        flex: 0 0 50%;
+        margin-bottom: 10px;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .step.card {
+        padding: 1rem;
+    }
+}
+
+/* ============================================ */
+/* UTILITY CLASSES */
+/* ============================================ */
+.text-tupc-primary {
+    color: #440207 !important;
+}
+
+.bg-tupc-primary {
+    background-color: #440207 !important;
+}
+
+.border-tupc-primary {
+    border-color: #440207 !important;
+}
+
+/* ============================================ */
+/* PRINT STYLES */
+/* ============================================ */
+@media print {
+    .navbar,
+    .fixed-nav,
+    .btn,
+    #formAlert {
+        display: none !important;
+    }
+    
+    .step {
+        page-break-inside: avoid;
+    }
+    
+    .card {
+        border: 1px solid #000;
+    }
+    
+    body {
+        background: white;
+    }
+}
+
+/* ============================================ */
+/* LOADING SPINNER */
+/* ============================================ */
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.spinner-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+    color: #440207;
 }

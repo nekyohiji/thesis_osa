@@ -7,7 +7,7 @@ from datetime import date
 from decimal import Decimal
 from django.core.validators import MinLengthValidator
 from django.contrib.staticfiles import finders
-from .models import ClearanceRequest, YEAR_LEVEL_CHOICES, CLIENT_TYPE_CHOICES, STAKEHOLDER_CHOICES, PURPOSE_CHOICES
+from .models import ClearanceRequest, YEAR_LEVEL_CHOICES, CLIENT_TYPE_CHOICES, STAKEHOLDER_CHOICES, PURPOSE_CHOICES, PH_PHONE_RE, SEX_CHOICES
 from .models import Facilitator
 
 class ViolationForm(forms.ModelForm):
@@ -131,20 +131,57 @@ class AddViolationForm(forms.ModelForm):
         obj.save()
         return obj
       
+SEX_ALLOWED = {
+    'MALE': 'Male',
+    'FEMALE': 'Female',
+}
+
+YEAR_MIN = 1979
+YEAR_MAX = date.today().year
+
 class GoodMoralRequestForm(forms.ModelForm):
-    # Override model fields so we can accept "YYYY" strings
-    date_graduated = forms.CharField(required=False)
-    date_admission = forms.CharField(required=False)
+    date_graduated = forms.CharField(required=False)   
+    date_admission = forms.CharField(required=False)  
+    sex = forms.ChoiceField(choices=SEX_CHOICES, required=True)
+    age = forms.IntegerField(min_value=16, max_value=121, required=True)
+    address = forms.CharField(widget=forms.Textarea(attrs={"rows": 2}), required=True)
+    client_type = forms.ChoiceField(choices=CLIENT_TYPE_CHOICES, required=True)
+    stakeholder = forms.ChoiceField(choices=STAKEHOLDER_CHOICES, required=True)
 
     class Meta:
         model = GoodMoralRequest
         fields = [
-            'first_name','middle_name','surname','ext','sex',
+            'first_name','middle_name','surname','ext',
+            'sex','age','address','client_type','stakeholder',
             'student_id','program','status','date_graduated',
             'inclusive_years','date_admission','purpose','other_purpose',
             'requester_name','requester_email','requester_contact','relationship',
-            'document_type','uploaded_file'
+            'document_type','uploaded_file','uploaded_file_2',
         ]
+
+    # ---------- Field-level cleans ----------
+    def clean_requester_contact(self):
+        s = (self.cleaned_data.get('requester_contact') or '').strip()
+        if not re.fullmatch(r'^\+63-\d{3}-\d{3}-\d{4}$', s):
+            raise forms.ValidationError('Contact number must be in the format +63-XXX-XXX-XXXX.')
+        return s
+
+    def clean_student_id(self):
+        s = (self.cleaned_data.get('student_id') or '').strip().upper()
+        if not re.fullmatch(r'^TUPC-\d{2}-[A-Z0-9]{4,15}$', s):
+            raise forms.ValidationError('Student ID must match TUPC-YY-XXXX (last block 4–15 chars).')
+        return s
+
+    def _clean_year_str(self, value, label):
+        s = (value or '').strip()
+        if not s:
+            return '' 
+        if not re.fullmatch(r'\d{4}', s):
+            raise forms.ValidationError(f'Enter a 4-digit year for {label}.')
+        y = int(s)
+        if y < YEAR_MIN or y > YEAR_MAX:
+            raise forms.ValidationError(f'{label} must be between {YEAR_MIN} and {YEAR_MAX}.')
+        return str(y)
 
     def clean_date_graduated(self):
         s = (self.cleaned_data.get('date_graduated') or '').strip()
@@ -153,41 +190,104 @@ class GoodMoralRequestForm(forms.ModelForm):
         if not re.fullmatch(r'\d{4}', s):
             raise forms.ValidationError('Enter a 4-digit year for Year Graduated.')
         y = int(s)
-        cur = date.today().year
-        if y < 1979 or y > cur:
-            raise forms.ValidationError(f'Year Graduated must be between 1979 and {cur}.')
-        # store as Jan 1 of that year (fits your DateField)
-        return date(y, 1, 1)
+        if y < YEAR_MIN or y > YEAR_MAX:
+            raise forms.ValidationError(f'Year Graduated must be between {YEAR_MIN} and {YEAR_MAX}.')
+        return date(y, 1, 1)  
 
     def clean_date_admission(self):
-        s = (self.cleaned_data.get('date_admission') or '').strip()
-        if not s:
-            return ''  # your model field is CharField(null=True, blank=True)
-        if not re.fullmatch(r'\d{4}', s):
-            raise forms.ValidationError('Enter a 4-digit year for Year of Admission.')
-        y = int(s)
-        cur = date.today().year
-        if y < 1979 or y > cur:
-            raise forms.ValidationError(f'Year of Admission must be between 1979 and {cur}.')
-        # model column is CharField → store "YYYY"
-        return str(y)
+        return self._clean_year_str(self.cleaned_data.get('date_admission'), 'Year of Admission')
 
+    def clean_age(self):
+        age = self.cleaned_data.get('age')
+        if age is None or not (16 <= int(age) <= 121):
+            raise forms.ValidationError('Age must be between 16 and 121.')
+        return int(age)
+    def clean(self):
+        cleaned = super().clean()
+        purpose = (cleaned.get('purpose') or '').strip()
+        other = (cleaned.get('other_purpose') or '').strip()
+        needs_other = purpose in {'Others', 'Scholarship', 'Transfer to Another School',
+                                  'Continuing Education', 'Student Development'}
+        if needs_other and not other:
+            self.add_error('other_purpose', 'Please specify your purpose.')
+        doc_type = cleaned.get('document_type')
+        f1 = cleaned.get('uploaded_file')
+        f2 = cleaned.get('uploaded_file_2')
+
+        if not f1:
+            self.add_error('uploaded_file', 'File 1 is required.')
+
+        if doc_type in {'upload_id', 'upload_government_id'} and not f2:
+            self.add_error('uploaded_file_2', 'File 2 is required for this document type.')
+
+        return cleaned
+
+    # ---------- Save normalization ----------
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # normalize names
         for f in ['first_name','middle_name','surname','ext']:
             val = getattr(instance, f, "")
             setattr(instance, f, (val or "").strip().upper())
+        instance.address = (instance.address or '').strip()
         if commit:
             instance.save()
         return instance
     
+SEX_CHOICES_FORM = [('', '-- Select --')] + [(s, s) for s in ["Male", "Female"]]
+PH_CONTACT_RE = r"^\+63-\d{3}-\d{3}-\d{4}$"
+
 class IDSurrenderRequestForm(forms.ModelForm):
+    age = forms.IntegerField(
+        required=True,
+        min_value=16, max_value=121,
+        widget=forms.NumberInput(attrs={
+            "placeholder": "Age (16–121)",
+            "min": 16, "max": 121, "step": 1
+        })
+    )
+
+    sex = forms.ChoiceField(
+        required=True,
+        choices=SEX_CHOICES_FORM,
+        widget=forms.Select()
+    )
+
+    address = forms.CharField(
+        required=True,
+        min_length=5, max_length=255,
+        widget=forms.TextInput(attrs={
+            "placeholder": "Home address",
+            "maxlength": 255
+        })
+    )
+
+    client_type = forms.ChoiceField(
+        required=True,
+        choices=CLIENT_TYPE_CHOICES,
+        widget=forms.Select()
+    )
+
+    stakeholder = forms.ChoiceField(
+        required=True,
+        choices=STAKEHOLDER_CHOICES,
+        widget=forms.Select()
+    )
+
+    contact_number = forms.CharField(
+        required=True,
+        max_length=17,
+        widget=forms.TextInput(attrs={
+            "placeholder": "+63-912-345-6789",
+            "pattern": r"\+63-\d{3}-\d{3}-\d{4}",
+            "title": "Use +63-XXX-XXX-XXXX (e.g., +63-912-345-6789)"
+        })
+    )
+
     class Meta:
         model = IDSurrenderRequest
         exclude = ("status", "message", "submitted_at", "acknowledgement_receipt")
         labels = {
-            "document_type": "Document Type",                           # <-- add
+            "document_type": "Document Type",
             "first_name": "First Name",
             "middle_name": "Middle Name",
             "surname": "Surname",
@@ -200,11 +300,15 @@ class IDSurrenderRequestForm(forms.ModelForm):
             "upload_id_front": "Upload ID (Front) / Affidavit First Page",
             "upload_id_back": "Upload ID (Back) / Affidavit Second Page",
             "contact_email": "Email",
+            "age": "Age",
+            "sex": "Sex",
+            "address": "Address",
+            "client_type": "Client Type",
+            "stakeholder": "Stakeholder",
+            "contact_number": "Contact Number",
         }
         widgets = {
-            "document_type": forms.Select(                              # <-- add
-                choices=IDSurrenderRequest.DOCUMENT_TYPE_CHOICES
-            ),
+            "document_type": forms.Select(choices=IDSurrenderRequest.DOCUMENT_TYPE_CHOICES),
             "first_name": forms.TextInput(attrs={"maxlength": 50}),
             "middle_name": forms.TextInput(attrs={"maxlength": 50}),
             "surname": forms.TextInput(attrs={"maxlength": 50}),
@@ -213,7 +317,7 @@ class IDSurrenderRequestForm(forms.ModelForm):
             "student_number": forms.TextInput(attrs={
                 "maxlength": 23,
                 "placeholder": "TUPC-23-0123 … TUPC-23-1234567890",
-                "title": "Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 digits)",
+                "title": "Format: TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 characters)",
             }),
             "inclusive_years": forms.TextInput(attrs={
                 "placeholder": "2019-2023",
@@ -226,14 +330,18 @@ class IDSurrenderRequestForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "contact_email" in self.fields:
-            self.fields["contact_email"].required = True
-        if "document_type" in self.fields:
-            self.fields["document_type"].required = True
+        self.fields["contact_email"].required = True
+        self.fields["document_type"].required = True
+        self.fields["age"].required = True
+        self.fields["sex"].required = True
+        self.fields["address"].required = True
+        self.fields["client_type"].required = True
+        self.fields["stakeholder"].required = True
+        self.fields["contact_number"].required = True
 
     def clean_student_number(self):
         sn = (self.cleaned_data.get("student_number") or "").strip()
-        if not re.match(r"TUPC-\d{2}-[A-Za-z0-9]{4,15}$", sn):
+        if not re.match(r"^TUPC-\d{2}-[A-Za-z0-9]{4,15}$", sn):
             raise ValidationError("Use TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 characters).")
         return sn
 
@@ -242,6 +350,34 @@ class IDSurrenderRequestForm(forms.ModelForm):
         if not email:
             raise ValidationError("Email is required.")
         return email
+
+    def clean_contact_number(self):
+        contact = (self.cleaned_data.get("contact_number") or "").strip()
+        if not re.match(PH_CONTACT_RE, contact):
+            raise ValidationError("Use +63-XXX-XXX-XXXX (e.g., +63-912-345-6789).")
+        return contact
+
+    def clean(self):
+        cleaned = super().clean()
+        age = cleaned.get("age")
+        sex = cleaned.get("sex")
+        address = (cleaned.get("address") or "").strip()
+
+        if age is None:
+            self.add_error("age", "Age is required.")
+        elif not (16 <= age <= 121):
+            self.add_error("age", "Age must be between 16 and 121.")
+
+        if not sex:
+            self.add_error("sex", "Please select sex.")
+
+        if not address:
+            self.add_error("address", "Address is required.")
+        elif len(address) < 5:
+            self.add_error("address", "Address is too short (min 5 characters).")
+
+        # client_type & stakeholder are ChoiceFields and already required
+        return cleaned
     
 class CSCreateOrAdjustForm(forms.Form):
     last_name = forms.CharField(label="Last Name", max_length=50, validators=[MinLengthValidator(1)])
@@ -311,6 +447,8 @@ def load_programs_from_csv():
 
 STUDENT_RE = re.compile(r'TUPC-\d{2}-[A-Za-z0-9]{4,15}$')
 
+SEX_CHOICES_FORM = [('', '-- Select --')] + [(s, s) for s in ["Male", "Female"]]
+
 class ClearanceRequestForm(forms.ModelForm):
     hasExtension = forms.ChoiceField(
         choices=[('yes','Yes'), ('no','No')],
@@ -318,40 +456,70 @@ class ClearanceRequestForm(forms.ModelForm):
         initial='no'
     )
 
-    first_name = forms.CharField(min_length=2, max_length=50)
-    last_name  = forms.CharField(min_length=2, max_length=50)
-    middle_name = forms.CharField(required=False, min_length=1, max_length=50)  
-    extension  = forms.CharField(required=False, min_length=2, max_length=15)
-    email      = forms.EmailField()
-    contact    = forms.CharField(min_length=14, max_length=14)
-    student_number = forms.CharField(min_length=12, max_length=23)
-    program    = forms.CharField(min_length=2, max_length=100)
+    # Personal
+    first_name  = forms.CharField(min_length=2, max_length=50)
+    last_name   = forms.CharField(min_length=2, max_length=50)
+    middle_name = forms.CharField(required=False, min_length=1, max_length=50)
+    extension   = forms.CharField(required=False, min_length=2, max_length=15)
+    email       = forms.EmailField()
+    contact = forms.CharField(min_length=16, max_length=16)
+    age = forms.IntegerField(
+        required=True,
+        min_value=10, max_value=100
+    )
+    sex = forms.ChoiceField(
+        choices=SEX_CHOICES_FORM,
+        required=True
+    )
+    address = forms.CharField(          
+        required=True,
+        min_length=5,
+        max_length=255
+    )
 
-    year_level = forms.ChoiceField(choices=[('', '-- Select --')] + YEAR_LEVEL_CHOICES)
-    client_type= forms.ChoiceField(choices=[('', '-- Select --')] + CLIENT_TYPE_CHOICES)
-    stakeholder= forms.ChoiceField(choices=[('', '-- Select --')] + STAKEHOLDER_CHOICES)
-    purpose    = forms.ChoiceField(choices=[('', '-- Select Purpose --')] + PURPOSE_CHOICES)
+    # Academic
+    student_number = forms.CharField(min_length=12, max_length=23)
+    program     = forms.CharField(min_length=2, max_length=100)
+    year_level  = forms.ChoiceField(choices=[('', '-- Select --')] + YEAR_LEVEL_CHOICES)
+    client_type = forms.ChoiceField(choices=[('', '-- Select --')] + CLIENT_TYPE_CHOICES)
+    stakeholder = forms.ChoiceField(choices=[('', '-- Select --')] + STAKEHOLDER_CHOICES)
+
+    last_year_in_tupc = forms.IntegerField(
+        required=False,
+        min_value=1979 
+    )
+
+    purpose = forms.ChoiceField(choices=[('', '-- Select Purpose --')] + PURPOSE_CHOICES)
 
     class Meta:
         model = ClearanceRequest
         fields = [
-            "first_name", "middle_name", "last_name","extension","email","contact",
-            "student_number","program","year_level","client_type","stakeholder","purpose"
+            "first_name", "middle_name", "last_name", "extension", "email", "contact",
+            "age", "sex", "address",         
+            "student_number", "program", "year_level", "client_type", "stakeholder",
+            "last_year_in_tupc",
+            "purpose"
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.fields["contact"].widget.attrs.update({
-            "placeholder": "+63 XXXXXXXXXX",
-            "pattern": r"^\+63\s\d{10}$"
+            "placeholder": "+63 995-241-5114",
+            "pattern": r"^\+63\s\d{3}-\d{3}-\d{4}$",
+            "title": "Format: +63 XXX-XXX-XXXX"
         })
         self.fields["student_number"].widget.attrs.update({
-            "placeholder": "TUPC-XX-XXXXXXXX (4–10 digits)",
+            "placeholder": "TUPC-XX-XXXXXXXX (4–15 letters/digits)",
             "pattern": r"TUPC-\d{2}-[A-Za-z0-9]{4,15}$"
         })
+        self.fields["address"].widget.attrs.update({
+            "placeholder": "House/Street, Barangay, City/Municipality, Province, ZIP"
+        })
+
     def clean(self):
         cleaned = super().clean()
-        for fld in ["first_name","last_name","extension","email","student_number","program"]:
+        for fld in ["first_name","last_name","extension","email","student_number","program","address"]:
             if fld in cleaned and isinstance(cleaned[fld], str):
                 cleaned[fld] = cleaned[fld].rstrip()
         has_ext = (self.data.get("hasExtension") or "no").lower()
@@ -360,22 +528,37 @@ class ClearanceRequestForm(forms.ModelForm):
                 self.add_error("extension", "Extension is required when 'Yes' is selected.")
         else:
             cleaned["extension"] = ""
-        contact = cleaned.get("contact","")
-        if contact and not re.fullmatch(r"\+63\s\d{10}", contact):
-            self.add_error("contact", "Contact number must be exactly: +63 XXXXXXXXXX.")
+        contact = cleaned.get("contact", "")
+        if contact and not re.fullmatch(r"\+63\s\d{3}-\d{3}-\d{4}", contact):
+            self.add_error("contact", "Contact number must be exactly: +63 XXX-XXX-XXXX.")
         sn = cleaned.get("student_number","")
         if sn:
             sn = sn.upper()
             cleaned["student_number"] = sn
             if not STUDENT_RE.fullmatch(sn):
-                self.add_error("student_number",
-                               "Use TUPC-XX-XXXXXXXX (XX letters/digits; 4–15 characters at end).")
-        prog = cleaned.get("program","")
-        if not prog:
+                self.add_error(
+                    "student_number",
+                    "Use TUPC-XX-XXXXXXXX (last part 4–15 letters/digits)."
+                )
+        if not cleaned.get("program"):
             self.add_error("program", "Program is required.")
+        age = cleaned.get("age")
+        if age is None:
+            self.add_error("age", "Age is required.")
+        elif not (16 <= age <= 121):
+            self.add_error("age", "Age is required.")
+        sex = cleaned.get("sex")
+        if not sex:
+            self.add_error("sex", "Please select sex.")
+        address = cleaned.get("address")
+        if not address:
+            self.add_error("address", "Address is required.")
+        last_year = cleaned.get("last_year_in_tupc")
+        if last_year is not None and not (1979 <= last_year):
+            self.add_error("last_year_in_tupc", "Enter a year after 1979.")
 
         return cleaned
-    
+
 NNNNN = re.compile(r'^\d{2}-\d{3}$')
 
 class FacilitatorForm(forms.ModelForm):

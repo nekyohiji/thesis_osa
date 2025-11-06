@@ -452,12 +452,16 @@ def send_clearance_confirmation(obj) -> None:
         Name: {full_name}
         Email: {obj.email}
         Contact: {obj.contact}
+        Sex: {obj.sex}
+        Age: {obj.age}
+        Address: {obj.address}
         Student No.: {obj.student_number}
         Program: {obj.program}
         Year Level: {obj.year_level}
         Client Type: {obj.client_type}
         Stakeholder: {obj.stakeholder}
         Purpose: {obj.purpose}
+        Last Year in TUPC: {obj.last_year_in_tupc}
         Submitted: {submitted_local:%B %d, %Y %I:%M %p}
     """).strip()
 

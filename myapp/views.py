@@ -45,6 +45,7 @@ from reportlab.platypus import TableStyle as PlatypusTableStyle
 from reportlab.platypus import Image
 # ── Django
 from django.conf import settings
+from django.core.mail import EmailMessage
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.finders import find as find_static
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
@@ -85,6 +86,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.contrib.auth.hashers import make_password, check_password
 from django.db import IntegrityError
+from myapp.authz import can_view_superadmins
 # ── Local apps
 from .decorators import role_required, facilitator_required
 from .forms import (
@@ -96,7 +98,10 @@ from .forms import (
     ViolationForm,
     FacilitatorForm
 )
+from .libre.cs_completion import build_cs_completion_pdf
+from .libre.cs_agreement import build_cs_agreement_pdf
 from .libre.ack_receipt import build_ack_pdf
+
 from .models import (
     ACSORequirement,
     Archived_Account,
@@ -144,6 +149,17 @@ def index(request):
 def home_view(request):
     return render(request, 'myapp/client_home.html')
 
+def _get_account_or_404_visible_to(request, email: str):
+    from myapp.models import UserAccount
+    try:
+        obj = UserAccount.objects.get(email=email)
+    except UserAccount.DoesNotExist:
+        raise Http404("Not found")
+
+    if obj.role == "superadmin" and not can_view_superadmins(request):
+        # Do not leak existence
+        raise Http404("Not found")
+    return obj
 #------------------------------------------------------------------------------------------#
 
 def client_goodmoral_view(request):
@@ -185,11 +201,11 @@ def admin_insurance_view(request):
 
 #------------------------------------------------------------------------------------------#
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_old_violation_view(request):     
     return render (request, 'myapp/admin_old_violation.html')
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_add_faculty_view(request):
     open_add_modal = False
 
@@ -235,7 +251,7 @@ def admin_add_faculty_view(request):
     }
     return render(request, "myapp/admin_add_faculty.html", ctx)
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def facilitator_delete(request, pk: int):
     """
     Confirm modal posts here. Only accept POST, then redirect back to the page.
@@ -251,11 +267,11 @@ def facilitator_delete(request, pk: int):
 
 #------------------------------------------------------------------------------------------#
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_dashboard_view(request):
     return render(request, 'myapp/admin_dashboard.html')
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_dashboard_data(request):
     """
     Return monthly counts + totals as JSON.
@@ -420,7 +436,7 @@ def admin_dashboard_data(request):
         "rows": rows,
     })
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_ACSO_view(request):
     obj, _ = ACSORequirement.objects.get_or_create(id=1)
 
@@ -437,7 +453,7 @@ def admin_ACSO_view(request):
 
     return render(request, 'myapp/admin_ACSO.html', {'requirement': obj})
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_assistantship_view(request):
     obj, _ = StudentAssistantshipRequirement.objects.get_or_create(id=1)
 
@@ -460,41 +476,7 @@ def admin_assistantship_view(request):
 
     return render(request, 'myapp/admin_assistantship.html', {'requirement': obj})
 
-@role_required(['admin', 'staff'])
-def admin_community_service(request):
-    q = (request.GET.get('q') or '').strip()
-    cases = CommunityServiceCase.objects.order_by('is_closed', '-updated_at')
-    if q:
-        cases = cases.filter(
-            Q(student_id__icontains=q) |
-            Q(last_name__icontains=q) |
-            Q(first_name__icontains=q)
-        )
-
-    cs_form = CSCreateOrAdjustForm()   # for the modal
-    return render(request, 'myapp/admin_community_service.html', {
-        'cases': cases,
-        'q': q,
-        'cs_form': cs_form,
-        'show_cs_modal': False,        # only True when posting with errors
-    })
-
-@role_required(['admin', 'staff'])
-def admin_view_community_service(request, case_id):
-    case = get_object_or_404(CommunityServiceCase, id=case_id)
-    violations = (Violation.objects
-                  .filter(student_id=case.student_id)
-                  .order_by('-violation_date', '-created_at'))
-    logs = case.logs.order_by('-check_in_at')  # newest first
-    open_log = case.logs.filter(check_out_at__isnull=True).first()
-    return render(request, 'myapp/admin_view_community_service.html', {
-        'case': case,
-        'violations': violations,
-        'logs': logs,
-        'open_log': open_log,
-    })
-
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_lostandfound_view(request):
     items = LostAndFound.objects.order_by('-posted_date')
 
@@ -520,7 +502,7 @@ def admin_lostandfound_view(request):
 
     return render(request, 'myapp/admin_lostandfound.html', {'items': items})
 
-@role_required(['admin', 'staff', 'scholarship'])
+@role_required(['admin', 'staff', 'scholarship', 'superadmin'])
 def admin_scholarships_view(request):
     scholarships = Scholarship.objects.order_by('-posted_date')
 
@@ -569,12 +551,7 @@ def admin_scholarships_view(request):
         'scholarships': scholarships
     })
 
-@role_required(['admin', 'staff', 'studasst'])
-def admin_view_ackreq_view(request, pk):
-    req = get_object_or_404(IDSurrenderRequest, pk=pk)
-    return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
-
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_view_goodmoral_view(request):
     return render (request, 'myapp/admin_view_goodmoral.html')
 
@@ -612,13 +589,13 @@ def lostandfound_feed_api(request):
 
 def goodmoral_request_form(request):
     template = 'myapp/client_goodmoral.html'
-    # Clear any stray messages from previous requests
-    list(messages.get_messages(request))
+    list(messages.get_messages(request))  
 
     if request.method == 'POST':
         form = GoodMoralRequestForm(request.POST, request.FILES)
         if form.is_valid():
             obj = form.save(commit=False)
+
             needs_other = obj.purpose in ['Others', 'Scholarship', 'Transfer to Another School']
             if needs_other and not (obj.other_purpose or '').strip():
                 messages.error(request, "You must specify your purpose.", extra_tags="gm-client")
@@ -635,22 +612,16 @@ def goodmoral_request_form(request):
                     fail_silently=False,
                 )
             except Exception:
-                # Log the real error for admins, show a safe message to the client
                 logger.exception("Good Moral: send_mail failed for id=%s email=%s", obj.id, obj.requester_email)
                 messages.error(
                     request,
                     "Your request was submitted, but email notification could not be sent. We’ll follow up.",
                     extra_tags="gm-client",
                 )
-
-            return render(request, template, {'form': GoodMoralRequestForm(), 'show_modal': True})
-        else:
-            # Let your HTML show field errors; optionally add a non-field error for general problems
-            # form.add_error(None, "Please correct the errors below.")
-            return render(request, template, {'form': form})
-    else:
-        form = GoodMoralRequestForm()
-
+            messages.success(request, "Request submitted successfully.")
+            return redirect('client_home') 
+        return render(request, template, {'form': form})
+    form = GoodMoralRequestForm()
     return render(request, template, {'form': form})
 
 def id_surrender_request(request):
@@ -660,14 +631,10 @@ def id_surrender_request(request):
         form = IDSurrenderRequestForm(request.POST, request.FILES)
         if form.is_valid():
             obj = form.save(commit=False)
-
-            # If your model has submitted_by (ForeignKey to User), record it
             if hasattr(obj, "submitted_by") and request.user.is_authenticated:
                 obj.submitted_by = request.user
 
             obj.save()
-
-            # Choose best recipient: the form's contact_email, else logged-in user email
             recipient = getattr(obj, "contact_email", None)
             if not recipient and request.user.is_authenticated:
                 recipient = request.user.email
@@ -685,8 +652,6 @@ def id_surrender_request(request):
                     )
                 except Exception as e:
                     messages.error(request, f"Email error: {e}")
-
-            # Re-render with a fresh form and the success modal flag
             return render(request, template, {
                 'form': IDSurrenderRequestForm(),
                 'show_modal': True
@@ -724,7 +689,6 @@ def clearance_request_view(request):
 #########################LOGIN
 
 @never_cache
-@never_cache
 def login_view(request):
     next_url = request.GET.get("next") or request.POST.get("next") or ""
 
@@ -732,12 +696,17 @@ def login_view(request):
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
 
-        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(email_regex, email) or len(email) > 164:
+        # Email: allow-list (gmail + TUP)
+        allowlist = re.compile(
+            r"^[A-Za-z0-9._%+-]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$",
+            re.IGNORECASE,
+        )
+        if not allowlist.fullmatch(email) or len(email) > 254:
             messages.error(request, "Please enter a valid email address.", extra_tags="LOGIN")
             resp = render(request, 'myapp/login.html', {"next": next_url})
             return no_store(resp)
 
+        # Password length
         if not (8 <= len(password) <= 128):
             messages.error(request, "Password must be between 8 and 128 characters.", extra_tags="LOGIN")
             resp = render(request, 'myapp/login.html', {"next": next_url})
@@ -752,8 +721,8 @@ def login_view(request):
                         extra_tags="LOGIN")
                     ctx = {
                         "next": next_url,
-                        "force_pw_change": True,        
-                        "force_reset_email": user.email, 
+                        "force_pw_change": True,
+                        "force_reset_email": user.email,
                     }
                     resp = render(request, 'myapp/login.html', ctx)
                     return no_store(resp)
@@ -764,13 +733,14 @@ def login_view(request):
                 request.session['full_name'] = user.full_name
                 request.session['email'] = user.email
                 request.session.set_expiry(0)
+                request.session['last_touch'] = int(time.time())
 
                 if next_url and url_has_allowed_host_and_scheme(next_url, {request.get_host()}):
                     resp = redirect(next_url)
                     return no_store(resp)
 
                 role = (user.role or "").lower()
-                if role in ('admin', 'staff', 'studasst'):
+                if role in ('admin', 'staff', 'studasst', 'superadmin'):
                     resp = redirect('admin_dashboard')
                 elif role == 'guard':
                     resp = redirect('guard_violation')
@@ -782,7 +752,6 @@ def login_view(request):
                     messages.error(request, "Account role not recognized.", extra_tags="LOGIN")
                     resp = render(request, 'myapp/login.html', {"next": next_url})
                 return no_store(resp)
-
             else:
                 messages.error(request, "Incorrect password.", extra_tags="LOGIN")
         except UserAccount.DoesNotExist:
@@ -793,7 +762,7 @@ def login_view(request):
 
 def logout_view(request):
     request.session.flush()
-    resp = redirect('login')
+    resp = redirect('client_home')
     return no_store(resp)
 
 LOGIN_OTP_TTL_MINUTES = 5
@@ -911,12 +880,12 @@ def login_reset_password(request):
 
 ########################GUARD
 
-@role_required(['guard'])
+@role_required(['guard', 'superadmin'])
 def guard_violation_view(request):
     guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
     return render (request, 'myapp/guard_violation.html', {'guards': guards})
 
-@role_required(['guard'])
+@role_required(['guard', 'superadmin'])
 def guard_report_view(request):
     violations = Violation.objects.all().order_by('-violation_date')
     guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
@@ -967,7 +936,6 @@ def guard_report_view(request):
         'today': CEIL,  # for template max=...
     }
     return render(request, 'myapp/guard_report.html', context)
-
 
 def submit_violation(request):
     guards = UserAccount.objects.filter(role='guard', is_active=True).order_by('full_name')
@@ -1020,7 +988,7 @@ def submit_violation(request):
         'guards': guards,
     })
 
-@role_required(['guard'])
+@role_required(['guard', 'superadmin'])
 def generate_guard_report_pdf(request):
     # ---- Inputs (generate-only) ----
     start_date_raw = (request.GET.get('start_date') or '').strip()
@@ -1195,7 +1163,7 @@ def generate_guard_report_pdf(request):
 ########################ADMIN
 
 @csrf_exempt
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def upload_student_csv(request):
     if request.method == 'POST' and request.FILES.get('csv_file'):
         import re, unicodedata  # add these imports
@@ -1279,7 +1247,7 @@ def upload_student_csv(request):
 
     return HttpResponse("❌ Invalid request", status=400)
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_student_view(request):
     q = (request.GET.get('q') or '').strip()
 
@@ -1308,6 +1276,7 @@ def admin_student_view(request):
     })
     
 #---------Admin Manage Accounts----------------------#
+
 OTP_TTL_MINUTES = 10  
 
 def json_ok(message="ok", **extra):
@@ -1366,7 +1335,7 @@ def _throttle(email: str, purpose: str, seconds: int = 60):
         # Cache misconfigured or unavailable → fallback to DB window
         return _db_too_soon(email, seconds=seconds)
 
-@role_required(['admin'])
+@role_required(['admin', 'superadmin'])
 def admin_accounts_view(request):
     # Ensure your template path matches this
     return render(request, 'myapp/admin_accounts.html')
@@ -1374,20 +1343,24 @@ def admin_accounts_view(request):
 @require_http_methods(["GET"])
 @csrf_protect
 def get_accounts_data(request):
-    active = list(
-        UserAccount.objects.filter(is_active=True)
-        .values("full_name", "email", "role")
-    )
-    deactivated = list(
-        Archived_Account.objects.all()
-        .values("full_name", "email", "role")
-    )
+    can_see = can_view_superadmins(request)
+
+    active_qs = UserAccount.objects.filter(is_active=True)
+    deact_qs  = Archived_Account.objects.all()
+
+    if not can_see:
+        active_qs = active_qs.exclude(role="superadmin")
+        deact_qs  = deact_qs.exclude(role="superadmin")
+
+    active = list(active_qs.values("full_name", "email", "role"))
+    deactivated = list(deact_qs.values("full_name", "email", "role"))
+
     return JsonResponse({"active": active, "deactivated": deactivated}, status=200)
 
 @require_http_methods(["POST"])
 @csrf_protect
 def deactivate_account(request, user_email):
-    account = get_object_or_404(UserAccount, email=user_email)
+    account = _get_account_or_404_visible_to(request, user_email)
     try:
         with transaction.atomic():
             Archived_Account.objects.update_or_create(
@@ -1409,7 +1382,7 @@ def deactivate_account(request, user_email):
 @require_http_methods(["PATCH", "POST"])
 @csrf_protect
 def edit_account(request, user_email: str):
-    account = get_object_or_404(UserAccount, email=user_email)
+    account = _get_account_or_404_visible_to(request, user_email)
     try:
         body = safe_body(request)
     except ValueError as e:
@@ -1454,7 +1427,7 @@ def password_otp_request(request):
     if not email:
         return json_err("Email is required.", code="MISSING_FIELDS")
 
-    account = get_object_or_404(UserAccount, email=email)
+    account = _get_account_or_404_visible_to(request, email)
 
     # Throttle using cache.add with DB fallback
     should_throttle, remaining = _throttle(email, "password", seconds=60)
@@ -1542,7 +1515,7 @@ def change_password(request, email: str):
     if len(new_password) < 8:
         return json_err("Password must be at least 8 characters.", code="VALIDATION")
 
-    account = get_object_or_404(UserAccount, email=email)
+    account = _get_account_or_404_visible_to(request, email)
 
     try:
         rec = OTPVerification.objects.get(email=email)
@@ -1581,8 +1554,11 @@ def request_otp(request):
     full_name = data["fullName"].strip()
     email = data["email"].strip().lower()
     position = data["position"].strip()
-    password = data["password"]
 
+    password = data["password"]
+    if position == "superadmin" and not can_view_superadmins(request):
+        return json_err("Invalid role.", code="VALIDATION")
+    
     errors = []
     if not (3 <= len(full_name) <= 128): errors.append("Full name must be 3–128 characters.")
     if not (5 <= len(email) <= 254): errors.append("Email must be 5–254 characters.")
@@ -1696,7 +1672,7 @@ def email_change_request(request):
     if current_email == new_email:
         return json_err("New email must be different from current email.", code="SAME_EMAIL")
 
-    account = get_object_or_404(UserAccount, email=current_email)
+    account = _get_account_or_404_visible_to(request, current_email)
 
     if UserAccount.objects.filter(email=new_email).exists():
         return json_err("That email is already in use.", code="EMAIL_TAKEN", status=409)
@@ -1806,7 +1782,7 @@ def email_change_apply(request):
 
 #---------------Manage Reports--------------------#
 
-@role_required(['admin'])
+@role_required(['admin', 'superadmin'])
 def admin_report_view(request):
     from django.utils import timezone
     server_today = timezone.localdate()  # server-side date (no client clock)
@@ -1912,7 +1888,7 @@ def _date_range(qs, field_name, start_date, end_date):
     else:
         return qs
 
-@role_required(['admin'])
+@role_required(['admin', 'superadmin'])
 def admin_violation_report_pdf(request):
     start_date = request.GET.get('start_date', '').strip()
     end_date   = request.GET.get('end_date', '').strip()
@@ -1953,7 +1929,7 @@ def admin_violation_report_pdf(request):
     doc.build(elements)
     return resp
 
-@role_required(['admin'])
+@role_required(['admin', 'superadmin'])
 def admin_good_moral_report_pdf(request):
     start_date = request.GET.get('start_date', '').strip()
     end_date   = request.GET.get('end_date', '').strip()
@@ -1991,7 +1967,7 @@ def admin_good_moral_report_pdf(request):
     doc.build(elements)
     return resp
 
-@role_required(['admin'])
+@role_required(['admin', 'superadmin'])
 def admin_surrender_id_report_pdf(request):
     start_date = request.GET.get('start_date', '').strip()
     end_date   = request.GET.get('end_date', '').strip()
@@ -2027,7 +2003,7 @@ def admin_surrender_id_report_pdf(request):
     doc.build(elements)
     return resp
 
-@role_required(['admin'])
+@role_required(['admin', 'superadmin'])
 def admin_clearance_report_pdf(request):
     start_date  = request.GET.get('start_date', '').strip()
     end_date    = request.GET.get('end_date', '').strip()
@@ -2081,7 +2057,7 @@ def admin_clearance_report_pdf(request):
 
 #----------------Posting--------------------------#
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def ajax_delete_lostandfound(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(LostAndFound, id=item_id)
@@ -2089,7 +2065,7 @@ def ajax_delete_lostandfound(request, item_id):
         return JsonResponse({'success': True})
     return JsonResponse({'success': False}, status=400)
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def ajax_edit_lostandfound(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(LostAndFound, id=item_id)
@@ -2103,7 +2079,7 @@ def ajax_edit_lostandfound(request, item_id):
         return JsonResponse({'success': True, 'description': item.description, 'image_url': item.image.url if item.image else None})
     return JsonResponse({'success': False}, status=400)
 
-@role_required(['admin', 'staff', 'scholarship'])
+@role_required(['admin', 'staff', 'scholarship', 'superadmin'])
 def ajax_delete_scholarship(request, id):
     if request.method == 'POST':
         s = get_object_or_404(Scholarship, id=id)
@@ -2111,7 +2087,7 @@ def ajax_delete_scholarship(request, id):
         return JsonResponse({'success': True})
     return JsonResponse({'success': False}, status=400)
 
-@role_required(['admin', 'staff', 'scholarship'])
+@role_required(['admin', 'staff', 'scholarship', 'superadmin'])
 def ajax_edit_scholarship(request, id):
     if request.method == 'POST':
         s = get_object_or_404(Scholarship, id=id)
@@ -2133,7 +2109,7 @@ def ajax_edit_scholarship(request, id):
 
 #------------clearance-----------------------------#
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_clearance(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -2153,7 +2129,7 @@ def admin_clearance(request):
         'q': q,
     })
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_view_clearance_view(request, pk):
     obj = get_object_or_404(ClearanceRequest, pk=pk)
     return render(request, 'myapp/admin_view_clearance.html', {'obj': obj})
@@ -2164,7 +2140,7 @@ def admin_view_clearance_view(request, pk):
 
 #-----------Good Moral Page------------------#
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_goodmoral_view(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -2197,10 +2173,91 @@ def admin_goodmoral_view(request):
         }
     )
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_view_goodmoral(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
     return render(request, 'myapp/admin_view_goodmoral.html', {'r': r})
+
+def _render_gm_request_pdf_bytes(r) -> tuple[bytes, str]:
+    """Builds the filled 'Good Moral Request' PDF and returns (pdf_bytes, filename)."""
+    template_path = finders.find('myapp/form/GMC-request-template.pdf')
+    if not template_path:
+        raise Http404("Template PDF not found.")
+
+    # ---- base page ----
+    with open(template_path, 'rb') as f:
+        base_reader = PdfReader(f)
+    base_page = base_reader.pages[0]
+    llx, lly, urx, ury = map(float, base_page.mediabox)
+    width, height = urx - llx, ury - lly
+
+    # ---- overlay drawing (your same logic) ----
+    overlay_buf = BytesIO()
+    c = canvas.Canvas(overlay_buf, pagesize=(width, height))
+
+    def check(x, y):
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, y, "✓")
+
+    def text(x, y, s, bold=False, size=11, right=False):
+        font = "Helvetica-Bold" if bold else "Helvetica"
+        c.setFont(font, size)
+        (c.drawRightString if right else c.drawString)(x, y, s or "")
+
+    # top row (NO./DATE), names, sex, program/status, purpose, requester…
+    from django.utils import timezone
+    req_no = f"{r.pk:06d}"
+    text(70,  height - 135, req_no,   bold=True, size=12)
+    text(430, height - 135, timezone.localdate(r.submitted_at).strftime('%m/%d/%Y'),
+         bold=True, size=12, right=True)
+
+    surname = (r.surname or "").upper()
+    first   = (r.first_name or "").upper()
+    ext     = (r.ext or "").upper()
+    mi      = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
+    text(45, 660, surname); text(120, 660, first); text(210, 660, ext); text(240, 660, mi)
+
+    sex = (r.sex or "").lower()
+    if sex.startswith("m"): check(320, 660)
+    elif sex.startswith("f"): check(375, 660)
+
+    styles = getSampleStyleSheet(); styleN = styles["Normal"]; styleN.fontSize = 8; styleN.leading = 8
+    Paragraph(r.program or "", styleN).wrapOn(c, 280, 100); Paragraph(r.program or "", styleN).drawOn(c, 45, 610)
+
+    status = (r.status or "").lower()
+    if "alum" in status or "gradu" in status:
+        check(60, 580);  text(160, 565, r.date_graduated.strftime('%Y') if r.date_graduated else "")
+    elif "former" in status:
+        check(60, 550);  text(190, 535, r.inclusive_years or "")
+    else:
+        check(60, 520);  text(170, 505, r.date_admission or "")
+
+    purpose_raw = r.purpose or ""; purpose = purpose_raw.strip().lower(); other = (r.other_purpose or "").strip()
+    if "transfer" in purpose:                    check(330, 610);  text(360, 595, other, size=8) if other else None
+    elif "continu" in purpose:                   check(330, 583)
+    elif "employment" in purpose:                check(330, 555)
+    elif "scholar" in purpose:                   check(330, 530);  text(360, 515, other) if other else None
+    elif any(k in purpose for k in ("sit","ipt","opt","practice teaching")): check(330, 500)
+    elif any(k in purpose for k in ("student development","comselec","usg","award")): check(330, 460)
+    else:                                        check(330, 420);  text(420, 420, other or purpose_raw)
+
+    text(85, 345, r.requester_name)
+    text(415, 345, r.requester_contact)
+    text(205, 330, r.relationship)
+
+    c.showPage(); c.save()
+    overlay_buf.seek(0)
+
+    # ---- merge ----
+    overlay_reader = PdfReader(overlay_buf)
+    page = base_page
+    page.merge_page(overlay_reader.pages[0])
+    writer = PdfWriter()
+    writer.add_page(page)
+    out = BytesIO(); writer.write(out); out.seek(0)
+
+    filename = f"GMC_RequestForm_{r.student_id or r.pk}.pdf"
+    return out.read(), filename
 
 DEFAULT_APPROVAL_MSG = (
     "Your Good Moral Certificate request has been approved.\n\n"
@@ -2209,23 +2266,17 @@ DEFAULT_APPROVAL_MSG = (
     "After payment, reply to this email with a photo or copy of your receipt."
 )
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @require_POST
 def goodmoral_accept(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
-
-    # Build a human-friendly reference using the DB primary key
-    ref = f"GM-{r.pk:06d}"  # e.g., GM-000117
+    ref = f"GM-{r.pk:06d}"
 
     note = (request.POST.get('accept_message') or "").strip()
-    base_msg = DEFAULT_APPROVAL_MSG
-    final_msg = (note if note else base_msg) + f"\n\nReference ID: {ref}"
+    final_msg = (note if note else DEFAULT_APPROVAL_MSG) + f"\n\nReference ID: {ref}"
 
-    # Update status
-    r.is_approved = True
-    r.is_rejected = False
-    r.rejection_reason = ""
-    r.save(update_fields=['is_approved', 'is_rejected', 'rejection_reason'])
+    r.is_approved = True; r.is_rejected = False; r.rejection_reason = ""
+    r.save(update_fields=['is_approved','is_rejected','rejection_reason'])
 
     subject = f"[{ref}] Your Good Moral Certificate Request has been APPROVED"
     body = (
@@ -2235,26 +2286,28 @@ def goodmoral_accept(request, pk):
         f"{final_msg}\n\n"
         f"Purpose: {r.purpose}{(' - ' + r.other_purpose) if r.other_purpose else ''}\n"
         f"Submitted: {r.submitted_at:%b %d, %Y %I:%M %p}\n\n"
+        "A PDF copy of the Good Moral Request Form is attached for your records.\n\n"
         "Thank you."
     )
 
     try:
-        send_mail(
-            subject,
-            body,
-            settings.DEFAULT_FROM_EMAIL,
-            [r.requester_email],
-            fail_silently=False,
+        pdf_bytes, filename = _render_gm_request_pdf_bytes(r)
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[r.requester_email],
         )
-        messages.success(request,
-                 f"Request accepted and email sent. Ref: {ref}",
-                 extra_tags='gm-admin')
+        email.attach(filename, pdf_bytes, 'application/pdf')
+        email.send(fail_silently=False)
+
+        messages.success(request, f"Request accepted; email with PDF sent. Ref: {ref}", extra_tags='gm-admin')
     except Exception as e:
-        messages.warning(request, f"Accepted, but email failed: {e}. Ref: {ref}")
+        messages.warning(request, f"Accepted, but sending PDF failed: {e}. Ref: {ref}")
 
     return redirect('admin_view_goodmoral', pk=pk)
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @require_POST
 def goodmoral_decline(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
@@ -2286,7 +2339,7 @@ def goodmoral_decline(request, pk):
 
 TEMPLATE_PATH = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'pdf', 'GMC-request-template.pdf')
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def goodmoral_request_form_pdf(request, pk):
     from django.utils import timezone
     from io import BytesIO
@@ -2428,7 +2481,7 @@ def goodmoral_request_form_pdf(request, pk):
     out.seek(0)
     return FileResponse(out, as_attachment=False, filename=f"GMC_RequestForm_{r.student_id or r.pk}.pdf")
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @xframe_options_exempt
 def batch_view_gmrf(request):
     """
@@ -2627,7 +2680,7 @@ def batch_view_gmrf(request):
     resp["Content-Length"] = str(len(out.getvalue()))
     return resp
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @xframe_options_exempt
 def view_gmf(request, pk):
     req = get_object_or_404(GoodMoralRequest, pk=pk)
@@ -2637,7 +2690,7 @@ def view_gmf(request, pk):
     resp["Content-Length"] = str(len(pdf_bytes))
     return resp
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @xframe_options_exempt
 def batch_view_gmf(request):
     """
@@ -2689,7 +2742,7 @@ def batch_view_gmf(request):
 
 #------------Acknowledgement Receipt---------------#
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_ackreq_view(request):  
     q = (request.GET.get("q") or "").strip()
     pending_requests = IDSurrenderRequest.objects.filter(
@@ -2722,7 +2775,12 @@ def admin_ackreq_view(request):
         return render(request, "myapp/admin_ackreq.html", context)
     return render(request, "myapp/admin_ackreq.html", context)
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+def admin_view_ackreq_view(request, pk):
+    req = get_object_or_404(IDSurrenderRequest, pk=pk)
+    return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
+
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
     admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
@@ -2738,7 +2796,7 @@ def admin_ackreq_receipt_pdf(request, pk):
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @xframe_options_exempt
 def batch_view_ackreq_receipts(request):
     """
@@ -2807,7 +2865,7 @@ def batch_view_ackreq_receipts(request):
 def _is_ajax(request):
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @require_POST
 def admin_ackreq_accept(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
@@ -2851,7 +2909,7 @@ def admin_ackreq_accept(request, pk):
     messages.success(request, "Request accepted and email sent.")
     return redirect("admin_view_ackreq", pk=req.pk)
 
-@role_required(['admin', 'staff', 'studasst'])
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 @require_POST
 def admin_ackreq_decline(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
@@ -2898,7 +2956,7 @@ def admin_ackreq_decline(request, pk):
 
 #---------------violation-------------#
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_view_violation(request):
     violation_id = request.GET.get('violation_id')
     if not violation_id:
@@ -3088,7 +3146,7 @@ def admin_violation_view(request):
         "default_violation_time": default_violation_time,
     })
      
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 @transaction.atomic
 def admin_approve_violation(request, violation_id):
     v = Violation.objects.select_for_update().get(id=violation_id)              # lock this violation
@@ -3192,7 +3250,7 @@ def admin_approve_violation(request, violation_id):
 
     return redirect('admin_violation')
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 @transaction.atomic
 def admin_decline_violation(request, violation_id):
     v = Violation.objects.select_for_update().get(id=violation_id)
@@ -3233,7 +3291,7 @@ def admin_decline_violation(request, violation_id):
     messages.error(request, f"Violation for {student.first_name} {student.last_name} was lifted.")
     return redirect('admin_violation')
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
 @transaction.atomic
 def mark_apology_settled(request, violation_id):
     v = get_object_or_404(Violation, id=violation_id)
@@ -3254,7 +3312,41 @@ def mark_apology_settled(request, violation_id):
 
 #-----admin community service--------#
 
-@role_required(['admin', 'staff'])
+@role_required(['admin', 'staff', 'superadmin'])
+def admin_community_service(request):
+    q = (request.GET.get('q') or '').strip()
+    cases = CommunityServiceCase.objects.order_by('is_closed', '-updated_at')
+    if q:
+        cases = cases.filter(
+            Q(student_id__icontains=q) |
+            Q(last_name__icontains=q) |
+            Q(first_name__icontains=q)
+        )
+
+    cs_form = CSCreateOrAdjustForm()   # for the modal
+    return render(request, 'myapp/admin_community_service.html', {
+        'cases': cases,
+        'q': q,
+        'cs_form': cs_form,
+        'show_cs_modal': False,        # only True when posting with errors
+    })
+
+@role_required(['admin', 'staff', 'superadmin'])
+def admin_view_community_service(request, case_id):
+    case = get_object_or_404(CommunityServiceCase, id=case_id)
+    violations = (Violation.objects
+                  .filter(student_id=case.student_id)
+                  .order_by('-violation_date', '-created_at'))
+    logs = case.logs.order_by('-check_in_at')  # newest first
+    open_log = case.logs.filter(check_out_at__isnull=True).first()
+    return render(request, 'myapp/admin_view_community_service.html', {
+        'case': case,
+        'violations': violations,
+        'logs': logs,
+        'open_log': open_log,
+    })
+
+@role_required(['admin', 'staff', 'superadmin'])
 @transaction.atomic
 def cs_create_or_adjust(request):
     if request.method != "POST":
@@ -3427,6 +3519,57 @@ def cs_scan_time_out(request, case_id):
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
 
+@role_required(['admin', 'staff', 'superadmin'])
+def admin_cs_agreement_pdf(request, case_id):
+    case = get_object_or_404(CommunityServiceCase, id=case_id)
+
+    # Latest active admin name (do not force uppercase; template shows normal case)
+    admin_acc = (
+        UserAccount.objects
+        .filter(role='admin', is_active=True)
+        .order_by('-created_at')
+        .first()
+    )
+    osa_head_name = admin_acc.full_name if admin_acc else "Office of Student Affairs"
+
+    try:
+        pdf_path = build_cs_agreement_pdf(case, osa_head_name)
+    except Exception as e:
+        raise Http404(f"PDF generation failed: {e}")
+
+    filename = os.path.basename(pdf_path)
+    resp = FileResponse(
+        open(pdf_path, "rb"),
+        content_type=mimetypes.types_map.get(".pdf", "application/pdf"),
+    )
+    # Inline so browsers show it; front-end will open in a new tab
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
+
+@role_required(['admin', 'staff', 'superadmin'])
+def admin_cs_completion_pdf(request, case_id):
+    case = get_object_or_404(CommunityServiceCase, id=case_id)
+
+    admin_acc = (
+        UserAccount.objects
+        .filter(role='admin', is_active=True)
+        .order_by('-created_at')
+        .first()
+    )
+    osa_head_name = admin_acc.full_name if admin_acc else "Office of Student Affairs"
+
+    try:
+        pdf_path = build_cs_completion_pdf(case, osa_head_name)
+    except Exception as e:
+        raise Http404(f"PDF generation failed: {e}")
+
+    filename = os.path.basename(pdf_path)
+    resp = FileResponse(
+        open(pdf_path, "rb"),
+        content_type=mimetypes.types_map.get(".pdf", "application/pdf"),
+    )
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
 #--------------------------------------------------#
 
 #---------Facilitator Accounts---------------------#
@@ -3657,7 +3800,7 @@ def cs_case_detail_api(request, case_id):
 
 
 #---------Election Accounts---------------------#
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 def admin_election_view(request):
     return render (request, 'myapp/admin_election.html')
 
@@ -3675,7 +3818,7 @@ def _pos_rank(pos: str) -> int:
     if pos.endswith('Governor'): return 3  
     return 99
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_http_methods(["GET"])
 def get_candidates(request):
     e = _active_election()
@@ -3736,7 +3879,7 @@ def add_candidate(request):
     except Exception as ex:
         return JsonResponse({"status":"error","message": f"{ex}"}, status=500)
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def delete_candidate(request, cid):
     c = get_object_or_404(Candidate, id=cid)
@@ -3747,11 +3890,11 @@ def delete_candidate(request, cid):
 
 
 ###################################################################
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 def admin_election_results_view(request):
     return render(request, 'myapp/admin_election_results.html')
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_http_methods(["GET"])
 def api_admin_elections_list(request):
     """
@@ -3770,7 +3913,7 @@ def api_admin_elections_list(request):
         })
     return JsonResponse({"status": "success", "elections": out})
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_http_methods(["GET"])
 def api_admin_results_data(request):
     """
@@ -4021,7 +4164,7 @@ def api_admin_results_data(request):
 
 
 ###################################################################
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 def admin_election_manage_view(request):
     elections = Election.objects.order_by('-start_date')[:20]
     today = timezone.localdate()
@@ -4030,7 +4173,7 @@ def admin_election_manage_view(request):
         'now': today,  
     })
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def eligibles_upload_view(request, eid):
     election = get_object_or_404(Election, id=eid)
@@ -4141,7 +4284,7 @@ def extract_tup_id_from_qr(raw: str) -> str:
     token = normalize_tup_id(token)
     return token if token.startswith("TUP") else ""
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def api_eligible_scan(request, eid):
     election = get_object_or_404(Election, id=eid)
@@ -4199,7 +4342,7 @@ def _someone_else_active(exclude_id=None):
         qs = qs.exclude(id=exclude_id)
     return qs.exists()
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def admin_election_create(request):
     name = (request.POST.get('name') or 'Student Government Election').strip()
@@ -4236,7 +4379,7 @@ def admin_election_create(request):
     messages.success(request, f"Election {ay} created and opened today.")
     return redirect('admin_election_manage')
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def admin_election_open_now(request, eid):
     with transaction.atomic():
@@ -4257,7 +4400,7 @@ def admin_election_open_now(request, eid):
     messages.success(request, f"Election opened today for {e.academic_year}.")
     return redirect('admin_election_manage')
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def admin_election_close_now(request, eid):
     e = get_object_or_404(Election, id=eid)
@@ -4271,7 +4414,7 @@ def admin_election_close_now(request, eid):
     messages.success(request, f"Election {e.name} is already closed.")
     return redirect('admin_election_manage')
 
-@role_required(['admin', 'comselec'])
+@role_required(['admin', 'comselec', 'superadmin'])
 @require_POST
 def admin_election_finalize(request, eid):
     e = get_object_or_404(Election, id=eid)
@@ -4349,9 +4492,12 @@ def voter_required_api(view_func):
 # ---------- Pages ----------
 @never_cache
 @ensure_csrf_cookie
+@require_http_methods(["GET"])
 def client_election_view(request):
-    """Login page (org + TUPC ID)."""
-    return render(request, 'myapp/client_election.html')
+    e = _active_election()
+    if not e:  
+        return render(request, "myapp/client_election_closed.html")
+    return render(request, "myapp/client_election.html")
 
 @never_cache
 @ensure_csrf_cookie
