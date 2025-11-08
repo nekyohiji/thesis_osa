@@ -32,9 +32,7 @@ surrendering id
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services"> &larr; Return to Services</a></li>
             </ul>
         </div>
     </div>
@@ -43,9 +41,13 @@ surrendering id
 <!-- MAIN CONTAINER -->
 <div class="container mt-3 mb-3">
   
-    <h1 class="mb-3"><i class="bi bi-card-text"></i> <b>Return ID Form</b></h1>
+    <h1 class="mb-3"><i class="bi bi-card-text"></i> <b>Return of ID Form</b></h1>
     <hr>
     <h6 class="mb-3">Please fill in the required information below.</h6>
+    <h6 class="mb-3 text-danger">
+        <b>INCORRECT INFORMATION WILL RESULT IN DELAY OR NON-ISSUANCE OF THE REQUESTED DOCUMENT.</b>
+    </h6>
+
     <!-- Form -->
     <form id="surrender-form" method="post" action="{% url 'id_surrender_request' %}" enctype="multipart/form-data">
         {% csrf_token %}
