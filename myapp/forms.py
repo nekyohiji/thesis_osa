@@ -7,7 +7,7 @@ from datetime import date
 from decimal import Decimal
 from django.core.validators import MinLengthValidator
 from django.contrib.staticfiles import finders
-from .models import ClearanceRequest, YEAR_LEVEL_CHOICES, CLIENT_TYPE_CHOICES, STAKEHOLDER_CHOICES, PURPOSE_CHOICES, PH_PHONE_RE, SEX_CHOICES
+from .models import ClearanceRequest, YEAR_LEVEL_CHOICES, CLIENT_TYPE_CHOICES, STAKEHOLDER_CHOICES, PURPOSE_CHOICES, PH_PHONE_RE, SEX_CHOICES, StudentAssist, AcsoAccre
 from .models import Facilitator
 
 class ViolationForm(forms.ModelForm):
@@ -569,3 +569,80 @@ class FacilitatorForm(forms.ModelForm):
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip().lower()
         return email
+    
+PROGRAM_MAX = 18 
+ALLOWED_EMAIL_RE = re.compile(
+    r'^[^@\s]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$',
+    re.IGNORECASE
+)
+NAME_RE = re.compile(r"^(?! )(?!.* {2,})(?!.* $)[A-Za-zÑñ.'-]+(?: [A-Za-zÑñ.'-]+)*$")
+
+class _TrimMixin:
+    def _strip(self, key):
+        val = (self.cleaned_data.get(key) or "").strip()
+        self.cleaned_data[key] = val
+        return val
+
+class _BaseIntakeForm(_TrimMixin, forms.ModelForm):
+    class Meta:
+        fields = [
+            "name", "age", "sex",
+            "tupc_id", "contact", "program", "address",
+            "client_type", "stakeholder", "contact_email",
+        ]
+        widgets = {
+            "contact_email": forms.EmailInput(attrs={"placeholder": "you@example.com"}),
+        }
+        
+    def clean_contact_email(self):
+        v = (self.cleaned_data.get("contact_email") or "").strip()
+        if not ALLOWED_EMAIL_RE.match(v):
+            raise ValidationError(
+                "Email must end with @gmail.com, @gsfe.tupcavite.edu.ph, or @tup.edu.ph."
+            )
+        return v
+
+    def clean_name(self):
+        v = (self.cleaned_data.get("name") or "").strip()
+        if not (2 <= len(v) <= 100 and NAME_RE.match(v)):
+            raise ValidationError("Only letters, period (.), apostrophe ('), hyphen (-); single spaces; no trailing space.")
+        self.cleaned_data["name"] = v
+        return v
+
+    def clean_address(self):
+        return self._strip("address")
+
+    def clean_tupc_id(self):
+        v = (self.cleaned_data.get("tupc_id") or "").strip().upper()
+        self.cleaned_data["tupc_id"] = v
+        return v
+
+    def clean_program(self):
+        v = (self.cleaned_data.get("program") or "").strip()
+        if not (1 <= len(v) <= PROGRAM_MAX):
+            raise ValidationError(f"Program must be 1–{PROGRAM_MAX} characters.")
+        return v
+
+    def clean(self):
+        cleaned = super().clean()
+        stakeholder = (cleaned.get("stakeholder") or "").strip()
+        year_level  = (self.data.get("year_level") or "").strip()
+
+        if stakeholder == "TUPC Student":
+            allowed = {"1st Year","2nd Year","3rd Year","4th Year","5th Year"}
+            if year_level not in allowed:
+                raise ValidationError({"stakeholder": "Please select your year level."})
+            cleaned["stakeholder"] = f"TUPC Student - {year_level}"
+        else:
+            pass
+
+        return cleaned
+
+class StudentAssistForm(_BaseIntakeForm):
+    class Meta(_BaseIntakeForm.Meta):
+        model = StudentAssist
+
+class AcsoAccreForm(_BaseIntakeForm):
+    class Meta(_BaseIntakeForm.Meta):
+        model = AcsoAccre
+        fields = _BaseIntakeForm.Meta.fields + ["acso"]

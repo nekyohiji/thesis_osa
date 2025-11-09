@@ -27,7 +27,6 @@ STAKEHOLDER_CHOICES = [
     ("Parent/Guardian", "Parent/Guardian"),
     ("TUPC Employee", "TUPC Employee"),
 ]
-
 SEX_CHOICES = [
     ("Male", "Male"),
     ("Female", "Female"),
@@ -272,7 +271,7 @@ class GoodMoralRequest(models.Model):
         max_length=40, choices=STAKEHOLDER_CHOICES, null=True, blank=True
     )
 
-    student_id = models.CharField(max_length=23)
+    student_id = models.CharField(max_length=23, null=True, blank=True)
     program = models.CharField(max_length=100)
     status = models.CharField(max_length=20)
     date_graduated = models.DateField(null=True, blank=True)
@@ -498,11 +497,6 @@ def _q_half(x: Decimal) -> Decimal:
     return (Decimal(x) * Decimal(2)).quantize(Decimal('1')) / Decimal(2)
 
 class CommunityServiceCase(models.Model):
-    """
-    One active community service case per student.
-    total_required_hours goes up with manual assignments.
-    hours_completed never resets (remaining = total - completed).
-    """
     # Denormalized student snapshot
     last_name = models.CharField(max_length=50, default="", blank=True)
     first_name = models.CharField(max_length=50, default="", blank=True)
@@ -860,7 +854,7 @@ class ClearanceRequest(models.Model):
     )
 
     # Academic
-    student_number = models.CharField(max_length=23, validators=[STUDENT_NO_RE])
+    student_number = models.CharField(max_length=23, null=True, blank=True)
     program    = models.CharField(max_length=100)
     year_level = models.CharField(max_length=20, choices=YEAR_LEVEL_CHOICES)
     client_type= models.CharField(max_length=50, choices=CLIENT_TYPE_CHOICES)
@@ -1006,3 +1000,76 @@ class Candidate(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.position} - {self.academic_year}"
+
+CLIENT_TYPE_CHOICES_STUDAS_ACSO = [
+    ("Citizen", "Citizen"),
+    ("Business", "Business"),
+    ("Government (Employee/Agency)", "Government (Employee/Agency)"),
+]
+
+class StudentAssist(models.Model):
+    name = models.CharField(max_length=150)
+    age = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(16), MaxValueValidator(121)]
+    )
+    sex = models.CharField(max_length=20, choices=SEX_CHOICES)
+
+    tupc_id = models.CharField(
+        max_length=23,
+        validators=[STUDENT_NO_RE]
+    )
+    contact = models.CharField(max_length=20, validators=[PH_PHONE_RE])
+    contact_email = models.EmailField(default='')
+    program = models.CharField(max_length=100)
+    address = models.TextField()
+    client_type = models.CharField(max_length=40, choices=CLIENT_TYPE_CHOICES)
+    stakeholder = models.CharField(max_length=40)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "student_assist"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["tupc_id"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["client_type"]),
+            models.Index(fields=["stakeholder"]),
+            models.Index(fields=["contact_email"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} | {self.tupc_id}"
+
+class AcsoAccre(models.Model):
+    name = models.CharField(max_length=150)
+    age = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(16), MaxValueValidator(121)]
+    )
+    sex = models.CharField(max_length=20, choices=SEX_CHOICES)
+
+    tupc_id = models.CharField(
+        max_length=23,
+        validators=[STUDENT_NO_RE]
+    )
+    contact = models.CharField(max_length=20, validators=[PH_PHONE_RE])
+    contact_email = models.EmailField(default='')
+    program = models.CharField(max_length=100)
+    address = models.TextField()
+    client_type = models.CharField(max_length=40, choices=CLIENT_TYPE_CHOICES)
+    stakeholder = models.CharField(max_length=40)
+    created_at = models.DateTimeField(auto_now_add=True)
+    acso = models.CharField(max_length=100, default="")
+
+    class Meta:
+        db_table = "acso_accre"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["tupc_id"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["client_type"]),
+            models.Index(fields=["stakeholder"]),
+            models.Index(fields=["contact_email"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} | {self.tupc_id}"

@@ -18,13 +18,9 @@
 
   <!-- Top Navigation -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="{% url 'admin_clearance' %}" class="btn text-light">
+    <a href="{% url 'admin_assistantship_logs' %}" class="btn text-light">
       <i class="bi bi-arrow-left text-light"></i> Back
     </a>
-
-    <span class="badge text-bg-light">
-      Submitted: {{ obj.created_at|date:"M d, Y h:i A" }}
-    </span>
   </div>
 
   <!-- Form Container -->
@@ -49,7 +45,7 @@
           <div class="col-md-6 mb-3">
             <label class="form-label fw-semibold" for="first_name">Full Name:</label>
             <input type="text" class="form-control" id="first_name" name="first_name"
-                   value="{{ obj.first_name }}" readonly>
+                   value="{{ obj.name }}" readonly>
           </div>
 
           <div class="col-md-3 mb-3">
@@ -60,17 +56,14 @@
 
           <div class="col-md-3 mb-3">
             <label class="form-label fw-semibold" for="sex">Sex:</label>
-            <select class="form-select" id="sex" name="sex" disabled>
-              <option value="">-- Select --</option>
-              <option >Male</option>
-              <option >Female</option>
-            </select>
+            <input type="text" class="form-control" id="sex" name="sex"
+                   value="{{ obj.sex }}" readonly>
           </div>
 
           <div class="col-md-6 mb-3">
             <label class="form-label fw-semibold" for="id">ID:</label>
             <input type="text" class="form-control" id="id" name="id"
-                   value="{{ obj.student_id }}" readonly>
+                   value="{{ obj.tupc_id }}" readonly>
           </div>
 
           <div class="col-md-6 mb-3">
@@ -80,9 +73,15 @@
           </div>
 
           <div class="col-md-6 mb-3">
-            <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
-            <input type="text" class="form-control" id="contact_surrender" name="contact"
+            <label class="form-label fw-semibold" for="contact">Contact No.:</label>
+            <input type="text" class="form-control" id="contact" name="contact"
                    value="{{ obj.contact }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="contact_email">Email.:</label>
+            <input type="text" class="form-control" id="contact_email" name="contact"
+                   value="{{ obj.contact_email}}" readonly>
           </div>
 
           <div class="col-md-6 mb-3">
@@ -103,95 +102,23 @@
 
           <!-- Client Type Checkboxes -->
           <div class="col-md-12 mb-3">
-            <label class="form-label fw-semibold">Client Type:</label><br>
-            <div class="d-flex flex-wrap gap-3">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="citizen" name="client_type[]" 
-                       value="Citizen" {% if 'Citizen' in obj.client_type %}checked{% endif %} disabled>
-                <label class="form-check-label" for="citizen">Citizen</label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="business" name="client_type[]" 
-                       value="Business" {% if 'Business' in obj.client_type %}checked{% endif %} disabled>
-                <label class="form-check-label" for="business">Business</label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="government" name="client_type[]" 
-                       value="Government" {% if 'Government' in obj.client_type %}checked{% endif %} disabled>
-                <label class="form-check-label" for="government">Government (Employee or another agency)</label>
-              </div>
+            <label class="form-label fw-semibold"> Client Type:</label>
+            <input type="text" class="form-control" id="client_type" name="client_type"
+                   value="{{ obj.client_type }}" readonly>
             </div>
           </div>
 
           <!-- Client Category -->
           <div class="col-md-12 mb-3">
-            <label class="form-label fw-semibold">Are you a/an <span class="fst-italic">(Ikaw ba ay isang?):</span></label>
-            <div class="row mt-2 gy-2">
-
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="tupc_student" name="client_category[]" 
-                         value="TUPC Student" {% if 'TUPC Student' in obj.client_category %}checked{% endif %} disabled>
-                  <label class="form-check-label" for="tupc_student">
-                    TUPC Student — Year level
-                  </label>
-                  <input type="text" class="form-control mt-1" id="year_level" name="year_level" 
-                         value="{{ obj.year_level }}" readonly>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="external_client" name="client_category[]" 
-                         value="External Client" {% if 'External Client' in obj.client_category %}checked{% endif %} disabled>
-                  <label class="form-check-label" for="external_client">External client</label>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="alumnus" name="client_category[]" 
-                         value="Alumnus" {% if 'Alumnus' in obj.client_category %}checked{% endif %} disabled>
-                  <label class="form-check-label" for="alumnus">Alumnus</label>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="parent_guardian" name="client_category[]" 
-                         value="Parent/Guardian" {% if 'Parent/Guardian' in obj.client_category %}checked{% endif %} disabled>
-                  <label class="form-check-label" for="parent_guardian">Parent/Guardian</label>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="student_other" name="client_category[]" 
-                         value="Student from other school" {% if 'Student from other school' in obj.client_category %}checked{% endif %} disabled>
-                  <label class="form-check-label" for="student_other">Student from other school</label>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="tupc_employee" name="client_category[]" 
-                         value="TUPC Employee" {% if 'TUPC Employee' in obj.client_category %}checked{% endif %} disabled>
-                  <label class="form-check-label" for="tupc_employee">TUPC Employee</label>
-                </div>
-              </div>
-
+            <label class="form-label fw-semibold"> Client Type:</label>
+            <input type="text" class="form-control" id="client_type" name="client_type"
+                   value="{{ obj.stakeholder }}" readonly>
             </div>
           </div>
-
         </div>
       </div>
-
     </div> <!-- End row -->
-
   </div> <!-- End form container -->
-
 </div> <!-- End container-fluid -->
 
 <!-- Bootstrap JS -->

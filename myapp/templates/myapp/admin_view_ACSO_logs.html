@@ -1,752 +1,137 @@
 {% load static %}
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-  <title>OSA - ACSO Accreditation</title>
+  <meta charset="UTF-8">
+  <title>Student Assistantship Form Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Bootstrap CSS + Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
-
-  <!-- Fonts + FA (optional) -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-  <!-- Your CSS -->
-  <link rel="stylesheet" href="{% static 'myapp/css/client_CS.css' %}">
-
-  <style>
-    .form-section {
-      border: 1px solid #800000; border-radius: 6px; padding: 20px; margin-bottom: 20px; background-color: #fff;
-    }
-    .form-section h5 { font-weight: bold; margin-bottom: 15px; }
-    .form-control:focus, .form-select:focus {
-      border-color: #5e0000; box-shadow: 0 0 4px rgba(94,0,0,.4); outline: none;
-    }
-    .btn-submit { background-color: #440207; color:#fff; transition: .2s; }
-    .btn-submit:hover { background-color: #5e0000; color:#fff; font-weight: 600; }
-    .hint { font-size: .85rem; color:#6c757d; }
-    .status-wrap { position: relative; }
-    .status-icon {
-      position: absolute; right: .65rem; top: 50%; transform: translateY(-50%);
-      font-size: 1.05rem; pointer-events: none;
-    }
-    .status-wrap .form-control, .status-wrap .form-select { padding-right: 2rem; }
-  </style>
+  <!-- Bootstrap CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'myapp/css/admin_view_clearance.css' %}">
 </head>
-<body class="bg-light">
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
-  <div class="container-fluid">
-    <a id="TUPC" class="navbar-brand" href="{% url 'client_home' %}">
-      <img src="{% static 'myapp/images/logo.png' %}" alt="TUP Logo" class="img-fluid me-2">
-      <span class="d-none d-sm-inline"><b>Technological University of the Philippines - Cavite</b></span>
-      <span class="d-inline d-sm-none"><b>TUPC</b></span>
+<body style="background: linear-gradient(to bottom right, #000000, #440207, #440207, #000000);">
+
+<div class="container-fluid py-4">
+
+  <!-- Top Navigation -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'admin_ACSO_logs' %}" class="btn text-light">
+      <i class="bi bi-arrow-left text-light"></i> Back
     </a>
-
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#about">About</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'client_home' %}#services">Services</a></li>
-      </ul>
-    </div>
   </div>
-</nav>
 
-<div class="container mt-5 mb-5 pt-5">
+  <!-- Form Container -->
+  <div class="shadow p-4 rounded" style="max-width: 95%; margin: auto; background: #f0f0f0ff;">
 
-  <!-- Header -->
-  <div class="mb-4">
-    <h1 class="mb-3">
-      <i class="fas fa-file-signature me-2"></i>
-      <b> ACSO Accreditation Form</b>
-    </h1>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h3 class="text-dark fw-bold mb-0">
+        <i class="bi bi-file-check"></i> ACSO Accreditation Logs
+      </h3>
+    </div>
     <hr>
-    <h6 class="text-muted">Please fill in the required information below to request clearance.</h6>
-    <h6 class="text-muted">INCORRECT INFORMATION WILL RESULT IN DELAY OR NON-ISSUANCE OF THE REQUESTED DOCUMENT.</h6>
-  </div>
 
-  <!-- Top alert -->
-  <div id="formAlert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
-    <strong>Some fields need attention.</strong> Look for red ❌ icons and messages beside the fields.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
+    <div class="row g-4">
 
-  <!-- FORM -->
-  <form id="clearanceForm" method="post" action="{% url 'clearance_request' %}" novalidate>
-    {% csrf_token %}
+      <!-- Personal Information Card -->
+      <div class="card mb-4 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-person-fill"></i> Personal Information
+        </div>
+        <div class="card-body row g-3">
 
-    <!-- Personal -->
-    <div class="form-section">
-      <div class="card-body">
-        <h5 class="fw-bold mb-3"><i class="bi bi-person-fill"></i> Personal Information</h5><hr>
-
-        <div class="row">
-          <div class="col-md mb-3">
+          <div class="col-md-6 mb-3">
             <label class="form-label fw-semibold" for="first_name">Full Name:</label>
-            <div class="status-wrap">
-              <input type="text" class="form-control" id="first_name" name="first_name"
-                     placeholder="Enter First Name" minlength="2" maxlength="50" required
-                       inputmode="text" title="Letters from any language with spaces and internal hyphen/apostrophe. No digits or symbols." 
-                        oninput="{
-                          let v = this.value.normalize('NFC')
-                            .replace(/[\p{Zs}]+/gu, ' ')                       /* any Unicode space → ASCII space */
-                            .replace(/[^\p{L}\p{M} \-'\u2010\u2019]/gu, '')     /* keep letters/marks/space/-/'/’ */
-                            .replace(/([\-'\u2010\u2019])\1+/gu, '$1')          /* collapse --- or '' */
-                            .replace(/^[ \-'\u2010\u2019]+/u, '');              /* trim LEFT only while typing */
-                          if (v !== this.value) {
-                            const p = this.selectionStart; this.value = v; this.setSelectionRange(p, p);
-                          }
-                        }"
-                        onblur="{
-                          this.value = this.value
-                            .replace(/^[ \-'\u2010\u2019]+|[ \-'\u2010\u2019]+$/gu, ''); /* full trim on blur */
-                        }">
-              <i id="first_name_status" class="status-icon bi d-none"></i>
-            </div>
-            <div class="valid-feedback">Looks good.</div>
-            <div class="invalid-feedback">First name is required (2–50 characters).</div>
+            <input type="text" class="form-control" id="first_name" name="first_name"
+                   value="{{ obj.name }}" readonly>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label fw-semibold" for="age">Age:</label>
+            <input type="number" class="form-control" id="age" name="age"
+                   value="{{ obj.age }}" readonly>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label class="form-label fw-semibold" for="sex">Sex:</label>
+            <input type="text" class="form-control" id="sex" name="sex"
+                   value="{{ obj.sex }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="id">ID:</label>
+            <input type="text" class="form-control" id="id" name="id"
+                   value="{{ obj.tupc_id }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="program">Program:</label>
+            <input type="text" class="form-control" id="program" name="program"
+                   value="{{ obj.program }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="contact">Contact No.:</label>
+            <input type="text" class="form-control" id="contact" name="contact"
+                   value="{{ obj.contact }}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="contact_email">Email.:</label>
+            <input type="text" class="form-control" id="contact_email" name="contact"
+                   value="{{ obj.contact_email}}" readonly>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="address">Address:</label>
+            <input type="text" class="form-control" id="address" name="address"
+                   value="{{ obj.address }}" readonly>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold" for="acso">Student Organization:</label>
+            <input type="text" class="form-control" id="acso" name="acso"
+                   value="{{ obj.acso }}" readonly>
           </div>
         </div>
+      </div>
 
+      <!-- Client Type Card -->
+      <div class="card mb-4 p-3 border-dark">
+        <div class="card-header bg-white text-dark fw-bold">
+          <i class="bi bi-mortarboard-fill"></i> Client Type
+        </div>
+        <div class="card-body row g-3">
 
-        <div class="row">
-            <div class="col-md mb-3">
-              <label class="form-label fw-semibold" for="age">Age:</label>
-              <div class="status-wrap">
-                <input type="number" class="form-control" id="age" name="age"
-                      placeholder="e.g., 21"
-                      min="16" max="120" step="1" required>
-                <i id="age_status" class="status-icon bi d-none"></i>
-              </div>
-              <div class="hint mt-1">Required. Allowed: 16–120.</div>
-              <div class="invalid-feedback">Age must be 16–120.</div>
+          <!-- Client Type Checkboxes -->
+          <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold"> Client Type:</label>
+            <input type="text" class="form-control" id="client_type" name="client_type"
+                   value="{{ obj.client_type }}" readonly>
             </div>
+          </div>
 
-            <div class="col-md mb-3">
-              <label class="form-label fw-semibold" for="sex">Sex:</label>
-              <div class="status-wrap">
-                <select class="form-select" id="sex" name="sex" required>
-                  <option value="" selected>-- Select --</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                </select>
-                <i id="sex_status" class="status-icon bi d-none"></i>
-              </div>
+          <!-- Client Category -->
+          <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold"> Client Type:</label>
+            <input type="text" class="form-control" id="client_type" name="client_type"
+                   value="{{ obj.stakeholder }}" readonly>
             </div>
           </div>
         </div>
-
-        <!-- ID & Program -->
-        <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold" for="id">ID:</label>
-                <div class="status-wrap">
-                <input type="text" class="form-control" id="id" name="id"
-                        placeholder="TUPC-XX-XXXXXXXX" required>
-                <i id="id_status" class="status-icon bi d-none"></i>
-                </div>
-            </div>
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold" for="program">Program:</label>
-                <div class="status-wrap">
-                <input type="text" class="form-control" id="program" name="program"
-                        placeholder="Enter your Program" required>
-                <i id="program_status" class="status-icon bi d-none"></i>
-                </div>
-            </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-            <!-- Contact -->
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold" for="contact_surrender">Contact No.:</label>
-                <div class="status-wrap">
-                <input type="text" class="form-control" id="contact_surrender" name="contact"
-                        value="+63 " placeholder="+63 995-241-5114"
-                        minlength="16" maxlength="16"
-                        pattern="^\+63\s\d{3}-\d{3}-\d{4}$"
-                        title="Format: +63 XXX-XXX-XXXX"
-                        autocomplete="off" required>
-                <i id="contact_surrender_status" class="status-icon bi d-none"></i>
-                </div>
-                <div class="valid-feedback">Format OK.</div>
-                <div class="invalid-feedback">Use +63 XXX-XXX-XXXX.</div>
-            </div>
-
-            <!-- Address -->
-            <div class="col-12 col-md-6">
-                <label class="form-label fw-semibold" for="address">Address:</label>
-                <div class="status-wrap">
-                <input type="text" class="form-control" id="address" name="address"
-                        placeholder="House/Street, Barangay, City/Municipality, Province, ZIP"
-                        minlength="5" maxlength="255" required>
-                <i id="address_status" class="status-icon bi d-none"></i>
-                </div>
-                <div class="invalid-feedback">Please enter your full address (min 5 characters).</div>
-            
-        
-
-            </div>
-        </div>  
-    </div>
-
-    <!-- CLIENT TYPE SECTION -->
-    <div class="form-section mt-4">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3"><i class="bi bi-person-fill"></i> Client Type</h5><hr>
-
-            <!-- Client Type Row -->
-            <div class="row mb-3">
-            <div class="col-md-12">
-                <label class="form-label fw-semibold">Client Type:</label>
-                <div class="d-flex flex-wrap gap-3">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="citizen" name="client_type[]" value="Citizen">
-                    <label class="form-check-label" for="citizen">Citizen</label>
-                </div>
-
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="business" name="client_type[]" value="Business">
-                    <label class="form-check-label" for="business">Business</label>
-                </div>
-
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="government" name="client_type[]" value="Government">
-                    <label class="form-check-label" for="government">Government (Employee or another agency)</label>
-                </div>
-                </div>
-            </div>
-            </div>
-
-            <!-- Are you a/an Section -->
-            <div class="row">
-            <div class="col-md-12">
-                <label class="form-label fw-semibold">
-                Are you a/an <span class="fst-italic">(Ikaw ba ay isang?):</span>
-                </label>
-
-                <div class="row mt-2 gy-2">
-                <div class="col-md-6">
-                    <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="tupc_student" name="client_category[]" value="TUPC Student">
-                    <label class="form-check-label" for="tupc_student">
-                        TUPC Student (Estudyante) — Year level (antas ng taon)
-                    </label>
-                    <input type="text" class="form-control mt-1" id="year_level" name="year_level" placeholder="Enter Year Level">
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="external_client" name="client_category[]" value="External Client">
-                    <label class="form-check-label" for="external_client">External client (Panlabas na kliyente)</label>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="alumnus" name="client_category[]" value="Alumnus">
-                    <label class="form-check-label" for="alumnus">Alumnus (Nagtapos sa TUPC)</label>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="parent_guardian" name="client_category[]" value="Parent/Guardian">
-                    <label class="form-check-label" for="parent_guardian">Parent/Guardian (Magulang/Tagapag-alaga)</label>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="student_other" name="client_category[]" value="Student from other school">
-                    <label class="form-check-label" for="student_other">
-                        Student from other school (Estudyante mula sa ibang paaralan)
-                    </label>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="tupc_employee" name="client_category[]" value="TUPC Employee">
-                    <label class="form-check-label" for="tupc_employee">TUPC Employee (Empleyado ng TUPC)</label>
-                    </div>
-                </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-  </div>
-
-    <!-- Submit -->
-    <div class="d-flex justify-content-end mt-4">
-      <button type="button"
-              id="openConfirmModal"
-              class="btn btn-submit d-flex align-items-center px-4"
-              data-bs-toggle="modal" data-bs-target="#confirmSubmitModal"
-              disabled>
-        <i class="bi bi-send-fill me-2"></i> Submit Request
-      </button>
-    </div>
-  </form>
-</div>
-
-<!-- Confirm Modal -->
-<div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5></div>
-      <div class="modal-body text-center">
-        Are you sure you want to submit this request?<br>Double-check your details before proceeding.
       </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" form="clearanceForm" class="btn text-light" style="background-color:#440207;" id="confirmSubmitBtn">Submit</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Redirect Modal -->
-<div class="modal fade" id="redirectModal" tabindex="-1" aria-labelledby="redirectModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow">
-      <div class="modal-header"><h5 class="modal-title" id="redirectModalLabel">Submitting…</h5></div>
-      <div class="modal-body">
-        Your request is being submitted. You’ll be redirected to Home in
-        <strong><span id="countModal">5</span></strong> seconds.
-        <div class="small text-muted mt-2">Please don’t close this tab.</div>
-        <div id="submitError" class="alert alert-danger d-none mt-3" role="alert">Submission failed. Please try again later.</div>
-      </div>
-      <div class="modal-footer"><a href="{% url 'client_home' %}" class="btn btn-primary" id="goNowBtn">Go Now</a></div>
-    </div>
-  </div>
-</div>
+    </div> <!-- End row -->
+  </div> <!-- End form container -->
+</div> <!-- End container-fluid -->
 
 <!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  const RE_PHONE_HYPHEN = /^\+63\s\d{3}-\d{3}-\d{4}$/;
-  const RE_PHONE_PLAIN  = /^\+63\s\d{10}$/;
-
-  function digitsOnly(s){ return (s||"").replace(/\D+/g,""); }
-
-  function formatPhMobileHyphenated(raw){
-    const d = digitsOnly(raw);
-    const rest = d.startsWith("63") ? d.slice(2) : d;
-    const ten  = rest.slice(0,10);
-    if (!ten) return "+63 ";
-    const a = ten.slice(0,3), b = ten.slice(3,6), c = ten.slice(6,10);
-    return +63 ${a}${b?'-'+b:''}${c?'-'+c:''};
-  }
-  // ===== Utilities =====
-  function rtrimInput(el) {
-   el.value = el.value
-     .replace(/\p{Zs}+/gu, ' ')     
-     .replace(/^\s+|\s+$/g, '');    
-  }
-  function setClasses(el, valid) {
-    el.classList.toggle('is-valid',  valid);
-    el.classList.toggle('is-invalid', !valid);
-  }
-  function setStatusIcon(el, valid) {
-    const icon = document.getElementById(el.id + '_status');
-    if (!icon) return;
-    icon.classList.remove('d-none','bi-check-circle-fill','bi-x-circle-fill','text-success','text-danger');
-    if (valid) { icon.classList.add('bi-check-circle-fill','text-success'); }
-    else       { icon.classList.add('bi-x-circle-fill','text-danger'); }
-  }
-  function mark(el, valid) { setClasses(el, valid); setStatusIcon(el, valid); return valid; }
-  function isSelect(el){ return el && el.tagName === 'SELECT'; }
-
-  // ===== Elements =====
-  const form       = document.getElementById("clearanceForm");
-  const openBtn    = document.getElementById("openConfirmModal");
-  const confirmBtn = document.getElementById("confirmSubmitBtn");
-  const formAlert  = document.getElementById("formAlert");
-
-  const extYes = document.getElementById("extYes");
-  const extNo  = document.getElementById("extNo");
-  const extWrap= document.getElementById("extensionField");
-  const extInp = document.getElementById("extension");
-
-  const phone   = document.getElementById("contact_surrender");
-  const student = document.getElementById("student_number");
-  const program = document.getElementById("program");
-  const ageEl  = document.getElementById("age");
-  const sexEl  = document.getElementById("sex");
-  const lyEl   = document.getElementById("last_year_in_tupc");
-  
-
-  const trimIds   = ["first_name","last_name","extension","email_surrender","student_number","address"];
-  const baseIds   = ["first_name","last_name","email_surrender","contact_surrender","student_number","age","address","last_year_in_tupc"];
-  const selectIds = ["program","year_level","client_type","stakeholder","purpose","sex"];
-  
-
-  // ===== CSV Programs (now with "Other") =====
-  (async function loadPrograms() {
-    try {
-      const resp = await fetch("{% static 'myapp/data/programs.csv' %}", {cache:'no-store'});
-      if (!resp.ok) return;
-      const text = await resp.text();
-      const lines = text.split(/\r?\n/).map(l => l.replace(/\s+$/,'')).filter(Boolean);
-      for (const line of lines) {
-        if (!line) continue;
-        if (line.toLowerCase() === 'program') continue;
-        const opt = document.createElement('option');
-        opt.value = line; opt.textContent = line;
-        program.appendChild(opt);
-      }
-      const otherOpt = document.createElement('option');
-      otherOpt.value = '_OTHER_';
-      otherOpt.textContent = 'Other';
-      program.appendChild(otherOpt);
-
-      initProgramOther();
-      validateField(program);
-      validateForm();
-    } catch(e) {
-      console.warn('Failed to load programs:', e);
-    }
-  })();
-
-  // ===== Add a typable "Other" input without changing field IDs/names =====
-  let programOtherInput = null;
-  function initProgramOther() {
-    if (!program) return;
-    const wrap = program.closest('.status-wrap') || program.parentElement;
-    programOtherInput = document.createElement('input');
-    programOtherInput.type = 'text';
-    programOtherInput.id = 'program_other';
-    programOtherInput.className = 'form-control mt-2 d-none';
-    programOtherInput.placeholder = 'Type your program';
-    programOtherInput.setAttribute('minlength', '2');
-    programOtherInput.setAttribute('maxlength', '100');
-    wrap.insertAdjacentElement('afterend', programOtherInput);
-    program.addEventListener('change', handleProgramChange);
-    programOtherInput.addEventListener('input', () => { validateProgramOther(); validateForm(); });
-    programOtherInput.addEventListener('blur',  () => { validateProgramOther(); validateForm(); });
-    handleProgramChange();
-  }
-
-  function handleProgramChange() {
-    if (!programOtherInput) return;
-    if (program.value === '_OTHER_') {
-      programOtherInput.classList.remove('d-none');
-      programOtherInput.required = true;
-      programOtherInput.focus();
-      validateProgramOther();
-      setClasses(program, validateProgramOther());
-    } else {
-      programOtherInput.required = false;
-      programOtherInput.value = '';
-      programOtherInput.classList.add('d-none');
-      setClasses(programOtherInput, true);
-      setClasses(program, !!program.value);
-    }
-  }
-
-  function validateProgramOther() {
-    if (!programOtherInput) return true;
-    if (program.value !== '_OTHER_') return true;
-    programOtherInput.value = programOtherInput.value.replace(/\s+$/, '');
-    const len = programOtherInput.value.length;
-    const ok = len >= 2 && len <= 100;
-    setClasses(programOtherInput, ok);
-    return ok;
-  }
-
-  // ===== Extension toggle =====
-  function refreshExtension() {
-    if (extYes.checked) {
-      extWrap.classList.remove("d-none");
-      extInp.required = true;
-    } else {
-      extWrap.classList.add("d-none");
-      extInp.required = false;
-      extInp.value = "";
-      extInp.setCustomValidity("");
-      setClasses(extInp, true);
-      const ic = document.getElementById('extension_status');
-      if (ic) ic.classList.add('d-none');
-    }
-    validateForm();
-  }
-  extYes.addEventListener("change", refreshExtension);
-  extNo .addEventListener("change", refreshExtension);
-
-  // ===== Field validators =====
-  function validateField(el) {
-    if (!el) return true;
-    const isTyping = el === document.activeElement;
-    if (!isTyping && (el.type === 'text' || el.type === 'email') && el !== phone) {
-      rtrimInput(el);
-     }
-    if (el === phone) {
-      const ok = RE_PHONE_HYPHEN.test(el.value);
-      el.setCustomValidity(ok ? "" : "Use +63 XXX-XXX-XXXX.");
-      return mark(el, ok);
-    }
-
-    if (el === student) {
-      el.value = el.value.toUpperCase();
-      const ok = el.checkValidity();
-      return mark(el, ok);
-    }
-
-    if (el && el.id === "sex") {
-      const ok = !!el.value;   
-      el.setCustomValidity(ok ? "" : "Please select sex.");
-      return mark(el, ok);
-    }
-
-    if (el.id === "last_year_in_tupc") {
-      const v = el.value.trim();
-      const MIN_YEAR = 1979;
-      const CURRENT_YEAR = new Date().getFullYear();
-
-      // required
-      if (!v) {
-        el.setCustomValidity("Please enter a year.");
-        return mark(el, false);
-      }
-
-      const n = Number(v);
-      const ok = Number.isInteger(n) && n >= MIN_YEAR && n <= CURRENT_YEAR;
-      el.setCustomValidity(ok ? "" : Enter a valid year (${MIN_YEAR}–${CURRENT_YEAR}).);
-      return mark(el, ok);
-    }
-
-    if (el.id === "age") {
-      const v = el.value.trim();
-      const n = Number(v);
-      const ok = v !== "" && Number.isInteger(n) && n >= 16 && n <= 120;
-      el.setCustomValidity(ok ? "" : "Out of allowed range.");
-      return mark(el, ok);
-    }
-
-    if (el.id === "address") {
-      rtrimInput(el);
-      const len = el.value.length;
-      const ok = len >= 5 && len <= 255;
-      el.setCustomValidity(ok ? "" : "Address must be 5–255 characters.");
-      return mark(el, ok);
-    }
-    if (el === program) {
-      const ok = (program.value === '_OTHER_') ? validateProgramOther() : !!program.value;
-      return mark(program, ok);
-    }
-
-    if (el === extInp) {
-      const ok = extYes.checked ? el.checkValidity() : true;
-      return mark(el, ok);
-    }
-
-    if (isSelect(el)) {
-      const ok = !!el.value;
-      return mark(el, ok);
-    }
-
-    const ok = el.checkValidity();
-    return mark(el, ok);
-  }
-
-  function validateForm() {
-    let ok = true;
-    for (const id of baseIds) {
-      const el = document.getElementById(id);
-      if (el) ok = validateField(el) && ok;
-    }
-    ok = validateField(program) && ok;
-    ok = validateField(extInp) && ok;
-
-  for (const id of selectIds) {
-    const el = document.getElementById(id);
-    if (el) ok = validateField(el) && ok;
-  }
-    ok = form.checkValidity() && ok;
-    openBtn.disabled = !ok;
-    if (ok) formAlert.classList.add('d-none');
-    return ok;
-  }
-
-  // Live listeners
-  trimIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("input", () => { validateField(el); validateForm(); });
-    el.addEventListener("blur",  () => { validateField(el); validateForm(); });
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload();
   });
-  if (lyEl) {
-    lyEl.addEventListener("input", () => { validateField(lyEl); validateForm(); });
-    lyEl.addEventListener("blur",  () => { validateField(lyEl); validateForm(); });
-  }
-  if (phone) {
-  // initialize pretty mask
-  if (!phone.value.trim() || phone.value.trim() === "+63") phone.value = "+63 ";
-
-  const validateContact = () => {
-    const ok = RE_PHONE_HYPHEN.test(phone.value);
-    phone.setCustomValidity(ok ? "" : "Invalid");
-    validateField(phone);
-    validateForm();
-  };
-
-  phone.addEventListener("input", () => {
-    phone.value = formatPhMobileHyphenated(phone.value);
-    phone.selectionStart = phone.selectionEnd = phone.value.length;
-    validateContact();
-  });
-
-  phone.addEventListener("blur", () => {
-    phone.value = formatPhMobileHyphenated(phone.value);
-    validateContact();
-  });
-
-  phone.addEventListener("focus", () => {
-    if (!phone.value.startsWith("+63")) phone.value = "+63 ";
-    setTimeout(() => phone.setSelectionRange(phone.value.length, phone.value.length), 0);
-  });
-}
-  student.addEventListener("input", () => { validateField(student); validateForm(); });
-  student.addEventListener("blur",  () => { validateField(student); validateForm(); });
-  if (ageEl) {
-    ageEl.addEventListener("input", () => { validateField(ageEl); validateForm(); });
-    ageEl.addEventListener("blur",  () => { validateField(ageEl); validateForm(); });
-  }
-  selectIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("change", () => { validateField(el); validateForm(); });
-  });
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const yEl = document.getElementById("last_year_in_tupc");
-    if (yEl) yEl.setAttribute("max", String(new Date().getFullYear()));
-    if (phone && (phone.value === "" || phone.value === "+63")) phone.value = "+63 ";
-    refreshExtension();
-    validateForm();
-  });
-
-  // If user clicks open while invalid
-  document.getElementById('openConfirmModal').addEventListener('click', () => {
-    if (openBtn.disabled) {
-      formAlert.classList.remove('d-none');
-      validateForm();
-      const firstInvalid = form.querySelector('.is-invalid');
-      if (firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-  });
-
-  // ===== Submit flow (countdown starts ONLY on real success) =====
-  const redirectModal = new bootstrap.Modal(document.getElementById('redirectModal'));
-  const confirmModal  = new bootstrap.Modal(document.getElementById('confirmSubmitModal'));
-  const countSpan     = document.getElementById('countModal');
-  const errorBox      = document.getElementById('submitError');
-  let   countdownTimer = null;
-
-  function startCountdown(seconds, redirectUrl) {
-    let n = seconds;
-    countSpan.textContent = n;
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-      n -= 1; countSpan.textContent = n;
-      if (n <= 0) { clearInterval(countdownTimer); window.location.href = redirectUrl; }
-    }, 1000);
-  }
-  function getCsrfToken() {
-    const inp = form.querySelector('input[name=csrfmiddlewaretoken]');
-    return inp ? inp.value : '';
-  }
-  function applyServerErrors(errors) {
-    // errors: { field_name: ["msg",...], "_all_": [...] }
-    let any = false;
-    for (const [name, msgs] of Object.entries(errors || {})) {
-      const el = form.querySelector([name="${name}"]);
-      if (el) {
-        el.classList.add('is-invalid');
-        any = true;
-      }
-    }
-    if (any) {
-      formAlert.classList.remove('d-none');
-      const firstInvalid = form.querySelector('.is-invalid');
-      if (firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-  }
-  function reenableForm() {
-    Array.from(form.elements).forEach(el => el.disabled = false);
-    confirmBtn.disabled = false;
-    openBtn.disabled = false;
-  }
-
-  confirmBtn.addEventListener("click", async function () {
-    if (!validateForm()) {
-      formAlert.classList.remove('d-none');
-      const firstInvalid = form.querySelector('.is-invalid');
-      if (firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
-      return;
-    }
-
-    confirmModal.hide();
-    redirectModal.show();
-    const fd = new FormData(form);
-    if (program && program.value === '_OTHER_' && programOtherInput) {
-      fd.set('program', programOtherInput.value.replace(/\s+$/, ''));
-    }
-    Array.from(form.elements).forEach(el => el.disabled = true);
-    confirmBtn.disabled = true;
-    openBtn.disabled = true;
-    errorBox.classList.add('d-none');
-
-    try {
-      const resp = await fetch(form.action, {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": getCsrfToken(),
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        body: fd,
-        credentials: "same-origin",
-      });
-
-      const isJson = resp.headers.get("content-type") && resp.headers.get("content-type").includes("application/json");
-      let data = null;
-      if (isJson) {
-        data = await resp.json();
-      }
-
-      if (resp.ok && (!isJson || (data && data.ok))) {
-        startCountdown(5, "{% url 'client_home' %}");
-        return; // keep modal open until countdown ends
-      }
-      if (isJson && data && data.errors) {
-        applyServerErrors(data.errors);
-      }
-      if (countdownTimer) clearInterval(countdownTimer);
-      errorBox.classList.remove('d-none');
-      reenableForm();
-
-    } catch (e) {
-      if (countdownTimer) clearInterval(countdownTimer);
-      errorBox.textContent = "Network error. Please check your connection and try again.";
-      errorBox.classList.remove('d-none');
-      reenableForm();
-    }
-  });
-
 </script>
-
-
 
 <script>
 

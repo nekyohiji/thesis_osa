@@ -61,6 +61,8 @@ urlpatterns = [
     path('reports/good-moral.pdf',   views.admin_good_moral_report_pdf,   name='admin_good_moral_report_pdf'),
     path('reports/surrender-id.pdf', views.admin_surrender_id_report_pdf, name='admin_surrender_id_report_pdf'),
     path('reports/clearance.pdf',    views.admin_clearance_report_pdf,    name='admin_clearance_report_pdf'),
+    path('reports/student-assist/pdf', views.admin_student_assist_report_pdf, name='admin_student_assist_report_pdf'),
+    path('reports/acso-accre/pdf',     views.admin_acso_accre_report_pdf,     name='admin_acso_accre_report_pdf'),
     # ---------------
     
     
@@ -107,10 +109,11 @@ urlpatterns = [
     ###------------------- added by jochelle - admin
     path('admin_student/', views.admin_student_view, name='admin_student'),
     path('admin_insurance/', views.admin_insurance_view, name='admin_insurance'),
-    path('admin_assistantship_logs/', views.admin_assistantship_logs_view, name='admin_assistantship_logs'),
-    path('admin_view_assistantship_logs/', views.admin_view_assistantship_logs_view, name='admin_view_assistantship_logs'),
-    path('admin_ACSO_logs/', views.admin_ACSO_logs_view, name='admin_ACSO_logs'),
-
+    
+    path('admin_assistantship_logs/', views.admin_assistantship_logs, name='admin_assistantship_logs'),
+    path('admin_view_assistantship_logs/', views.admin_assistantship_logs_view, name='admin_view_assistantship_logs'),
+    path('admin_ACSO_logs/', views.admin_ACSO_logs, name='admin_ACSO_logs'),
+    path('admin_view_ACSO_logs/', views.admin_ACSO_logs_view, name='admin_view_ACSO_logs'),
 
 
 
@@ -120,8 +123,8 @@ urlpatterns = [
     path('client_studentAssistantship_form/', views.client_studentAssistantship_form_view, name='client_studentAssistantship_form'),
     path('client_ACSO_form/', views.client_ACSO_form_view, name='client_ACSO_form'),
     
-    
-    
+    path("submit/student-assist/", views.submit_student_assist, name="submit_student_assist"),
+    path("submit/acso-accre/",    views.submit_acso_accre,    name="submit_acso_accre"),
     
     
     

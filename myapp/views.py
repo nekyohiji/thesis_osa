@@ -96,7 +96,9 @@ from .forms import (
     IDSurrenderRequestForm,
     AddViolationForm,
     ViolationForm,
-    FacilitatorForm
+    FacilitatorForm,
+    StudentAssistForm, 
+    AcsoAccreForm
 )
 from .libre.cs_completion import build_cs_completion_pdf
 from .libre.cs_agreement import build_cs_agreement_pdf
@@ -122,7 +124,9 @@ from .models import (
     Election,
     EligibleVoter,
     Vote,
-    Candidate,
+    Candidate, 
+    StudentAssist, 
+    AcsoAccre
 )
 from .utils import (
     generate_gmf_pdf,
@@ -134,7 +138,9 @@ from .utils import (
     no_store,
     compute_cs_topup_for_minor,
     CS_EXEMPT_TYPES,
-    _current_facilitator_entities,
+    _current_facilitator_entities, 
+    send_studentassist_confirmation, 
+    send_acso_accre_confirmation,
     )
 
 logger = logging.getLogger(__name__)
@@ -207,22 +213,88 @@ def client_ACSO_form_view(request):
 
 
 #------------------------------------------------------------------------------------------#
+PAGE_SIZE = 50
 
+def _search(qs, q):
+    if q:
+        q = q.strip()
+        qs = qs.filter(
+            Q(name__icontains=q) |
+            Q(tupc_id__icontains=q) |
+            Q(program__icontains=q)
+        )
+    return qs
+
+def _page(qs, page, size=PAGE_SIZE):
+    """Slice with a +1 lookahead (avoids heavy COUNT())."""
+    page = int(page or 1)
+    start = (page - 1) * size
+    items = list(qs[start:start + size + 1])
+    has_more = len(items) > size
+    if has_more:
+        items = items[:size]
+    return items, has_more, page + 1
+
+@require_GET
+@role_required(['admin', 'staff', 'superadmin'])
+def admin_assistantship_logs(request):
+    q    = request.GET.get("q", "")
+    page = request.GET.get("page", "1")
+
+    qs = _search(StudentAssist.objects.order_by("-created_at"), q)
+    records, has_more, next_page = _page(qs, page)
+
+    ctx = {
+        "records": records,
+        "has_more": has_more,
+        "next_page": next_page,
+        "q": q,
+        # this flag tells the template to render rows-only for HTMX requests
+        "rows_only": bool(request.headers.get("HX-Request")),
+        # used by the “View more” link in the rows
+        "view_url_name": "admin_view_assistantship_logs",
+    }
+    return render(request, "myapp/admin_assistantship_logs.html", ctx)
+
+@require_GET
+@role_required(['admin', 'staff', 'superadmin'])
+def admin_ACSO_logs(request):
+    q    = request.GET.get("q", "")
+    page = request.GET.get("page", "1")
+
+    qs = _search(AcsoAccre.objects.order_by("-created_at"), q)
+    records, has_more, next_page = _page(qs, page)
+
+    ctx = {
+        "records": records,
+        "has_more": has_more,
+        "next_page": next_page,
+        "q": q,
+        "view_url_name": "admin_view_ACSO_logs",  # used in link
+    }
+    return render(request, "myapp/admin_ACSO_logs.html", ctx)
+
+# detail pages (same URLs you already have)
+@require_GET
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_assistantship_logs_view(request):
-    return render (request, 'myapp/admin_assistantship_logs.html')
+    pk = request.GET.get("id")
+    obj = get_object_or_404(StudentAssist, pk=pk) if pk else None
+    return render(request, "myapp/admin_view_assistantship_logs.html", {"obj": obj})
 
-def admin_view_assistantship_logs_view(request):
-    return render (request, 'myapp/admin_view_assistantship_logs.html')
-
+@require_GET
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_ACSO_logs_view(request):
-    return render (request, 'myapp/admin_ACSO_logs.html')
+    pk = request.GET.get("id")
+    obj = get_object_or_404(AcsoAccre, pk=pk) if pk else None
+    return render(request, "myapp/admin_view_ACSO_logs.html", {"obj": obj})
+
+
+
 
 
 def admin_insurance_view(request):
     return render (request, 'myapp/admin_insurance.html')
-
-
-
 
 #------------------------------------------------------------------------------------------#
 
@@ -296,25 +368,13 @@ def facilitator_delete(request, pk: int):
 def admin_dashboard_view(request):
     return render(request, 'myapp/admin_dashboard.html')
 
+# at top of views.py (if not already)
+from collections import Counter
+from datetime import datetime
+from django.utils import timezone
+
 @role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_dashboard_data(request):
-    """
-    Return monthly counts + totals as JSON.
-
-    - Card totals:
-        * Good Moral: approved + rejected
-        * ID Surrender: approved + declined (as "rejected")
-        * Clearance: all only (no 'rejected' concept)
-
-    - Monthly rows:
-        * Per-month approved & rejected for GM and Surrender
-        * Clearance has only "all" (rejected = 0)
-        * Any NULL datetimes go into an 'Undated' row
-
-    This preserves existing keys your UI already uses, and *adds*
-    rejected keys so you can light up those new counters.
-    """
-
     # ---------- Card totals ----------
     # Good Moral
     gm_approved = GoodMoralRequest.objects.filter(is_approved=True, is_rejected=False).count()
@@ -331,28 +391,39 @@ def admin_dashboard_data(request):
     # Clearance (no reject)
     clr_all = ClearanceRequest.objects.count()
 
+    # Student Assistantship (logbook)
+    studasst_all = StudentAssist.objects.count()
+
+    # ACSO Accreditation (logbook)
+    acso_all = AcsoAccre.objects.count()
+
     totals = {
-        # Existing keys (kept):
+        # existing keys you already render:
         "surrender_approved": surr_approved,
         "goodmoral_approved": gm_approved,
         "clearance_all": clr_all,
-        "grand_total": surr_approved + gm_approved + clr_all,  # headline number you already show
+        # headline grand total now includes logbooks too
+        "grand_total": surr_approved + gm_approved + clr_all + studasst_all + acso_all,
 
-        # NEW keys (for your Accepted/Rejected breakdowns):
+        # existing/new breakdowns:
         "goodmoral_rejected": gm_rejected,
         "surrender_rejected": surr_rejected,
 
-        # Optional: convenient grand splits (clearance has no rejected)
-        "grand_accepted": surr_approved + gm_approved + clr_all,
+        # convenient splits
+        "grand_accepted": surr_approved + gm_approved + clr_all + studasst_all + acso_all,
         "grand_rejected": surr_rejected + gm_rejected,
+
+        # NEW card totals for your two new stat cards:
+        "studentassist_all": studasst_all,
+        "acso_all": acso_all,
     }
 
-    # ---------- Helper: aggregate by (year, month) in Python ----------
+    # ---------- helper: aggregate by (year, month) ----------
     def month_counts_py(qs, dt_field: str):
         """
         Returns (agg, undated_count) where:
-          - agg is list of {'y': int, 'm': int, 'count': int} sorted by (y,m)
-          - undated_count is count of rows with NULL dt_field
+          - agg = list of {'y': int, 'm': int, 'count': int} sorted by (y,m)
+          - undated_count = rows with NULL/invalid dt_field
         """
         buckets = Counter()
         undated = 0
@@ -364,25 +435,24 @@ def admin_dashboard_data(request):
             try:
                 if timezone.is_aware(dt):
                     dt = timezone.localtime(dt)
+                buckets[(dt.year, dt.month)] += 1
             except Exception:
                 undated += 1
-                continue
-            buckets[(dt.year, dt.month)] += 1
 
         agg = [{"y": y, "m": m, "count": c} for (y, m), c in sorted(buckets.items())]
         return agg, undated
 
-    # ---------- Querysets for monthly aggregation ----------
-    # GM: approved & rejected
+    # ---------- Querysets ----------
     gm_qs_approved  = GoodMoralRequest.objects.filter(is_approved=True, is_rejected=False)
     gm_qs_rejected  = GoodMoralRequest.objects.filter(is_rejected=True)
 
-    # Surrender: approved & declined (treated as rejected)
     surr_qs_approved = IDSurrenderRequest.objects.filter(status=IDSurrenderRequest.STATUS_APPROVED)
     surr_qs_rejected = IDSurrenderRequest.objects.filter(status=IDSurrenderRequest.STATUS_DECLINED)
 
-    # Clearance: all (no rejected path)
     clr_qs = ClearanceRequest.objects.all()
+
+    studasst_qs = StudentAssist.objects.all()
+    acso_qs     = AcsoAccre.objects.all()
 
     # ---------- Monthly aggregation ----------
     gm_agg_appr,   gm_undated_appr   = month_counts_py(gm_qs_approved,  "submitted_at")
@@ -391,9 +461,11 @@ def admin_dashboard_data(request):
     surr_agg_rej,  surr_undated_rej  = month_counts_py(surr_qs_rejected, "submitted_at")
     clr_agg_all,   clr_undated_all   = month_counts_py(clr_qs,           "created_at")
 
-    # ---------- Combine into a single (year, month) map ----------
-    # We keep existing fields you already render AND add rejected fields (zero for clearance).
-    by_month = {}  # key: (y, m) -> dict of fields
+    studasst_agg_all, studasst_undated_all = month_counts_py(studasst_qs, "created_at")
+    acso_agg_all,     acso_undated_all     = month_counts_py(acso_qs,     "created_at")
+
+    # ---------- Combine per (year, month) ----------
+    by_month = {}  # (y,m) -> dict
 
     def bump(key, field, n):
         d = by_month.setdefault(
@@ -402,11 +474,12 @@ def admin_dashboard_data(request):
                 "surrender_approved": 0, "surrender_rejected": 0,
                 "goodmoral_approved": 0, "goodmoral_rejected": 0,
                 "clearance_all": 0,
+                "studentassist_all": 0,  # NEW
+                "acso_all": 0,           # NEW
             },
         )
         d[field] += int(n or 0)
 
-    # Fill buckets
     for r in surr_agg_appr:
         bump((int(r["y"]), int(r["m"])), "surrender_approved", r["count"])
     for r in surr_agg_rej:
@@ -420,16 +493,22 @@ def admin_dashboard_data(request):
     for r in clr_agg_all:
         bump((int(r["y"]), int(r["m"])), "clearance_all", r["count"])
 
-    # ---------- Build rows (newest month first) ----------
+    for r in studasst_agg_all:
+        bump((int(r["y"]), int(r["m"])), "studentassist_all", r["count"])
+
+    for r in acso_agg_all:
+        bump((int(r["y"]), int(r["m"])), "acso_all", r["count"])
+
+    # ---------- Build rows (newest first) ----------
     rows = []
     for (y, m), vals in sorted(by_month.items(), key=lambda kv: kv[0], reverse=True):
         month_dt = datetime(int(y), int(m), 1)
         total = (
-            vals["surrender_approved"] +
-            vals["surrender_rejected"] +    # included in monthly total
-            vals["goodmoral_approved"] +
-            vals["goodmoral_rejected"] +    # included in monthly total
-            vals["clearance_all"]
+            vals["surrender_approved"] + vals["surrender_rejected"] +
+            vals["goodmoral_approved"] + vals["goodmoral_rejected"] +
+            vals["clearance_all"] +
+            vals["studentassist_all"] +  # NEW (included in monthly total)
+            vals["acso_all"]             # NEW (included in monthly total)
         )
         rows.append({
             "month_iso": month_dt.strftime("%Y-%m-01"),
@@ -445,6 +524,8 @@ def admin_dashboard_data(request):
         "goodmoral_approved": gm_undated_appr,
         "goodmoral_rejected": gm_undated_rej,
         "clearance_all":      clr_undated_all,
+        "studentassist_all":  studasst_undated_all,  # NEW
+        "acso_all":           acso_undated_all,      # NEW
     }
     undated_total = sum(undated_totals.values())
     if undated_total:
@@ -460,6 +541,7 @@ def admin_dashboard_data(request):
         "totals": totals,
         "rows": rows,
     })
+
 
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_ACSO_view(request):
@@ -593,7 +675,7 @@ def get_student_by_id(request, tupc_id):
         })
     except Student.DoesNotExist:
         return JsonResponse({'success': False})
-    
+
 #########################CLIENT
 
 def scholarship_feed_api(request):
@@ -606,7 +688,6 @@ def lostandfound_feed_api(request):
     data = list(LostAndFound.objects.order_by('-posted_date').values(
         'id', 'description', 'posted_date', 'image'
     ))
-    # optionally add .url if image is present
     for item in data:
         if item['image']:
             item['image'] = request.build_absolute_uri(item['image'])
@@ -681,11 +762,7 @@ def id_surrender_request(request):
                 'form': IDSurrenderRequestForm(),
                 'show_modal': True
             })
-
-        # Invalid: redisplay with errors
         return render(request, template, {'form': form})
-
-    # GET
     return render(request, template, {'form': IDSurrenderRequestForm()})
 
 @require_http_methods(["GET", "POST"])
@@ -698,11 +775,9 @@ def clearance_request_view(request):
             return render(request, "myapp/client_clearance.html", {"form": form})
         obj = form.save()
 
-        # send confirmation to the client
         try:
             send_clearance_confirmation(obj)
         except Exception as e:
-            # don't block UX on email failure; log as needed
             print("Email send failed:", e)
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -710,6 +785,51 @@ def clearance_request_view(request):
         return render(request, "myapp/client_clearance.html", {"form": ClearanceRequestForm()})
     return render(request, "myapp/client_clearance.html", {"form": ClearanceRequestForm()})
 
+def _normalized_post(request):
+    data = request.POST.copy()
+    if data.get("email") and not data.get("contact_email"):
+        data["contact_email"] = data["email"]
+    if "full_name" in data and "name" not in data:
+        data["name"] = data["full_name"]
+    if "id" in data and "tupc_id" not in data:
+        data["tupc_id"] = data["id"]
+
+    if data.get("stakeholder") == "TUPC Student":
+        yl = (data.get("year_level") or "").strip()
+        if yl in {"1st Year","2nd Year","3rd Year","4th Year","5th Year"}:
+            data["stakeholder"] = f"TUPC Student - {yl}"
+    return data
+
+def _json_errors(form):
+    return {k: [str(e) for e in v] for k, v in form.errors.items()}
+
+@csrf_protect
+@require_POST
+def submit_student_assist(request):
+    data = _normalized_post(request)
+    form = StudentAssistForm(data)
+    if form.is_valid():
+        obj = form.save()
+        try:
+            send_studentassist_confirmation(obj)
+        except Exception:
+            pass
+        return JsonResponse({"ok": True, "id": obj.pk}, status=201)
+    return JsonResponse({"ok": False, "errors": _json_errors(form)}, status=400)
+
+@csrf_protect
+@require_POST
+def submit_acso_accre(request):
+    data = _normalized_post(request)
+    form = AcsoAccreForm(data)
+    if form.is_valid():
+        obj = form.save()
+        try:
+            send_acso_accre_confirmation(obj)
+        except Exception:
+            pass
+        return JsonResponse({"ok": True, "id": obj.pk}, status=201)
+    return JsonResponse({"ok": False, "errors": _json_errors(form)}, status=400)
 
 #########################LOGIN
 
@@ -720,8 +840,6 @@ def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
-
-        # Email: allow-list (gmail + TUP)
         allowlist = re.compile(
             r"^[A-Za-z0-9._%+-]+@(?:gmail\.com|gsfe\.tupcavite\.edu\.ph|tup\.edu\.ph)$",
             re.IGNORECASE,
@@ -731,7 +849,6 @@ def login_view(request):
             resp = render(request, 'myapp/login.html', {"next": next_url})
             return no_store(resp)
 
-        # Password length
         if not (8 <= len(password) <= 128):
             messages.error(request, "Password must be between 8 and 128 characters.", extra_tags="LOGIN")
             resp = render(request, 'myapp/login.html', {"next": next_url})
@@ -1173,7 +1290,7 @@ def generate_guard_report_pdf(request):
             Paragraph("Printed Name with Signature", sig_pr)
         ]
 
-    elements.extend(sig_block("Prepared by:", guard_name))
+    elements.extend(sig_block("Requested by:", ""))
     elements.append(Spacer(1, 40))
     elements.extend(sig_block("Noted by:", ""))
 
@@ -1913,6 +2030,10 @@ def _date_range(qs, field_name, start_date, end_date):
     else:
         return qs
 
+def _append_total_footer(elements, count: int):
+    elements.append(Spacer(1, 6))
+    elements.append(Paragraph(f"Total rows included in this report: <b>{count}</b>", STYLE_CELL))
+    
 @role_required(['admin', 'superadmin'])
 def admin_violation_report_pdf(request):
     start_date = request.GET.get('start_date', '').strip()
@@ -1951,6 +2072,7 @@ def admin_violation_report_pdf(request):
         rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
 
     elements.append(_table(rows, colw))
+    _append_total_footer(elements, qs.count())
     doc.build(elements)
     return resp
 
@@ -1989,6 +2111,7 @@ def admin_good_moral_report_pdf(request):
         rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
 
     elements.append(_table(rows, colw))
+    _append_total_footer(elements, qs.count())
     doc.build(elements)
     return resp
 
@@ -2025,6 +2148,7 @@ def admin_surrender_id_report_pdf(request):
         rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
 
     elements.append(_table(rows, colw))
+    _append_total_footer(elements, qs.count())
     doc.build(elements)
     return resp
 
@@ -2075,6 +2199,97 @@ def admin_clearance_report_pdf(request):
         rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
 
     elements.append(_table(rows, colw))
+    _append_total_footer(elements, qs.count())
+    doc.build(elements)
+    return resp
+
+@role_required(['admin', 'superadmin'])
+def admin_student_assist_report_pdf(request):
+    start_date = request.GET.get('start_date', '').strip()
+    end_date   = request.GET.get('end_date', '').strip()
+
+    qs = StudentAssist.objects.all().order_by('created_at')
+    qs = _date_range(qs, 'created_at', start_date, end_date)
+
+    resp = HttpResponse(content_type='application/pdf')
+    resp['Content-Disposition'] = 'inline; filename="student_assistantship_report.pdf"'
+    title = f"STUDENT ASSISTANTSHIP REPORT FROM {start_date or '—'} TO {end_date or '—'}"
+    doc, elements = _start_doc(resp, title)
+
+    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'AGE', 'SEX', 'PROGRAM', 'CLIENT TYPE', 'STAKEHOLDER']
+    colw = [
+        doc.width * 0.14,  # DATE
+        doc.width * 0.30,  # NAME
+        doc.width * 0.06,  # AGE
+        doc.width * 0.06,  # SEX
+        doc.width * 0.18,  # PROGRAM
+        doc.width * 0.13,  # CLIENT TYPE
+        doc.width * 0.13,  # STAKEHOLDER
+    ]
+    rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
+
+    for r in qs:
+        rows.append([
+            Paragraph(_fmt_date(r.created_at), STYLE_CELL),
+            Paragraph(r.name, STYLE_CELL),
+            Paragraph(str(r.age), STYLE_CELL),
+            Paragraph(r.sex or "", STYLE_CELL),
+            Paragraph(r.program, STYLE_CELL),
+            Paragraph(r.client_type, STYLE_CELL),
+            Paragraph(r.stakeholder, STYLE_CELL),
+        ])
+
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
+
+    elements.append(_table(rows, colw))
+    _append_total_footer(elements, qs.count())
+    doc.build(elements)
+    return resp
+
+@role_required(['admin', 'superadmin'])
+def admin_acso_accre_report_pdf(request):
+    start_date = request.GET.get('start_date', '').strip()
+    end_date   = request.GET.get('end_date', '').strip()
+
+    qs = AcsoAccre.objects.all().order_by('created_at')
+    qs = _date_range(qs, 'created_at', start_date, end_date)
+
+    resp = HttpResponse(content_type='application/pdf')
+    resp['Content-Disposition'] = 'inline; filename="acso_accreditation_report.pdf"'
+    title = f"ACSO ACCREDITATION REPORT FROM {start_date or '—'} TO {end_date or '—'}"
+    doc, elements = _start_doc(resp, title)
+
+    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'AGE', 'SEX', 'PROGRAM', 'ACSO', 'CLIENT TYPE', 'STAKEHOLDER']
+    colw = [
+        doc.width * 0.13,  # DATE
+        doc.width * 0.27,  # NAME
+        doc.width * 0.06,  # AGE
+        doc.width * 0.06,  # SEX
+        doc.width * 0.18,  # PROGRAM
+        doc.width * 0.12,  # ACSO
+        doc.width * 0.09,  # CLIENT TYPE
+        doc.width * 0.09,  # STAKEHOLDER
+    ]
+    rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
+
+    for r in qs:
+        rows.append([
+            Paragraph(_fmt_date(r.created_at), STYLE_CELL),
+            Paragraph(r.name, STYLE_CELL),
+            Paragraph(str(r.age), STYLE_CELL),
+            Paragraph(r.sex or "", STYLE_CELL),
+            Paragraph(r.program, STYLE_CELL),
+            Paragraph(r.acso or "", STYLE_CELL),
+            Paragraph(r.client_type, STYLE_CELL),
+            Paragraph(r.stakeholder, STYLE_CELL),
+        ])
+
+    if len(rows) == 1:
+        rows.append([Paragraph('No data', STYLE_CELL)] * len(headers))
+
+    elements.append(_table(rows, colw))
+    _append_total_footer(elements, qs.count())
     doc.build(elements)
     return resp
 
@@ -3574,25 +3789,17 @@ def admin_cs_agreement_pdf(request, case_id):
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_completion_pdf(request, case_id):
     case = get_object_or_404(CommunityServiceCase, id=case_id)
-
-    admin_acc = (
-        UserAccount.objects
-        .filter(role='admin', is_active=True)
-        .order_by('-created_at')
-        .first()
-    )
+    admin_acc = (UserAccount.objects
+                 .filter(role='admin', is_active=True)
+                 .order_by('-created_at').first())
     osa_head_name = admin_acc.full_name if admin_acc else "Office of Student Affairs"
-
     try:
         pdf_path = build_cs_completion_pdf(case, osa_head_name)
     except Exception as e:
         raise Http404(f"PDF generation failed: {e}")
-
     filename = os.path.basename(pdf_path)
-    resp = FileResponse(
-        open(pdf_path, "rb"),
-        content_type=mimetypes.types_map.get(".pdf", "application/pdf"),
-    )
+    resp = FileResponse(open(pdf_path, "rb"),
+                        content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 #--------------------------------------------------#

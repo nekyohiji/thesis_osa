@@ -576,3 +576,116 @@ def _current_facilitator_entities(request):
             "faculty": None,
         }
     return {"source": "", "name": "", "user": None, "faculty": None}
+
+##################################
+def _send_async(msg: EmailMultiAlternatives):
+    Thread(target=lambda: msg.send(fail_silently=True), daemon=True).start()
+
+def send_studentassist_confirmation(obj) -> None:
+    osa_inbox = getattr(settings, "OSA_INBOX", None)
+    if not osa_inbox:
+        return  # nowhere to send
+
+    subject = f"TUPC-Cavite OSA — Student Assistantship Submission Received (Ref #{obj.pk})"
+    from_email = _from_email()          # ideally your OSA SMTP account so it lands in “Sent”
+    to = [osa_inbox]
+    bcc = []
+    reply_to = None
+
+    submitted_local = localtime(obj.created_at)
+    e = lambda s: escape("" if s is None else str(s))
+
+    text = dedent(f"""
+        Student Assistantship — Submission Received
+
+        Reference: {obj.pk}
+        Name: {obj.name}
+        Age / Sex: {obj.age} / {obj.sex}
+        TUPC ID: {obj.tupc_id}
+        Contact: {obj.contact}
+        Email: {getattr(obj, 'contact_email', '')}
+        Program: {obj.program}
+        Address: {obj.address}
+        Client Type: {obj.client_type}
+        Stakeholder: {obj.stakeholder}
+        Submitted: {submitted_local:%B %d, %Y %I:%M %p}
+    """).strip()
+
+    html = f"""
+    <div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45">
+      <h2 style="margin:0 0 12px">Student Assistantship — Submission Received</h2>
+      <table cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+        <tr><td><b>Reference</b></td><td>{e(obj.pk)}</td></tr>
+        <tr><td><b>Name</b></td><td>{e(obj.name)}</td></tr>
+        <tr><td><b>Age / Sex</b></td><td>{e(obj.age)} / {e(obj.sex)}</td></tr>
+        <tr><td><b>TUPC ID</b></td><td>{e(obj.tupc_id)}</td></tr>
+        <tr><td><b>Contact</b></td><td>{e(obj.contact)}</td></tr>
+        <tr><td><b>Email</b></td><td>{e(getattr(obj, 'contact_email', ''))}</td></tr>
+        <tr><td><b>Program</b></td><td>{e(obj.program)}</td></tr>
+        <tr><td><b>Address</b></td><td>{e(obj.address)}</td></tr>
+        <tr><td><b>Client Type</b></td><td>{e(obj.client_type)}</td></tr>
+        <tr><td><b>Stakeholder</b></td><td>{e(obj.stakeholder)}</td></tr>
+        <tr><td><b>Submitted</b></td><td>{submitted_local:%B %d, %Y %I:%M %p}</td></tr>
+      </table>
+    </div>
+    """.strip()
+
+    msg = EmailMultiAlternatives(subject, text, from_email, to, bcc=bcc, reply_to=reply_to)
+    msg.attach_alternative(html, "text/html")
+    _send_async(msg)
+
+
+def send_acso_accre_confirmation(obj) -> None:
+    osa_inbox = getattr(settings, "OSA_INBOX", None)
+    if not osa_inbox:
+        return
+
+    subject = f"TUPC-Cavite OSA — ACSO Accreditation Submission Received (Ref #{obj.pk})"
+    from_email = _from_email()
+    to = [osa_inbox]
+    bcc = []
+    reply_to = None
+
+    submitted_local = localtime(obj.created_at)
+    e = lambda s: escape("" if s is None else str(s))
+
+    text = dedent(f"""
+        ACSO Accreditation — Submission Received
+
+        Reference: {obj.pk}
+        Name: {obj.name}
+        Age / Sex: {obj.age} / {obj.sex}
+        TUPC ID: {obj.tupc_id}
+        Contact: {obj.contact}
+        Email: {getattr(obj, 'contact_email', '')}
+        Program: {obj.program}
+        Address: {obj.address}
+        Student Organization: {obj.acso}
+        Client Type: {obj.client_type}
+        Stakeholder: {obj.stakeholder}
+        Submitted: {submitted_local:%B %d, %Y %I:%M %p}
+    """).strip()
+
+    html = f"""
+    <div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45">
+      <h2 style="margin:0 0 12px">ACSO Accreditation — Submission Received</h2>
+      <table cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+        <tr><td><b>Reference</b></td><td>{e(obj.pk)}</td></tr>
+        <tr><td><b>Name</b></td><td>{e(obj.name)}</td></tr>
+        <tr><td><b>Age / Sex</b></td><td>{e(obj.age)} / {e(obj.sex)}</td></tr>
+        <tr><td><b>TUPC ID</b></td><td>{e(obj.tupc_id)}</td></tr>
+        <tr><td><b>Contact</b></td><td>{e(obj.contact)}</td></tr>
+        <tr><td><b>Email</b></td><td>{e(getattr(obj, 'contact_email', ''))}</td></tr>
+        <tr><td><b>Program</b></td><td>{e(obj.program)}</td></tr>
+        <tr><td><b>Address</b></td><td>{e(obj.address)}</td></tr>
+        <tr><td><b>Student Organization</b></td><td>{e(obj.acso)}</td></tr>
+        <tr><td><b>Client Type</b></td><td>{e(obj.client_type)}</td></tr>
+        <tr><td><b>Stakeholder</b></td><td>{e(obj.stakeholder)}</td></tr>
+        <tr><td><b>Submitted</b></td><td>{submitted_local:%B %d, %Y %I:%M %p}</td></tr>
+      </table>
+    </div>
+    """.strip()
+
+    msg = EmailMultiAlternatives(subject, text, from_email, to, bcc=bcc, reply_to=reply_to)
+    msg.attach_alternative(html, "text/html")
+    _send_async(msg)

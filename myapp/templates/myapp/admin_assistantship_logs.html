@@ -89,69 +89,68 @@
           </div>
           <hr class="border-dark">
 
-          <!-- Search Bar -->
-          <div class="d-flex justify-content-end mb-3">
-            <form method="get" class="input-group input-group-sm" style="max-width: 480px;" onsubmit="return false">
-              <input id="sa_search" name="q" type="text" class="form-control" autocomplete="off"
-                    placeholder="Search by Name, Student No., or Position"
-                    value="{{ q }}">
-              <button class="input-group-text bg-white border" type="button" title="Search">
-                <i class="bi bi-search text-muted"></i>
-              </button>
-            </form>
-          </div>
-
-          <!-- Table of Student Assistantship Records -->
           <div class="card shadow-sm border">
-            <div class="card-header text-white" style="background-color: #440207;">
+            <div class="card-header d-flex align-items-center justify-content-between text-white" style="background-color:#440207;">
               <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Student Assistantship Record</h6>
+              <div class="input-group input-group-sm" style="width: 280px;">
+                <input id="sa_search" type="search" class="form-control" placeholder="Search name / ID / program" />
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+              </div>
             </div>
-            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y: auto;">
-              <table class="table table-hover table-bordered align-middle text-center mb-0 sa-table">
-                <thead class="table-secondary sticky-top border">
+
+            <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y:auto;">
+              <table class="table table-striped mb-0">
+                <thead class="sticky-top" style="top:0; background:#fff; z-index:1;">
                   <tr>
-                    <th>Student ID</th>
+                    <th class="text-nowrap">TUPC ID</th>
                     <th>Name</th>
-                    <th>Program</th>
-                    <th>Date</th>
-                    <th>Details</th>
+                    <th class="text-nowrap">Program</th>
+                    <th class="text-nowrap">Submitted</th>
+                    <th style="width:1%;"></th>
                   </tr>
                 </thead>
                 <tbody id="sa_tbody"
-                      hx-select="#sa_tbody > *"
+                      hx-get="{% url 'admin_assistantship_logs' %}?q={{ q|urlencode }}"
+                      hx-vals='js:{"q": document.getElementById("sa_search")?.value?.trim() || ""}'
+                      hx-trigger="load, keyup changed delay:300ms from:#sa_search"
                       hx-target="#sa_tbody"
                       hx-swap="innerHTML"
-                      hx-vals='js:{"q": document.getElementById("sa_search")?.value?.trim() || ""}'
-                      hx-trigger="load, every 4s, keyup changed delay:300ms from:#sa_search"
-                      hx-on="htmx:beforeRequest: if ((document.activeElement && document.activeElement.id === 'sa_search') || document.body.classList.contains('modal-open')) event.preventDefault()">
-                  {% if records %}
-                    {% for sa in records %}
-                      <tr>
-                        <td>{{ sa.student_number }}</td>
-                        <td>{{ sa.last_name }}, {{ sa.first_name }}</td>
-                        <td>{{ sa.program }}</td>
-                        <td>{{ sa.created_at|date:"M d, Y h:i A" }}</td>
-                        <td>
-                          <a
-                            class="btn btn-sm"
-                            style="color:#440207; border-color:#440207;"
-                            onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
-                            onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
-                            View More
-                          </a>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  {% else %}
-                    <tr>
-                      <td colspan="6" class="text-center text-muted">No student assistantship requests found.</td>
-                    </tr>
+                      hx-select="#sa_tbody > *">
+
+                  {# server-side initial paint so it’s not empty before htmx runs #}
+                  {% for r in records %}
+                  <tr>
+                    <td>{{ r.tupc_id }}</td>
+                    <td>{{ r.name }}</td>
+                    <td>{{ r.program }}</td>
+                    <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="text-end">
+                      <a hx-boost="false"
+                        class="btn btn-outline-secondary btn-sm"
+                        href="{% url 'admin_view_assistantship_logs' %}?id={{ r.id }}">
+                        View more
+                      </a>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="5" class="text-center text-muted py-3">No results.</td></tr>
+                  {% endfor %}
+
+                  {% if has_more %}
+                  <tr id="pager"
+                      hx-get="?page={{ next_page }}&q={{ q|urlencode }}"
+                      hx-trigger="revealed"
+                      hx-swap="outerHTML">
+                    <td colspan="5" class="text-center py-2">
+                      <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                      <span class="ms-2">Loading…</span>
+                    </td>
+                  </tr>
                   {% endif %}
                 </tbody>
               </table>
             </div>
           </div>
-
         </div>
       </div>
     </div> <!-- End white content box -->
