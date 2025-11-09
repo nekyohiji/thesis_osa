@@ -103,7 +103,7 @@ from .forms import (
 from .libre.cs_completion import build_cs_completion_pdf
 from .libre.cs_agreement import build_cs_agreement_pdf
 from .libre.ack_receipt import build_ack_pdf
-
+from .disciplines.policies import compute_hours_cap_for_student
 from .models import (
     ACSORequirement,
     Archived_Account,
@@ -3579,11 +3579,13 @@ def admin_view_community_service(request, case_id):
                   .order_by('-violation_date', '-created_at'))
     logs = case.logs.order_by('-check_in_at')  # newest first
     open_log = case.logs.filter(check_out_at__isnull=True).first()
+    cap = compute_hours_cap_for_student(case.student_id)
     return render(request, 'myapp/admin_view_community_service.html', {
         'case': case,
         'violations': violations,
         'logs': logs,
         'open_log': open_log,
+        'policy_hours_cap': cap,
     })
 
 @role_required(['admin', 'staff', 'superadmin'])
@@ -3617,21 +3619,25 @@ def cs_create_or_adjust(request):
     new_total = Decimal(data["hours"])
     sdt_no = data.get("sdt_resolution_no", "").strip()  # may be ""
 
+    # Fetch existing open case (None if creating)
     case = (CommunityServiceCase.objects
             .select_for_update()
             .filter(student_id=sid, is_closed=False)
             .first())
 
+    # Compute policy cap once (Approved + MINOR, per-type)
+    from myapp.disciplines.policies import compute_hours_cap_for_student
+    cap = Decimal(compute_hours_cap_for_student(sid))
+
     try:
         if case:
-            # update snapshot fields
+            # snapshot updates
             case.last_name      = data["last_name"]
             case.first_name     = data["first_name"]
             case.middle_initial = data.get("middle_initial") or ""
             case.extension_name = data.get("extension_name") or ""
             case.program_course = data["program_course"]
 
-            # attach SDT Resolution if provided (leave unchanged if blank)
             if sdt_no and sdt_no != (case.sdt_resolution_no or ""):
                 case.sdt_resolution_no = sdt_no
 
@@ -3640,15 +3646,29 @@ def cs_create_or_adjust(request):
                 "program_course","sdt_resolution_no","updated_at"
             ])
 
-            # set TOTAL required hours (completed stays the same)
-            case.adjust_total_required(new_total)
+            # Clamp INSIDE the update branch (case exists)
+            lower_bound = case.hours_completed
+            clamped_total = max(min(new_total, cap), lower_bound)
+
+            case.adjust_total_required(clamped_total)
+
+            note = ""
+            if clamped_total != new_total:
+                if new_total > cap:
+                    note = f" (clamped to policy cap {cap}h)"
+                elif new_total < lower_bound:
+                    note = " (raised to completed hours)"
 
             messages.success(
                 request,
-                f"Hours set to {case.total_required_hours}h for {case.last_name}, {case.first_name}. "
+                f"Hours set to {case.total_required_hours}h for {case.last_name}, {case.first_name}{note}. "
                 f"Remaining: {case.remaining_hours}h."
             )
+
         else:
+            # Clamp INSIDE the create branch (no case yet)
+            clamped_total = max(min(new_total, cap), Decimal("0"))
+
             case = CommunityServiceCase.objects.create(
                 last_name=data["last_name"],
                 first_name=data["first_name"],
@@ -3656,19 +3676,26 @@ def cs_create_or_adjust(request):
                 extension_name=data.get("extension_name") or "",
                 program_course=data["program_course"],
                 student_id=sid,
-                sdt_resolution_no=sdt_no,                     # <-- NEW on create
-                total_required_hours=new_total,
+                sdt_resolution_no=sdt_no,
+                total_required_hours=clamped_total,
                 hours_completed=Decimal("0.0"),
-                is_closed=(new_total == Decimal("0.0")),
+                is_closed=(clamped_total == Decimal("0.0")),
             )
+
+            note = ""
+            if clamped_total != new_total:
+                if new_total > cap:
+                    note = f" (clamped to policy cap {cap}h)"
+                elif new_total < 0:
+                    note = " (raised to 0h)"
+
             messages.success(
                 request,
                 f"Community Service created for {case.last_name}, {case.first_name} ({case.student_id}) "
-                f"with {case.total_required_hours}h."
+                f"with {case.total_required_hours}h{note}."
             )
 
     except IntegrityError:
-        # Likely the unique constraint on non-blank SDT numbers
         form.add_error("sdt_resolution_no", "This SDT Resolution No. is already used by another case.")
         q = (request.GET.get('q') or '').strip()
         cases = CommunityServiceCase.objects.order_by('is_closed', '-updated_at')
@@ -3691,15 +3718,24 @@ def cs_create_or_adjust(request):
 def cs_update_total_required(request, case_id):
     case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
     try:
-        total = Decimal(request.POST.get('total', '').strip())
+        desired = Decimal((request.POST.get('total') or '').strip())
     except Exception:
         return HttpResponseBadRequest("Invalid total hours.")
-    if total < case.hours_completed:
-        total = case.hours_completed  # never below completed
 
-    case.adjust_total_required(total)
+    cap = Decimal(compute_hours_cap_for_student(case.student_id))
+
+    clamped = max(min(desired, cap), case.hours_completed)
+
+    case.adjust_total_required(clamped)
+
+    note = ("Clamped down to cap" if desired > cap
+            else "Cannot be below completed hours" if desired < case.hours_completed
+            else "Saved")
+
     return JsonResponse({
         "ok": True,
+        "note": note,
+        "policy_hours_cap": str(cap),
         "total_required_hours": str(case.total_required_hours),
         "hours_completed": str(case.hours_completed),
         "remaining_hours": str(case.remaining_hours),

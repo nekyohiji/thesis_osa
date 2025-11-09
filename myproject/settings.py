@@ -255,7 +255,7 @@ SUPERADMIN_VIEWERS = [
     "beverly.devega@tup.edu.ph",  
 ]
 
-IDLE_TIMEOUT_SECONDS = 15 * 60
+IDLE_TIMEOUT_SECONDS = 60 * 60
 SESSION_SAVE_EVERY_REQUEST = False 
 
 SESSION_COOKIE_SECURE = True            
