@@ -86,27 +86,33 @@
               </h5>
               <small class="text-muted">Handle ACSO Accreditation, monitor progress, and maintain records.</small>
             </div>
-          </div>
-          <hr class="border-dark">
 
-          <!-- Search Bar -->
-            <div class="card-header d-flex align-items-center justify-content-between text-white" style="background-color:#440207;">
-              <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>ACSO Accreditation Record</h6>
-              <div class="input-group input-group-sm" style="width: 280px;">
+
+          <div class="input-group input-group-sm mt-2 mt-mzd-0" style="width: 280px;">
+            <div class="input-group input-group-sm" style="width: 280px;">
                 <input id="acso_search" type="search" class="form-control" placeholder="Search name / ID / program" />
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
               </div>
+          </div>
+        </div>
+          
+          <hr class="border-dark">
+
+          <!-- Search Bar -->
+          <div class="card shadow-sm border">
+            <div class="card-header d-flex align-items-center justify-content-between text-white" style="background-color:#440207;">
+              <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>ACSO Accreditation Record</h6> 
             </div>
 
             <div class="card-body table-responsive p-0" style="max-height: calc(49px * 10); overflow-y:auto;">
-              <table class="table table-striped mb-0">
-                <thead class="sticky-top" style="top:0; background:#fff; z-index:1;">
+              <table class="table mb-0 table-bordered text-center">
+                <thead class=" table-secondary sticky-top" style="top:0; background:#fff; z-index:1;">
                   <tr>
-                    <th class="text-nowrap">TUPC ID</th>
+                    <th>TUPC ID</th>
                     <th>Name</th>
-                    <th class="text-nowrap">Program</th>
-                    <th class="text-nowrap">Submitted</th>
-                    <th style="width:1%;"></th>
+                    <th>Program</th>
+                    <th>Submitted</th>
+                    <th>Details</th>
                   </tr>
                 </thead>
 
@@ -127,10 +133,12 @@
                     <td>{{ r.name }}</td>
                     <td>{{ r.program }}</td>
                     <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
-                    <td class="text-end">
+                    <td>
                       <a hx-boost="false"
-                        class="btn btn-outline-secondary btn-sm"
-                        href="{% url 'admin_view_ACSO_logs' %}?id={{ r.id }}">
+                        class="btn btn-sm"
+                        href="{% url 'admin_view_ACSO_logs' %}?id={{ r.id }}" style="color: #440207; border-color: #440207;"
+                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';">
                         View more
                       </a>
                     </td>
