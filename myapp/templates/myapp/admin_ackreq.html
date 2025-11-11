@@ -232,10 +232,10 @@
                             <span class="badge rounded-pill bg-secondary px-3">{{ r.status }}</span>
                           {% endif %}
                         </td>
- style="color: #440207; border-color: #440207;"
-                          onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
-                          onmouseout="this.style.backgroundColor=''; this.style.color='#440207';"                        <td class="td-date">{{ r.submitted_at|date:"F j, Y g:iA" }}</td>
-                        <td><a href="{% url 'admin_view_ackreq' r.id %}" class="btn btn-sm">View More</a></td>
+                        <td class="td-date">{{ r.submitted_at|date:"F j, Y g:iA" }}</td>
+                        <td ><a   style="color:#440207; border-color:#440207;"
+                            onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"
+                            onmouseout="this.style.backgroundColor=''; this.style.color='#440207';"href="{% url 'admin_view_ackreq' r.id %}" class="btn btn-sm ">View More</a></td>
                       </tr>
                     {% endfor %}
                   {% else %}
