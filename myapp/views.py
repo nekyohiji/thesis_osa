@@ -10,6 +10,7 @@ import os
 import random
 import re
 import uuid
+from datetime import datetime
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, time
 from decimal import Decimal
@@ -199,9 +200,6 @@ def client_lostandfound_view(request):
 def client_clearance_view(request):
     return render (request, 'myapp/client_clearance.html')
 
-
-
-
 def client_studentAssistantship_form_view(request):
     return render (request, 'myapp/client_studentAssistantship_form.html')
 
@@ -236,7 +234,7 @@ def _page(qs, page, size=PAGE_SIZE):
     return items, has_more, page + 1
 
 @require_GET
-@role_required(['admin', 'staff', 'superadmin'])
+@role_required(['admin', 'staff', 'studlife', 'studasst', 'superadmin'])
 def admin_assistantship_logs(request):
     q    = request.GET.get("q", "")
     page = request.GET.get("page", "1")
@@ -257,7 +255,7 @@ def admin_assistantship_logs(request):
     return render(request, "myapp/admin_assistantship_logs.html", ctx)
 
 @require_GET
-@role_required(['admin', 'staff', 'superadmin'])
+@role_required(['admin', 'staff', 'studlife', 'studasst', 'superadmin'])
 def admin_ACSO_logs(request):
     q    = request.GET.get("q", "")
     page = request.GET.get("page", "1")
@@ -276,23 +274,20 @@ def admin_ACSO_logs(request):
 
 # detail pages (same URLs you already have)
 @require_GET
-@role_required(['admin', 'staff', 'superadmin'])
+@role_required(['admin', 'staff', 'studlife', 'studasst', 'superadmin'])
 def admin_assistantship_logs_view(request):
     pk = request.GET.get("id")
     obj = get_object_or_404(StudentAssist, pk=pk) if pk else None
     return render(request, "myapp/admin_view_assistantship_logs.html", {"obj": obj})
 
 @require_GET
-@role_required(['admin', 'staff', 'superadmin'])
+@role_required(['admin', 'staff', 'studlife', 'studasst', 'superadmin'])
 def admin_ACSO_logs_view(request):
     pk = request.GET.get("id")
     obj = get_object_or_404(AcsoAccre, pk=pk) if pk else None
     return render(request, "myapp/admin_view_ACSO_logs.html", {"obj": obj})
 
-
-
-
-
+@role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_insurance_view(request):
     return render (request, 'myapp/admin_insurance.html')
 
@@ -367,11 +362,6 @@ def facilitator_delete(request, pk: int):
 @role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_dashboard_view(request):
     return render(request, 'myapp/admin_dashboard.html')
-
-# at top of views.py (if not already)
-from collections import Counter
-from datetime import datetime
-from django.utils import timezone
 
 @role_required(['admin', 'staff', 'studasst', 'superadmin'])
 def admin_dashboard_data(request):
@@ -542,8 +532,7 @@ def admin_dashboard_data(request):
         "rows": rows,
     })
 
-
-@role_required(['admin', 'staff', 'superadmin'])
+@role_required(['admin', 'staff', 'studlife', 'superadmin'])
 def admin_ACSO_view(request):
     obj, _ = ACSORequirement.objects.get_or_create(id=1)
 
@@ -658,7 +647,7 @@ def admin_scholarships_view(request):
         'scholarships': scholarships
     })
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_view_goodmoral_view(request):
     return render (request, 'myapp/admin_view_goodmoral.html')
 
@@ -1477,6 +1466,9 @@ def _throttle(email: str, purpose: str, seconds: int = 60):
         # Cache misconfigured or unavailable → fallback to DB window
         return _db_too_soon(email, seconds=seconds)
 
+def _has_active_admin():
+    return UserAccount.objects.filter(role="admin", is_active=True).exists()
+
 @role_required(['admin', 'superadmin'])
 def admin_accounts_view(request):
     # Ensure your template path matches this
@@ -1715,7 +1707,10 @@ def request_otp(request):
 
     if UserAccount.objects.filter(email=email).exists() or Archived_Account.objects.filter(email=email).exists():
         return json_err("This email is already registered.", code="EMAIL_TAKEN", status=409)
-
+    
+    if position == "admin" and _has_active_admin():
+        return json_err("There is already an active Admin. Deactivate the current Admin before creating a new one.", code="ADMIN_LIMIT", status=409)
+    
     # Throttle using cache.add with DB fallback
     should_throttle, remaining = _throttle(email, "create_account", seconds=60)
     if should_throttle:
@@ -1765,34 +1760,57 @@ def verify_otp(request):
 
     email = (data.get("email") or "").strip().lower()
     otp_input = (data.get("otp") or "").strip()
-
     if not email or not otp_input:
         return json_err("Email and OTP are required.", code="MISSING_FIELDS")
 
     try:
-        rec = OTPVerification.objects.get(email=email)
-    except OTPVerification.DoesNotExist:
-        return json_err("No OTP record found for this email.", code="OTP_NOT_FOUND", status=404)
-
-    if _expired(rec.created_at):
-        return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
-
-    if rec.otp.strip() != otp_input:
-        return json_err("Incorrect OTP.", code="OTP_INCORRECT")
-
-    try:
         with transaction.atomic():
+            try:
+                rec = (OTPVerification.objects
+                       .select_for_update()
+                       .get(email=email))
+            except OTPVerification.DoesNotExist:
+                return json_err("No OTP record found for this email.", code="OTP_NOT_FOUND", status=404)
+
+            if _expired(rec.created_at):
+                return json_err("OTP expired. Please request a new one.", code="OTP_EXPIRED")
+
+            if rec.otp.strip() != otp_input:
+                return json_err("Incorrect OTP.", code="OTP_INCORRECT")
+
+            role = (rec.role or "").strip().lower()
+
+            if role == "admin":
+                if UserAccount.objects.select_for_update().filter(role="admin", is_active=True).exists():
+                    return json_err(
+                        "There is already an active Admin. Deactivate the current Admin before creating a new one.",
+                        code="ADMIN_LIMIT",
+                        status=409
+                    )
+            ALLOWED = {"guard","studasst","staff","admin","scholarship","comselec","studlife","superadmin"}
+            if role not in ALLOWED:
+                return json_err("Invalid role.", code="VALIDATION")
+
             UserAccount.objects.create(
                 full_name=rec.full_name,
-                email=rec.email,
-                role=rec.role,
-                password=rec.password,  
+                email=rec.email.lower(),
+                role=role,
+                password=rec.password,   
                 is_active=True,
                 must_change_password=True,
             )
             rec.delete()
-    except IntegrityError:
-        return json_err("Account already exists.", code="EMAIL_TAKEN", status=409)
+
+    except IntegrityError as e:
+        msg = str(e)
+        if "one_active_admin_only" in msg:   
+            return json_err(
+                "There is already an active Admin. Deactivate the current Admin before creating a new one.",
+                code="ADMIN_LIMIT", status=409
+            )
+        if "unique" in msg and "email" in msg:
+            return json_err("Account already exists.", code="EMAIL_TAKEN", status=409)
+        return json_err("Could not create account.", code="CREATE_FAIL", status=500)
     except Exception:
         return json_err("Could not create account.", code="CREATE_FAIL", status=500)
 
@@ -2380,7 +2398,7 @@ def admin_view_clearance_view(request, pk):
 
 #-----------Good Moral Page------------------#
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_goodmoral_view(request):
     q = (request.GET.get("q") or "").strip()
 
@@ -2413,7 +2431,7 @@ def admin_goodmoral_view(request):
         }
     )
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_view_goodmoral(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
     return render(request, 'myapp/admin_view_goodmoral.html', {'r': r})
@@ -2506,7 +2524,7 @@ DEFAULT_APPROVAL_MSG = (
     "After payment, reply to this email with a photo or copy of your receipt."
 )
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 def goodmoral_accept(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
@@ -2547,7 +2565,7 @@ def goodmoral_accept(request, pk):
 
     return redirect('admin_view_goodmoral', pk=pk)
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 def goodmoral_decline(request, pk):
     r = get_object_or_404(GoodMoralRequest, pk=pk)
@@ -2579,7 +2597,7 @@ def goodmoral_decline(request, pk):
 
 TEMPLATE_PATH = os.path.join(settings.BASE_DIR, 'myapp', 'static', 'myapp', 'pdf', 'GMC-request-template.pdf')
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def goodmoral_request_form_pdf(request, pk):
     from django.utils import timezone
     from io import BytesIO
@@ -2721,7 +2739,7 @@ def goodmoral_request_form_pdf(request, pk):
     out.seek(0)
     return FileResponse(out, as_attachment=False, filename=f"GMC_RequestForm_{r.student_id or r.pk}.pdf")
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def batch_view_gmrf(request):
     """
@@ -2920,7 +2938,7 @@ def batch_view_gmrf(request):
     resp["Content-Length"] = str(len(out.getvalue()))
     return resp
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def view_gmf(request, pk):
     req = get_object_or_404(GoodMoralRequest, pk=pk)
@@ -2930,7 +2948,7 @@ def view_gmf(request, pk):
     resp["Content-Length"] = str(len(pdf_bytes))
     return resp
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def batch_view_gmf(request):
     """
@@ -2982,7 +3000,7 @@ def batch_view_gmf(request):
 
 #------------Acknowledgement Receipt---------------#
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_ackreq_view(request):  
     q = (request.GET.get("q") or "").strip()
     pending_requests = IDSurrenderRequest.objects.filter(
@@ -3015,12 +3033,12 @@ def admin_ackreq_view(request):
         return render(request, "myapp/admin_ackreq.html", context)
     return render(request, "myapp/admin_ackreq.html", context)
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_view_ackreq_view(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
     return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
     admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
@@ -3036,7 +3054,7 @@ def admin_ackreq_receipt_pdf(request, pk):
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def batch_view_ackreq_receipts(request):
     """
@@ -3105,7 +3123,7 @@ def batch_view_ackreq_receipts(request):
 def _is_ajax(request):
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 def admin_ackreq_accept(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
@@ -3149,7 +3167,7 @@ def admin_ackreq_accept(request, pk):
     messages.success(request, "Request accepted and email sent.")
     return redirect("admin_view_ackreq", pk=req.pk)
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 def admin_ackreq_decline(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
@@ -4068,6 +4086,7 @@ def cs_case_detail_api(request, case_id):
 
 
 #---------Election Accounts---------------------#
+
 @role_required(['admin', 'comselec', 'superadmin'])
 def admin_election_view(request):
     return render (request, 'myapp/admin_election.html')

@@ -10,7 +10,7 @@ from django.db.models.functions import Now
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, UniqueConstraint
 from django.utils.timezone import now
 from django.core.validators import RegexValidator
 
@@ -74,6 +74,14 @@ class UserAccount(models.Model):
     
     class Meta:
         db_table = 'user_accounts'
+        constraints = [
+            UniqueConstraint(
+                fields=['role'],
+                condition=Q(is_active=True, role='admin'),
+                name='one_active_admin_only',
+            ),
+        ]
+        indexes = [models.Index(fields=['role','is_active'])]
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
     
