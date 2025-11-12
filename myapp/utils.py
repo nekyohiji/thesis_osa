@@ -545,37 +545,47 @@ def compute_cs_topup_for_minor(violation_type: str, approved_count_of_same_type:
 
 def _current_facilitator_entities(request):
     """
-    Returns a dict:
-      {
-        "source": "admin"|"faculty"|"",
-        "name":   "Display Name",
-        "user":   <User or None>,
-        "faculty":<Facilitator or None>
-      }
+    Invariants enforced to satisfy DB check constraint:
+      - source='admin'   => user is not None, faculty is None
+      - source='faculty' => faculty is not None, user is None
+      - source='manual'  => user is None, faculty is None
     """
     s = request.session
-    # Faculty OTP flow
-    if s.get("facilitator_pk"):
-        from myapp.models import Facilitator  # adjust import if needed
-        fac = Facilitator.objects.filter(pk=s["facilitator_pk"], is_active=True).first()
-        return {
-            "source": "faculty",
-            "name": s.get("facilitator_name", "") or (fac.full_name if fac else ""),
-            "user": None,
-            "faculty": fac,
-        }
-    # Admin/Staff login
-    if s.get("user_id"):
+
+    # 1) Faculty OTP flow
+    fac_pk = s.get("facilitator_pk")
+    if fac_pk:
+        from myapp.models import Facilitator
+        fac = Facilitator.objects.filter(pk=fac_pk, is_active=True).first()
+        if fac:
+            return {
+                "source": "faculty",
+                "name": s.get("facilitator_name", "") or (fac.full_name or ""),
+                "user": None,
+                "faculty": fac,
+            }
+        # If the pk is stale/invalid, FALL BACK to manual rather than lying
+        # about source='faculty' with a NULL faculty_id.
+
+    # 2) Admin/Staff login (session-backed)
+    user_pk = s.get("user_id")
+    if user_pk:
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        user = User.objects.filter(pk=s["user_id"], is_active=True).first()
-        return {
-            "source": "admin",
-            "name": s.get("full_name", "") or (getattr(user, "get_full_name", lambda: "")() if user else ""),
-            "user": user,
-            "faculty": None,
-        }
-    return {"source": "", "name": "", "user": None, "faculty": None}
+        user = User.objects.filter(pk=user_pk, is_active=True).first()
+        if user:
+            full = s.get("full_name") or getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "") or ""
+            return {
+                "source": "admin",
+                "name": full,
+                "user": user,
+                "faculty": None,
+            }
+        # If user lookup fails, DO NOT return source='admin' with user=None.
+
+    # 3) Fallback: manual (both IDs NULL)
+    return {"source": "manual", "name": s.get("full_name", "") or "", "user": None, "faculty": None}
+
 
 ##################################
 def _send_async(msg: EmailMultiAlternatives):

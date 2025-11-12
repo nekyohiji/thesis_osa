@@ -3768,16 +3768,17 @@ def _extract_tupc_id(raw: str) -> str | None:
     return m.group(1).upper() if m else None
 
 
-# AJAX: scanner -> TIME IN
 @role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 @transaction.atomic
 def cs_scan_time_in(request, case_id):
+    # Lock the case row
     try:
         case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
     except CommunityServiceCase.DoesNotExist:
         return JsonResponse({"ok": False, "error": "Case not found."}, status=404)
 
+    # Validate scan
     scanned_raw = request.POST.get('scanned', '')
     scanned_id = _extract_tupc_id(scanned_raw)
     if not scanned_id or scanned_id != case.student_id:
@@ -3785,22 +3786,31 @@ def cs_scan_time_in(request, case_id):
     if case.is_closed:
         return JsonResponse({"ok": False, "error": "Case is closed. Add hours first."}, status=400)
 
+    # Resolve facilitator identity (must satisfy DB check constraint)
     try:
-        ctx = _current_facilitator_entities(request)  # must tolerate/validate request.user
+        ctx = _current_facilitator_entities(request)
+        src = ctx.get("source")
+
+        if src == "admin" and not ctx.get("user"):
+            return JsonResponse({"ok": False, "error": "Admin session invalid. Please re-login."}, status=401)
+        if src == "faculty" and not ctx.get("faculty"):
+            return JsonResponse({"ok": False, "error": "Faculty session invalid. Please re-auth."}, status=401)
+
+        # Open the session (this must set source/user/faculty consistently)
         log = case.open_session(
             facilitator_name=ctx.get("name") or "",
-            facilitator_source=ctx.get("source") or "admin",
+            facilitator_source=src or "manual",
             facilitator_user=ctx.get("user"),
             facilitator_faculty=ctx.get("faculty"),
         )
+
     except PermissionError as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=403)
     except Exception as e:
-        # convert unexpected failures to a clean 400/409 instead of 500
+        # prevent 500s from bubbling up
         return JsonResponse({"ok": False, "error": f"Unable to open session: {e}"}, status=409)
 
     return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
-
 
 @role_required(['admin', 'staff', 'superadmin'])
 @require_POST
@@ -3818,9 +3828,15 @@ def cs_scan_time_out(request, case_id):
 
     try:
         ctx = _current_facilitator_entities(request)
+        src = ctx.get("source")
+        if src == "admin" and not ctx.get("user"):
+            return JsonResponse({"ok": False, "error": "Admin session invalid. Please re-login."}, status=401)
+        if src == "faculty" and not ctx.get("faculty"):
+            return JsonResponse({"ok": False, "error": "Faculty session invalid. Please re-auth."}, status=401)
+
         log = case.close_open_session(
             facilitator_name=ctx.get("name") or "",
-            facilitator_source=ctx.get("source") or "admin",
+            facilitator_source=src or "manual",
             facilitator_user=ctx.get("user"),
             facilitator_faculty=ctx.get("faculty"),
         )
@@ -3831,9 +3847,7 @@ def cs_scan_time_out(request, case_id):
 
     if not log:
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
-
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
-
 
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_agreement_pdf(request, case_id):
