@@ -3767,12 +3767,17 @@ def _extract_tupc_id(raw: str) -> str | None:
     m = re.search(r'(TUPC-\d{2}-\d+)(?=\s|$)', raw or '', flags=re.IGNORECASE)
     return m.group(1).upper() if m else None
 
-# AJAX: scanner -> TIME IN
 
+# AJAX: scanner -> TIME IN
+@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 @transaction.atomic
 def cs_scan_time_in(request, case_id):
-    case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
+    try:
+        case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
+    except CommunityServiceCase.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Case not found."}, status=404)
+
     scanned_raw = request.POST.get('scanned', '')
     scanned_id = _extract_tupc_id(scanned_raw)
     if not scanned_id or scanned_id != case.student_id:
@@ -3780,38 +3785,55 @@ def cs_scan_time_in(request, case_id):
     if case.is_closed:
         return JsonResponse({"ok": False, "error": "Case is closed. Add hours first."}, status=400)
 
-    ctx = _current_facilitator_entities(request)
-    log = case.open_session(
-        facilitator_name=ctx["name"],
-        facilitator_source=ctx["source"],
-        facilitator_user=ctx["user"],
-        facilitator_faculty=ctx["faculty"],
-    )
+    try:
+        ctx = _current_facilitator_entities(request)  # must tolerate/validate request.user
+        log = case.open_session(
+            facilitator_name=ctx.get("name") or "",
+            facilitator_source=ctx.get("source") or "admin",
+            facilitator_user=ctx.get("user"),
+            facilitator_faculty=ctx.get("faculty"),
+        )
+    except PermissionError as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=403)
+    except Exception as e:
+        # convert unexpected failures to a clean 400/409 instead of 500
+        return JsonResponse({"ok": False, "error": f"Unable to open session: {e}"}, status=409)
+
     return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
 
+
+@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 @transaction.atomic
 def cs_scan_time_out(request, case_id):
-    case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
+    try:
+        case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
+    except CommunityServiceCase.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Case not found."}, status=404)
+
     scanned_raw = request.POST.get('scanned', '')
     scanned_id = _extract_tupc_id(scanned_raw)
     if not scanned_id or scanned_id != case.student_id:
         return JsonResponse({"ok": False, "error": "ID mismatch or unreadable scan."}, status=400)
 
-    ctx = _current_facilitator_entities(request)
     try:
+        ctx = _current_facilitator_entities(request)
         log = case.close_open_session(
-            facilitator_name=ctx["name"],
-            facilitator_source=ctx["source"],
-            facilitator_user=ctx["user"],
-            facilitator_faculty=ctx["faculty"],
+            facilitator_name=ctx.get("name") or "",
+            facilitator_source=ctx.get("source") or "admin",
+            facilitator_user=ctx.get("user"),
+            facilitator_faculty=ctx.get("faculty"),
         )
     except PermissionError as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=403)
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": f"Unable to close session: {e}"}, status=409)
 
     if not log:
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
+
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
+
 
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_agreement_pdf(request, case_id):
