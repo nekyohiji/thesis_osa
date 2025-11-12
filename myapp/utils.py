@@ -545,14 +545,14 @@ def compute_cs_topup_for_minor(violation_type: str, approved_count_of_same_type:
 
 def _current_facilitator_entities(request):
     """
-    Invariants enforced to satisfy DB check constraint:
-      - source='admin'   => user is not None, faculty is None
-      - source='faculty' => faculty is not None, user is None
-      - source='manual'  => user is None, faculty is None
+    Enforce combos allowed by log_identity_consistent:
+      - admin   => user!=None,  faculty=None
+      - faculty => faculty!=None, user=None
+      - ""      => user=None, faculty=None
     """
     s = request.session
 
-    # 1) Faculty OTP flow
+    # Faculty OTP flow
     fac_pk = s.get("facilitator_pk")
     if fac_pk:
         from myapp.models import Facilitator
@@ -564,10 +564,6 @@ def _current_facilitator_entities(request):
                 "user": None,
                 "faculty": fac,
             }
-        # If the pk is stale/invalid, FALL BACK to manual rather than lying
-        # about source='faculty' with a NULL faculty_id.
-
-    # 2) Admin/Staff login (session-backed)
     user_pk = s.get("user_id")
     if user_pk:
         from django.contrib.auth import get_user_model
@@ -581,10 +577,13 @@ def _current_facilitator_entities(request):
                 "user": user,
                 "faculty": None,
             }
-        # If user lookup fails, DO NOT return source='admin' with user=None.
 
-    # 3) Fallback: manual (both IDs NULL)
-    return {"source": "manual", "name": s.get("full_name", "") or "", "user": None, "faculty": None}
+    return {
+        "source": "",         
+        "name": s.get("full_name", "") or "",
+        "user": None,
+        "faculty": None,
+    }
 
 
 ##################################
