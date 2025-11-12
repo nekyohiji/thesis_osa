@@ -3733,22 +3733,32 @@ def cs_create_or_adjust(request):
 
     return redirect('admin_view_community_service', case_id=case.id)
 
+@role_required(['admin', 'staff', 'superadmin'])
+@require_POST
+@transaction.atomic
 def cs_update_total_required(request, case_id):
-    case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
+    from myapp.disciplines.policies import compute_hours_cap_for_student
+
+    try:
+        case = CommunityServiceCase.objects.select_for_update().get(id=case_id)
+    except CommunityServiceCase.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Case not found."}, status=404)
+
     try:
         desired = Decimal((request.POST.get('total') or '').strip())
     except Exception:
         return HttpResponseBadRequest("Invalid total hours.")
 
     cap = Decimal(compute_hours_cap_for_student(case.student_id))
-
     clamped = max(min(desired, cap), case.hours_completed)
 
     case.adjust_total_required(clamped)
 
-    note = ("Clamped down to cap" if desired > cap
-            else "Cannot be below completed hours" if desired < case.hours_completed
-            else "Saved")
+    note = (
+        "Clamped down to cap" if desired > cap
+        else "Cannot be below completed hours" if desired < case.hours_completed
+        else "Saved"
+    )
 
     return JsonResponse({
         "ok": True,
@@ -3759,7 +3769,6 @@ def cs_update_total_required(request, case_id):
         "remaining_hours": str(case.remaining_hours),
         "is_closed": case.is_closed,
     })
-
 # Helpers
 def _extract_tupc_id(raw: str) -> str | None:
     # Generic + forgiving: grabs 'TUPC-<2 digits>-<digits>' until whitespace/end
