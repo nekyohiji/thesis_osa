@@ -3246,6 +3246,7 @@ def admin_view_violation(request):
         'pending_violations': pending_violations,
     })
 
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_violation_view(request):
     open_major_modal = False
     form_debug = None
@@ -3256,6 +3257,8 @@ def admin_violation_view(request):
         try:
             if add_form.is_valid():
                 approver = getattr(request.user, "get_full_name", lambda: "")() or request.user.username
+
+                hours_topup = Decimal("0")  # make sure this is always defined
 
                 with transaction.atomic():
                     violation = add_form.save(approved_by_user=approver)
@@ -3268,16 +3271,15 @@ def admin_violation_view(request):
                         violation.save(update_fields=["settlement_type", "is_settled", "settled_at"])
                         hours_topup = Decimal("0")
 
-                    # MINOR → maybe CS
+                    # MINOR → maybe CS (same rule as admin_approve_violation)
                     else:
-                        hours_topup = Decimal("0")
-                        if (
-                            violation.status == "Approved"
-                            and violation.violation_type not in CS_EXEMPT_TYPES
-                        ):
+                        # Only apply the CS / settlement policy when the violation is already Approved
+                        if violation.status == "Approved":
                             student = Student.objects.select_for_update().get(
                                 tupc_id=violation.student_id
                             )
+
+                            # Count APPROVED MINORs of THIS TYPE for this student (includes this one)
                             approved_count = (
                                 Violation.objects
                                 .filter(
@@ -3288,11 +3290,33 @@ def admin_violation_view(request):
                                 )
                                 .count()
                             )
-                            hours_topup = compute_cs_topup_for_minor(
-                                violation.violation_type,
-                                approved_count
-                            )
 
+                            # Decide settlement for this MINOR violation (per-type rule)
+                            if violation.violation_type in CS_EXEMPT_TYPES:
+                                new_settlement = "Apology Letter"
+                            else:
+                                if approved_count == 1:
+                                    # 1st time for this violation type -> Apology Letter
+                                    new_settlement = "Apology Letter"
+                                else:
+                                    # 2nd time and beyond for this violation type -> Community Service
+                                    new_settlement = "Community Service"
+
+                            # Force settlement_type to follow the rule (override any default from form/model)
+                            if (violation.settlement_type != new_settlement) or violation.is_settled:
+                                violation.settlement_type = new_settlement
+                                violation.is_settled = False
+                                violation.settled_at = None
+                                violation.save(update_fields=["settlement_type", "is_settled", "settled_at"])
+
+                            # ---- Community Service: compute top-up (per-type rule) ----
+                            if violation.violation_type not in CS_EXEMPT_TYPES:
+                                hours_topup = compute_cs_topup_for_minor(
+                                    violation.violation_type,
+                                    approved_count
+                                )
+
+                            # If there is a top-up, apply it ONCE by ledgering it to this violation
                             if hours_topup > 0:
                                 if not hasattr(violation, "cs_adjustment"):
                                     case = CommunityServiceCase.get_or_reopen_latest(
@@ -3312,6 +3336,9 @@ def admin_violation_view(request):
                                     )
                                 else:
                                     hours_topup = Decimal("0")
+                        else:
+                            # Pending minor: no settlement_type change, no CS hours yet
+                            hours_topup = Decimal("0")
 
                 # EMAIL (no SDT number)
                 student_email = build_student_email(
@@ -3398,8 +3425,8 @@ def admin_violation_view(request):
     return render(request, 'myapp/admin_violation.html', {
         'pending_violations': pending_page,
         'history_violations': history_page,
-        "major_form": add_form,                   # keep existing template var name
-        "open_major_modal": open_major_modal,     # controls modal re-open on errors
+        "major_form": add_form,
+        "open_major_modal": open_major_modal,
         "default_violation_date": default_violation_date,
         "default_violation_time": default_violation_time,
     })
@@ -3437,6 +3464,7 @@ def admin_approve_violation(request, violation_id):
     # ---------- MINOR logic below ----------
 
     # Count APPROVED MINORs of THIS TYPE for this student (includes this one now)
+    # Count APPROVED MINORs of THIS TYPE for this student (includes this one now)
     approved_count = (
         Violation.objects
         .filter(
@@ -3448,11 +3476,27 @@ def admin_approve_violation(request, violation_id):
         .count()
     )
 
+    # 🔍 DEBUG: see exactly what the system thinks
+    print(
+        "DEBUG APPROVE:",
+        "student_id=", student.tupc_id,
+        "| violation_type=", v.violation_type,
+        "| approved_count_of_same_type=", approved_count,
+        "| current_settlement=", v.settlement_type,
+    )
+
     # Decide settlement for this MINOR violation
     if v.violation_type in CS_EXEMPT_TYPES:
+        # Exempt types are ALWAYS Apology Letter, no CS
         new_settlement = 'Apology Letter'
     else:
-        new_settlement = 'Apology Letter' if approved_count == 1 else 'Community Service'
+        if approved_count == 1:
+            # 1st time for this violation type -> Apology Letter
+            new_settlement = 'Apology Letter'
+        else:
+            # 2nd time and beyond for this violation type -> Community Service
+            # (they still owe CS until they finish it, but hours are capped at 20)
+            new_settlement = 'Community Service'
 
     # Apply settlement tag to this violation
     if (v.settlement_type != new_settlement) or v.is_settled:
