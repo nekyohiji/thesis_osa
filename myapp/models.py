@@ -158,7 +158,7 @@ class Violation(models.Model):
         ("Smoking (Major)", "Smoking within the University premises of any type of cigarette or tabacco product"),
         ("Littering", "Littering within the University premises"),
         ("Borrowed ID", "Entering the University premises with a borrowed ID or registration form"),
-        ("Lending ID", "Leading of ID/ registration form to facilitate the entry of another student into the University premises"),
+        ("Lending ID", "Lending of ID/ registration form to facilitate the entry of another student into the University premises"),
         ("4th Minor", "Commission of the same or any minor offense for the 4th time"),
         ("Probation Major", "Commission of major offense while under academic probation"),
         ("Final Conviction", "Final conviction of any offense punishable under the Revised Penal Code, special penal laws or ordinances"),
