@@ -61,21 +61,73 @@ surrendering id
                 <div class="row">
                     <!-- First Name -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-semibold">First Name:</label>
-                        <input type="text" class="form-control" id="fn_surrender" name="first_name" placeholder="Enter Your First Name" minlength="1" maxlength="50" required
-                          inputmode="text" title="Only letters, ñ, apostrophe (') and hyphen (-).">
+                      <label class="form-label fw-semibold">First Name:</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="fn_surrender"
+                        name="first_name"
+                        placeholder="Enter Your First Name"
+                        minlength="1"
+                        maxlength="50"
+                        required
+                        inputmode="text"
+                        pattern="^[A-Za-zÑñ' -]+$"
+                        title="Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed."
+                        oninput="this.value = this.value
+                          .normalize('NFC')
+                          .replace(/[^A-Za-zÑñ' -]/g, '')   /* keep letters, space, ñ, ', - */
+                          .replace(/\s{2,}/g, ' ');         /* collapse multiple spaces */"
+                      >
+                      <div class="invalid-feedback">
+                        Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed.
+                      </div>
                     </div>
                     <!-- Middle Name -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-semibold">Middle Name:</label>
-                        <input type="text" class="form-control" id="mn_surrender" name="middle_name" placeholder="Enter Your Middle Name" maxlength="50"
-                          inputmode="text" title="Only letters, ñ, apostrophe (') and hyphen (-).">
+                      <label class="form-label fw-semibold">Middle Name:</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="mn_surrender"
+                        name="middle_name"
+                        placeholder="Enter Your Middle Name"
+                        maxlength="50"
+                        inputmode="text"
+                        pattern="^[A-Za-zÑñ' -]+$"
+                        title="Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed."
+                        oninput="this.value = this.value
+                          .normalize('NFC')
+                          .replace(/[^A-Za-zÑñ' -]/g, '')
+                          .replace(/\s{2,}/g, ' ');"
+                      >
+                      <div class="invalid-feedback">
+                        Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed.
+                      </div>
                     </div>
                     <!-- Surname -->
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-semibold">Surname:</label>
-                        <input type="text" class="form-control" id="sn_surrender" name="surname" placeholder="Enter Your Surname" minlength="1" maxlength="50" required
-                          inputmode="text" title="Only letters, ñ, apostrophe (') and hyphen (-).">
+                      <label class="form-label fw-semibold">Surname:</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="sn_surrender"
+                        name="surname"
+                        placeholder="Enter Your Surname"
+                        minlength="1"
+                        maxlength="50"
+                        required
+                        inputmode="text"
+                        pattern="^[A-Za-zÑñ' -]+$"
+                        title="Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed."
+                        oninput="this.value = this.value
+                          .normalize('NFC')
+                          .replace(/[^A-Za-zÑñ' -]/g, '')
+                          .replace(/\s{2,}/g, ' ');"
+                      >
+                      <div class="invalid-feedback">
+                        Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed.
+                      </div>
                     </div>
                 </div>
 
@@ -100,7 +152,7 @@ surrendering id
                     <!-- Extension -->
                     <div class="col-md-6 mb-3 d-none"  id="extensionCol" >
                         <label class="form-label fw-semibold">Extension (Jr., Sr.):</label>
-                        <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name" maxlength="15">
+                        <input type="text" class="form-control" id="ex_surrender" name="extension" placeholder="Enter Extension Name" maxlength="5">
                     </div>
 
                     <!-- Program -->

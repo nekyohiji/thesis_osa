@@ -228,18 +228,10 @@ document.getElementById('openConfirmModal').addEventListener('click', () => {
 /* ================== SUBMIT FLOW ================== */
 const redirectModal = new bootstrap.Modal(document.getElementById('redirectModal'));
 const confirmModal  = new bootstrap.Modal(document.getElementById('confirmSubmitModal'));
-const countSpan     = document.getElementById('countModal');
 const errorBox      = document.getElementById('submitError');
-let countdownTimer  = null;
+let submissionSucceeded = false;
 
-function startCountdown(seconds, redirectUrl){
-  let n = seconds; countSpan.textContent = n;
-  clearInterval(countdownTimer);
-  countdownTimer = setInterval(() => {
-    n -= 1; countSpan.textContent = n;
-    if (n <= 0){ clearInterval(countdownTimer); window.location.href = redirectUrl; }
-  }, 1000);
-}
+
 function getCsrfToken(){
   const inp = form.querySelector('input[name=csrfmiddlewaretoken]');
   return inp ? inp.value : '';
@@ -272,36 +264,45 @@ confirmBtn.addEventListener('click', async function(){
 
   // Disable UI during submit
   Array.from(form.elements).forEach(el => el.disabled = true);
-  confirmBtn.disabled = true; openBtn.disabled = true; errorBox.classList.add('d-none');
+  confirmBtn.disabled = true;
+  openBtn.disabled = true;
+  errorBox.classList.add('d-none');
+  submissionSucceeded = false;   // reset flag
 
   try{
     const resp = await fetch(form.action, {
       method: 'POST',
       headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-      body: fd, credentials: 'same-origin'
+      body: fd,
+      credentials: 'same-origin'
     });
-    const isJson = (resp.headers.get('content-type')||'').includes('application/json');
-    const data = isJson ? await resp.json() : null;
 
-    if (resp.ok && (!isJson || (data && data.ok))){
-      startCountdown(5, "{% url 'client_home' %}");
+    const isJson = (resp.headers.get('content-type')||'').includes('application/json');
+    const data   = isJson ? await resp.json() : null;
+
+    if (resp.ok && (!isJson || (data && data.ok))) {
+      submissionSucceeded = true;
+      document.getElementById('redirectModalLabel').textContent = 'Submitted!';
       return;
     }
+
     if (data && data.errors){
       Object.keys(data.errors).forEach(name => {
         const el = form.querySelector(`[name="${name}"]`);
         if (el){ el.classList.add('is-invalid'); }
       });
     }
-    clearInterval(countdownTimer);
     errorBox.classList.remove('d-none');
   } catch(e){
-    clearInterval(countdownTimer);
     errorBox.textContent = 'Network error. Please try again.';
     errorBox.classList.remove('d-none');
   } finally {
-    Array.from(form.elements).forEach(el => el.disabled = false);
-    confirmBtn.disabled = false; openBtn.disabled = false;
+    if (!submissionSucceeded) {
+      Array.from(form.elements).forEach(el => el.disabled = false);
+      confirmBtn.disabled = false;
+      openBtn.disabled = false;
+      redirectModal.hide();
+    }
   }
 });
 

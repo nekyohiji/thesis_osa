@@ -543,47 +543,6 @@ def compute_cs_topup_for_minor(violation_type: str, approved_count_of_same_type:
         return Decimal("10")
     return Decimal("0")  # 1st or 4th+ => no hours
 
-def _current_facilitator_entities(request):
-    """
-    Enforce combos allowed by log_identity_consistent:
-      - admin   => user!=None,  faculty=None
-      - faculty => faculty!=None, user=None
-      - ""      => user=None, faculty=None
-    """
-    s = request.session
-
-    # Faculty OTP flow
-    fac_pk = s.get("facilitator_pk")
-    if fac_pk:
-        from myapp.models import Facilitator
-        fac = Facilitator.objects.filter(pk=fac_pk, is_active=True).first()
-        if fac:
-            return {
-                "source": "faculty",
-                "name": s.get("facilitator_name", "") or (fac.full_name or ""),
-                "user": None,
-                "faculty": fac,
-            }
-    user_pk = s.get("user_id")
-    if user_pk:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        user = User.objects.filter(pk=user_pk, is_active=True).first()
-        if user:
-            full = s.get("full_name") or getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "") or ""
-            return {
-                "source": "admin",
-                "name": full,
-                "user": user,
-                "faculty": None,
-            }
-
-    return {
-        "source": "",         
-        "name": s.get("full_name", "") or "",
-        "user": None,
-        "faculty": None,
-    }
 
 
 ##################################

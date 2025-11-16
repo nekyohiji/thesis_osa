@@ -140,42 +140,49 @@ document.addEventListener("DOMContentLoaded", function () {
       return fileOk(el);
     }
 
-    const value = (el.value || '').trim();
+    const raw = el.value || '';      // what the user actually typed
+    const trimmed = raw.trim();      // for "is empty?" checks etc.
 
-    // --- 1) First / Middle / Surname: letters + ñ + ' + - only ---
+    // ------------------------------------------------
+    // 1) First / Middle / Surname: letters + ñ + ' + - + spaces
+    // ------------------------------------------------
     if (id === 'fn_surrender' || id === 'mn_surrender' || id === 'sn_surrender') {
-      // first & surname: required
-      if (!value && (id === 'fn_surrender' || id === 'sn_surrender')) {
+      // First & surname: required
+      if (!trimmed && (id === 'fn_surrender' || id === 'sn_surrender')) {
         setInvalid(el, 'This field is required.');
         return false;
       }
 
-      // middle name: optional, empty = NEUTRAL (no green, no red)
-      if (!value && id === 'mn_surrender') {
+      // Middle name: optional, empty = NEUTRAL (no green, no red)
+      if (!trimmed && id === 'mn_surrender') {
         el.classList.remove('is-valid', 'is-invalid');
         el.setCustomValidity('');
-        return true; // still counts as okay for the form
+        return true; // don't block submit
       }
 
-      // only A–Z, a–z, ñ, Ñ, apostrophe, hyphen
-      const nameRe = /^[A-Za-zÑñ'\-]+$/;
-      if (!nameRe.test(value)) {
-        setInvalid(el, "Only letters, ñ, apostrophe (') and hyphen (-) are allowed.");
+      // Allow letters, ñ/Ñ, apostrophe, hyphen, AND spaces
+      const nameRe = /^[A-Za-zÑñ' -]+$/;
+      if (!nameRe.test(raw)) {                 // use raw so spaces are allowed naturally
+        setInvalid(el, "Only letters, spaces, ñ, apostrophe (') and hyphen (-) are allowed.");
         return false;
       }
+
+      // DO NOT touch el.value here; let the user keep spaces while typing
       setValid(el);
       return true;
     }
 
-    // --- Student Number: required, TUPC-XX-XXXX… ---
+    // ------------------------------------------------
+    // 2) Student Number: required, TUPC-XX-XXXX…
+    // ------------------------------------------------
     if (id === 'studentID_surrender') {
-      if (!value) {
+      if (!trimmed) {
         setInvalid(el, 'Student number is required.');
         return false;
       }
 
       const re = /^TUPC-\d{2}-[A-Za-z0-9]{4,15}$/;
-      if (!re.test(value)) {
+      if (!re.test(trimmed)) {
         setInvalid(
           el,
           "Use TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 letters/digits)."
@@ -187,14 +194,16 @@ document.addEventListener("DOMContentLoaded", function () {
       return true;
     }
 
-    // --- 2) Years of stay: 2014–current year, format YYYY-YYYY ---
+    // ------------------------------------------------
+    // 3) Inclusive years of stay: YYYY-YYYY, 2014–current year
+    // ------------------------------------------------
     if (id === 'stay_surrender') {
-      if (!value) {
+      if (!trimmed) {
         setInvalid(el, 'This field is required.');
         return false;
       }
 
-      const m = /^(\d{4})-(\d{4})$/.exec(value);
+      const m = /^(\d{4})-(\d{4})$/.exec(trimmed);
       if (!m) {
         setInvalid(el, 'Use YYYY-YYYY (e.g., 2019-2023).');
         return false;
@@ -217,12 +226,22 @@ document.addEventListener("DOMContentLoaded", function () {
       return true;
     }
 
-    // --- 3) Everything else: use built-in HTML5 validity (age, email, etc.) ---
-    // IMPORTANT: clear any previous custom error so a field can recover from red → green
-    el.setCustomValidity('');
+    // ------------------------------------------------
+    // 4) Everything else: use built-in HTML5 validity (age, email, ADDRESS, etc.)
+    //    IMPORTANT: do NOT overwrite el.value here, or you kill spaces.
+    // ------------------------------------------------
+    el.setCustomValidity('');  // clear any previous custom error
 
     if (!el.checkValidity()) {
-      const msg = el.validationMessage || 'Invalid value.';
+      let msg = el.validationMessage || 'Invalid value.';
+
+      // nicer messages for some special cases (if needed)
+      if (id === 'stay_surrender') {
+        msg = 'Use YYYY-YYYY (e.g., 2019-2023).';
+      } else if (id === 'studentID_surrender') {
+        msg = "Use TUPC-XX-XXXX up to TUPC-XX-XXXXXXXXXX (last block 4–15 letters/digits).";
+      }
+
       setInvalid(el, msg);
       return false;
     }
@@ -230,6 +249,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setValid(el);
     return true;
   }
+
 
   function firstInvalidEl() {
     for (const id of FIELD_IDS) {

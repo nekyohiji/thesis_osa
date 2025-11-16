@@ -236,18 +236,22 @@
 
           <!-- Faculty ID: NN-NNN -->
           <div class="mb-1">
-            <label for="facultyId" class="form-label fw-semibold">Faculty ID Number (NN-NNN):</label>
+            <label for="facultyId" class="form-label fw-semibold">
+              Faculty ID Number (NN-NNN or NN-NNNN):
+            </label>
             <input type="text" class="form-control {% if form.faculty_id.errors %}is-invalid{% endif %}"
-                   id="facultyId" name="faculty_id"
-                   placeholder="12-345" maxlength="6" inputmode="numeric"
-                   pattern="\d{2}-\d{3}" required
-                   value="{{ form.faculty_id.value|default:'' }}">
+                  id="facultyId" name="faculty_id"
+                  placeholder="12-345 or 12-3456" maxlength="7" inputmode="numeric"
+                  pattern="^\d{2}-\d{3,4}$" required
+                  value="{{ form.faculty_id.value|default:'' }}">
             {% if form.faculty_id.errors %}
               <div class="invalid-feedback">{{ form.faculty_id.errors|striptags }}</div>
             {% else %}
-              <div class="invalid-feedback">Use format <b>NN-NNN</b> (e.g., 12-345).</div>
+              <div class="invalid-feedback">
+                Use format <b>NN-NNN</b> or <b>NN-NNNN</b> (e.g., 12-345 or 12-3456).
+              </div>
             {% endif %}
-            <div class="form-text">Two digits, a hyphen, then three digits.</div>
+            <div class="form-text">Two digits, a hyphen, then 3–4 digits.</div>
           </div>
           <div class="mb-3">
             <label for="facilitatorEmail" class="form-label fw-semibold">Email:</label>
@@ -397,9 +401,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idInput) {
       idInput.addEventListener('input', () => {
         try {
+          // keep only digits
           let v = idInput.value.replace(/[^\d]/g, '');
-          if (v.length > 2) v = v.slice(0, 2) + '-' + v.slice(2, 5);
-          idInput.value = v.slice(0, 6);
+
+          // max: 2 (prefix) + 4 (suffix) = 6 digits
+          if (v.length > 6) v = v.slice(0, 6);
+
+          if (v.length > 2) {
+            // insert hyphen after first 2 digits
+            v = v.slice(0, 2) + '-' + v.slice(2);
+          }
+          idInput.value = v;
         } catch (err) {
           console.error('ID format error:', err);
         }
@@ -410,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
       form.addEventListener('submit', (e) => {
         try {
-          const idPattern = /^\d{2}-\d{3}$/;
+          const idPattern = /^\d{2}-\d{3,4}$/;
           let ok = true;
 
           // Name required

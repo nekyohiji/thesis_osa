@@ -895,13 +895,13 @@ class ClearanceRequest(models.Model):
         return f"{self.last_name}, {self.first_name} - {self.student_number}"
     
 id_validator = RegexValidator(
-    regex=r'^\d{2}-\d{3}$',
+    regex=r'^\d{2}-\d{3,4}$',
     message="Use format NN-NNN (e.g., 12-345). Only digits with a hyphen."
 )
 
 class Facilitator(models.Model):
     faculty_id = models.CharField(
-        max_length=6,
+        max_length=7,
         unique=True,
         db_index=True,
         validators=[id_validator],
@@ -925,7 +925,7 @@ class Facilitator(models.Model):
         # DB check constraint (works on PostgreSQL). SQLite ignores regex in CHECK.
         constraints = [
             models.CheckConstraint(
-                check=Q(faculty_id__regex=r'^\d{2}-\d{3}$'),
+                check=Q(faculty_id__regex=r'^\d{2}-\d{3,4}$'),
                 name="faculty_id_nn_nnn_format"
             )
         ]

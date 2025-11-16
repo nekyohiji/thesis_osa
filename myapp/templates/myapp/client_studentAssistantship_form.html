@@ -316,17 +316,26 @@
 </div>
 
 <!-- Redirect Modal -->
-<div class="modal fade" id="redirectModal" tabindex="-1" aria-labelledby="redirectModalLabel" aria-hidden="true">
+<!-- Redirect Modal -->
+<div class="modal fade"
+     id="redirectModal"
+     tabindex="-1"
+     aria-labelledby="redirectModalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow">
       <div class="modal-header"><h5 class="modal-title" id="redirectModalLabel">Submitting…</h5></div>
       <div class="modal-body">
-        Your request is being submitted. You’ll be redirected to Home in
-        <strong><span id="countModal">5</span></strong> seconds.
-        <div class="small text-muted mt-2">Please don’t close this tab.</div>
-        <div id="submitError" class="alert alert-danger d-none mt-3" role="alert">Submission failed. Please try again later.</div>
+        Your log has been submitted and recorded. 
+        <div id="submitError" class="alert alert-danger d-none mt-3" role="alert">
+          Submission failed. Please try again later.
+        </div>
       </div>
-      <div class="modal-footer"><a href="{% url 'client_home' %}" class="btn btn-primary" id="goNowBtn">Go Now</a></div>
+      <div class="modal-footer">
+        <a href="{% url 'client_home' %}" class="btn btn-primary" id="goNowBtn">Go Back Home</a>
+      </div>
     </div>
   </div>
 </div>

@@ -24,6 +24,7 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A4, landscape, inch
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -46,6 +47,7 @@ from reportlab.platypus import TableStyle as PlatypusTableStyle
 from reportlab.platypus import Image
 # ── Django
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.mail import EmailMessage
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.finders import find as find_static
@@ -139,7 +141,6 @@ from .utils import (
     no_store,
     compute_cs_topup_for_minor,
     CS_EXEMPT_TYPES,
-    _current_facilitator_entities, 
     send_studentassist_confirmation, 
     send_acso_accre_confirmation,
     )
@@ -819,6 +820,11 @@ def submit_acso_accre(request):
             pass
         return JsonResponse({"ok": True, "id": obj.pk}, status=201)
     return JsonResponse({"ok": False, "errors": _json_errors(form)}, status=400)
+
+
+
+
+
 
 #########################LOGIN
 
@@ -2621,13 +2627,26 @@ def goodmoral_request_form_pdf(request, pk):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(x, y, "✓")
 
-    def text(x, y, s, bold=False, size=11, right=False):
+    def text(x, y, s, bold=False, size=11, right=False, max_width=None):
+
+        s = s or ""
         font = "Helvetica-Bold" if bold else "Helvetica"
+
+        # Auto-shrink to fit width if needed
+        if max_width is not None:
+            cur_size = size
+            while cur_size > 6:  # minimum readable size
+                text_width = pdfmetrics.stringWidth(s, font, cur_size)
+                if text_width <= max_width:
+                    break
+                cur_size -= 0.5
+            size = cur_size
+
         c.setFont(font, size)
         if right:
-            c.drawRightString(x, y, s or "")
+            c.drawRightString(x, y, s)
         else:
-            c.drawString(x, y, s or "")
+            c.drawString(x, y, s)
 
     def draw_guides(step=25):
         c.setFont("Helvetica", 6)
@@ -2637,6 +2656,79 @@ def goodmoral_request_form_pdf(request, pk):
         for y in range(0, int(height), step):
             c.line(0, y, width, y); c.drawString(2, y+2, str(y))
         c.setFillGray(0)
+        
+
+    def draw_name_block(
+        surname,
+        first,
+        ext,
+        mi,
+        x_start,
+        y_first_line,
+        line_max_width,
+        base_size=11,
+        min_size=6,
+        step=0.5,
+        space_factor=1.2,
+    ):
+        """
+        Draws surname, first, ext, mi as ONE flowing line:
+        - surname first, then first name, then ext, then MI
+        - skips missing parts (no big gaps)
+        - shrinks font size so the WHOLE line fits within max_width
+        - all parts use the SAME font size
+        """
+        font = "Helvetica"  # usually names are not bold on these forms
+
+        parts = [
+            (surname or "").strip(),
+            (first or "").strip(),
+            (ext or "").strip(),
+            (mi or "").strip(),
+        ]
+        # Keep only non-empty parts
+        parts = [p for p in parts if p]
+        if not parts:
+            return  # nothing to draw
+
+        def longest_word_width(size):
+            return max(
+                pdfmetrics.stringWidth(p, font, size) for p in parts
+            ) if parts else 0
+
+        # Shrink so that the longest word fits within one line
+        size = base_size
+        while size > min_size and longest_word_width(size) > line_max_width:
+            size -= step
+        if size < min_size:
+            size = min_size
+
+        c.setFont(font, size)
+        space_w = pdfmetrics.stringWidth(" ", font, size) * space_factor
+
+        x = x_start
+        y = y_first_line
+
+        for i, p in enumerate(parts):
+            w = pdfmetrics.stringWidth(p, font, size)
+
+            # If this part doesn't fit in the remaining space on this line,
+            # wrap to the line below the names (away from sex checkboxes).
+            if x != x_start and x + w > x_start + line_max_width:
+                x = x_start
+                y -= (size + 2)  # line spacing downward
+
+            c.drawString(x, y, p)
+            x += w
+
+            # Add space if not the last part, but wrap early if the space
+            # itself would push us over the line_max_width.
+            if i != len(parts) - 1:
+                if x + space_w > x_start + line_max_width:
+                    x = x_start
+                    y -= (size + 2)
+                else:
+                    x += space_w
 
     if request.GET.get("guide") == "1":
         draw_guides()
@@ -2651,16 +2743,28 @@ def goodmoral_request_form_pdf(request, pk):
     date_requested = timezone.localdate(r.submitted_at).strftime('%m/%d/%Y')
     text(width - 180, height - 135, date_requested, bold=True, size=12, right=True)  # DATE (right box)
 
-    # ---------- PLACE FIELDS ----------
+ # ---------- NAME FIELDS (FLOWING LINE) ----------
     surname = (r.surname or "").upper()
     first = (r.first_name or "").upper()
     ext = (r.ext or "").upper()
     mi = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
 
-    text(45, 660, surname)
-    text(120, 660, first)
-    text(210, 660, ext)
-    text(240, 660, mi)
+    NAME_X = 45         # start of the name line (adjust with ?guide=1)
+    NAME_Y = 665        # vertical position of name line
+    NAME_LINE_MAX_WIDTH = 265
+
+    # Draw: Surname First Ext MI as one line, collapsing gaps
+
+    draw_name_block(
+        surname,
+        first,
+        ext,
+        mi,
+        x_start=NAME_X,
+        y_first_line=NAME_Y,
+        line_max_width=NAME_LINE_MAX_WIDTH,
+        base_size=10,
+    )
 
     # Sex checkboxes
     sex = (r.sex or "").lower()
@@ -2736,6 +2840,7 @@ def goodmoral_request_form_pdf(request, pk):
     writer.write(out)
     out.seek(0)
     return FileResponse(out, as_attachment=False, filename=f"GMC_RequestForm_{r.student_id or r.pk}.pdf")
+
 
 @role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
@@ -3384,10 +3489,9 @@ def admin_violation_view(request):
     default_violation_date = timezone.localdate().strftime("%Y-%m-%d")
     default_violation_time = timezone.localtime().strftime("%H:%M")
 
-    base = (Violation.objects
-            .defer('evidence_1', 'evidence_2')
-            .order_by('-created_at'))
+    base = Violation.objects.defer('evidence_1', 'evidence_2')
 
+    # --- Pending: keep created_at order (most recently created at top) ---
     pending = base.filter(status='Pending')
     if q_pending:
         pending = pending.filter(
@@ -3395,7 +3499,9 @@ def admin_violation_view(request):
             Q(first_name__icontains=q_pending) |
             Q(last_name__icontains=q_pending)
         )
+    pending = pending.order_by('-created_at')
 
+    # --- History: order by violation date/time (newest → oldest) ---
     history = base.exclude(status='Pending')
     if q_history:
         history = history.filter(
@@ -3403,6 +3509,7 @@ def admin_violation_view(request):
             Q(first_name__icontains=q_history) |
             Q(last_name__icontains=q_history)
         )
+    history = history.order_by('-violation_date', '-violation_time', '-created_at')
 
     def _toi(v, d):
         try:
@@ -3608,7 +3715,40 @@ def mark_apology_settled(request, violation_id):
     return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
 
 #------------------------------------#
+User = get_user_model()
 
+def _current_facilitator_entities(request):
+    ctx = {"source": "", "name": "", "user": None, "faculty": None}
+    role = (request.session.get("role") or "").lower()
+    user_pk = request.session.get("user_id")
+
+    if role in ("admin", "staff", "superadmin") and user_pk:
+        try:
+            user = User.objects.get(pk=user_pk, is_active=True)
+        except User.DoesNotExist:
+            user = None
+
+        if user:
+            ctx["source"] = "admin"
+            ctx["user"] = user
+            ctx["name"] = (
+                getattr(user, "full_name", None)
+                or getattr(user, "get_full_name", lambda: "")()
+                or getattr(user, "username", "")
+                or getattr(user, "email", "")
+                or ""
+            )
+            return ctx
+
+    fpk = request.session.get("facilitator_pk")
+    if fpk:
+        fac = Facilitator.objects.filter(pk=fpk, is_active=True).first()
+        if fac:
+            ctx["source"] = "faculty"
+            ctx["faculty"] = fac
+            ctx["name"] = fac.full_name
+            return ctx
+    return ctx
 
 #-----admin community service--------#
 
@@ -3956,7 +4096,7 @@ def admin_cs_completion_pdf(request, case_id):
 
 #---------Facilitator Accounts---------------------#
 
-ID_PATTERN = re.compile(r'^\d{2}-\d{3}$')   # NN-NNN
+ID_PATTERN = re.compile(r'^\d{2}-\d{3,4}$')   # NN-NNN
 OTP_LENGTH = 6
 OTP_TTL = timedelta(minutes=5)
 

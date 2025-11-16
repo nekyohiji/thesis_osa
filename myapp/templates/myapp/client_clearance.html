@@ -276,15 +276,36 @@
         </div>
 
         <div class="col-md">
-          <label class="form-label fw-semibold" for="program">Program:</label>
-          <div class="status-wrap">
-            <select class="form-select" id="program" name="program" required>
-              <option value="" selected disabled>-- Select Program --</option>
-            </select>
-            <i id="program_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="invalid-feedback">Please select your program.</div>
-        </div>
+          <div class="col-md">
+            <label class="form-label fw-semibold" for="program">Program (Acronym Only):</label>
+            <div class="status-wrap">
+              <input
+                type="text"
+                class="form-control"
+                id="program"
+                name="program"
+                placeholder="BET-COET"
+                minlength="2"
+                maxlength="10"
+                required
+                inputmode="text"
+                pattern="^[A-Za-z]+(?:-[A-Za-z]+)*$"
+                title="Letters and hyphens only. No spaces; hyphens must be between letters."
+                oninput="this.value = this.value
+                  .normalize('NFC')
+                  .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g,'-')   /* normalize unicode dashes to '-' */
+                  .replace(/[^A-Za-z-]/g,'')                             /* keep only letters and '-' */
+                  .replace(/-{2,}/g,'-')                                 /* collapse multiple hyphens */
+                  .replace(/^-+/, '');                                   /* strip leading hyphens */
+                "
+                onblur="this.value = this.value.replace(/-+$/,'');"      /* strip trailing hyphens on blur */
+              >
+              <i id="program_status" class="status-icon bi d-none"></i>
+            </div>
+            <div class="invalid-feedback">
+              Program must be 2–10 characters, letters and hyphens only (e.g., BET-COET).
+            </div>
+          </div> 
 
         <div class="col-md">
           <label class="form-label fw-semibold" for="year_level">Year Level:</label>

@@ -51,84 +51,10 @@
   const lyEl   = document.getElementById("last_year_in_tupc");
   
 
-  const trimIds   = ["first_name","last_name","extension","email_surrender","student_number","address"];
-  const baseIds   = ["first_name","last_name","email_surrender","contact_surrender","student_number","age","address","last_year_in_tupc"];
-  const selectIds = ["program","year_level","client_type","stakeholder","purpose","sex"];
+  const trimIds   = ["first_name","last_name","extension","email_surrender","student_number","address", "program"];
+  const baseIds   = ["first_name","last_name","email_surrender","contact_surrender","student_number","age","address","last_year_in_tupc", "program"];
+  const selectIds = ["year_level","client_type","stakeholder","purpose","sex"];
   
-
-  // ===== CSV Programs (now with "Other") =====
-  (async function loadPrograms() {
-    try {
-      const resp = await fetch("{% static 'myapp/data/programs.csv' %}", {cache:'no-store'});
-      if (!resp.ok) return;
-      const text = await resp.text();
-      const lines = text.split(/\r?\n/).map(l => l.replace(/\s+$/,'')).filter(Boolean);
-      for (const line of lines) {
-        if (!line) continue;
-        if (line.toLowerCase() === 'program') continue;
-        const opt = document.createElement('option');
-        opt.value = line; opt.textContent = line;
-        program.appendChild(opt);
-      }
-      const otherOpt = document.createElement('option');
-      otherOpt.value = '__OTHER__';
-      otherOpt.textContent = 'Other';
-      program.appendChild(otherOpt);
-
-      initProgramOther();
-      validateField(program);
-      validateForm();
-    } catch(e) {
-      console.warn('Failed to load programs:', e);
-    }
-  })();
-
-  // ===== Add a typable "Other" input without changing field IDs/names =====
-  let programOtherInput = null;
-  function initProgramOther() {
-    if (!program) return;
-    const wrap = program.closest('.status-wrap') || program.parentElement;
-    programOtherInput = document.createElement('input');
-    programOtherInput.type = 'text';
-    programOtherInput.id = 'program_other';
-    programOtherInput.className = 'form-control mt-2 d-none';
-    programOtherInput.placeholder = 'Type your program';
-    programOtherInput.setAttribute('minlength', '2');
-    programOtherInput.setAttribute('maxlength', '100');
-    wrap.insertAdjacentElement('afterend', programOtherInput);
-    program.addEventListener('change', handleProgramChange);
-    programOtherInput.addEventListener('input', () => { validateProgramOther(); validateForm(); });
-    programOtherInput.addEventListener('blur',  () => { validateProgramOther(); validateForm(); });
-    handleProgramChange();
-  }
-
-  function handleProgramChange() {
-    if (!programOtherInput) return;
-    if (program.value === '__OTHER__') {
-      programOtherInput.classList.remove('d-none');
-      programOtherInput.required = true;
-      programOtherInput.focus();
-      validateProgramOther();
-      setClasses(program, validateProgramOther());
-    } else {
-      programOtherInput.required = false;
-      programOtherInput.value = '';
-      programOtherInput.classList.add('d-none');
-      setClasses(programOtherInput, true);
-      setClasses(program, !!program.value);
-    }
-  }
-
-  function validateProgramOther() {
-    if (!programOtherInput) return true;
-    if (program.value !== '__OTHER__') return true;
-    programOtherInput.value = programOtherInput.value.replace(/\s+$/, '');
-    const len = programOtherInput.value.length;
-    const ok = len >= 2 && len <= 100;
-    setClasses(programOtherInput, ok);
-    return ok;
-  }
-
   // ===== Extension toggle =====
   function refreshExtension() {
     if (extYes.checked) {
@@ -205,9 +131,15 @@
       el.setCustomValidity(ok ? "" : "Address must be 5–255 characters.");
       return mark(el, ok);
     }
-    if (el === program) {
-      const ok = (program.value === '__OTHER__') ? validateProgramOther() : !!program.value;
-      return mark(program, ok);
+
+    if (el.id === "program") {
+      // Trim right-side whitespace only; pattern handles the rest
+      el.value = el.value.replace(/\s+$/,'');
+      const ok = el.checkValidity();
+      el.setCustomValidity(
+        ok ? "" : "Program must be 2–10 characters, letters and hyphens only (e.g., BET-COET)."
+      );
+      return mark(el, ok);
     }
 
     if (el === extInp) {
@@ -363,9 +295,6 @@
     confirmModal.hide();
     redirectModal.show();
     const fd = new FormData(form);
-    if (program && program.value === '__OTHER__' && programOtherInput) {
-      fd.set('program', programOtherInput.value.replace(/\s+$/, ''));
-    }
     Array.from(form.elements).forEach(el => el.disabled = true);
     confirmBtn.disabled = true;
     openBtn.disabled = true;
