@@ -269,11 +269,46 @@
           <div class="invalid-feedback">
             Format: <b>TUPC-XX-YYYY</b> where <b>XX</b> = two digits and <b>YYYY</b> = 4–15 letters/digits.
           </div>
-          <div id="student_number_hint" class="hint mt-1">
+          <div id="student_number_hint" class="hint mt-1 text-center">
             Examples: <code>TUPC-22-1234</code> • <code>TUPC-14-1234567891012MC</code>
           </div>
-
         </div>
+
+        <div class="col-md">
+          <label class="form-label fw-semibold" for="year_level">Year Level:</label>
+          <div class="status-wrap">
+            <select class="form-select" id="year_level" name="year_level" required>
+              <option value="" selected disabled>-- Select --</option>
+              <option>First Year</option><option>Second Year</option><option>Third Year</option>
+              <option>Fourth Year</option><option>Fifth Year</option>
+            </select>
+            <i id="year_level_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="valid-feedback">Looks good.</div>
+          <div class="invalid-feedback">Please select a year level.</div>
+        </div>
+
+        <div class="col-md">
+          <label class="form-label fw-semibold" for="last_year_in_tupc">Last year in TUPC:</label>
+          <div class="status-wrap">
+            <input
+              type="number"
+              class="form-control"
+              id="last_year_in_tupc"
+              name="last_year_in_tupc"
+              placeholder="YYYY"
+              inputmode="numeric"
+              step="1"
+              min="1979"
+              max="" 
+              required>
+            <i id="last_year_in_tupc_status" class="status-icon bi d-none"></i>
+          </div>
+          <div class="hint mt-1 text-center">Optional. Pick a year between 1979 and the current year.</div>
+          <div class="invalid-feedback">Enter a valid year (1979–current).</div>
+        </div>
+
+
 
         <div class="col-md">
           <div class="col-md">
@@ -307,39 +342,6 @@
             </div>
           </div> 
 
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="year_level">Year Level:</label>
-          <div class="status-wrap">
-            <select class="form-select" id="year_level" name="year_level" required>
-              <option value="" selected disabled>-- Select --</option>
-              <option>First Year</option><option>Second Year</option><option>Third Year</option>
-              <option>Fourth Year</option><option>Fifth Year</option>
-            </select>
-            <i id="year_level_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="valid-feedback">Looks good.</div>
-          <div class="invalid-feedback">Please select a year level.</div>
-        </div>
-
-        <div class="col-md">
-          <label class="form-label fw-semibold" for="last_year_in_tupc">Last year in TUPC:</label>
-          <div class="status-wrap">
-            <input
-              type="number"
-              class="form-control"
-              id="last_year_in_tupc"
-              name="last_year_in_tupc"
-              placeholder="YYYY"
-              inputmode="numeric"
-              step="1"
-              min="1979"
-              max="" 
-              required>
-            <i id="last_year_in_tupc_status" class="status-icon bi d-none"></i>
-          </div>
-          <div class="hint mt-1">Optional. Pick a year between 1979 and the current year.</div>
-          <div class="invalid-feedback">Enter a valid year (1979–current).</div>
-        </div>
       </div>
 
       <div class="row mb-3">

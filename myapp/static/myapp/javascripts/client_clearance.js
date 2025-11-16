@@ -135,10 +135,18 @@
     if (el.id === "program") {
       // Trim right-side whitespace only; pattern handles the rest
       el.value = el.value.replace(/\s+$/,'');
+
+      // Clear old custom error first so checkValidity() uses only the constraints
+      el.setCustomValidity("");
+
       const ok = el.checkValidity();
-      el.setCustomValidity(
-        ok ? "" : "Program must be 2–10 characters, letters and hyphens only (e.g., BET-COET)."
-      );
+
+      if (!ok) {
+        el.setCustomValidity(
+          "Program must be 2–10 characters, letters and hyphens only (e.g., BET-COET)."
+        );
+      }
+
       return mark(el, ok);
     }
 
