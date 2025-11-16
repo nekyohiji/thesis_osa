@@ -3719,27 +3719,32 @@ User = get_user_model()
 
 def _current_facilitator_entities(request):
     ctx = {"source": "", "name": "", "user": None, "faculty": None}
+
+    # --- 1) Admin / Staff / Superadmin (custom UserAccount login) ---
     role = (request.session.get("role") or "").lower()
-    user_pk = request.session.get("user_id")
+    user_id = request.session.get("user_id")
 
-    if role in ("admin", "staff", "superadmin") and user_pk:
-        try:
-            user = User.objects.get(pk=user_pk, is_active=True)
-        except User.DoesNotExist:
-            user = None
+    if role in ("admin", "staff", "superadmin") and user_id:
+        ua = UserAccount.objects.filter(id=user_id, is_active=True).first()
+        if ua:
+            full_name = (ua.full_name or "").strip()
+            email = (ua.email or "").strip()
 
-        if user:
+            # Backing auth user ONLY for FK + "same admin must time out" check
+            auth_user = None
+            if email:
+                # username = email to keep it unique & stable
+                auth_user, _created = User.objects.get_or_create(
+                    username=email,
+                    defaults={"email": email}
+                )
+
             ctx["source"] = "admin"
-            ctx["user"] = user
-            ctx["name"] = (
-                getattr(user, "full_name", None)
-                or getattr(user, "get_full_name", lambda: "")()
-                or getattr(user, "username", "")
-                or getattr(user, "email", "")
-                or ""
-            )
+            ctx["user"] = auth_user           # used in facilitator_user FK
+            ctx["name"] = full_name or (auth_user.get_full_name() if auth_user else email)
             return ctx
 
+    # --- 2) Faculty facilitator (OTP login) ---
     fpk = request.session.get("facilitator_pk")
     if fpk:
         fac = Facilitator.objects.filter(pk=fpk, is_active=True).first()
@@ -3748,6 +3753,8 @@ def _current_facilitator_entities(request):
             ctx["faculty"] = fac
             ctx["name"] = fac.full_name
             return ctx
+
+    # --- 3) No recognized operator ---
     return ctx
 
 #-----admin community service--------#
