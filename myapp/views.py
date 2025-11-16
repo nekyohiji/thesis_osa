@@ -107,6 +107,7 @@ from .libre.cs_completion import build_cs_completion_pdf
 from .libre.cs_agreement import build_cs_agreement_pdf
 from .libre.ack_receipt import build_ack_pdf
 from .disciplines.policies import compute_hours_cap_for_student
+from .libre.ack_receipt import build_ack_pdf_bytes 
 from .models import (
     ACSORequirement,
     Archived_Account,
@@ -3226,35 +3227,37 @@ def admin_view_ackreq_view(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
     return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
 
-@role_required(['admin', 'staff', 'superadmin'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
-    admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
+
+    admin_acc = (
+        UserAccount.objects.filter(role='admin', is_active=True)
+        .order_by('-created_at')
+        .first()
+    )
     admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
 
-    try:
-        pdf_path = build_ack_pdf(req, admin_name_upper)
-    except Exception as e:
-        raise Http404(f"PDF generation failed: {e}")
+    pdf_bytes = build_ack_pdf_bytes(req, admin_name_upper)
 
-    filename = os.path.basename(pdf_path)
-    resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
-    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    content_type = mimetypes.types_map.get(".pdf", "application/pdf")
+    resp = HttpResponse(pdf_bytes, content_type=content_type)
+    resp["Content-Disposition"] = (
+        f'inline; filename="Acknowledgement-Receipt-{req.student_number}.pdf"'
+    )
+    resp["Content-Length"] = str(len(pdf_bytes))
     return resp
+
 
 @role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def batch_view_ackreq_receipts(request):
     """
     Batch preview for Acknowledgement Receipt PDFs (ID Surrender).
-    Uses build_ack_pdf(req, admin_name_upper).
 
     Usage:
       /ackreq/batch-preview?frm=1&to=50
 
-    Notes:
-      - Range is 1-based index over the filtered/sorted queryset.
-      - Streams a single merged PDF inline.
+    Range is 1-based index over the queryset ordered by pk.
     """
 
     def _num(x, default):
@@ -3278,8 +3281,8 @@ def batch_view_ackreq_receipts(request):
 
     qs = IDSurrenderRequest.objects.order_by("pk")
 
-    start = frm - 1
-    end = to
+    start = frm - 1  # 1-based -> 0-based
+    end = to         # slice end is exclusive
     rows = list(qs[start:end])
 
     if not rows:
@@ -3296,11 +3299,11 @@ def batch_view_ackreq_receipts(request):
 
     for r in rows:
         try:
-            pdf_path = build_ack_pdf(r, admin_name_upper)
-            merger.append(pdf_path)
+            pdf_bytes = build_ack_pdf_bytes(r, admin_name_upper)
+            merger.append(BytesIO(pdf_bytes))
             added += 1
         except Exception as e:
-            # Optionally log:
+            # For debugging you can temporarily print:
             # print(f"ACK BATCH ERROR for PK={r.pk}: {e}")
             continue
 
@@ -3311,8 +3314,8 @@ def batch_view_ackreq_receipts(request):
     merger.write(out)
     merger.close()
     out.seek(0)
-
     pdf_bytes = out.getvalue()
+
     content_type = mimetypes.types_map.get(".pdf", "application/pdf")
     resp = HttpResponse(pdf_bytes, content_type=content_type)
     resp["Content-Disposition"] = (
