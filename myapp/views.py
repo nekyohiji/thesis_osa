@@ -2931,6 +2931,80 @@ def batch_view_gmrf(request):
                 c.line(0, y, width, y); c.drawString(2, y+2, str(y))
             c.setFillGray(0)
 
+        # ---- NEW: same draw_name_block as single view ----
+        def draw_name_block(
+            surname,
+            first,
+            ext,
+            mi,
+            x_start,
+            y_first_line,
+            line_max_width,
+            base_size=11,
+            min_size=6,
+            step=0.5,
+            space_factor=1.2,
+        ):
+            """
+            Draws surname, first, ext, mi as ONE flowing line:
+            - surname first, then first name, then ext, then MI
+            - skips missing parts (no big gaps)
+            - shrinks font size so the WHOLE line fits within max_width
+            - all parts use the SAME font size
+            """
+            font = "Helvetica"  # usually names are not bold on these forms
+
+            parts = [
+                (surname or "").strip(),
+                (first or "").strip(),
+                (ext or "").strip(),
+                (mi or "").strip(),
+            ]
+            # Keep only non-empty parts
+            parts = [p for p in parts if p]
+            if not parts:
+                return  # nothing to draw
+
+            def longest_word_width(size):
+                return max(
+                    pdfmetrics.stringWidth(p, font, size) for p in parts
+                ) if parts else 0
+
+            # Shrink so that the longest word fits within one line
+            size = base_size
+            while size > min_size and longest_word_width(size) > line_max_width:
+                size -= step
+            if size < min_size:
+                size = min_size
+
+            c.setFont(font, size)
+            space_w = pdfmetrics.stringWidth(" ", font, size) * space_factor
+
+            x = x_start
+            y = y_first_line
+
+            for i, p in enumerate(parts):
+                w = pdfmetrics.stringWidth(p, font, size)
+
+                # If this part doesn't fit in the remaining space on this line,
+                # wrap to the line below the names (away from sex checkboxes).
+                if x != x_start and x + w > x_start + line_max_width:
+                    x = x_start
+                    y -= (size + 2)  # line spacing downward
+
+                c.drawString(x, y, p)
+                x += w
+
+                # Add space if not the last part, but wrap early if the space
+                # itself would push us over the line_max_width.
+                if i != len(parts) - 1:
+                    if x + space_w > x_start + line_max_width:
+                        x = x_start
+                        y -= (size + 2)
+                    else:
+                        x += space_w
+        # ---- END new helper ----
+
         if guide:
             draw_guides()
 
@@ -2940,15 +3014,26 @@ def batch_view_gmrf(request):
         date_requested = timezone.localdate(r.submitted_at).strftime('%m/%d/%Y')
         text(width - 180, height - 135, date_requested, bold=True, size=12, right=True)
 
-        # PLACE FIELDS
+        # NAME FIELDS (FLOWING LINE)  --- UPDATED TO MATCH SINGLE VIEW
         surname = (r.surname or "").upper()
         first = (r.first_name or "").upper()
         ext = (r.ext or "").upper()
         mi = ((r.middle_name[:1] + ".").upper() if r.middle_name else "")
-        text(45, 660, surname)
-        text(120, 660, first)
-        text(210, 660, ext)
-        text(240, 660, mi)
+
+        NAME_X = 45
+        NAME_Y = 665
+        NAME_LINE_MAX_WIDTH = 265
+
+        draw_name_block(
+            surname,
+            first,
+            ext,
+            mi,
+            x_start=NAME_X,
+            y_first_line=NAME_Y,
+            line_max_width=NAME_LINE_MAX_WIDTH,
+            base_size=10,
+        )
 
         # Sex checkboxes
         sex = (r.sex or "").lower()
@@ -3162,10 +3247,11 @@ def admin_ackreq_receipt_pdf(request, pk):
 def batch_view_ackreq_receipts(request):
     """
     Batch preview for Acknowledgement Receipt PDFs (ID Surrender).
-    Uses your existing build_ack_pdf(req, admin_name_upper).
+    Uses build_ack_pdf(req, admin_name_upper).
 
     Usage:
       /ackreq/batch-preview?frm=1&to=50
+
     Notes:
       - Range is 1-based index over the filtered/sorted queryset.
       - Streams a single merged PDF inline.
@@ -3178,36 +3264,44 @@ def batch_view_ackreq_receipts(request):
         except Exception:
             return default
 
-    frm = _num(request.GET.get('frm'), 1)
-    to  = _num(request.GET.get('to'),  frm)
+    frm = _num(request.GET.get("frm"), 1)
+    to = _num(request.GET.get("to"), frm)
     if to < frm:
         return HttpResponseBadRequest("Invalid range.")
 
-    admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
+    admin_acc = (
+        UserAccount.objects.filter(role="admin", is_active=True)
+        .order_by("-created_at")
+        .first()
+    )
     admin_name_upper = (admin_acc.full_name if admin_acc else "ADMIN").upper()
-    qs = IDSurrenderRequest.objects.order_by('pk')
+
+    qs = IDSurrenderRequest.objects.order_by("pk")
 
     start = frm - 1
-    end   = to
+    end = to
     rows = list(qs[start:end])
+
     if not rows:
         return HttpResponseBadRequest("No requests in that range.")
 
     MAX_ROWS = 300
     if len(rows) > MAX_ROWS:
-        return HttpResponseBadRequest(f"Too many rows ({len(rows)}). Limit is {MAX_ROWS} per batch.")
+        return HttpResponseBadRequest(
+            f"Too many rows ({len(rows)}). Limit is {MAX_ROWS} per batch."
+        )
 
     merger = PdfMerger(strict=False)
     added = 0
-    for req in rows:
+
+    for r in rows:
         try:
-            # Reuse your existing generator which returns a file path
-            pdf_path = build_ack_pdf(req, admin_name_upper)
-            # Append by file path (PyPDF2 will open/close internally)
+            pdf_path = build_ack_pdf(r, admin_name_upper)
             merger.append(pdf_path)
             added += 1
-        except Exception:
-            # Skip row on any error; optionally log
+        except Exception as e:
+            # Optionally log:
+            # print(f"ACK BATCH ERROR for PK={r.pk}: {e}")
             continue
 
     if added == 0:
@@ -3218,9 +3312,13 @@ def batch_view_ackreq_receipts(request):
     merger.close()
     out.seek(0)
 
-    resp = HttpResponse(out.getvalue(), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
-    resp["Content-Disposition"] = f'inline; filename="ACKREQ_batch_{frm}-{to}.pdf"'
-    resp["Content-Length"] = str(len(out.getvalue()))
+    pdf_bytes = out.getvalue()
+    content_type = mimetypes.types_map.get(".pdf", "application/pdf")
+    resp = HttpResponse(pdf_bytes, content_type=content_type)
+    resp["Content-Disposition"] = (
+        f'inline; filename="ACKREQ_batch_{frm}-{to}.pdf"'
+    )
+    resp["Content-Length"] = str(len(pdf_bytes))
     return resp
 
 def _is_ajax(request):
