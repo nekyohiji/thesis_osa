@@ -3909,9 +3909,10 @@ def cs_scan_time_out(request, case_id):
 
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_agreement_pdf(request, case_id):
+    logger.info("admin_cs_agreement_pdf called for case_id=%s", case_id)
+
     case = get_object_or_404(CommunityServiceCase, id=case_id)
 
-    # Latest active admin name (do not force uppercase; template shows normal case)
     admin_acc = (
         UserAccount.objects
         .filter(role='admin', is_active=True)
@@ -3923,14 +3924,15 @@ def admin_cs_agreement_pdf(request, case_id):
     try:
         pdf_path = build_cs_agreement_pdf(case, osa_head_name)
     except Exception as e:
-        raise Http404(f"PDF generation failed: {e}")
+        logger.exception("PDF generation failed for case_id=%s", case_id)
+        # During debugging, don't mask it as 404:
+        raise
 
     filename = os.path.basename(pdf_path)
     resp = FileResponse(
         open(pdf_path, "rb"),
         content_type=mimetypes.types_map.get(".pdf", "application/pdf"),
     )
-    # Inline so browsers show it; front-end will open in a new tab
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 
