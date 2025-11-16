@@ -88,6 +88,7 @@
                   <th>Date</th>
                   <th>Severity</th>
                   <th>Violation</th>
+                  <th>Recorded By</th>
                   <th>Attachments</th>
                   <th>Status</th>
                 </tr>
@@ -102,6 +103,7 @@
                   </span>
                 </td>
                 <td>{{ v.get_violation_type_display }}</td>
+                <td>{{ v.guard_name }}</td>
                 <td>
                   {% if v.evidence_1 %}
                     <button type="button"

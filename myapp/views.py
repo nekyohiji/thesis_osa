@@ -1124,12 +1124,8 @@ def generate_guard_report_pdf(request):
     # ---- Inputs (generate-only) ----
     start_date_raw = (request.GET.get('start_date') or '').strip()
     end_date_raw   = (request.GET.get('end_date')   or '').strip()
-    guard_name     = (request.GET.get('guard_name') or '').strip()
+    guard_name     = (request.GET.get('guard_name') or '').strip()  # not used for filtering
     violation_type = (request.GET.get('violation_type') or '').strip()
-
-    # Require a guard for this report
-    if not guard_name:
-        return HttpResponseBadRequest("guard_name is required")
 
     # ---- Server-side hard bounds ----
     FLOOR = date(2020, 1, 1)
@@ -1143,19 +1139,23 @@ def generate_guard_report_pdf(request):
 
     start_date = parse_ymd(start_date_raw) or FLOOR
     end_date   = parse_ymd(end_date_raw)   or CEIL
-    if start_date < FLOOR: start_date = FLOOR
-    if end_date > CEIL:    end_date   = CEIL
+    if start_date < FLOOR:
+        start_date = FLOOR
+    if end_date > CEIL:
+        end_date = CEIL
     if start_date > end_date:
         start_date, end_date = end_date, start_date
+    qs = (
+        Violation.objects
+        .filter(
+            violation_date__gte=start_date,
+            violation_date__lte=end_date,
+        )
+        .exclude(guard_name__iexact='admin')
+    )
 
-    # ---- Query: guard + dates (+ optional type) ----
-    qs = (Violation.objects
-          .filter(guard_name=guard_name,
-                  violation_date__gte=start_date,
-                  violation_date__lte=end_date))
     if violation_type:
         qs = qs.filter(violation_type=violation_type)
-
     # ---- Build PDF (inline viewer) ----
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'inline; filename="violations_report.pdf"'
@@ -1183,10 +1183,11 @@ def generate_guard_report_pdf(request):
     filt_bits = [
         f"From: {start_date.isoformat()}",
         f"To: {end_date.isoformat()}",
-        f"Guard on Duty: {guard_name}",
+        "Listed by Guard",  
     ]
     if violation_type:
         filt_bits.append(f"Violation Type: {violation_type}")
+
     elements.append(Paragraph(", ".join(filt_bits), subtitle_style))
     elements.append(Spacer(1, 10))
 
@@ -1285,9 +1286,6 @@ def generate_guard_report_pdf(request):
 
     doc.build(elements)
     return response
-
-
-
 
 
 
@@ -3821,7 +3819,7 @@ def _extract_tupc_id(raw: str) -> str | None:
     return m.group(1).upper() if m else None
 
 
-@role_required(['admin', 'staff', 'superadmin'])
+
 @require_POST
 @transaction.atomic
 def cs_scan_time_in(request, case_id):
@@ -3839,7 +3837,12 @@ def cs_scan_time_in(request, case_id):
 
     try:
         ctx = _current_facilitator_entities(request)
-        src = ctx.get("source") or ""  # "" is allowed by your CHECK constraint
+        src = ctx.get("source") or ""
+
+        # NEW: basic auth guard
+        if src not in ("admin", "faculty"):
+            return JsonResponse({"ok": False, "error": "Not authorized to time in."}, status=403)
+
         if src == "admin" and not ctx.get("user"):
             return JsonResponse({"ok": False, "error": "Admin session invalid. Please re-login."}, status=401)
         if src == "faculty" and not ctx.get("faculty"):
@@ -3847,7 +3850,7 @@ def cs_scan_time_in(request, case_id):
 
         log = case.open_session(
             facilitator_name=ctx.get("name") or "",
-            facilitator_source=src,                  # '', 'admin', or 'faculty'
+            facilitator_source=src,
             facilitator_user=ctx.get("user"),
             facilitator_faculty=ctx.get("faculty"),
         )
@@ -3860,7 +3863,6 @@ def cs_scan_time_in(request, case_id):
     return JsonResponse({"ok": True, "status": "time_in", "log_id": log.id})
 
 
-@role_required(['admin', 'staff', 'superadmin'])
 @require_POST
 @transaction.atomic
 def cs_scan_time_out(request, case_id):
@@ -3877,6 +3879,11 @@ def cs_scan_time_out(request, case_id):
     try:
         ctx = _current_facilitator_entities(request)
         src = ctx.get("source") or ""
+
+        # NEW: basic auth guard
+        if src not in ("admin", "faculty"):
+            return JsonResponse({"ok": False, "error": "Not authorized to time out."}, status=403)
+
         if src == "admin" and not ctx.get("user"):
             return JsonResponse({"ok": False, "error": "Admin session invalid. Please re-login."}, status=401)
         if src == "faculty" and not ctx.get("faculty"):
@@ -3898,6 +3905,7 @@ def cs_scan_time_out(request, case_id):
         return JsonResponse({"ok": False, "error": "No open session to close."}, status=400)
 
     return JsonResponse({"ok": True, "status": "time_out", "credited_hours": str(log.hours)})
+
 
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_agreement_pdf(request, case_id):

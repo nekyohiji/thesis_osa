@@ -134,7 +134,7 @@
                                    name="first_name" 
                                    maxlength="50" 
                                    placeholder="e.g., Juan"
-                                   pattern="^[A-Za-z\s'-]+$"
+                                   pattern="^[A-Za-zÑñ\s'-]+$"
                                    required
                                    aria-required="true">
                             <div class="invalid-feedback">Please enter your first name (letters, apostrophes, and hyphens only).</div>
@@ -148,7 +148,7 @@
                                    id="mn_goodmoral" 
                                    class="form-control" 
                                    name="middle_name" 
-                                   pattern="^[A-Za-z\s'-]+$"
+                                   pattern="^[A-Za-zÑñ\s'-]+$"
                                    maxlength="50" 
                                    placeholder="e.g., Santos">
                                 <div class="invalid-feedback">Please enter a valid middle name (letters, apostrophes, and hyphens only).</div>
@@ -164,7 +164,7 @@
                                    name="surname" 
                                    maxlength="50" 
                                    placeholder="e.g., Dela Cruz"
-                                   pattern="^[A-Za-z\s'-]+$"
+                                   pattern="^[A-Za-zÑñ\s'-]+$"
                                    required
                                    aria-required="true">
                             <div class="invalid-feedback">Please enter a valid surname (letters, apostrophes, and hyphens only).</div>
@@ -535,6 +535,7 @@
                                    maxlength="100" 
                                    placeholder="Enter your name"
                                    required
+                                   pattern="^[A-Za-zÑñ\s'-]+$"
                                    aria-required="true">
                             <div class="invalid-feedback">Please enter a valid requester's name (letters, apostrophes, and hyphens only).</div>
                         </div>
@@ -586,9 +587,10 @@
                                    name="relationship" 
                                    maxlength="50" 
                                    placeholder="e.g., self, parent, guardian"
+                                   pattern="^[A-Za-zÑñ\s]+$"
                                    required
                                    aria-required="true">
-                            <div class="invalid-feedback">Please enter your relationship.</div>
+                            <div class="invalid-feedback">Please enter your relationship, no numbers.</div>
                         </div>
                     </div>
                 </div>
@@ -1144,7 +1146,7 @@ const FormNavigation = {
     this.focusFirstInput(steps[stepNumber - 1]);
   },
   
-    updateButtonVisibility(stepNumber, totalSteps) {
+  updateButtonVisibility(stepNumber, totalSteps) {
     const prevBtn  = document.querySelector(CONFIG.SELECTORS.PREV_BTN);
     const nextBtn  = document.querySelector(CONFIG.SELECTORS.NEXT_BTN);
     const fixedNav = document.querySelector(CONFIG.SELECTORS.FIXED_NAV);
@@ -1153,29 +1155,31 @@ const FormNavigation = {
     const isFirst = stepNumber === 1;
     const isLast  = stepNumber === totalSteps;
 
-    // Hide/show the buttons
-    prevBtn.classList.toggle('d-none', isFirst); // hide on step 1
-    nextBtn.classList.toggle('d-none', isLast);  // hide on last step
+    // Hide/show via class AND inline display
+    prevBtn.classList.toggle('d-none', isFirst);
+    nextBtn.classList.toggle('d-none', isLast);
+    prevBtn.style.display = isFirst ? 'none' : '';
+    nextBtn.style.display = isLast  ? 'none' : '';
 
-    // Accessibility + click safety
     prevBtn.disabled = isFirst;
     nextBtn.disabled = isLast;
     prevBtn.setAttribute('aria-hidden', String(isFirst));
     nextBtn.setAttribute('aria-hidden', String(isLast));
 
-    // Tidy alignment of the fixed footer when a button is missing
-    fixedNav.classList.remove('justify-content-between','justify-content-end','justify-content-start');
+    // Footer alignment
+    fixedNav.classList.remove(
+      'justify-content-between',
+      'justify-content-end',
+      'justify-content-start'
+    );
     if (isFirst) {
-        // Only “Next” visible
-        fixedNav.classList.add('justify-content-end');
+      fixedNav.classList.add('justify-content-end');     // only Next visible
     } else if (isLast) {
-        // Only “Previous” visible
-        fixedNav.classList.add('justify-content-start');
+      fixedNav.classList.add('justify-content-start');   // only Previous visible
     } else {
-        // Both visible
-        fixedNav.classList.add('justify-content-between');
+      fixedNav.classList.add('justify-content-between'); // both
     }
-    },
+  },
   
   focusFirstInput(stepElement) {
     if (!stepElement) return;
@@ -1219,7 +1223,7 @@ const InputFormatter = {
   /**
    * Format phone number as +63-XXX-XXX-XXXX
    */
-   setupPhoneFormatter() {
+  setupPhoneFormatter() {
     const input = document.getElementById('contact_req_goodmoral');
     if (!input) return;
 
@@ -1229,12 +1233,14 @@ const InputFormatter = {
     input.setAttribute('maxlength', '16');
 
     const digitsOnly = v => (v || '').replace(/\D+/g, '');
+
     const normalizeDigits = d => {
       if (d.startsWith('0')) d = d.slice(1);
       if (d.startsWith('63')) d = d.slice(2);
       return d.slice(0, 10);
     };
-    const toDisplay = d => {
+
+    const formatDisplay = d => {
       let out = '+63';
       if (d.length > 0) out += '-' + d.slice(0, Math.min(3, d.length));
       if (d.length > 3) out += '-' + d.slice(3, Math.min(6, d.length));
@@ -1242,23 +1248,43 @@ const InputFormatter = {
       return out;
     };
 
+    // Always show +63- when typing
+    input.addEventListener('focus', e => {
+      if (!e.target.value.trim()) {
+        e.target.value = '+63-';
+      }
+    });
+
     input.addEventListener('input', e => {
-      const d = normalizeDigits(digitsOnly(e.target.value));
-      e.target.value = d;
+      const rawDigits = digitsOnly(e.target.value);
+      const d = normalizeDigits(rawDigits);
+
+      // If deleting everything, keep the prefix
+      if (!d) {
+        e.target.value = '+63-';
+        return;
+      }
+
+      e.target.value = formatDisplay(d);
       e.target.setCustomValidity('');
       e.target.classList.remove('is-invalid');
     });
 
     input.addEventListener('blur', e => {
-      const d = normalizeDigits(digitsOnly(e.target.value));
-      e.target.value = d ? toDisplay(d) : '';
+      const rawDigits = normalizeDigits(digitsOnly(e.target.value));
+      // If nothing entered, clear input
+      if (!rawDigits) {
+        e.target.value = '';
+      } else {
+        e.target.value = formatDisplay(rawDigits);
+      }
     });
 
     input.addEventListener('paste', e => {
       e.preventDefault();
       const txt = (e.clipboardData || window.clipboardData).getData('text') || '';
       const d = normalizeDigits(digitsOnly(txt));
-      document.execCommand('insertText', false, d);
+      input.value = d ? formatDisplay(d) : '+63-';
     });
   },
   

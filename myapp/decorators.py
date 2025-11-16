@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
+from django.http import HttpResponseForbidden
 
 from myapp.models import Facilitator
 from .utils import no_store
@@ -40,7 +41,7 @@ def role_required(allowed_roles):
 
             if _wants_json(request):
                 return no_store(JsonResponse({"detail": "Forbidden"}, status=403))
-            return no_store(render(request, "403.html", status=403))
+            return no_store(HttpResponseForbidden("Forbidden"))
         return wrapped
     return decorator
 

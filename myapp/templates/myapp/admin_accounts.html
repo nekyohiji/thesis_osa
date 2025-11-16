@@ -514,6 +514,7 @@
       </div>
 
       <div class="card-body px-4 py-3" style="min-height: 400px;">
+        <label class=" fw-bold text-mute text-center text-danger">**Make sure all details are completed in create account**</label><br>
         <form id="createAccountForm" method="post" action="{% url 'request_otp' %}" style="background-color:rgba(0, 0, 0, 0.04); padding: 20px; min-height: 400px;">
           {% csrf_token %}
           <div class="row g-4">
@@ -577,7 +578,7 @@
               <div id="otpSection" style="display: none;">
                 <label for="otp" class="form-label small">Enter OTP sent to email:</label>
                 <div class="d-flex mb-2">
-                  <input type="text" id="otp" class="form-control me-2" maxlength="6" placeholder="6-digit OTP"  style="flex: 1;">
+                  <input type="text" id="otp" class="form-control me-2" maxlength="6" placeholder="Enter and Verify OTP"  style="flex: 1;">
                   <button type="button" class="btn text-light btn-sm" style="background-color: #440207;  white-space: nowrap;" id="verifyOtpBtn">Verify</button>
                 </div>
               </div>
@@ -587,7 +588,7 @@
           <!-- Create Button -->
           <div class="text-center mt-3">
             <button type="button" id="createAccountBtn" class="btn btn-dark btn-sm">
-              <i class="fas fa-user-plus me-1"></i> Create Account
+              <i class="fas fa-user-plus me-1"></i> Send Otp
             </button>
           </div>
         </form>

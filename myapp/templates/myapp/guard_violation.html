@@ -158,7 +158,18 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Student ID Number:</label>
-                        <input type="text" id="studentId_gv" name="student_id" class="form-control text-center" readonly>
+                        <div class="input-group">
+                            <input type="text"
+                                  id="studentId_gv"
+                                  name="student_id"
+                                  class="form-control text-center"
+                                  readonly>
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="enableManualIdBtn">
+                                Manual Input
+                            </button>
+                        </div>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -279,7 +290,7 @@
 
             <div class="upload-evidence-card position-relative">
                 <div class="form-section h-100 d-flex flex-column">
-                    <div class="section-title text-dark"><i class="bi bi-paperclip"></i> Upload Evidence</div><hr>
+                    <div class="section-title text-dark"><i class="bi bi-paperclip"></i> Upload Evidence (Required)</div><hr>
                     <div id="capturedPreview" class="mt-2" style="overflow-y:auto; max-height: 300px;">
                         <p class="text-muted text-center" style="font-size:14px;">No evidence captured yet.</p>
                     </div>
@@ -369,7 +380,23 @@
     </div>
 </div>
 
-
+<!-- Student Error Modal -->
+<div class="modal fade" id="studentErrorModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Student Lookup Error</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-dark" id="studentErrorBody">
+        <!-- Filled by JavaScript -->
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <style>
         body, html {
@@ -542,10 +569,10 @@ function updateDateTime() {
       date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     // form fields
-    const yyyy = date.getFullYear();
-    const mm = pad(date.getMonth() + 1);
-    const dd = pad(date.getDate());
-    const hours = pad(date.getHours());
+    const yyyy   = date.getFullYear();
+    const mm     = pad(date.getMonth() + 1);
+    const dd     = pad(date.getDate());
+    const hours  = pad(date.getHours());
     const minutes = pad(date.getMinutes());
 
     document.getElementById("violation_date_gv").value = `${yyyy}-${mm}-${dd}`;
@@ -573,23 +600,90 @@ function updateDateTime() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  const hiddenScanInput = document.getElementById("hiddenScanInput");
-  const visibleStudentId = document.getElementById("studentId_gv");
+  const hiddenScanInput   = document.getElementById("hiddenScanInput");
+  const visibleStudentId  = document.getElementById("studentId_gv");
+  const enableManualIdBtn = document.getElementById("enableManualIdBtn");
+  let manualMode = false;
 
   {% if messages %}
     const successModal = new bootstrap.Modal(document.getElementById('successModal'));
     successModal.show();
   {% endif %}
 
+  // --- Student error modal setup ---
+  const studentErrorModalEl = document.getElementById('studentErrorModal');
+  const studentErrorBody    = document.getElementById('studentErrorBody');
+  const studentErrorModal   = studentErrorModalEl ? new bootstrap.Modal(studentErrorModalEl) : null;
+
+  function showStudentError(htmlMessage) {
+    if (!studentErrorModal) {
+      console.error(htmlMessage);
+      return;
+    }
+    studentErrorBody.innerHTML = htmlMessage;   // allow formatted explanation
+    studentErrorModal.show();
+  }
+
+  // 🔹 shared helper so scanner + manual use same fetch logic
+  function fetchStudentById(tupcId) {
+    visibleStudentId.value = tupcId;
+    window.history.replaceState({}, document.title, "/guard_violation/");
+
+    fetch(`/get_student_by_id/${tupcId}/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          clearFields();
+          showStudentError(`
+            <p><strong>Student not found.</strong></p>
+            <p>No student record was found for ID <code>${tupcId}</code>.</p>
+            <p>Please make sure:</p>
+            <ul class="mb-0">
+              <li>The TUPC ID is typed or scanned correctly.</li>
+              <li>The student is already registered in the system.</li>
+            </ul>
+          `);
+          return;
+        }
+        document.getElementById("fn_gv").value             = data.first_name;
+        document.getElementById("ln_gv").value             = data.last_name;
+        document.getElementById("mn_gv").value             = data.middle_initial || '';
+        document.getElementById("ext_gv").value            = data.extension || '';
+        document.getElementById("studentProgram_gv").value = data.program;
+      })
+      .catch(() => {
+        clearFields();
+        showStudentError(`
+          <p><strong>Unable to retrieve student data.</strong></p>
+          <p>An error occurred while contacting the server. Please try again.</p>
+        `);
+      })
+      .finally(() => {
+        window.updateSubmitState && window.updateSubmitState();
+        if (!manualMode) {
+          hiddenScanInput.focus();
+        }
+      });
+  }
+
   // keep scanner focused
   hiddenScanInput.addEventListener("keypress", function (e) {
     if (e.key === "Enter") e.preventDefault();
   });
+
   document.addEventListener("click", (e) => {
     const tag = e.target.tagName;
-    if (!["INPUT", "SELECT", "TEXTAREA"].includes(tag)) hiddenScanInput.focus();
+    if (!manualMode && !["INPUT", "SELECT", "TEXTAREA"].includes(tag)) {
+      hiddenScanInput.focus();
+    }
   });
-  document.addEventListener("keydown", () => hiddenScanInput.focus());
+
+  document.addEventListener("keydown", () => {
+    if (!manualMode) {
+      hiddenScanInput.focus();
+    }
+  });
+
   hiddenScanInput.focus();
 
   // buffer for scanner
@@ -610,39 +704,62 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const match = rawText.match(/TUPC-\d{2}-\d{4}/i);
       if (!match) {
-        alert("⚠️ Invalid ID format scanned!");
         visibleStudentId.value = '';
         window.updateSubmitState && window.updateSubmitState();
+
+        showStudentError(`
+          <p><strong>Invalid TUPC ID format scanned.</strong></p>
+          <p>The required format is: <code>TUPC-XX-XXXX</code></p>
+          <ul class="mb-0">
+            <li>Starts with <code>TUPC-</code></li>
+            <li>Then 2 digits for the year (e.g., <code>23</code>)</li>
+            <li>Then a hyphen and 4 digits (e.g., <code>0001</code>)</li>
+            <li>Example: <code>TUPC-23-0001</code></li>
+          </ul>
+        `);
         return;
       }
 
       const tupcId = match[0].toUpperCase();
-      visibleStudentId.value = tupcId;
-      window.history.replaceState({}, document.title, "/guard_violation/");
-
-      fetch(`/get_student_by_id/${tupcId}/`)
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) {
-            alert("❌ Student not found.");
-            clearFields();
-            return;
-          }
-          document.getElementById("fn_gv").value = data.first_name;
-          document.getElementById("ln_gv").value = data.last_name;
-          document.getElementById("mn_gv").value = data.middle_initial || '';
-          document.getElementById("ext_gv").value = data.extension || '';
-          document.getElementById("studentProgram_gv").value = data.program;
-        })
-        .catch(() => {
-          alert("❌ Error retrieving student data.");
-          clearFields();
-        })
-        .finally(() => {
-          window.updateSubmitState && window.updateSubmitState();
-          hiddenScanInput.focus();
-        });
+      // reuse helper
+      fetchStudentById(tupcId);
     }, 200);
+  });
+
+  // 🔹 Manual TUPC ID behavior
+  if (enableManualIdBtn) {
+    enableManualIdBtn.addEventListener('click', () => {
+      manualMode = true;                  // stops auto-focus jumping to hiddenScanInput
+      visibleStudentId.readOnly = false;  // let guard type
+      visibleStudentId.focus();
+      visibleStudentId.select();
+    });
+  }
+
+  visibleStudentId.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const raw = (visibleStudentId.value || '').trim().toUpperCase();
+      const match = raw.match(/TUPC-\d{2}-\d{4}/i);
+
+      if (!match) {
+        clearFields();
+        showStudentError(`
+          <p><strong>Invalid TUPC ID format.</strong></p>
+          <p>The required format is: <code>TUPC-XX-XXXX</code></p>
+          <ul class="mb-0">
+            <li>Starts with <code>TUPC-</code></li>
+            <li>Then 2 digits for the year (e.g., <code>23</code>)</li>
+            <li>Then a hyphen and 4 digits (e.g., <code>0001</code>)</li>
+            <li>Example: <code>TUPC-23-0001</code></li>
+          </ul>
+        `);
+        return;
+      }
+
+      const tupcId = match[0].toUpperCase();
+      fetchStudentById(tupcId);  // same as scanner
+    }
   });
 
   // ✅ Camera functionality
@@ -707,6 +824,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   // --- Elements we validate
@@ -750,7 +868,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const personalOK  = hasText(firstName) && hasText(lastName) && hasText(studentID) && hasText(program);
     const datetimeOK  = hasText(vioDate) && hasText(vioTime);
     const selectsOK   = notDefaultSelect(vioType) && notDefaultSelect(guardName);
-    return personalOK && datetimeOK && selectsOK;
+    const evidenceOK  = hasFile(evidence);   // 🔒 evidence must be present
+    return personalOK && datetimeOK && selectsOK && evidenceOK;
   }
 
   function updateSubmitState() {

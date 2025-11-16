@@ -91,16 +91,14 @@
                   value="{{ request.GET.end_date }}"
                   min="2020-01-01" max="{{ today|date:'Y-m-d' }}">
         </div>
-        <div class="col">
-          <label class="form-label">Guard on Duty:</label>
-          <select name="guard_name" class="form-select text-center" required>
-            <option value="" disabled {% if not request.GET.guard_name %}selected{% endif %}>Select Guard</option>
-            {% for guard in guards %}
-              <option value="{{ guard.full_name }}" {% if request.GET.guard_name == guard.full_name %}selected{% endif %}>
-                {{ guard.full_name }}
-              </option>
-            {% endfor %}
-          </select>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Guard on Duty:</label>
+            <select name="guard_name" class="form-select text-center" disabled>
+                <option value="">Listed by Guard</option>
+            </select>
+            <small class="text-muted">
+                Report will include all violations in the date range, listed by reporting guard.
+            </small>
         </div>
 
         {# Optional: keep violation_type passthrough if you use it #}
@@ -401,10 +399,6 @@
         alert("Start Date cannot be after End Date.");
         return;
       }
-      if (!guard.value) {
-        e.preventDefault();
-        alert("Please select a guard.");
-        return;
       }
     });
   })();
