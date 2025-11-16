@@ -588,57 +588,7 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-
-
-<script>
-  function isInViewport(element) {
-    const rect = element.getBoundingClientRect();
-    return rect.top <= window.innerHeight * 0.75 && rect.bottom >= 0;
-  }
-
-  function animateSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    const content = section.querySelector('.content');
-    const bars = section.querySelectorAll('.shape-bar');
-
-    if (!section) return;
-
-    if (isInViewport(section)) {
-      section.classList.add('visible');
-      if (content) content.classList.add('animate');
-
-      bars.forEach((bar, index) => {
-        setTimeout(() => {
-          bar.classList.add('slide-in');
-        }, index * 200);
-      });
-    } else {
-      section.classList.remove('visible');
-      if (content) content.classList.remove('animate');
-      bars.forEach(bar => bar.classList.remove('slide-in'));
-    }
-  }
-
-  function handleScrollAnimations() {
-    animateSection('home');
-    animateSection('about');
-    animateSection('services'); 
-  }
-
-  window.addEventListener('scroll', handleScrollAnimations);
-  window.addEventListener('load', handleScrollAnimations);
-
-
-// /////////////////////ABOUT
-
-
-// /////////////////////CONTACT
-
-
-</script>
-
-
+<script src="{% static 'myapp/javascripts/client_home.js' %}"></script>
 
 
 
