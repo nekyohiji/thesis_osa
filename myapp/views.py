@@ -105,7 +105,6 @@ from .forms import (
 )
 from .libre.cs_completion import build_cs_completion_pdf
 from .libre.cs_agreement import build_cs_agreement_pdf
-from .libre.ack_receipt import build_ack_pdf
 from .disciplines.policies import compute_hours_cap_for_student
 from .libre.ack_receipt import build_ack_pdf_bytes 
 from .models import (
