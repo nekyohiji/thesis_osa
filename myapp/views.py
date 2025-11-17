@@ -3238,8 +3238,8 @@ def admin_ackreq_receipt_pdf(request, pk):
         raise Http404(f"PDF generation failed: {e}")
 
     filename = os.path.basename(pdf_path)
-    resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
-    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    resp = FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename=\"{filename}\"'
     return resp
 
 @role_required(['admin', 'staff', 'studasst', 'superadmin'])

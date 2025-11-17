@@ -5,13 +5,24 @@ from openpyxl import load_workbook
 
 TEMPLATE_PATH = os.path.join(settings.BASE_DIR, "myapp", "cert_templates", "Acknowledgement-Receipt-Form.xlsx")
 
-def _set_input(ws, key, value):
-    """Find `key` in column A and write `value` in column B (case-insensitive)."""
-    k = (key or "").strip().lower()
-    for row in ws.iter_rows(min_row=1, max_col=2):
-        a = (row[0].value or "").strip().lower()
-        if a == k:
-            row[1].value = value
+def _set_input(wb, key, value):
+    """
+    Write `value` into a Named Range whose name matches `key`
+    (case-insensitive). Works with names like student_name, program,
+    proof, reason, timestamp, osa_head, etc.
+    """
+    key = (key or "").strip().lower()
+    if not key:
+        return False
+
+    # openpyxl: workbook.defined_names.definedName is a list of DefinedName
+    for defined in wb.defined_names.definedName:
+        if defined.name.lower() == key:
+            # Each name in your template refers to a single cell,
+            # but destinations returns (sheet_name, cell_ref) pairs.
+            for sheet_name, coord in defined.destinations:
+                ws = wb[sheet_name]
+                ws[coord].value = value
             return True
     return False
 
@@ -39,7 +50,6 @@ def build_ack_pdf(request_obj, admin_name_upper):
 
     # Load & fill workbook
     wb = load_workbook(TEMPLATE_PATH, data_only=False)
-    ws_inputs = wb["inputs"]  # will raise KeyError if missing — good: fail fast
 
     data = {
         "student_name": _fmt_name(request_obj),
@@ -48,12 +58,21 @@ def build_ack_pdf(request_obj, admin_name_upper):
         "program": request_obj.program,
         "years_of_stay": request_obj.inclusive_years,
         "timestamp": _fmt_timestamp(timezone.now()),
-        "proof": request_obj.get_document_type_display() if hasattr(request_obj, "get_document_type_display") else request_obj.document_type,
-        "reason": request_obj.get_reason_display() if hasattr(request_obj, "get_reason_display") else request_obj.reason,
+        "proof": (
+            request_obj.get_document_type_display()
+            if hasattr(request_obj, "get_document_type_display")
+            else request_obj.document_type
+        ),
+        "reason": (
+            request_obj.get_reason_display()
+            if hasattr(request_obj, "get_reason_display")
+            else request_obj.reason
+        ),
         "osa_head": admin_name_upper,
     }
+
     for k, v in data.items():
-        _set_input(ws_inputs, k, v)
+        _set_input(wb, k, v)   # ⬅️ pass wb, not ws_inputs
 
     # Hide inputs sheet; set the target sheet active (helps export)
     ws_inputs.sheet_state = "hidden"
