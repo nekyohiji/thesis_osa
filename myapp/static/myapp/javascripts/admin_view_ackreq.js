@@ -5,10 +5,22 @@
   const modalEl = document.getElementById('generateModal');
   const btn     = document.getElementById('generateReceiptBtn');
   if (!modalEl || !btn) return;
-  const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
-  const url     = "{% url 'admin_ackreq_receipt_pdf' req.id %}";
-  btn.addEventListener('click', () => { btn.blur(); modal.hide(); });
-  modalEl.addEventListener('hidden.bs.modal', () => { window.open(url, '_blank', 'noopener'); });
+
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+  // URL is rendered by Django into data-url in the HTML
+  const url = btn.dataset.url;
+
+  btn.addEventListener('click', () => {
+    btn.blur();
+    modal.hide();
+  });
+
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    if (url) {
+      window.open(url, '_blank', 'noopener');
+    }
+  });
 })();
 
 /* Accept / Decline via AJAX with instant feedback */

@@ -256,7 +256,14 @@
       </div>
       <div class="modal-footer justify-content-center">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-dark" id="generateReceiptBtn">Generate</button>
+        <button id="generateReceiptBtn" class="btn text-light" type="button"
+                style="background-color: #440207; border-color: #440207;"
+                data-url="{% url 'admin_ackreq_receipt_pdf' req.id %}"
+                onmouseover="this.style.backgroundColor='#5e0000';"
+                onmouseout="this.style.backgroundColor='#440207';"
+                data-bs-toggle="modal" data-bs-target="#generateModal">
+          <i class="bi bi-printer"></i> Generate Certificate
+        </button>
       </div>
     </div>
   </div>
