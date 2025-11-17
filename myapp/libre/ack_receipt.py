@@ -3,7 +3,12 @@ from django.conf import settings
 from django.utils import timezone
 from openpyxl import load_workbook
 
-TEMPLATE_PATH = os.path.join(settings.BASE_DIR, "myapp", "cert_templates", "Acknowledgement-Receipt-Form.xlsx")
+TEMPLATE_PATH = os.path.join(
+    settings.BASE_DIR,
+    "myapp",
+    "cert_templates",
+    "Acknowledgement-Receipt-Form.xlsx"
+)
 
 def _set_input(wb, key, value):
     """
@@ -15,11 +20,8 @@ def _set_input(wb, key, value):
     if not key:
         return False
 
-    # openpyxl: workbook.defined_names.definedName is a list of DefinedName
     for defined in wb.defined_names.definedName:
         if defined.name.lower() == key:
-            # Each name in your template refers to a single cell,
-            # but destinations returns (sheet_name, cell_ref) pairs.
             for sheet_name, coord in defined.destinations:
                 ws = wb[sheet_name]
                 ws[coord].value = value
@@ -35,11 +37,11 @@ def _fmt_timestamp(dt):
     # Example: 10/08/2025 8:57:32PM (no space before AM/PM)
     local = timezone.localtime(dt)
     s = local.strftime("%m/%d/%Y %I:%M:%S%p")
-    return s.lstrip("0")  
+    return s.lstrip("0")
 
 def build_ack_pdf(request_obj, admin_name_upper):
     """
-    Fills the inputs sheet then exports the 'Acknowledgement Receipt' sheet to PDF
+    Fills the Named Ranges then exports the 'Acknowledgement Receipt' sheet to PDF
     using LibreOffice. Returns absolute path to the generated PDF.
     """
     if not os.path.exists(TEMPLATE_PATH):
@@ -72,10 +74,13 @@ def build_ack_pdf(request_obj, admin_name_upper):
     }
 
     for k, v in data.items():
-        _set_input(wb, k, v)   # ⬅️ pass wb, not ws_inputs
+        _set_input(wb, k, v)
 
-    # Hide inputs sheet; set the target sheet active (helps export)
-    ws_inputs.sheet_state = "hidden"
+    # Hide inputs sheet if it exists; set the target sheet active
+    if "inputs" in wb.sheetnames:
+        ws_inputs = wb["inputs"]
+        ws_inputs.sheet_state = "hidden"
+
     if "Acknowledgement Receipt" in wb.sheetnames:
         wb.active = wb.sheetnames.index("Acknowledgement Receipt")
 
@@ -90,11 +95,13 @@ def build_ack_pdf(request_obj, admin_name_upper):
     ]
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.returncode != 0:
-        raise RuntimeError(f"LibreOffice export failed: {proc.stderr.decode(errors='ignore') or proc.stdout.decode(errors='ignore')}")
+        raise RuntimeError(
+            f"LibreOffice export failed: "
+            f"{proc.stderr.decode(errors='ignore') or proc.stdout.decode(errors='ignore')}"
+        )
 
     # LibreOffice names the PDF from the XLSX basename
     pdf_path = os.path.join(outdir, "ack_work.pdf")
-    # Rename to a nice filename
     nice_name = f"Acknowledgement-Receipt-{request_obj.student_number}.pdf"
     nice_path = os.path.join(outdir, nice_name)
     if os.path.exists(pdf_path):
