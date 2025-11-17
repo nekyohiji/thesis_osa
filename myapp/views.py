@@ -3226,7 +3226,7 @@ def admin_view_ackreq_view(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
     return render(request, 'myapp/admin_view_ackreq.html', {"req": req})
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 def admin_ackreq_receipt_pdf(request, pk):
     req = get_object_or_404(IDSurrenderRequest, pk=pk)
     admin_acc = UserAccount.objects.filter(role='admin', is_active=True).order_by('-created_at').first()
@@ -3238,11 +3238,11 @@ def admin_ackreq_receipt_pdf(request, pk):
         raise Http404(f"PDF generation failed: {e}")
 
     filename = os.path.basename(pdf_path)
-    resp = FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
-    resp["Content-Disposition"] = f'inline; filename=\"{filename}\"'
+    resp = FileResponse(open(pdf_path, "rb"), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 
-@role_required(['admin', 'staff', 'studasst', 'superadmin'])
+@role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def batch_view_ackreq_receipts(request):
     """
@@ -3306,20 +3306,6 @@ def batch_view_ackreq_receipts(request):
     resp = HttpResponse(out.getvalue(), content_type=mimetypes.types_map.get(".pdf", "application/pdf"))
     resp["Content-Disposition"] = f'inline; filename="ACKREQ_batch_{frm}-{to}.pdf"'
     resp["Content-Length"] = str(len(out.getvalue()))
-    return resp
-
-    out = BytesIO()
-    merger.write(out)
-    merger.close()
-    out.seek(0)
-    pdf_bytes = out.getvalue()
-
-    content_type = mimetypes.types_map.get(".pdf", "application/pdf")
-    resp = HttpResponse(pdf_bytes, content_type=content_type)
-    resp["Content-Disposition"] = (
-        f'inline; filename="ACKREQ_batch_{frm}-{to}.pdf"'
-    )
-    resp["Content-Length"] = str(len(pdf_bytes))
     return resp
 
 def _is_ajax(request):
