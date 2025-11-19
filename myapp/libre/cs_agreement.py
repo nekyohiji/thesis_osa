@@ -2,6 +2,7 @@
 import os, subprocess, tempfile
 from django.conf import settings
 from openpyxl import load_workbook
+from myapp.utils import _get_osa_head_name, _get_osa_head_title
 
 TEMPLATE_PATH = os.path.join(
     settings.BASE_DIR, "myapp", "cert_templates", "Agreement_Certificate.xlsx"
@@ -33,41 +34,39 @@ def _fmt_student_name(case):
     name = " ".join(p for p in parts if p)
     return " ".join(name.split())
 
-def build_cs_agreement_pdf(case_obj, osa_head_name):
-    """
-    Fill inputs on sheet 'inputs' then export sheet 'Agreement Certificate' to PDF via LibreOffice.
-    Returns absolute path to the generated PDF.
-    """
+def build_cs_agreement_pdf(case_obj, osa_head_name=None, osa_head_title=None):
     if not os.path.exists(TEMPLATE_PATH):
         raise FileNotFoundError(f"Template not found: {TEMPLATE_PATH}")
+
+    if osa_head_name is None:
+        osa_head_name = _get_osa_head_name()
+    if osa_head_title is None:
+        osa_head_title = _get_osa_head_title()
 
     tmpdir = tempfile.mkdtemp(prefix="cs_agree_")
     xlsx_out = os.path.join(tmpdir, "agreement_work.xlsx")
 
-    # Load & fill workbook
     wb = load_workbook(TEMPLATE_PATH, data_only=False)
-    ws_inputs = wb["inputs"]  # fail fast if missing
+    ws_inputs = wb["inputs"]
 
     payload = {
         "student_name": _fmt_student_name(case_obj),
-        "program": getattr(case_obj, "program_course", ""),
-        "osa_head": osa_head_name or "",
-        "title":        osa_head_title or "",
+        "program":      getattr(case_obj, "program_course", ""),
+        "osa_head":     osa_head_name or "",
+        "title":        osa_head_title or "",   
     }
+
     for k, v in payload.items():
         ok = _set_input(ws_inputs, k, v)
         if not ok:
-            # It’s helpful to fail fast if a key is missing in the template
             raise KeyError(f"Key '{k}' not found in inputs sheet A-column of {TEMPLATE_PATH}")
 
-    # Optional: hide inputs, set target sheet active for clean export
     ws_inputs.sheet_state = "hidden"
     if "Agreement Certificate" in wb.sheetnames:
         wb.active = wb.sheetnames.index("Agreement Certificate")
 
     wb.save(xlsx_out)
 
-    # LibreOffice headless export
     lo = getattr(settings, "LIBREOFFICE_BIN", "soffice")
     cmd = [
         lo, "--headless", "--nologo", "--nofirststartwizard",
@@ -78,7 +77,6 @@ def build_cs_agreement_pdf(case_obj, osa_head_name):
         err = proc.stderr.decode(errors="ignore") or proc.stdout.decode(errors="ignore")
         raise RuntimeError(f"LibreOffice export failed: {err}")
 
-    # LO names from XLSX basename -> agreement_work.pdf
     pdf_path = os.path.join(tmpdir, "agreement_work.pdf")
     nice_name = f"Agreement-{case_obj.student_id}.pdf"
     nice_path = os.path.join(tmpdir, nice_name)

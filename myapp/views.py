@@ -4150,24 +4150,12 @@ def cs_scan_time_out(request, case_id):
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_agreement_pdf(request, case_id):
     logger.info("admin_cs_agreement_pdf called for case_id=%s", case_id)
-
     case = get_object_or_404(CommunityServiceCase, id=case_id)
-
-    admin_acc = (
-        UserAccount.objects
-        .filter(role='admin', is_active=True)
-        .order_by('-created_at')
-        .first()
-    )
-    osa_head_name = admin_acc.full_name if admin_acc else "Office of Student Affairs"
-
     try:
-        pdf_path = build_cs_agreement_pdf(case, osa_head_name)
-    except Exception as e:
+        pdf_path = build_cs_agreement_pdf(case)
+    except Exception:
         logger.exception("PDF generation failed for case_id=%s", case_id)
-        # During debugging, don't mask it as 404:
         raise
-
     filename = os.path.basename(pdf_path)
     resp = FileResponse(
         open(pdf_path, "rb"),
@@ -4179,17 +4167,12 @@ def admin_cs_agreement_pdf(request, case_id):
 @role_required(['admin', 'staff', 'superadmin'])
 def admin_cs_completion_pdf(request, case_id):
     case = get_object_or_404(CommunityServiceCase, id=case_id)
-    admin_acc = (UserAccount.objects
-                 .filter(role='admin', is_active=True)
-                 .order_by('-created_at').first())
-    osa_head_name = admin_acc.full_name if admin_acc else "Office of Student Affairs"
     try:
-        pdf_path = build_cs_completion_pdf(case, osa_head_name)
+        pdf_path = build_cs_completion_pdf(case)
     except Exception as e:
         raise Http404(f"PDF generation failed: {e}")
     filename = os.path.basename(pdf_path)
-    resp = FileResponse(open(pdf_path, "rb"),
-                        content_type="application/pdf")
+    resp = FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 #--------------------------------------------------#

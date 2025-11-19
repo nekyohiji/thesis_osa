@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.utils import timezone
 from openpyxl import load_workbook
+from myapp.utils import _get_osa_head_name, _get_osa_head_title
 
 TEMPLATE_PATH = os.path.join(
     settings.BASE_DIR, "myapp", "cert_templates", "Completion_Certificate.xlsx"
@@ -55,22 +56,21 @@ def _fmt_hours(x):
     except Exception:
         return str(x)
 
-def build_cs_completion_pdf(case_obj, osa_head_name):
-    """
-    Fill `inputs` then export 'Completion Certificate' to PDF via LibreOffice.
-    Keys required in A-column: student_name, student_id, program, date, start_date, end_date, osa_head, hours
-    """
+def build_cs_completion_pdf(case_obj, osa_head_name=None, osa_head_title=None):
+    if osa_head_name is None:
+        osa_head_name = _get_osa_head_name()
+    if osa_head_title is None:
+        osa_head_title = _get_osa_head_title()
+
     if not os.path.exists(TEMPLATE_PATH):
         raise FileNotFoundError(f"Template not found: {TEMPLATE_PATH}")
 
-    # derive start/end from logs (fallbacks if none)
     logs_qs = case_obj.logs.order_by("check_in_at")
     first_in  = logs_qs.first().check_in_at if logs_qs.exists() else timezone.now()
     last_out_qs = case_obj.logs.exclude(check_out_at__isnull=True).order_by("-check_out_at")
     last_dt = (last_out_qs.first().check_out_at if last_out_qs.exists()
                else logs_qs.last().check_in_at if logs_qs.exists()
                else timezone.now())
-
     payload = {
         "student_name": _fmt_student_name(case_obj),
         "student_id":   case_obj.student_id,
@@ -79,9 +79,11 @@ def build_cs_completion_pdf(case_obj, osa_head_name):
         "start_date":   _fmt_date_long(first_in),
         "end_date":     _fmt_date_long(last_dt),
         "osa_head":     osa_head_name or "",
-        # For a completion cert, "required __ hours" typically = total_required_hours
-        # (which should equal hours_completed at completion time)
-        "hours":        _fmt_hours(getattr(case_obj, "total_required_hours", getattr(case_obj, "hours_completed", ""))),
+        "title":        osa_head_title or "",          # ← NEW
+        "hours":        _fmt_hours(
+            getattr(case_obj, "total_required_hours",
+                    getattr(case_obj, "hours_completed", ""))
+        ),
     }
 
     tmpdir = tempfile.mkdtemp(prefix="cs_complete_")
