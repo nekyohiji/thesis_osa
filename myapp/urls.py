@@ -175,7 +175,6 @@ urlpatterns = [
     path('upload_student_csv/', views.upload_student_csv, name='upload_student_csv'),
     path('request-otp/', views.request_otp, name='request_otp'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
-    path('get-accounts/', views.get_accounts_data, name='get_accounts_data'),
     path('deactivate-account/<str:user_email>/', views.deactivate_account, name='deactivate_account'),
     path('lostandfound/ajax/delete/<int:item_id>/', views.ajax_delete_lostandfound, name='ajax_delete_lostandfound'),
     path('lostandfound/ajax/edit/<int:item_id>/', views.ajax_edit_lostandfound, name='ajax_edit_lostandfound'),

@@ -417,8 +417,9 @@
               <table id="violations_pending_table" class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
+                    <th>TUPC ID</th>
                     <th>Name</th>
-                    <th>Course/Program</th>
+                    <th>Program</th>
                     <th>Violation</th>
                     <th>Date Time</th>
                     <th>Actions</th>
@@ -445,6 +446,7 @@
                     }">
                   {% for v in pending_violations %}
                   <tr>
+                    <td>{{ v.student_id }}</td>
                     <td>{{ v.first_name }} {{ v.last_name }}</td>
                     <td>{{ v.program_course }}</td>
                     <td>{{ v.get_violation_type_display }}</td>
@@ -506,16 +508,24 @@
               <table class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
+                    <th>TUPC ID</th>
                     <th>Name</th>
+                    <th>Program</th>
+                    <th>Violation</th>
                     <th>Date Time</th>
+                    <th>Status</th>
                     <th>Details</th>
                   </tr>
                 </thead>
                 <tbody>
                 {% for v in history_violations %}
                 <tr>
-                  <td>{{ v.first_name }} {{ v.last_name }}</td>
-                  <td>{{ v.violation_date }} {{ v.violation_time }}</td>
+                   <td>{{ v.student_id }}</td>
+                    <td>{{ v.first_name }} {{ v.last_name }}</td>
+                    <td>{{ v.program_course }}</td>
+                    <td>{{ v.get_violation_type_display }}</td>
+                    <td>{{ v.violation_date }} {{ v.violation_time }}</td>
+                    <td>      </td>
                   <td>
                     <a href="{% url 'admin_view_violation' %}?violation_id={{ v.id }}" class="btn btn-sm " style="color: #440207; border-color: #440207;"
                           onmouseover="this.style.backgroundColor='#440207'; this.style.color='#fff';"

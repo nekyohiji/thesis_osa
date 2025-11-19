@@ -52,6 +52,7 @@ def build_cs_agreement_pdf(case_obj, osa_head_name):
         "student_name": _fmt_student_name(case_obj),
         "program": getattr(case_obj, "program_course", ""),
         "osa_head": osa_head_name or "",
+        "title":        osa_head_title or "",
     }
     for k, v in payload.items():
         ok = _set_input(ws_inputs, k, v)

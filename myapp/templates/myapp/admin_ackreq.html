@@ -123,8 +123,8 @@
               <table id="pendingTable" class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
-                    <th>Name</th>
                     <th>Student No.</th>
+                    <th>Name</th>
                     <th>Program</th>
                     <th>Submitted</th>
                     <th>Actions</th>
@@ -150,8 +150,8 @@
                   {% if pending_requests %}
                     {% for r in pending_requests %}
                       <tr>
-                        <td class="td-name">{{ r.surname }}, {{ r.first_name }}{% if r.middle_name %} {{ r.middle_name|first }}.{% endif %}</td>
                         <td class="td-student">{{ r.student_number }}</td>
+                        <td class="td-name">{{ r.surname }}, {{ r.first_name }}{% if r.middle_name %} {{ r.middle_name|first }}.{% endif %}</td>
                         <td>{{ r.program }}</td>
                         <td class="td-date">{{ r.submitted_at|date:"F j, Y g:iA" }}</td>
                         <td class="text-nowrap">
@@ -208,8 +208,8 @@
               <table id="historyTable" table class="table table-hover table-bordered align-middle text-center mb-0">
                 <thead class="table-secondary sticky-top border">
                   <tr>
-                    <th>Name</th>
                     <th>Student No.</th>
+                    <th>Name</th>
                     <th>Program</th>
                     <th>Status</th>
                     <th>Submitted</th>
@@ -220,8 +220,8 @@
                   {% if history_requests %}
                     {% for r in history_requests %}
                       <tr>
-                        <td class="td-name">{{ r.surname }}, {{ r.first_name }}</td>
                         <td class="td-student">{{ r.student_number }}</td>
+                        <td class="td-name">{{ r.surname }}, {{ r.first_name }}</td>
                         <td>{{ r.program }}</td>
                         <td>
                           {% if r.status == STATUS_APPROVED %}

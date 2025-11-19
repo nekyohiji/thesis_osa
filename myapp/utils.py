@@ -308,13 +308,23 @@ def _status_for_excel(raw: str) -> str:
 def _fmt_yyyy_mm_dd(dt):
     return "" if not dt else dt.strftime("%Y-%m-%d")
 
-def _get_osa_head_name():
-    name = (UserAccount.objects
+def _get_osa_head():
+    return (UserAccount.objects
             .filter(role__iexact='admin', is_active=True)
             .order_by('-created_at', '-id')
-            .values_list('full_name', flat=True)
             .first())
-    return name.strip() if name else "BEVERLY M. DE VEGA"
+
+def _get_osa_head_name() -> str:
+    admin = _get_osa_head()
+    if admin and admin.full_name:
+        return admin.full_name.strip()
+    return "BEVERLY M. DE VEGA"
+
+def _get_osa_head_title() -> str:
+    admin = _get_osa_head()
+    if admin and getattr(admin, "title", None):
+        return admin.title.strip()
+    return "Head, Office of Student Affairs"
 
 def _find_soffice() -> str | None:
     for p in (
@@ -369,13 +379,13 @@ def generate_gmf_pdf(req) -> bytes:
         "program":        (getattr(req, "program", "") or "").strip(),
         "sex":            (getattr(req, "sex", "") or "").strip().upper(),  # Excel lowers it anyway
         "status":         _status_for_excel(getattr(req, "status", "")),
-        # 👇 map to your model field names
         "years_of_stay":  (getattr(req, "inclusive_years", "") or "").strip(),
         "admission_date": (getattr(req, "date_admission", "") or "").strip(),
         "date_graduated": _fmt_yyyy_mm_dd(getattr(req, "date_graduated", None)),
         "purpose":        (getattr(req, "purpose", "") or "").strip(),
         "purpose_other":  (getattr(req, "other_purpose", "") or "").strip(),
         "osahead":        _get_osa_head_name(),
+        "osahead_title":  _get_osa_head_title(),
     }
 
     soffice = _find_soffice()

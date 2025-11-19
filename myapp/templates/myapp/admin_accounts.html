@@ -408,6 +408,14 @@
             <label class="form-label">Position:</label>
             <input type="text" class="form-control" id="editRole" disabled>
           </div>
+          <div class="mb-3" id="editTitleGroup" style="display:none;">
+            <label class="form-label">Title (for certificates):</label>
+            <input type="text" class="form-control" id="editTitle" maxlength="128"
+                  placeholder="e.g., Head, Office of Student Affairs">
+            <small class="form-text text-muted">
+              This appears under the name on Good Moral / clearance certificates.
+            </small>
+          </div>
 
           <!-- Change Password Button -->
           <div class="d-grid mt-3">
@@ -925,7 +933,7 @@ function fetchAndDisplayAccounts() {
 
       const activeList = document.getElementById('activeAccountsList');
       const hasActiveAdmin = active.some(a => (a?.role || '').toLowerCase() === 'admin');
-            lockAdminOption(hasActiveAdmin);
+      lockAdminOption(hasActiveAdmin);
       const deactivatedList = document.getElementById('deactivatedAccountsList');
       if (!activeList || !deactivatedList) {
         console.error('Accounts containers missing from DOM.');
@@ -939,9 +947,12 @@ function fetchAndDisplayAccounts() {
         const div = document.createElement('div');
         div.className = `card mb-3 shadow-sm ${status === 'deactivated' ? 'border-danger' : ''}`;
         div.style.cssText = 'cursor:default;font-size:.8rem;text-align:left;position:relative;padding:2px;';
+
+        // ✨ include title here
         div.dataset.fullName = account?.full_name ?? '';
-        div.dataset.email = account?.email ?? '';
-        div.dataset.role = account?.role ?? '';
+        div.dataset.email    = account?.email ?? '';
+        div.dataset.role     = account?.role ?? '';
+        div.dataset.title    = account?.title ?? '';   // <-- NEW
 
         div.innerHTML = `
           <div class="card-body p-2">
@@ -949,15 +960,21 @@ function fetchAndDisplayAccounts() {
               <div class="col-md-10 col-12">
                 <div class="row mb-1">
                   <div class="col-4 col-sm-3 text-end fw-bold">Full Name:</div>
-                  <div class="col-8 col-sm-9 ${status === 'deactivated' ? 'text-danger' : ''} text-truncate">${div.dataset.fullName || '-'}</div>
+                  <div class="col-8 col-sm-9 ${status === 'deactivated' ? 'text-danger' : ''} text-truncate">
+                    ${div.dataset.fullName || '-'}
+                  </div>
                 </div>
                 <div class="row mb-1">
                   <div class="col-4 col-sm-3 text-end fw-bold">Email:</div>
-                  <div class="col-8 col-sm-9 text-truncate">${div.dataset.email || '-'}</div>
+                  <div class="col-8 col-sm-9 text-truncate">
+                    ${div.dataset.email || '-'}
+                  </div>
                 </div>
                 <div class="row mb-0">
                   <div class="col-4 col-sm-3 text-end fw-bold">Position:</div>
-                  <div class="col-8 col-sm-9"><strong>${div.dataset.role || '-'}</strong></div>
+                  <div class="col-8 col-sm-9">
+                    <strong>${div.dataset.role || '-'}</strong>
+                  </div>
                 </div>
               </div>
 
@@ -968,8 +985,14 @@ function fetchAndDisplayAccounts() {
                     <i class="fas fa-ellipsis-v"></i>
                   </span>
                   <div class="kebab-menu bg-white border rounded shadow position-absolute end-0 mt-2" style="display:none; z-index:1000;">
-                    <div class="px-3 py-1" style="cursor:pointer;" onclick="editAccount('${(div.dataset.email||'').replace(/'/g, "\\'")}'); closeKebabMenu(this)">Edit</div>
-                    <div class="px-3 py-1 text-danger" style="cursor:pointer;" onclick="window.selectedEmailToDeactivate='${(div.dataset.email||'').replace(/'/g, "\\'")}'; confirmDeactivate(); closeKebabMenu(this)">Deactivate</div>
+                    <div class="px-3 py-1" style="cursor:pointer;"
+                         onclick="editAccount('${(div.dataset.email||'').replace(/'/g, "\\'")}'); closeKebabMenu(this)">
+                      Edit
+                    </div>
+                    <div class="px-3 py-1 text-danger" style="cursor:pointer;"
+                         onclick="window.selectedEmailToDeactivate='${(div.dataset.email||'').replace(/'/g, "\\'")}'; confirmDeactivate(); closeKebabMenu(this)">
+                      Deactivate
+                    </div>
                   </div>
                 </div>
               </div>` : ''}
@@ -995,7 +1018,6 @@ function fetchAndDisplayAccounts() {
       // optional: toast/alert if you have a helper
     });
 }
-
 /* ---------- KEBAB + EDIT MODAL ---------- */
 window.selectedEmailToDeactivate = null;
 
@@ -1016,12 +1038,28 @@ document.addEventListener('click', (e) => {
 });
 
 window.editAccount = function (email) {
-  const card = [...document.querySelectorAll('#activeAccountsList .card')].find(c => c.dataset.email === email);
+  const card = [...document.querySelectorAll('#activeAccountsList .card')]
+    .find(c => c.dataset.email === email);
   if (!card) return showMessage('Unable to find selected account.', 'danger');
+
+  const role = (card.dataset.role || '').toLowerCase();
+
   document.getElementById('editFullName').value = card.dataset.fullName || '';
-  document.getElementById('editEmail').value = card.dataset.email || '';
-  document.getElementById('editRole').value = card.dataset.role || '';
+  document.getElementById('editEmail').value    = card.dataset.email || '';
+  document.getElementById('editRole').value     = card.dataset.role || '';
   document.getElementById('editEmailBadge').style.display = 'none';
+
+  const titleGroup = document.getElementById('editTitleGroup');
+  const titleInput = document.getElementById('editTitle');
+
+  if (role === 'admin') {
+    if (titleGroup) titleGroup.style.display = '';
+    if (titleInput) titleInput.value = card.dataset.title || '';
+  } else {
+    if (titleGroup) titleGroup.style.display = 'none';
+    if (titleInput) titleInput.value = '';
+  }
+
   new bootstrap.Modal(document.getElementById('editAccountModal')).show();
 };
 
@@ -1055,17 +1093,34 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
   if (!saveBtn) return;
 
   saveBtn.addEventListener('click', async function () {
-    const nameEl = document.getElementById('editFullName');
-    const emailEl = document.getElementById('editEmail');
-    const roleEl  = document.getElementById('editRole'); // currently disabled
+    const nameEl   = document.getElementById('editFullName');
+    const emailEl  = document.getElementById('editEmail');
+    const roleEl   = document.getElementById('editRole'); 
+    const titleEl  = document.getElementById('editTitle');
 
     const full_name = (nameEl?.value || '').trim();
-    const email = (emailEl?.value || '').trim();
-    const role = (roleEl?.value || null);
+    const email     = (emailEl?.value || '').trim();
+    const roleRaw   = (roleEl?.value || '').trim();
+    const roleLower = roleRaw.toLowerCase();
+    const title     = (titleEl?.value || '').trim();
 
     if (!email) { showMessage('No account selected.', 'danger'); return; }
     if (!full_name) { showMessage('Full name is required.', 'warning'); nameEl?.focus(); return; }
     if (full_name.length > 128) { showMessage('Full name must be at most 128 characters.', 'warning'); nameEl?.focus(); return; }
+    if (roleLower === 'admin' && title.length > 128) {
+      showMessage('Title must be at most 128 characters.', 'warning');
+      titleEl?.focus();
+      return;
+    }
+
+    const payload = { full_name };
+    if (roleEl && !roleEl.disabled && roleRaw) {
+      payload.role = roleRaw;
+    }
+
+    if (roleLower === 'admin') {
+      payload.title = title;
+    }
 
     const btn = this, txt = btn.textContent;
     btn.disabled = true; btn.textContent = 'Saving...';
@@ -1074,7 +1129,7 @@ document.getElementById('confirmDeactivateBtn')?.addEventListener('click', async
       const res = await fetch(`/edit-account/${encodeURIComponent(email)}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
-        body: JSON.stringify({ full_name, ...(roleEl && !roleEl.disabled && role ? { role } : {}) })
+        body: JSON.stringify(payload)
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || data?.status === 'error') {

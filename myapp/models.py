@@ -66,12 +66,19 @@ class UserAccount(models.Model):
 
     full_name = models.CharField(max_length=128)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=128) 
+    password = models.CharField(max_length=128)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    title = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text="Shown on certificates (e.g. 'Head, Office of Student Affairs')"
+    )
+
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     must_change_password = models.BooleanField(default=False)
-    
+
     class Meta:
         db_table = 'user_accounts'
         constraints = [
@@ -81,9 +88,29 @@ class UserAccount(models.Model):
                 name='one_active_admin_only',
             ),
         ]
-        indexes = [models.Index(fields=['role','is_active'])]
+        indexes = [models.Index(fields=['role', 'is_active'])]
+
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
+
+    def clean(self):
+        super().clean()
+        if self.role != 'admin' and self.title:
+            raise ValidationError({'title': 'Only the Admin account may have a title.'})
+
+    @classmethod
+    def get_active_admin(cls):
+        return cls.objects.filter(role='admin', is_active=True).first()
+
+    @property
+    def display_title(self) -> str:
+        """
+        Returns the title to be printed on certificates.
+        If admin has no custom title set, falls back to the old default.
+        """
+        if self.role == 'admin':
+            return self.title or "Head, Office of Student Affairs"
+        return ""
     
 class OTPVerification(models.Model):
     email = models.EmailField(unique=True)
@@ -106,7 +133,12 @@ class Archived_Account(models.Model):
     password = models.CharField(max_length=128)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=False)
-
+    title = models.CharField(                 # <-- ADD THIS
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text="Shown on certificates (e.g. 'Head, Office of Student Affairs')"
+    )
     class Meta:
         db_table = 'archive_account'
 

@@ -1490,8 +1490,8 @@ def get_accounts_data(request):
         active_qs = active_qs.exclude(role="superadmin")
         deact_qs  = deact_qs.exclude(role="superadmin")
 
-    active = list(active_qs.values("full_name", "email", "role"))
-    deactivated = list(deact_qs.values("full_name", "email", "role"))
+    active = list(active_qs.values("full_name", "email", "role", "title"))
+    deactivated = list(deact_qs.values("full_name", "email", "role", "title"))
 
     return JsonResponse({"active": active, "deactivated": deactivated}, status=200)
 
@@ -1508,6 +1508,7 @@ def deactivate_account(request, user_email):
                     "password": account.password,
                     "role": account.role,
                     "is_active": False,
+                    "title": getattr(account, "title", ""),
                 }
             )
             account.delete()
@@ -1527,30 +1528,50 @@ def edit_account(request, user_email: str):
         return json_err(str(e), code="BAD_JSON")
 
     full_name = (body.get("full_name") or "").strip()
-    role = body.get("role", None)
+    role      = body.get("role", None)
+    title     = (body.get("title") or "").strip()  # NEW
 
     errors = {}
     if not full_name:
         errors["full_name"] = "Full name is required."
     elif len(full_name) > 128:
         errors["full_name"] = "Full name must be at most 128 characters."
+
+    effective_role = (role or account.role or "").lower()
+    if effective_role == "admin" and title and len(title) > 128:
+        errors["title"] = "Title must be at most 128 characters."
+
     if role is not None and role not in {c[0] for c in UserAccount.ROLE_CHOICES}:
         errors["role"] = "Invalid role."
+
     if errors:
         return json_err("Validation failed.", code="VALIDATION", errors=errors)
 
     try:
         with transaction.atomic():
             account.full_name = full_name
+            update_fields = ["full_name"]
+
             if role is not None:
                 account.role = role
-            account.save(update_fields=["full_name"] + (["role"] if role is not None else []))
+                update_fields.append("role")
+
+            if effective_role == "admin" and hasattr(account, "title"):
+                account.title = title
+                update_fields.append("title")
+
+            account.save(update_fields=update_fields)
     except Exception:
         return json_err("Unable to update the account.", code="UPDATE_FAIL", status=500)
 
     return json_ok(
         "Account updated successfully.",
-        account={"full_name": account.full_name, "email": account.email, "role": account.role}
+        account={
+            "full_name": account.full_name,
+            "email": account.email,
+            "role": account.role,
+            "title": getattr(account, "title", ""),
+        },
     )
 
 @require_http_methods(["POST"])
@@ -2845,19 +2866,6 @@ def goodmoral_request_form_pdf(request, pk):
 @role_required(['admin', 'staff', 'superadmin'])
 @xframe_options_exempt
 def batch_view_gmrf(request):
-    """
-    Batch preview for *REQUEST FORMS* (not certificates).
-
-    Usage (index-like range, 1-based):
-      /gmrf/batch-preview?frm=1&to=50
-        -> Includes Accepted + Pending (excludes Rejected)
-
-    Optional:
-      &status=accepted|pending|all    (default: all=accepted+pending; rejected always excluded)
-      &guide=1                        (draws position guides for debugging)
-
-    Sorting matches your certs batch for predictable pagination.
-    """
     def _num(x, default):
         try:
             v = int(x)
