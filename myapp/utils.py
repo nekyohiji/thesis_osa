@@ -351,6 +351,11 @@ def _fill_named_ranges(template_xlsx: Path, values: dict,
             cell = coord.split(":")[0]  # top-left if it was a range
             ws[cell].value = val
 
+    if cert_sheet in wb.sheetnames:
+        ws_cert = wb[cert_sheet]
+        ws_cert.oddFooter.left.text = "TUPC-F-OQA-DCG-14 Ø3 (03.28.25)"
+        ws_cert.oddFooter.left.size = 8  # optional font size
+
     # force recalculation in LO on open
     try:
         wb.calculation.fullCalcOnLoad = True
