@@ -26,6 +26,184 @@
 
 <!--////////////////////// START HERE MAGCODE -->
 
+<style>
+        /* =========================
+        Scholarship Grant Options Styling
+        ========================= */
+
+    /* Section header */
+    h5.mb-3 {
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+    }
+
+    h5.mb-3 i {
+        color: #440207;
+        font-size: 1.3rem;
+    }
+
+    /* Form container */
+    .col-md-4 form {
+        border: 1px solid #49040c;
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .col-md-4 form:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Input styling */
+    form input.form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 8px 12px;
+        transition: all 0.2s;
+    }
+
+    form input.form-control:focus {
+        border-color: #440207;
+        box-shadow: 0 0 5px rgba(68, 2, 7, 0.3);
+        outline: none;
+    }
+
+    /* Form label */
+    form label.form-label {
+        color: #2c3e50;
+    }
+
+    /* Buttons */
+    .btn-sm {
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-sm:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Table styling */
+    .table-responsive {
+        border: 1px solid #49040c;
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .table {
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+        font-size: 15px;
+    }
+
+    .table th {
+        background-color: #440207;
+        color: #ffffff;
+        
+    }
+
+    .table td, .table th {
+        vertical-align: middle !important;
+    }
+
+    /* Badges */
+    .badge {
+        padding: 0.35em 0.65em;
+        border-radius: 8px;
+    }
+
+    .badge.bg-success {
+        background-color: #28a745 !important;
+    }
+
+    .badge.bg-secondary {
+        background-color: #6c757d !important;
+    }
+
+    /* Form toggle buttons in table */
+    .text-end form {
+        display: inline-block;
+    }
+
+    .btn-outline-warning {
+        color: #d97706;
+        border-color: #d97706;
+    }
+
+    .btn-outline-warning:hover {
+        background-color: #d97706;
+        color: #fff;
+    }
+
+    .btn-outline-success {
+        color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-outline-success:hover {
+        background-color: #28a745;
+        color: #fff;
+    }
+
+    /* Divider lines */
+    hr {
+        border-top: 1px solid #dcdcdc;
+        margin: 1.5rem 0;
+    }
+
+
+    /* ===== Add Option Form Styling ===== */
+        .col-md-4 form {
+            border: 1px solid #49040c;
+            background-color: #ffffff;      /* Card-like background */
+            border-radius: 12px;            /* Rounded corners */
+            padding: 20px;                  /* Spacing inside */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Subtle shadow */
+            transition: all 0.3s ease-in-out;
+        }
+
+        .col-md-4 form:hover {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); /* Hover shadow */
+        }
+
+        .col-md-4 form .form-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .col-md-4 form .form-control {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            padding: 8px 12px;
+            transition: all 0.2s;
+        }
+
+        .col-md-4 form .form-control:focus {
+            border-color: #440207; /* Focus color */
+            box-shadow: 0 0 5px rgba(68, 2, 7, 0.3);
+            outline: none;
+        }
+
+        .col-md-4 form .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            width: 100%; /* Full width for better UX */
+            transition: all 0.2s ease-in-out;
+        }
+
+        .col-md-4 form .btn:hover {
+            transform: translateY(-1px); /* Subtle hover lift */
+        }
+
+
+</style>
+
 
     <div class="main-content">
         <div class="container-fluid">
@@ -89,12 +267,12 @@
 
                 <hr class="my-4">
 
-                <h5 class="mb-3">
+                <h2 class="mb-3 text-center fw-bold">
                     <i class="bi bi-list-check me-2"></i>
-                    Scholarship Grant Options (for client dropdown)
-                </h5>
+                    Scholarship Grant Options (for client dropdown)<br>
+                </h2>
 
-                <div class="row g-3 align-items-start">
+                <div class="row g-3 align-items-start timeline-container">
                     <!-- Add new option -->
                     <div class="col-md-4">
                         <form method="post">
@@ -102,11 +280,11 @@
                             <input type="hidden" name="form_type" value="scholarship_grant_add">
 
                             <div class="mb-2">
-                                <label for="grant_name" class="form-label">Add new option</label>
+                                <label for="grant_name" class="form-label text-center">Add new option:</label>
                                 <input type="text" class="form-control" name="name" id="grant_name"
                                     placeholder="e.g. DOST Scholar" required>
                             </div>
-                            <button type="submit" class="btn btn-sm btn-primary">
+                            <button type="submit" class="btn btn-sm text-light" style=" background-color: #440207;">
                                 <i class="bi bi-plus-circle me-1"></i> Add to list
                             </button>
                         </form>
@@ -114,13 +292,13 @@
 
                     <!-- List/manage existing options -->
                     <div class="col-md-8">
-                        <div class="table-responsive">
+                        <div class="table-responsive text-center " style="max-height: 300px; overflow-y: auto;">
                             <table class="table table-sm align-middle">
                                 <thead>
                                     <tr>
                                         <th>Option</th>
                                         <th>Status</th>
-                                        <th class="text-end">Actions</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -134,7 +312,7 @@
                                                 <span class="badge bg-secondary">Hidden / disabled</span>
                                             {% endif %}
                                         </td>
-                                        <td class="text-end">
+                                        <td>
                                             <!-- Toggle enable/disable -->
                                             <form method="post" class="d-inline">
                                                 {% csrf_token %}
@@ -164,7 +342,7 @@
                 </div>
                 <hr>
 
-                <h6>Timeline</h6>
+                <h2 class="fw-bold text-center">Timeline</h2>
                 <div class="timeline-container">
                     <div class="posted-scholarships-list">
                     {% for s in scholarships %}
