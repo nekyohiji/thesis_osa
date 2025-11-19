@@ -197,7 +197,7 @@ urlpatterns = [
     path("admin_ackreq/<int:pk>/accept/",  views.admin_ackreq_accept,  name="admin_ackreq_accept"),
     path("admin_ackreq/<int:pk>/decline/", views.admin_ackreq_decline, name="admin_ackreq_decline"),
     
-
+    path('violations/<int:violation_id>/apology/upload/', views.upload_apology_letter, name='upload_apology_letter'),
     
     ########################################guard
     path('get_student_by_id/<str:tupc_id>/', views.get_student_by_id, name='get_student_by_id'),

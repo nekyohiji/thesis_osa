@@ -90,6 +90,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from django.contrib.auth.hashers import make_password, check_password
 from django.db import IntegrityError
 from myapp.authz import can_view_superadmins
+from django.http import HttpResponseNotAllowed
 # ── Local apps
 from .decorators import role_required, facilitator_required
 from .forms import (
@@ -3805,6 +3806,42 @@ def mark_apology_settled(request, violation_id):
         v.save(update_fields=['is_settled','settled_at'])
 
     messages.success(request, "✅ Apology Letter marked as received.")
+    return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
+
+@role_required(['admin', 'staff', 'superadmin'])
+@transaction.atomic
+def upload_apology_letter(request, violation_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    v = get_object_or_404(Violation, id=violation_id)
+
+    # Only allow upload for approved, unsettled Apology Letter violations
+    if v.status != 'Approved' or v.settlement_type != 'Apology Letter':
+        messages.error(request, "This violation is not an unsettled Apology Letter.")
+        return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
+
+    file = request.FILES.get('apology_letter')
+    if not file:
+        messages.error(request, "Please choose an image file to upload.")
+        return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
+
+    # Basic content-type validation (JPG/PNG only)
+    allowed_types = {'image/jpeg', 'image/png'}
+    if file.content_type not in allowed_types:
+        messages.error(request, "Apology letter must be a JPG or PNG image.")
+        return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
+
+    # If replacing an existing file, delete the old one
+    if v.apology_letter:
+        v.apology_letter.delete(save=False)
+
+    v.apology_letter = file
+    v.is_settled = True
+    v.settled_at = timezone.now()
+    v.save(update_fields=['apology_letter', 'is_settled', 'settled_at'])
+
+    messages.success(request, "✅ Apology letter uploaded and marked as received.")
     return redirect(f"{reverse('admin_view_violation')}?violation_id={v.id}")
 
 #------------------------------------#

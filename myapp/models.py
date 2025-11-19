@@ -233,7 +233,7 @@ class Violation(models.Model):
     settlement_type = models.CharField(max_length=50, choices=SETTLEMENT_CHOICES, default="None")
     is_settled = models.BooleanField(default=False)
     settled_at = models.DateTimeField(null=True, blank=True)
-
+    apology_letter = models.ImageField(upload_to='apology_letters/', null=True, blank=True)
     # --- meta
     created_at = models.DateTimeField(auto_now_add=True)
 
