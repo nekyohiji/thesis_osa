@@ -147,7 +147,9 @@ class GoodMoralRequestForm(forms.ModelForm):
     address = forms.CharField(widget=forms.Textarea(attrs={"rows": 2}), required=True)
     client_type = forms.ChoiceField(choices=CLIENT_TYPE_CHOICES, required=True)
     stakeholder = forms.ChoiceField(choices=STAKEHOLDER_CHOICES, required=True)
-
+    program_other = forms.CharField(required=False, max_length=100)
+    scholarship_grant = forms.CharField(required=False, max_length=150)
+    scholarship_grant_other = forms.CharField(required=False, max_length=150)
     class Meta:
         model = GoodMoralRequest
         fields = [
@@ -204,12 +206,42 @@ class GoodMoralRequestForm(forms.ModelForm):
         return int(age)
     def clean(self):
         cleaned = super().clean()
+
+        # ---------- Program + program_other ----------
+        program = (cleaned.get('program') or '').strip()
+        program_other = (self.cleaned_data.get('program_other') or '').strip()
+
+        if program == 'Others':
+            if not program_other:
+                self.add_error('program_other', 'Please specify your program.')
+            else:
+                cleaned['program'] = program_other
+                self.cleaned_data['program'] = program_other
+
         purpose = (cleaned.get('purpose') or '').strip()
         other = (cleaned.get('other_purpose') or '').strip()
-        needs_other = purpose in {'Others', 'Scholarship', 'Transfer to Another School',
-                                  'Continuing Education', 'Student Development'}
-        if needs_other and not other:
-            self.add_error('other_purpose', 'Please specify your purpose.')
+        sg = (cleaned.get('scholarship_grant') or '').strip()
+        sg_other = (self.cleaned_data.get('scholarship_grant_other') or '').strip()
+
+        if purpose == 'Scholarship':
+            if not sg:
+                self.add_error('scholarship_grant', 'Please select a scholarship grant.')
+            elif sg == 'others' and not sg_other:
+                self.add_error('scholarship_grant_other', 'Please specify the scholarship grant.')
+            else:
+                final_grant = sg_other if sg == 'others' else sg
+                cleaned['other_purpose'] = final_grant
+                self.cleaned_data['other_purpose'] = final_grant
+        else:
+            needs_other = purpose in {
+                'Others',
+                'Transfer to Another School',
+                'Continuing Education',
+                'Student Development',
+            }
+            if needs_other and not other:
+                self.add_error('other_purpose', 'Please specify your purpose.')
+
         doc_type = cleaned.get('document_type')
         f1 = cleaned.get('uploaded_file')
         f2 = cleaned.get('uploaded_file_2')

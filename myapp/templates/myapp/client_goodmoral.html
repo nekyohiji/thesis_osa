@@ -366,11 +366,12 @@
                                 Specify COMPLETE Program (if not listed): <span class="text-danger" aria-label="required">*</span>
                             </label>
                             <input type="text"
-                                    id="program_other_input"
-                                    autocomplete="off"
-                                    class="form-control"
-                                    maxlength="100"
-                                    placeholder="Type your program name">
+                                  id="program_other_input"
+                                  name="program_other"   
+                                  autocomplete="off"
+                                  class="form-control"
+                                  maxlength="100"
+                                  placeholder="Type your program name">
                             <div class="invalid-feedback">Please specify your program.</div>
                         </div>
                     </div>
@@ -529,6 +530,37 @@
                                maxlength="100">
                         <div class="invalid-feedback">Please specify the purpose.</div>
                     </div>
+                    <div class="mb-3" id="scholarshipGrantGroup" style="display:none;">
+                      <label for="scholarship_grant" class="form-label">
+                          Scholarship Grant: <span class="text-danger" aria-label="required">*</span>
+                      </label>
+                      <select class="form-select"
+                              id="scholarship_grant"
+                              name="scholarship_grant">
+                          <option value="" selected disabled>-- Select Scholarship Grant --</option>
+                          {% for grant in grant_options %}
+                              {% if grant.is_active %}
+                                  <option value="{{ grant.name }}">{{ grant.name }}</option>
+                              {% endif %}
+                          {% endfor %}
+                          <option value="others">Others (not in list)</option>
+                      </select>
+                      <div class="invalid-feedback">Please select a scholarship grant.</div>
+                  </div>
+
+                  <!-- 🔹 NEW: Scholarship Grant “Others” textbox -->
+                  <div class="mb-3" id="scholarshipGrantOtherGroup" style="display:none;">
+                      <label for="scholarship_grant_other" class="form-label">
+                          Specify Scholarship Grant: <span class="text-danger" aria-label="required">*</span>
+                      </label>
+                      <input type="text"
+                            class="form-control"
+                            id="scholarship_grant_other"
+                            name="scholarship_grant_other"
+                            autocomplete="off"
+                            maxlength="150">
+                      <div class="invalid-feedback">Please specify the scholarship grant.</div>
+                  </div>
 
                     <hr class="my-4">
 
@@ -1425,33 +1457,30 @@ const InputFormatter = {
 // FIELD TOGGLES - Show/hide conditional fields
 // ============================================================================
 const FieldToggles = {
-  
   init() {
     this.setupExtensionToggle();
     this.setupStatusToggle();
     this.setupPurposeToggle();
     this.setupDocumentTypeToggle();
     this.setupProgramOtherToggle();
+    this.setupScholarshipGrantToggle();
   },
-  
-  /**
-   * Toggle extension name field
-   */
+
   setupExtensionToggle() {
     const extensionRow = document.getElementById('extensionRow');
-    const yesRadio = document.getElementById('extYes');
-    const noRadio = document.getElementById('extNo');
+    const yesRadio     = document.getElementById('extYes');
+    const noRadio      = document.getElementById('extNo');
     const extensionInput = document.getElementById('ex_goodmoral');
-    
+
     if (!extensionRow || !yesRadio || !noRadio || !extensionInput) return;
-    
+
     yesRadio.addEventListener('change', () => {
       if (yesRadio.checked) {
         extensionRow.style.display = 'block';
         extensionInput.focus();
       }
     });
-    
+
     noRadio.addEventListener('change', () => {
       if (noRadio.checked) {
         extensionRow.style.display = 'none';
@@ -1459,100 +1488,124 @@ const FieldToggles = {
       }
     });
   },
-  
-  /**
-   * Toggle status-specific fields
-   */
+
   setupStatusToggle() {
     const statusRadios = document.querySelectorAll('input[name="status"]');
-    
     statusRadios.forEach(radio => {
       radio.addEventListener('change', () => this.updateStatusFields());
     });
-    
-    // Initial state
+
     this.updateStatusFields();
   },
-  
+
   updateStatusFields() {
     const graduated = document.getElementById('status_graduated')?.checked;
-    const former = document.getElementById('status_former')?.checked;
-    const current = document.getElementById('status_current')?.checked;
-    
+    const former    = document.getElementById('status_former')?.checked;
+    const current   = document.getElementById('status_current')?.checked;
+
     const yearGraduated = document.getElementById('year_graduated_goodmoral');
-    const stayYears = document.getElementById('stay_goodmoral');
+    const stayYears     = document.getElementById('stay_goodmoral');
     const yearAdmission = document.getElementById('year_admission_goodmoral');
-    
+
     const gradWrap = document.getElementById('graduated_date_field');
     const stayWrap = document.getElementById('inclusive_years_field');
-    const admWrap = document.getElementById('admission_date_field');
-    
-    // Toggle visibility
+    const admWrap  = document.getElementById('admission_date_field');
+
     if (gradWrap) gradWrap.style.display = graduated ? 'block' : 'none';
-    if (stayWrap) stayWrap.style.display = former ? 'block' : 'none';
-    if (admWrap) admWrap.style.display = current ? 'block' : 'none';
-    
-    // Toggle required attribute
+    if (stayWrap) stayWrap.style.display = former    ? 'block' : 'none';
+    if (admWrap)  admWrap.style.display  = current   ? 'block' : 'none';
+
     if (yearGraduated) yearGraduated.required = !!graduated;
-    if (stayYears) stayYears.required = !!former;
+    if (stayYears)     stayYears.required     = !!former;
     if (yearAdmission) yearAdmission.required = !!current;
   },
-  
-  /**
-   * Toggle purpose specification field
-   */
+
   setupPurposeToggle() {
-    const purposeSelect = document.getElementById('purpose_goodmoral');
-    const otherContainer = document.getElementById('otherPurposeContainer');
-    const otherInput = document.getElementById('other_purpose');
-    
+    const purposeSelect   = document.getElementById('purpose_goodmoral');
+    const otherContainer  = document.getElementById('otherPurposeContainer');
+    const otherInput      = document.getElementById('other_purpose');
+
+    const sgGroup      = document.getElementById('scholarshipGrantGroup');
+    const sgOtherGroup = document.getElementById('scholarshipGrantOtherGroup');
+    const sgSelect     = document.getElementById('scholarship_grant');
+    const sgOtherInput = document.getElementById('scholarship_grant_other');
+
     if (!purposeSelect || !otherContainer || !otherInput) return;
-    
-    purposeSelect.addEventListener('change', () => {
+
+    const update = () => {
       const value = purposeSelect.value;
-      const needsSpecification = [
+
+      const needsOtherText = [
         'Others',
         'Transfer to Another School',
-        'Scholarship',
         'Continuing Education',
         'Student Development'
       ].includes(value);
-      
-      if (needsSpecification) {
+
+      // reset scholarship UI
+      if (sgGroup)      sgGroup.style.display      = 'none';
+      if (sgOtherGroup) sgOtherGroup.style.display = 'none';
+      if (sgSelect) {
+        sgSelect.required = false;
+        if (value !== 'Scholarship') sgSelect.value = '';
+      }
+      if (sgOtherInput) {
+        sgOtherInput.required = false;
+        if (value !== 'Scholarship') {
+          sgOtherInput.value = '';
+          sgOtherInput.classList.remove('is-invalid');
+          sgOtherInput.setCustomValidity('');
+        }
+      }
+
+      // Scholarship => use scholarship grant select, not other_purpose
+      if (value === 'Scholarship') {
+        otherContainer.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+        otherInput.placeholder = '';
+
+        if (sgGroup) sgGroup.style.display = 'block';
+        if (sgSelect) sgSelect.required = true;
+
+        if (typeof FieldToggles.updateScholarshipGrantOthers === 'function') {
+          FieldToggles.updateScholarshipGrantOthers();
+        }
+        return;
+      }
+
+      // Non-scholarship that need a specific text
+      if (needsOtherText) {
         otherContainer.style.display = 'block';
         otherInput.required = true;
-        
-        // Set appropriate placeholder
+
         const placeholders = {
           'Others': 'Please specify your purpose',
           'Transfer to Another School': 'Enter the School Name',
-          'Scholarship': 'Specify Scholarship Grant',
           'Continuing Education': 'Specify Continuing Education Program',
           'Student Development': 'Specify Student Development Purpose'
         };
-        
         otherInput.placeholder = placeholders[value] || 'Please specify';
       } else {
         otherContainer.style.display = 'none';
         otherInput.required = false;
         otherInput.value = '';
+        otherInput.placeholder = '';
       }
-    });
+    };
+
+    purposeSelect.addEventListener('change', update);
+    update();
   },
-  
-  /**
-   * Toggle file upload fields based on document type
-   */
+
   setupDocumentTypeToggle() {
     const documentTypeSelect = document.getElementById('documentTypeSelect');
-    
     if (!documentTypeSelect) return;
-    
+
     documentTypeSelect.addEventListener('change', () => {
       this.updateFileUploadFields();
     });
-    
-    // Initial state
+
     this.updateFileUploadFields();
   },
 
@@ -1563,21 +1616,49 @@ const FieldToggles = {
     if (!select || !wrap || !input) return;
 
     const update = () => {
-        const show = select.value === 'Others';
-        wrap.style.display = show ? 'block' : 'none';
-        input.required = show;         // client-side only
-        if (!show) {
+      const show = select.value === 'Others';
+      wrap.style.display = show ? 'block' : 'none';
+      input.required = show;
+      if (!show) {
         input.value = '';
         input.classList.remove('is-invalid');
         input.setCustomValidity('');
-        }
+      }
     };
 
     select.addEventListener('change', update);
-    update(); // set initial state
-    },
-  
-    updateFileUploadFields() {
+    update();
+  },
+
+  setupScholarshipGrantToggle() {
+    const sgSelect     = document.getElementById('scholarship_grant');
+    const sgOtherGroup = document.getElementById('scholarshipGrantOtherGroup');
+    const sgOtherInput = document.getElementById('scholarship_grant_other');
+
+    if (!sgSelect || !sgOtherGroup || !sgOtherInput) return;
+
+    const update = () => {
+      const val      = sgSelect.value;
+      const isOthers = (val === 'others' || val === 'Others');
+
+      sgOtherGroup.style.display = isOthers ? 'block' : 'none';
+      sgOtherInput.required = isOthers;
+
+      if (!isOthers) {
+        sgOtherInput.value = '';
+        sgOtherInput.classList.remove('is-invalid');
+        sgOtherInput.setCustomValidity('');
+      }
+    };
+
+    // expose to setupPurposeToggle
+    FieldToggles.updateScholarshipGrantOthers = update;
+
+    sgSelect.addEventListener('change', update);
+    update();
+  },
+
+  updateFileUploadFields() {
     const documentTypeSelect = document.getElementById('documentTypeSelect');
     const group1 = document.getElementById('fileGroup1');
     const group2 = document.getElementById('fileGroup2');
@@ -1597,19 +1678,19 @@ const FieldToggles = {
     const needsTwo = CONFIG.DOCUMENT_TYPES_REQUIRING_TWO_FILES.includes(val);
 
     const L = CONFIG.DOC_LABELS[val] || {
-        one: `Upload ${text}`,
-        two: `Upload ${text} (File 2)`,
-        help: CONFIG.DOC_LABELS['default'].help
+      one: `Upload ${text}`,
+      two: `Upload ${text} (File 2)`,
+      help: CONFIG.DOC_LABELS.default.help
     };
 
     const hide = (group, input) => {
-        group.style.display = 'none';
-        if (input) {
+      group.style.display = 'none';
+      if (input) {
         input.required = false;
         input.value = '';
         input.classList.remove('is-invalid');
         input.setAttribute('accept', 'application/pdf,image/jpeg,image/png');
-        }
+      }
     };
 
     hide(group1, file1);
@@ -1619,25 +1700,24 @@ const FieldToggles = {
     group1.style.display = 'block';
     label1.textContent = L.one || `Upload ${text}`;
     file1.required = true;
-    if (help1) help1.textContent = L.help || CONFIG.DOC_LABELS['default'].help;
+    if (help1) help1.textContent = L.help || CONFIG.DOC_LABELS.default.help;
 
     if (needsTwo) {
-        group2.style.display = 'block';
-        label2.textContent = L.two || `Upload ${text} (File 2)`;
-        file2.required = true;
+      group2.style.display = 'block';
+      label2.textContent = L.two || `Upload ${text} (File 2)`;
+      file2.required = true;
 
-        if (['upload_id', 'upload_government_id'].includes(val)) {
+      if (['upload_id', 'upload_government_id'].includes(val)) {
         file1.setAttribute('accept', 'image/jpeg,image/png');
         file2.setAttribute('accept', 'image/jpeg,image/png');
         if (help2) help2.textContent = L.help;
-        } else {
-        if (help2) help2.textContent = CONFIG.DOC_LABELS['default'].help;
-        }
+      } else {
+        if (help2) help2.textContent = CONFIG.DOC_LABELS.default.help;
+      }
     } else {
-        if (help2) help2.textContent = ''; // clear secondary help when hidden
+      if (help2) help2.textContent = '';
     }
-    },
-
+  }
 };
 
 // ============================================================================
@@ -1764,6 +1844,13 @@ const FormSubmission = {
 
     // extra file checks
     if (!FormValidator.validateStep4()) return;
+
+    // 🔁 If program is "Others", copy manual text into the program field
+    const programSel   = document.getElementById('program_goodmoral');
+    const programOther = document.getElementById('program_other_input');
+    if (programSel && programSel.value === 'Others' && programOther && programOther.value.trim()) {
+      programSel.value = programOther.value.trim();
+    }
 
     // 🔒 lock immediately
     this.submitted = true;

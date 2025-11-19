@@ -130,7 +130,8 @@ from .models import (
     Vote,
     Candidate, 
     StudentAssist, 
-    AcsoAccre
+    AcsoAccre,
+    ScholarshipGrant
 )
 from .utils import (
     generate_gmf_pdf,
@@ -170,9 +171,15 @@ def _get_account_or_404_visible_to(request, email: str):
         raise Http404("Not found")
     return obj
 #------------------------------------------------------------------------------------------#
+def _get_grant_context():
+    return {
+        'grant_options': ScholarshipGrant.objects.filter(is_active=True).order_by('name')
+    }
 
 def client_goodmoral_view(request):
-    return render (request, 'myapp/client_goodmoral.html')
+    # if you’re not using {{ form }} in the template, you can skip the form here
+    context = _get_grant_context()
+    return render(request, 'myapp/client_goodmoral.html', context)
 
 def client_scholarships_view(request):
     scholarships = Scholarship.objects.order_by('-posted_date')
@@ -603,8 +610,55 @@ def admin_lostandfound_view(request):
 @role_required(['admin', 'staff', 'scholarship', 'superadmin'])
 def admin_scholarships_view(request):
     scholarships = Scholarship.objects.order_by('-posted_date')
+    grant_options = ScholarshipGrant.objects.all().order_by('name')
 
     if request.method == 'POST':
+        form_type = request.POST.get('form_type', 'scholarship_post')
+
+        # ================== SCHOLARSHIP GRANT MANAGEMENT ==================
+        if form_type == 'scholarship_grant_add':
+            name = request.POST.get('name', '').strip()
+
+            if not name:
+                messages.error(request, "⚠️ Grant name cannot be empty.")
+                return redirect('admin_scholarships')
+
+            grant, created = ScholarshipGrant.objects.get_or_create(name=name)
+            if created:
+                messages.success(request, f'"{grant.name}" is added to scholarship grant options.')
+            else:
+                messages.info(request, f'"{grant.name}" already exists in the list.')
+
+            return redirect('admin_scholarships')
+
+        elif form_type == 'scholarship_grant_toggle':
+            grant_id = request.POST.get('grant_id')
+            try:
+                grant = ScholarshipGrant.objects.get(pk=grant_id)
+            except ScholarshipGrant.DoesNotExist:
+                messages.error(request, "Scholarship grant option not found.")
+                return redirect('admin_scholarships')
+
+            grant.is_active = not grant.is_active
+            grant.save()
+            state = "enabled (shown in client form)" if grant.is_active else "disabled (hidden from client form)"
+            messages.success(request, f'"{grant.name}" is now {state}.')
+            return redirect('admin_scholarships')
+
+        elif form_type == 'scholarship_grant_delete':
+            grant_id = request.POST.get('grant_id')
+            try:
+                grant = ScholarshipGrant.objects.get(pk=grant_id)
+            except ScholarshipGrant.DoesNotExist:
+                messages.error(request, "Scholarship grant option not found.")
+                return redirect('admin_scholarships')
+
+            name = grant.name
+            grant.delete()
+            messages.success(request, f'"{name}" was removed from the scholarship grant options.')
+            return redirect('admin_scholarships')
+
+        # ================== SCHOLARSHIP POSTING (YOUR ORIGINAL LOGIC) ==================
         title = request.POST.get('title', '').strip()
         category = request.POST.get('category', '').strip()
         deadline_date = request.POST.get('deadline_date', '').strip()
@@ -621,7 +675,7 @@ def admin_scholarships_view(request):
         if missing_fields:
             messages.error(
                 request,
-                f"⚠️ Please fill in all required fields: {', '.join(missing_fields)}."
+                f"Please fill in all required fields: {', '.join(missing_fields)}."
             )
             return redirect('admin_scholarships')
 
@@ -638,15 +692,17 @@ def admin_scholarships_view(request):
                 attachment_5=request.FILES.get('attachment_5') or None,
             )
             scholarship.save()
-            messages.success(request, "✅ Scholarship posted successfully.")
+            messages.success(request, "Scholarship posted successfully.")
             return redirect('admin_scholarships')
 
         except Exception as e:
-            messages.error(request, f"🚨 Something went wrong while saving: {e}")
+            messages.error(request, f"Something went wrong while saving: {e}")
             return redirect('admin_scholarships')
 
+    # ================== GET REQUEST ==================
     return render(request, 'myapp/admin_scholarships.html', {
-        'scholarships': scholarships
+        'scholarships': scholarships,
+        'grant_options': grant_options,   # 🔹 needed for the admin grant table
     })
 
 @role_required(['admin', 'staff', 'superadmin'])
@@ -2087,25 +2143,47 @@ def admin_violation_report_pdf(request):
     severity   = request.GET.get('severity', '').strip()
 
     qs = Violation.objects.all().order_by('violation_date', 'violation_time')
-    if vtype:    qs = qs.filter(violation_type=vtype)
-    if status:   qs = qs.filter(status=status)
-    if severity: qs = qs.filter(severity=severity)
+    if vtype:
+        qs = qs.filter(violation_type=vtype)
+    if status:
+        qs = qs.filter(status=status)
+    if severity:
+        qs = qs.filter(severity=severity)
     qs = _date_range(qs, 'violation_date', start_date, end_date)
 
     resp = HttpResponse(content_type='application/pdf')
     resp['Content-Disposition'] = 'inline; filename="violation_report.pdf"'
-    doc, elements = _start_doc(resp, f"VIOLATION REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+    doc, elements = _start_doc(
+        resp,
+        f"VIOLATION REPORT FROM {start_date or '—'} TO {end_date or '—'}"
+    )
+    headers = [
+        'DATE (MM/DD/YYYY)',
+        'STUDENT ID',
+        'NAME',
+        'PROGRAM',
+        'SEVERITY',
+        'VIOLATION TYPE',
+        'STATUS',
+    ]
+    colw = [
+        doc.width * 0.12,  # DATE
+        doc.width * 0.14,  # STUDENT ID
+        doc.width * 0.26,  # NAME
+        doc.width * 0.18,  # PROGRAM
+        doc.width * 0.08,  # SEVERITY
+        doc.width * 0.14,  # VIOLATION TYPE
+        doc.width * 0.08,  # STATUS
+    ]
 
-    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'STUDENT ID', 'PROGRAM', 'SEVERITY', 'VIOLATION TYPE', 'STATUS']
-    colw = [doc.width*0.12, doc.width*0.26, doc.width*0.14, doc.width*0.18, doc.width*0.08, doc.width*0.14, doc.width*0.08]
     rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
 
     for v in qs:
         name = _full_name(v.first_name, v.middle_initial, v.last_name, v.extension_name)
         rows.append([
-            Paragraph(_fmt_date(v.violation_date), STYLE_CELL),
-            Paragraph(name, STYLE_CELL),
-            Paragraph(v.student_id, STYLE_CELL),
+            Paragraph(_fmt_date(v.violation_date), STYLE_CELL),            
+            Paragraph(v.student_id, STYLE_CELL),                               
+            Paragraph(name, STYLE_CELL),                                       
             Paragraph(v.program_course, STYLE_CELL),
             Paragraph(v.severity.title(), STYLE_CELL),
             Paragraph(dict(Violation.VIOLATION_TYPES).get(v.violation_type, v.violation_type), STYLE_CELL),
@@ -2133,19 +2211,39 @@ def admin_good_moral_report_pdf(request):
 
     resp = HttpResponse(content_type='application/pdf')
     resp['Content-Disposition'] = 'inline; filename="good_moral_report.pdf"'
-    doc, elements = _start_doc(resp, f"GOOD MORAL REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+    doc, elements = _start_doc(
+        resp,
+        f"GOOD MORAL REPORT FROM {start_date or '—'} TO {end_date or '—'}"
+    )
 
-    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'SEX', 'STUDENT ID', 'PROGRAM', 'PURPOSE', 'STATUS']
-    colw = [doc.width*0.12, doc.width*0.28, doc.width*0.06, doc.width*0.14, doc.width*0.16, doc.width*0.14, doc.width*0.10]
+    headers = [
+        'DATE (MM/DD/YYYY)',
+        'STUDENT ID',
+        'NAME',
+        'SEX',
+        'PROGRAM',
+        'PURPOSE',
+        'STATUS',
+    ]
+    colw = [
+        doc.width * 0.12,  # DATE
+        doc.width * 0.14,  # STUDENT ID
+        doc.width * 0.28,  # NAME
+        doc.width * 0.06,  # SEX
+        doc.width * 0.16,  # PROGRAM
+        doc.width * 0.14,  # PURPOSE
+        doc.width * 0.10,  # STATUS
+    ]
+
     rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
 
     for r in qs:
         name = _full_name(r.first_name, r.middle_name, r.surname, r.ext)
         rows.append([
-            Paragraph(_fmt_date(r.submitted_at), STYLE_CELL),
-            Paragraph(name, STYLE_CELL),
+            Paragraph(_fmt_date(r.submitted_at), STYLE_CELL),  
+            Paragraph(r.student_id, STYLE_CELL),              
+            Paragraph(name, STYLE_CELL),                
             Paragraph(r.sex or "", STYLE_CELL),
-            Paragraph(r.student_id, STYLE_CELL),
             Paragraph(r.program, STYLE_CELL),
             Paragraph(r.purpose, STYLE_CELL),
             Paragraph(r.status, STYLE_CELL),
@@ -2172,18 +2270,34 @@ def admin_surrender_id_report_pdf(request):
 
     resp = HttpResponse(content_type='application/pdf')
     resp['Content-Disposition'] = 'inline; filename="surrender_id_report.pdf"'
-    doc, elements = _start_doc(resp, f"SURRENDER ID REQUEST REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+    doc, elements = _start_doc(
+        resp,
+        f"SURRENDER ID REQUEST REPORT FROM {start_date or '—'} TO {end_date or '—'}"
+    )
 
-    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'STUDENT ID', 'PROGRAM', 'REASON']
-    colw = [doc.width*0.14, doc.width*0.34, doc.width*0.18, doc.width*0.20, doc.width*0.14]
+    headers = [
+        'DATE (MM/DD/YYYY)',
+        'STUDENT ID',
+        'NAME',
+        'PROGRAM',
+        'REASON',
+    ]
+    colw = [
+        doc.width * 0.14,  # DATE
+        doc.width * 0.18,  # STUDENT ID
+        doc.width * 0.34,  # NAME
+        doc.width * 0.20,  # PROGRAM
+        doc.width * 0.14,  # REASON
+    ]
+
     rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
 
     for r in qs:
         name = _full_name(r.first_name, r.middle_name, r.surname, r.extension)
         rows.append([
-            Paragraph(_fmt_date(r.submitted_at), STYLE_CELL),
-            Paragraph(name, STYLE_CELL),
-            Paragraph(r.student_number, STYLE_CELL),
+            Paragraph(_fmt_date(r.submitted_at), STYLE_CELL),  
+            Paragraph(r.student_number, STYLE_CELL),       
+            Paragraph(name, STYLE_CELL),                 
             Paragraph(r.program, STYLE_CELL),
             Paragraph(r.reason, STYLE_CELL),
         ])
@@ -2204,35 +2318,48 @@ def admin_clearance_report_pdf(request):
     client_type = request.GET.get('client_type', '').strip()
 
     qs = ClearanceRequest.objects.all().order_by('created_at')
-    if stakeholder: qs = qs.filter(stakeholder=stakeholder)
-    if client_type: qs = qs.filter(client_type=client_type)
+    if stakeholder:
+        qs = qs.filter(stakeholder=stakeholder)
+    if client_type:
+        qs = qs.filter(client_type=client_type)
     qs = _date_range(qs, 'created_at', start_date, end_date)
 
     resp = HttpResponse(content_type='application/pdf')
     resp['Content-Disposition'] = 'inline; filename="clearance_request_report.pdf"'
-    doc, elements = _start_doc(resp, f"CLEARANCE REQUEST REPORT FROM {start_date or '—'} TO {end_date or '—'}")
+    doc, elements = _start_doc(
+        resp,
+        f"CLEARANCE REQUEST REPORT FROM {start_date or '—'} TO {end_date or '—'}"
+    )
 
-    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'STUDENT ID', 'PROGRAM',
-            'CLIENT TYPE', 'STAKEHOLDER', 'REASON']
+    # Reordered: DATE, STUDENT ID, NAME, ...
+    headers = [
+        'DATE (MM/DD/YYYY)',
+        'STUDENT ID',
+        'NAME',
+        'PROGRAM',
+        'CLIENT TYPE',
+        'STAKEHOLDER',
+        'REASON',
+    ]
 
-    # sums to 1.00
     colw = [
         doc.width * 0.12,  # DATE
-        doc.width * 0.28,  # NAME
         doc.width * 0.16,  # STUDENT ID
+        doc.width * 0.26,  # NAME
         doc.width * 0.16,  # PROGRAM
         doc.width * 0.10,  # CLIENT TYPE
         doc.width * 0.12,  # STAKEHOLDER
-        doc.width * 0.06,  # REASON
+        doc.width * 0.08,  # REASON
     ]
+
     rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
 
     for r in qs:
         name = _full_name(r.first_name, r.middle_name, r.last_name, r.extension)
         rows.append([
-            Paragraph(_fmt_date(r.created_at), STYLE_CELL),
-            Paragraph(name, STYLE_CELL),
-            Paragraph(r.student_number, STYLE_CELL),
+            Paragraph(_fmt_date(r.created_at), STYLE_CELL),  # DATE
+            Paragraph(r.student_number or "", STYLE_CELL),   # STUDENT ID
+            Paragraph(name, STYLE_CELL),                    # NAME
             Paragraph(r.program, STYLE_CELL),
             Paragraph(r.client_type, STYLE_CELL),
             Paragraph(r.stakeholder, STYLE_CELL),
@@ -2260,22 +2387,35 @@ def admin_student_assist_report_pdf(request):
     title = f"STUDENT ASSISTANTSHIP REPORT FROM {start_date or '—'} TO {end_date or '—'}"
     doc, elements = _start_doc(resp, title)
 
-    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'AGE', 'SEX', 'PROGRAM', 'CLIENT TYPE', 'STAKEHOLDER']
-    colw = [
-        doc.width * 0.14,  # DATE
-        doc.width * 0.30,  # NAME
-        doc.width * 0.06,  # AGE
-        doc.width * 0.06,  # SEX
-        doc.width * 0.18,  # PROGRAM
-        doc.width * 0.13,  # CLIENT TYPE
-        doc.width * 0.13,  # STAKEHOLDER
+    headers = [
+        'DATE (MM/DD/YYYY)',
+        'STUDENT ID',
+        'NAME',
+        'AGE',
+        'SEX',
+        'PROGRAM',
+        'CLIENT TYPE',
+        'STAKEHOLDER',
     ]
+
+    colw = [
+        doc.width * 0.13,  # DATE
+        doc.width * 0.16,  # STUDENT ID
+        doc.width * 0.25,  # NAME
+        doc.width * 0.05,  # AGE
+        doc.width * 0.05,  # SEX
+        doc.width * 0.16,  # PROGRAM
+        doc.width * 0.10,  # CLIENT TYPE
+        doc.width * 0.10,  # STAKEHOLDER
+    ]
+
     rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
 
     for r in qs:
         rows.append([
-            Paragraph(_fmt_date(r.created_at), STYLE_CELL),
-            Paragraph(r.name, STYLE_CELL),
+            Paragraph(_fmt_date(r.created_at), STYLE_CELL),       # DATE
+            Paragraph(getattr(r, 'student_id', '') or "", STYLE_CELL),  # STUDENT ID
+            Paragraph(r.name, STYLE_CELL),                        # NAME
             Paragraph(str(r.age), STYLE_CELL),
             Paragraph(r.sex or "", STYLE_CELL),
             Paragraph(r.program, STYLE_CELL),
@@ -2304,23 +2444,37 @@ def admin_acso_accre_report_pdf(request):
     title = f"ACSO ACCREDITATION REPORT FROM {start_date or '—'} TO {end_date or '—'}"
     doc, elements = _start_doc(resp, title)
 
-    headers = ['DATE (MM/DD/YYYY)', 'NAME', 'AGE', 'SEX', 'PROGRAM', 'ACSO', 'CLIENT TYPE', 'STAKEHOLDER']
-    colw = [
-        doc.width * 0.13,  # DATE
-        doc.width * 0.27,  # NAME
-        doc.width * 0.06,  # AGE
-        doc.width * 0.06,  # SEX
-        doc.width * 0.18,  # PROGRAM
-        doc.width * 0.12,  # ACSO
-        doc.width * 0.09,  # CLIENT TYPE
-        doc.width * 0.09,  # STAKEHOLDER
+    headers = [
+        'DATE (MM/DD/YYYY)',
+        'STUDENT ID',
+        'NAME',
+        'AGE',
+        'SEX',
+        'PROGRAM',
+        'ACSO',
+        'CLIENT TYPE',
+        'STAKEHOLDER',
     ]
+
+    colw = [
+        doc.width * 0.12,  # DATE
+        doc.width * 0.14,  # STUDENT ID
+        doc.width * 0.23,  # NAME
+        doc.width * 0.05,  # AGE
+        doc.width * 0.05,  # SEX
+        doc.width * 0.16,  # PROGRAM
+        doc.width * 0.10,  # ACSO
+        doc.width * 0.08,  # CLIENT TYPE
+        doc.width * 0.07,  # STAKEHOLDER
+    ]
+
     rows = [[Paragraph(h, STYLE_HEAD) for h in headers]]
 
     for r in qs:
         rows.append([
-            Paragraph(_fmt_date(r.created_at), STYLE_CELL),
-            Paragraph(r.name, STYLE_CELL),
+            Paragraph(_fmt_date(r.created_at), STYLE_CELL),           
+            Paragraph(getattr(r, 'student_id', '') or "", STYLE_CELL), 
+            Paragraph(r.name, STYLE_CELL),                            
             Paragraph(str(r.age), STYLE_CELL),
             Paragraph(r.sex or "", STYLE_CELL),
             Paragraph(r.program, STYLE_CELL),
@@ -2336,6 +2490,7 @@ def admin_acso_accre_report_pdf(request):
     _append_total_footer(elements, qs.count())
     doc.build(elements)
     return resp
+
 
 #-------------------------------------------------#
 

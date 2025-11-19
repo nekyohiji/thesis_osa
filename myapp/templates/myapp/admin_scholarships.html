@@ -46,6 +46,7 @@
                 <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
+                    <input type="hidden" name="form_type" value="scholarship_post">
 
                     <div class="mb-3">
                     <label for="title" class="form-label">Title</label>
@@ -86,6 +87,81 @@
                     </div>
                 </form>
 
+                <hr class="my-4">
+
+                <h5 class="mb-3">
+                    <i class="bi bi-list-check me-2"></i>
+                    Scholarship Grant Options (for client dropdown)
+                </h5>
+
+                <div class="row g-3 align-items-start">
+                    <!-- Add new option -->
+                    <div class="col-md-4">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="scholarship_grant_add">
+
+                            <div class="mb-2">
+                                <label for="grant_name" class="form-label">Add new option</label>
+                                <input type="text" class="form-control" name="name" id="grant_name"
+                                    placeholder="e.g. DOST Scholar" required>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Add to list
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- List/manage existing options -->
+                    <div class="col-md-8">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Option</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for grant in grant_options %}
+                                    <tr>
+                                        <td>{{ grant.name }}</td>
+                                        <td>
+                                            {% if grant.is_active %}
+                                                <span class="badge bg-success">Shown in client form</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Hidden / disabled</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <!-- Toggle enable/disable -->
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="form_type" value="scholarship_grant_toggle">
+                                                <input type="hidden" name="grant_id" value="{{ grant.id }}">
+                                                {% if grant.is_active %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-slash-circle me-1"></i> Disable
+                                                    </button>
+                                                {% else %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                                        <i class="bi bi-check-circle me-1"></i> Enable
+                                                    </button>
+                                                {% endif %}
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-muted">No scholarship grant options yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 <hr>
 
                 <h6>Timeline</h6>

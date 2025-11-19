@@ -1113,3 +1113,14 @@ class AcsoAccre(models.Model):
 
     def __str__(self):
         return f"{self.name} | {self.tupc_id}"
+
+class ScholarshipGrant(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+    is_active = models.BooleanField(default=True)  # controls visibility / clickability in client form
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
