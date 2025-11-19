@@ -367,14 +367,14 @@ def _fill_named_ranges(template_xlsx: Path, values: dict,
 
         # 3) Margins + footer position
         ws_cert.page_margins = PageMargins(
-            left=0.25, right=0.25,
+            left=0.6, right=0.25,
             top=0.5, bottom=0.5,
             header=0.3, footer=0.3,
         )
 
         # 4) Footer text
-        ws_cert.oddFooter.left.text = "TUPC-F-OQA-DCG-14 Ø3 (03.28.25)"
-        ws_cert.oddFooter.left.size = 8
+        ws_cert.oddFooter.left.text = "TUPC-F-OQA-DCG-14 Ø3 (03.28.25)		"
+        ws_cert.oddFooter.left.size =12
 
         # 5) Make GMF the active visible sheet
         ws_cert.sheet_state = "visible"
