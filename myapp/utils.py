@@ -28,6 +28,7 @@ import re
 from threading import Thread
 from django.core.mail import send_mail as _send_mail
 from decimal import Decimal
+from openpyxl.worksheet.page import PageMargins
 
 EMAIL_MAX_ATTACHMENT_SIZE = getattr(settings, "EMAIL_MAX_ATTACHMENT_SIZE", 10_000_000)  # ~5 MB
 
@@ -341,6 +342,7 @@ def _find_soffice() -> str | None:
 def _fill_named_ranges(template_xlsx: Path, values: dict,
                        inputs_sheet="inputs", cert_sheet="GMF") -> Path:
     wb = load_workbook(str(template_xlsx))
+
     # write to single-cell defined names
     for key, val in values.items():
         dn = wb.defined_names.get(key)
@@ -353,8 +355,30 @@ def _fill_named_ranges(template_xlsx: Path, values: dict,
 
     if cert_sheet in wb.sheetnames:
         ws_cert = wb[cert_sheet]
+
+        # ----- PAGE / PRINT SETTINGS -----
+        # 1) Explicit print area – your cert is H1:P45
+        ws_cert.print_area = "H1:P45"
+
+        # 2) Fit the print area to exactly one page
+        ws_cert.page_setup.fitToWidth = 1
+        ws_cert.page_setup.fitToHeight = 1
+        # leave scale at default (100); fitTo* will control scaling
+
+        # 3) Margins + footer position
+        ws_cert.page_margins = PageMargins(
+            left=0.25, right=0.25,
+            top=0.5, bottom=0.5,
+            header=0.3, footer=0.3,
+        )
+
+        # 4) Footer text
         ws_cert.oddFooter.left.text = "TUPC-F-OQA-DCG-14 Ø3 (03.28.25)"
-        ws_cert.oddFooter.left.size = 8  # optional font size
+        ws_cert.oddFooter.left.size = 8
+
+        # 5) Make GMF the active visible sheet
+        ws_cert.sheet_state = "visible"
+        wb.active = wb.index(ws_cert)
 
     # force recalculation in LO on open
     try:
@@ -362,12 +386,9 @@ def _fill_named_ranges(template_xlsx: Path, values: dict,
     except Exception:
         pass
 
-    # show GMF, hide inputs, activate GMF
+    # hide inputs sheet if present
     if inputs_sheet in wb.sheetnames:
         wb[inputs_sheet].sheet_state = "hidden"
-    if cert_sheet in wb.sheetnames:
-        wb[cert_sheet].sheet_state = "visible"
-        wb.active = wb.index(wb[cert_sheet])
 
     out_xlsx = Path(tempfile.gettempdir()) / f"gmf_fill_{next(tempfile._get_candidate_names())}.xlsx"
     wb.save(str(out_xlsx))
