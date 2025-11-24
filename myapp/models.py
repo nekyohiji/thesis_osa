@@ -151,6 +151,7 @@ class Violation(models.Model):
         ("Disturbance", "Loitering or Causing Disturbance During Class Hours"),
         ("Proper Uniform", "Not Wearing Proper Uniform and ID / Haircut / Haircolor"),
         ("Cross Dressing", "Cross Dressing in Uniform and Wash Days"),
+        ("Violation Wash Day", "Violation of the Dress Code Regulation or the Footwear Regulation during Wash Days"),
         ("Facial Hair", "Unwanted Facial Hair"),
         ("Earrings", "Wearing of Earrings or Multiple Earrings"),
         ("Caps", "Wearing of Caps or Hats inside Covered Facilities"),
@@ -167,7 +168,7 @@ class Violation(models.Model):
         ("Property Damage", "Accidental Damage of University Property"),
         ("PDA", "Public Display of Physical Intimacy or Affection"),
         ("Cigarette", "Possession of Any type of Cigarette or Tobacco inside University"),
-        
+    
         ("Liquor/Drugs", "Liquor and Prohibited Drugs"),
         ("Illegal Assembly", "Unauthorized Activities/ Illegal Assemblies"),
         ("Weapons", "Deadly and Dangerous Weapons"),
